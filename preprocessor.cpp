@@ -270,7 +270,7 @@ private:
     const Token *endToken;
 };
 
-TokenList expandmacros(const TokenList &rawtokens)
+TokenList preprocess(const TokenList &rawtokens)
 {
     TokenList output;
     std::map<std::string, Macro> macros;

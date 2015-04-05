@@ -58,6 +58,7 @@ private:
 };
 
 TokenList readfile(std::istream &istr, const std::string &filename);
+TokenList preprocess(const TokenList &rawtokens);
 
 
 
