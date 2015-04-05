@@ -36,7 +36,15 @@ static std::string preprocess(const char code[]) {
 }
 
 
-void test1() {
+void comment() {
+    const char code[] = "// abc";
+    ASSERT_EQUALS(" // abc",
+                  readfile(code));
+    ASSERT_EQUALS(" // abc",
+                  preprocess(code));
+}
+
+void define1() {
     const char code[] = "#define A 1+2\n"
                         "a=A+3;";
     ASSERT_EQUALS(" # define A 1 + 2\n"
@@ -46,7 +54,40 @@ void test1() {
                   preprocess(code));
 }
 
+void define2() {
+    const char code[] = "#define ADD(A,B) A+B\n"
+                        "ADD(1+2,3);";
+    ASSERT_EQUALS(" # define ADD ( A , B ) A + B\n"
+                  " ADD ( 1 + 2 , 3 ) ;",
+                  readfile(code));
+    ASSERT_EQUALS(" 1 + 2 + 3 ;",
+                  preprocess(code));
+}
+
+void ifdef1() {
+    const char code[] = "#ifdef A\n"
+                        "1\n"
+                        "#else\n"
+                        "2\n"
+                        "#endif";
+    ASSERT_EQUALS(" 2", preprocess(code));
+}
+
+void ifdef2() {
+    const char code[] = "#define A\n"
+                        "#ifdef A\n"
+                        "1\n"
+                        "#else\n"
+                        "2\n"
+                        "#endif";
+    ASSERT_EQUALS(" 1", preprocess(code));
+}
+
 int main() {
-    test1();
+    comment();
+    define1();
+    define2();
+    ifdef1();
+    ifdef2();
     return 0;
 }
