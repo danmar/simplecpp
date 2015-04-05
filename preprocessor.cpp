@@ -1,113 +1,75 @@
 
+#include "preprocessor.h"
+
 #include <iostream>
-#include <fstream>
 #include <cctype>
 #include <list>
 #include <map>
 #include <vector>
 
-struct Location {
-    std::string file;
-    unsigned int line;
-    unsigned int col;
-};
 
-class Token {
-public:
-    Token(const std::string &str, const Location &location) :
-        str(str), location(location), previous(nullptr), next(nullptr)
-    {}
+TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
-    std::string str;
-    Location location;
-    Token *previous;
-    Token *next;
-};
+TokenList::TokenList(const TokenList &other) {
+    *this = other;
+}
 
-class TokenList {
-public:
-    TokenList() : first(nullptr), last(nullptr) {}
-    TokenList(const TokenList &other) {
-        *this = other;
+TokenList::~TokenList() {
+    clear();
+}
+
+void TokenList::operator=(const TokenList &other) {
+    if (this == &other)
+        return;
+    clear();
+    for (const Token *tok = other.cbegin(); tok; tok = tok->next)
+        push_back(new Token(tok->str, tok->location));
+}
+
+void TokenList::clear() {
+    while (first) {
+        Token *next = first->next;
+        delete first;
+        first = next;
     }
-    ~TokenList() {
-        clear();
-    }
-    void operator=(const TokenList &other) {
-        if (this == &other)
-            return;
-        clear();
-        for (const Token *tok = other.cbegin(); tok; tok = tok->next)
-            push_back(tok->str, tok->location);
-    }
+    last = nullptr;
+}
 
-    void clear() {
-        while (first) {
-            Token *next = first->next;
-            delete first;
-            first = next;
-        }
-        last = nullptr;
-    }
+void TokenList::push_back(Token *tok) {
+    if (!first)
+        first = tok;
+    else
+        last->next = tok;
+    tok->previous = last;
+    last = tok;
+}
 
-    void push_back(const std::string &str, const Location &location) {
-        Token *tok = new Token(str,location);
-        if (!first)
-            first = tok;
-        else
-            last->next = tok;
-        tok->previous = last;
-        last = tok;
+void TokenList::dump() const {
+    for (const Token *tok = cbegin(); tok; tok = tok->next) {
+        if (tok->previous && tok->previous->location.line != tok->location.line)
+            std::cout << std::endl;
+        std::cout << ' ' << tok->str;
     }
+    std::cout << std::endl;
+}
 
-    Token *begin() {
-        return first;
-    }
 
-    const Token *cbegin() const {
-        return first;
-    }
-
-    Token *end() {
-        return last;
-    }
-
-    const Token *cend() const {
-        return last;
-    }
-
-    void dump() const {
-        for (const Token *tok = cbegin(); tok; tok = tok->next) {
-            if (tok->previous && tok->previous->location.line != tok->location.line)
-                std::cout << std::endl;
-            std::cout << ' ' << tok->str;
-        }
-        std::cout << std::endl;
-    }
-private:
-    Token *first;
-    Token *last;
-};
-
-TokenList readfile(const std::string &filename)
+TokenList readfile(std::istream &istr, const std::string &filename)
 {
     TokenList tokens;
-
-    std::ifstream fin(filename);
-
     Location location;
     location.file = filename;
     location.line = 1U;
     location.col  = 0U;
-    while (fin.good()) {
-        unsigned char ch = (unsigned char)fin.get();
-        if (!fin.good())
+    while (istr.good()) {
+        unsigned char ch = (unsigned char)istr.get();
+        if (!istr.good())
             break;
         location.col = (ch == '\t') ? ((location.col + 8) & (~7)) : (location.col + 1);
 
         if (ch == '\r' || ch == '\n') {
-            if (ch == '\r' && fin.peek() == '\n')
-                fin.get();
+            if (ch == '\r' && istr.peek() == '\n')
+                istr.get();
             ++location.line;
             location.col = 0;
             continue;
@@ -119,39 +81,39 @@ TokenList readfile(const std::string &filename)
         // number or name
         if (std::isalnum(ch) || ch == '_') {
             std::string currentToken;
-            while (fin.good() && (std::isalnum(ch) || ch == '_')) {
+            while (istr.good() && (std::isalnum(ch) || ch == '_')) {
                 currentToken += ch;
-                ch = (unsigned char)fin.get();
+                ch = (unsigned char)istr.get();
             }
-            tokens.push_back(currentToken, location);
+            tokens.push_back(new Token(currentToken, location));
             location.col += currentToken.size() - 1U;
-            fin.unget();
+            istr.unget();
             continue;
         }
 
         // comment
-        if (ch == '/' && fin.peek() == '/') {
+        if (ch == '/' && istr.peek() == '/') {
             std::string currentToken;
-            while (fin.good() && ch != '\r' && ch != '\n') {
+            while (istr.good() && ch != '\r' && ch != '\n') {
                 currentToken += ch;
-                ch = (unsigned char)fin.get();
+                ch = (unsigned char)istr.get();
             }
-            tokens.push_back(currentToken, location);
+            tokens.push_back(new Token(currentToken, location));
             location.col += currentToken.size() - 1U;
-            fin.unget();
+            istr.unget();
             continue;
         }
 
         // comment
-        if (ch == '/' && fin.peek() == '*') {
+        if (ch == '/' && istr.peek() == '*') {
             std::string currentToken;
-            while (fin.good() && !(currentToken.size() > 2U && ch == '*' && fin.peek() == '/')) {
+            while (istr.good() && !(currentToken.size() > 2U && ch == '*' && istr.peek() == '/')) {
                 currentToken += ch;
-                ch = (unsigned char)fin.get();
+                ch = (unsigned char)istr.get();
             }
-            tokens.push_back(currentToken, location);
+            tokens.push_back(new Token(currentToken, location));
             location.col--;
-            fin.unget();
+            istr.unget();
             continue;
         }
 
@@ -160,21 +122,21 @@ TokenList readfile(const std::string &filename)
             std::string currentToken;
             do {
                 currentToken += ch;
-                ch = (unsigned char)fin.get();
-                if (fin.good() && ch == '\\') {
+                ch = (unsigned char)istr.get();
+                if (istr.good() && ch == '\\') {
                     currentToken += ch;
-                    ch = (unsigned char)fin.get();
+                    ch = (unsigned char)istr.get();
                     currentToken += ch;
-                    ch = (unsigned char)fin.get();
+                    ch = (unsigned char)istr.get();
                 }
-            } while (fin.good() && ch != '\"' && ch != '\'');
+            } while (istr.good() && ch != '\"' && ch != '\'');
             currentToken += ch;
-            tokens.push_back(currentToken, location);
+            tokens.push_back(new Token(currentToken, location));
             location.col += currentToken.size() - 1U;
             continue;
         }
 
-        tokens.push_back(std::string(1U,ch), location);
+        tokens.push_back(new Token(std::string(1U,ch), location));
     }
 
     return tokens;
@@ -210,7 +172,7 @@ public:
     const Token * expand(TokenList * const output, const Token *tok, const std::map<std::string,Macro> &macros) const {
         if (args.empty()) {
             for (const Token *macro = valueToken; macro != endToken; macro = macro->next)
-                output->push_back(macro->str, tok->location);
+                output->push_back(new Token(macro->str, tok->location));
             return tok->next;
         }
 
@@ -254,11 +216,11 @@ public:
                 }
                 if (par < args.size()) {
                     for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1]; partok = partok->next)
-                        output->push_back(partok->str, tok->location);
+                        output->push_back(new Token(partok->str, tok->location));
                     continue;
                 }
             }
-            output->push_back(macro->str, tok->location);
+            output->push_back(new Token(macro->str, tok->location));
         }
 
         return parametertokens[args.size()]->next;
@@ -333,15 +295,8 @@ TokenList expandmacros(const TokenList &rawtokens)
             }
         }
 
-        output.push_back(rawtok->str, rawtok->location);
+        output.push_back(new Token(*rawtok));
         rawtok = rawtok->next;
     }
     return output;
-}
-
-int main(int argc, const char * const argv[]) {
-    const TokenList rawtokens = readfile("1.c");
-    const TokenList tokens = expandmacros(rawtokens);
-    tokens.dump();
-    return 0;
 }

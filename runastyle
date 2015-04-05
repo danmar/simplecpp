@@ -1,3 +1,5 @@
 #!/bin/bash
 
+astyle --convert-tabs test.cpp
 astyle --convert-tabs preprocessor.cpp
+astyle --convert-tabs preprocessor.h
