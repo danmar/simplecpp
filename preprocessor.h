@@ -4,24 +4,37 @@
 #include <string>
 #include <map>
 
+extern const unsigned int DEFINE;
+
 struct Location {
-    std::string file;
+    unsigned int file;
     unsigned int line;
     unsigned int col;
 };
 
 class Token {
 public:
-    Token(unsigned int str, bool isname, const Location &location) :
-        str(str), isname(isname), location(location), previous(nullptr), next(nullptr)
+    Token(unsigned int str, const Location &location) :
+        str(str), location(location), previous(nullptr), next(nullptr)
     {}
 
     Token(const Token &tok) :
-        str(tok.str), isname(tok.isname), location(tok.location), previous(nullptr), next(nullptr)
+        str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
     {}
 
+    static unsigned int encode(unsigned int index, bool isname, unsigned char strlen) {
+        return index | (isname << 16U) | (strlen << 17U);
+    }
+
+    bool isname() const {
+        return (str >> 16U) & 1U;
+    }
+
+    unsigned char strlen() const {
+        return (str >> 17U) & 255U;
+    }
+
     unsigned int str;
-    bool isname;
     Location location;
     Token *previous;
     Token *next;
@@ -57,7 +70,7 @@ private:
     Token *last;
 };
 
-TokenList readfile(std::istream &istr, const std::string &filename, std::map<std::string, unsigned int> *stringlist);
+TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stringlist);
 TokenList preprocess(const TokenList &rawtokens);
 
 

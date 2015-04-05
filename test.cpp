@@ -39,14 +39,14 @@ static std::string stringify(const TokenList &tokens, const std::map<std::string
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
     std::map<std::string,unsigned int> stringlist;
-    const TokenList tokens = readfile(istr, "test.cpp",&stringlist);
+    const TokenList tokens = readfile(istr, &stringlist);
     return stringify(tokens,stringlist);
 }
 
 static std::string preprocess(const char code[]) {
     std::istringstream istr(code);
     std::map<std::string,unsigned int> stringlist;
-    const TokenList tokens1 = readfile(istr, "test.cpp", &stringlist);
+    const TokenList tokens1 = readfile(istr, &stringlist);
     const TokenList tokens2 = preprocess(tokens1);
     return stringify(tokens2,stringlist);
 }
@@ -100,7 +100,6 @@ void ifdef2() {
 }
 
 int main() {
-
     comment();
     define1();
     define2();

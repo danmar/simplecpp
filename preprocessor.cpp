@@ -7,7 +7,7 @@
 #include <map>
 #include <vector>
 
-#define DEFINE  256
+const unsigned int DEFINE = 256U | (1U << 16U) | (6U << 17U);
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
@@ -24,7 +24,7 @@ void TokenList::operator=(const TokenList &other) {
         return;
     clear();
     for (const Token *tok = other.cbegin(); tok; tok = tok->next)
-        push_back(new Token(tok->str, tok->isname, tok->location));
+        push_back(new Token(tok->str, tok->location));
 }
 
 void TokenList::clear() {
@@ -45,7 +45,139 @@ void TokenList::push_back(Token *tok) {
     last = tok;
 }
 
-TokenList readfile(std::istream &istr, const std::string &filename, std::map<std::string, unsigned int> *stringlist)
+class Macro {
+public:
+    Macro() : nameToken(nullptr) {}
+
+    explicit Macro(const Token *tok) : nameToken(nullptr) {
+        if (tok->previous && tok->previous->location.line == tok->location.line)
+            throw 1;
+        if (tok->str != '#')
+            throw 1;
+        tok = tok->next;
+        if (!tok || tok->str != DEFINE)
+            throw 1;
+        tok = tok->next;
+        if (!tok || !tok->isname())
+            throw 1;
+        parsedef(tok);
+    }
+
+    Macro(const Macro &macro) {
+        *this = macro;
+    }
+
+    void operator=(const Macro &macro) {
+        if (this != &macro)
+            parsedef(macro.nameToken);
+    }
+
+    const Token * expand(TokenList * const output, const Token *tok, const std::map<unsigned int,Macro> &macros) const {
+        if (args.empty()) {
+            for (const Token *macro = valueToken; macro != endToken; macro = macro->next)
+                output->push_back(new Token(macro->str, tok->location));
+            return tok->next;
+        }
+
+        if (!tok->next || tok->next->str != '(') {
+            std::cerr << "error: macro call" << std::endl;
+            return tok->next;
+        }
+
+        // Parse macro-call
+        std::vector<const Token*> parametertokens;
+        parametertokens.push_back(tok->next);
+        unsigned int par = 0U;
+        for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
+            if (calltok->str == '(')
+                ++par;
+            else if (calltok->str == ')') {
+                if (par == 0U) {
+                    parametertokens.push_back(calltok);
+                    break;
+                }
+                --par;
+            }
+            else if (par == 0U && calltok->str == ',')
+                parametertokens.push_back(calltok);
+        }
+
+        if (parametertokens.size() != args.size() + 1U) {
+            std::cerr << "error: macro call" << std::endl;
+            return tok->next;
+        }
+
+        // expand
+        for (const Token *macro = valueToken; macro != endToken; macro = macro->next) {
+            if (macro->isname()) {
+                // Handling macro parameter..
+                unsigned int par = 0;
+                while (par < args.size()) {
+                    if (macro->str == args[par])
+                        break;
+                    par++;
+                }
+                if (par < args.size()) {
+                    for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1]; partok = partok->next)
+                        output->push_back(new Token(partok->str, tok->location));
+                    continue;
+                }
+            }
+            output->push_back(new Token(macro->str, tok->location));
+        }
+
+        return parametertokens[args.size()]->next;
+    }
+
+    unsigned int name() const {
+        return nameToken->str;
+    }
+
+private:
+    void parsedef(const Token *nametoken) {
+        nameToken = nametoken;
+        if (!nameToken) {
+            valueToken = endToken = nullptr;
+            args.clear();
+            return;
+        }
+
+        // function like macro..
+        if (nameToken->next &&
+                nameToken->next->str == '(' &&
+                nameToken->location.line == nameToken->next->location.line &&
+                nameToken->next->location.col == nameToken->location.col + nameToken->strlen()) {
+            args.clear();
+            const Token *argtok = nameToken->next->next;
+            while (argtok && argtok->str != ')') {
+                if (argtok->str != ',')
+                    args.push_back(argtok->str);
+                argtok = argtok->next;
+            }
+            valueToken = argtok->next;
+        } else {
+            args.clear();
+            valueToken = nameToken->next;
+        }
+
+        if (valueToken && valueToken->location.line != nameToken->location.line)
+            valueToken = nullptr;
+        endToken = valueToken;
+        while (endToken && endToken->location.line == nameToken->location.line)
+            endToken = endToken->next;
+    }
+
+    const Token *nameToken;
+    std::vector<unsigned int> args;
+    const Token *valueToken;
+    const Token *endToken;
+};
+
+static bool sameline(const Token *tok1, const Token *tok2) {
+    return (tok1 && tok2 && tok1->location.line == tok2->location.line);
+}
+
+TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stringlist)
 {
     if (stringlist->empty()) {
         (*stringlist)["define"] = DEFINE;
@@ -53,7 +185,7 @@ TokenList readfile(std::istream &istr, const std::string &filename, std::map<std
 
     TokenList tokens;
     Location location;
-    location.file = filename;
+    location.file = 0U;
     location.line = 1U;
     location.col  = 0U;
     while (istr.good()) {
@@ -121,152 +253,23 @@ TokenList readfile(std::istream &istr, const std::string &filename, std::map<std
             const std::map<std::string,unsigned int>::const_iterator str = stringlist->find(currentToken);
             unsigned int stringindex;
             if (str == stringlist->end()) {
-                stringindex = 256U + stringlist->size();
+                unsigned int  index  = 256U + stringlist->size();
+                bool          isname = (currentToken[0] == '_' || std::isalpha(currentToken[0]));
+                unsigned char size   = currentToken.size() & 0xff;
+                stringindex = Token::encode(index,isname,size);
                 (*stringlist)[currentToken] = stringindex;
             } else {
                 stringindex = str->second;
             }
-            tokens.push_back(new Token(stringindex, (currentToken[0] == '_' || std::isalpha(currentToken[0])), location));
+            tokens.push_back(new Token(stringindex, location));
             location.col += currentToken.size() - 1U;
             continue;
         }
 
-        tokens.push_back(new Token(ch, false, location));
+        tokens.push_back(new Token(ch, location));
     }
 
     return tokens;
-}
-
-class Macro {
-public:
-    Macro() : nameToken(nullptr) {}
-
-    explicit Macro(const Token *tok) : nameToken(nullptr) {
-        if (tok->previous && tok->previous->location.line == tok->location.line)
-            throw 1;
-        if (tok->str != '#')
-            throw 1;
-        tok = tok->next;
-        if (!tok || tok->str != DEFINE)
-            throw 1;
-        tok = tok->next;
-        if (!tok || !tok->isname)
-            throw 1;
-        parsedef(tok);
-    }
-
-    Macro(const Macro &macro) {
-        *this = macro;
-    }
-
-    void operator=(const Macro &macro) {
-        if (this != &macro)
-            parsedef(macro.nameToken);
-    }
-
-    const Token * expand(TokenList * const output, const Token *tok, const std::map<unsigned int,Macro> &macros) const {
-        if (args.empty()) {
-            for (const Token *macro = valueToken; macro != endToken; macro = macro->next)
-                output->push_back(new Token(macro->str, macro->isname, tok->location));
-            return tok->next;
-        }
-
-        if (!tok->next || tok->next->str != '(') {
-            std::cerr << "error: macro call" << std::endl;
-            return tok->next;
-        }
-
-        // Parse macro-call
-        std::vector<const Token*> parametertokens;
-        parametertokens.push_back(tok->next);
-        unsigned int par = 0U;
-        for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
-            if (calltok->str == '(')
-                ++par;
-            else if (calltok->str == ')') {
-                if (par == 0U) {
-                    parametertokens.push_back(calltok);
-                    break;
-                }
-                --par;
-            }
-            else if (par == 0U && calltok->str == ',')
-                parametertokens.push_back(calltok);
-        }
-
-        if (parametertokens.size() != args.size() + 1U) {
-            std::cerr << "error: macro call" << std::endl;
-            return tok->next;
-        }
-
-        // expand
-        for (const Token *macro = valueToken; macro != endToken; macro = macro->next) {
-            if (macro->isname) {
-                // Handling macro parameter..
-                unsigned int par = 0;
-                while (par < args.size()) {
-                    if (macro->str == args[par])
-                        break;
-                    par++;
-                }
-                if (par < args.size()) {
-                    for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1]; partok = partok->next)
-                        output->push_back(new Token(partok->str, partok->isname, tok->location));
-                    continue;
-                }
-            }
-            output->push_back(new Token(macro->str, macro->isname, tok->location));
-        }
-
-        return parametertokens[args.size()]->next;
-    }
-
-    unsigned int name() const {
-        return nameToken->str;
-    }
-
-private:
-    void parsedef(const Token *nametoken) {
-        nameToken = nametoken;
-        if (!nameToken) {
-            valueToken = endToken = nullptr;
-            args.clear();
-            return;
-        }
-
-        // function like macro..
-        if (nameToken->next &&
-                nameToken->next->str == '(' &&
-                nameToken->location.line == nameToken->next->location.line /* &&
-                nameToken->next->location.col == nameToken->location.col + nameToken->str.size() */ ) {
-            args.clear();
-            const Token *argtok = nameToken->next->next;
-            while (argtok && argtok->str != ')') {
-                if (argtok->str != ',')
-                    args.push_back(argtok->str);
-                argtok = argtok->next;
-            }
-            valueToken = argtok->next;
-        } else {
-            args.clear();
-            valueToken = nameToken->next;
-        }
-
-        if (valueToken && valueToken->location.line != nameToken->location.line)
-            valueToken = nullptr;
-        endToken = valueToken;
-        while (endToken && endToken->location.line == nameToken->location.line)
-            endToken = endToken->next;
-    }
-
-    const Token *nameToken;
-    std::vector<unsigned int> args;
-    const Token *valueToken;
-    const Token *endToken;
-};
-
-static bool sameline(const Token *tok1, const Token *tok2) {
-    return (tok1 && tok2 && tok1->location.line == tok2->location.line);
 }
 
 TokenList preprocess(const TokenList &rawtokens)
