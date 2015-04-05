@@ -44,16 +44,6 @@ void TokenList::push_back(Token *tok) {
     last = tok;
 }
 
-void TokenList::dump() const {
-    for (const Token *tok = cbegin(); tok; tok = tok->next) {
-        if (tok->previous && tok->previous->location.line != tok->location.line)
-            std::cout << std::endl;
-        std::cout << ' ' << tok->str;
-    }
-    std::cout << std::endl;
-}
-
-
 TokenList readfile(std::istream &istr, const std::string &filename)
 {
     TokenList tokens;
@@ -149,7 +139,7 @@ public:
     explicit Macro(const Token *tok) : nameToken(nullptr) {
         if (tok->previous && tok->previous->location.line == tok->location.line)
             throw 1;
-        if (tok->str != "#")
+        if (tok->ch != '#')
             throw 1;
         tok = tok->next;
         if (!tok || tok->str != "define")
@@ -176,7 +166,7 @@ public:
             return tok->next;
         }
 
-        if (!tok->next || tok->next->str != "(") {
+        if (!tok->next || tok->next->ch != '(') {
             std::cerr << "error: macro call" << std::endl;
             return tok->next;
         }
@@ -186,16 +176,16 @@ public:
         parametertokens.push_back(tok->next);
         unsigned int par = 0U;
         for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
-            if (calltok->str == "(")
+            if (calltok->ch == '(')
                 ++par;
-            else if (calltok->str == ")") {
+            else if (calltok->ch == ')') {
                 if (par == 0U) {
                     parametertokens.push_back(calltok);
                     break;
                 }
                 --par;
             }
-            else if (par == 0U && calltok->str == ",")
+            else if (par == 0U && calltok->ch == ',')
                 parametertokens.push_back(calltok);
         }
 
@@ -241,13 +231,13 @@ private:
 
         // function like macro..
         if (nameToken->next &&
-                nameToken->next->str == "(" &&
+                nameToken->next->ch == '(' &&
                 nameToken->location.line == nameToken->next->location.line &&
                 nameToken->next->location.col == nameToken->location.col + nameToken->str.size()) {
             args.clear();
             const Token *argtok = nameToken->next->next;
-            while (argtok && argtok->str != ")") {
-                if (argtok->str != ",")
+            while (argtok && argtok->ch != ')') {
+                if (argtok->ch != ',')
                     args.push_back(argtok->str);
                 argtok = argtok->next;
             }
@@ -275,7 +265,7 @@ TokenList preprocess(const TokenList &rawtokens)
     TokenList output;
     std::map<std::string, Macro> macros;
     for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
-        if (rawtok->str == "#") {
+        if (rawtok->ch == '#') {
             try {
                 const Macro &macro = Macro(rawtok);
                 macros[macro.name()] = macro;

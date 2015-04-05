@@ -13,12 +13,15 @@ class Token {
 public:
     Token(const std::string &str, const Location &location) :
         str(str), location(location), previous(nullptr), next(nullptr)
-    {}
+    {
+        ch = (str.size() == 1U) ? str[0] : 0U;
+    }
 
     Token(const Token &tok) :
         str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
     {}
 
+    char ch;
     std::string str;
     Location location;
     Token *previous;
@@ -50,8 +53,6 @@ public:
     const Token *cend() const {
         return last;
     }
-
-    void dump() const;
 private:
     Token *first;
     Token *last;
