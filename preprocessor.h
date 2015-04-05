@@ -2,6 +2,7 @@
 #define PREPROCESSOR_HEADER_GUARD
 
 #include <string>
+#include <map>
 
 struct Location {
     std::string file;
@@ -11,18 +12,16 @@ struct Location {
 
 class Token {
 public:
-    Token(const std::string &str, const Location &location) :
-        str(str), location(location), previous(nullptr), next(nullptr)
-    {
-        ch = (str.size() == 1U) ? str[0] : 0U;
-    }
-
-    Token(const Token &tok) :
-        str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
+    Token(unsigned int str, bool isname, const Location &location) :
+        str(str), isname(isname), location(location), previous(nullptr), next(nullptr)
     {}
 
-    char ch;
-    std::string str;
+    Token(const Token &tok) :
+        str(tok.str), isname(tok.isname), location(tok.location), previous(nullptr), next(nullptr)
+    {}
+
+    unsigned int str;
+    bool isname;
     Location location;
     Token *previous;
     Token *next;
@@ -58,7 +57,7 @@ private:
     Token *last;
 };
 
-TokenList readfile(std::istream &istr, const std::string &filename);
+TokenList readfile(std::istream &istr, const std::string &filename, std::map<std::string, unsigned int> *stringlist);
 TokenList preprocess(const TokenList &rawtokens);
 
 
