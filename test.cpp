@@ -7,6 +7,8 @@
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line) {
     std::cerr << "line " << line << ": Assertion " << ((expected == actual) ? "success" : "failed") << std::endl;
+    if (expected != actual)
+        std::cerr << "<<<" << actual << ">>>" << std::endl;
     return (expected == actual);
 }
 
@@ -103,8 +105,7 @@ int main() {
     comment();
     define1();
     define2();
-    // TODO ifdef1();
-    // TODO ifdef2();
-
+    ifdef1();
+    ifdef2();
     return 0;
 }

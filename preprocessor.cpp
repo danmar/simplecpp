@@ -7,7 +7,11 @@
 #include <map>
 #include <vector>
 
-const unsigned int DEFINE = 256U | (1U << 16U) | (6U << 17U);
+const unsigned int DEFINE  = 256U | (1U << 16U) | (6U << 17U);
+const unsigned int IFDEF   = 257U | (1U << 16U) | (5U << 17U);
+const unsigned int IFNDEF  = 258U | (1U << 16U) | (6U << 17U);
+const unsigned int ELSE    = 259U | (1U << 16U) | (4U << 17U);
+const unsigned int ENDIF   = 260U | (1U << 16U) | (5U << 17U);
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
@@ -180,7 +184,11 @@ static bool sameline(const Token *tok1, const Token *tok2) {
 TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stringlist)
 {
     if (stringlist->empty()) {
-        (*stringlist)["define"] = DEFINE;
+        (*stringlist)["define"]  = DEFINE;
+        (*stringlist)["ifdef"]   = IFDEF;
+        (*stringlist)["ifndef"]  = IFNDEF;
+        (*stringlist)["else"]    = ELSE;
+        (*stringlist)["endif"]   = ENDIF;
     }
 
     TokenList tokens;
@@ -272,6 +280,20 @@ TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stri
     return tokens;
 }
 
+const Token *skipcode(const Token *rawtok) {
+    int state = 0;
+    while (rawtok) {
+        if (rawtok->str == '#')
+            state = 1;
+        else if (state == 1 && (rawtok->str == ELSE || rawtok->str == ENDIF))
+            return rawtok->previous;
+        else
+            state = 0;
+        rawtok = rawtok->next;
+    }
+    return nullptr;
+}
+
 TokenList preprocess(const TokenList &rawtokens)
 {
     TokenList output;
@@ -288,6 +310,33 @@ TokenList preprocess(const TokenList &rawtokens)
                     continue;
                 } catch (...) {
                 }
+            } else if (rawtok->next->str == IFDEF) {
+                if (macros.find(rawtok->next->next->str) != macros.end()) {
+                    rawtok = rawtok->next->next->next;
+                } else {
+                    rawtok = skipcode(rawtok);
+                    if (rawtok)
+                        rawtok = rawtok->next;
+                    if (rawtok)
+                        rawtok = rawtok->next;
+                    if (!rawtok)
+                        break;
+                }
+            } else if (rawtok->next->str == ELSE) {
+                rawtok = skipcode(rawtok->next);
+                if (rawtok)
+                    rawtok = rawtok->next;
+                if (rawtok)
+                    rawtok = rawtok->next;
+                if (!rawtok)
+                    break;
+            } else if (rawtok->next->str == ENDIF) {
+                if (rawtok)
+                    rawtok = rawtok->next;
+                if (rawtok)
+                    rawtok = rawtok->next;
+                if (!rawtok)
+                    break;
             }
         }
 
