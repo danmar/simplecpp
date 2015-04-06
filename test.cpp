@@ -82,6 +82,30 @@ void define2() {
                   preprocess(code));
 }
 
+void define3() {
+    const char code[] = "#define A   123\n"
+                        "#define B   A\n"
+                        "A B";
+    ASSERT_EQUALS(" # define A 123\n"
+                  " # define B A\n"
+                  " A B",
+                  readfile(code));
+    ASSERT_EQUALS(" 123 123",
+                  preprocess(code));
+}
+
+void define4() {
+    const char code[] = "#define A      123\n"
+                        "#define B(C)   A\n"
+                        "A B(1)";
+    ASSERT_EQUALS(" # define A 123\n"
+                  " # define B ( C ) A\n"
+                  " A B ( 1 )",
+                  readfile(code));
+    ASSERT_EQUALS(" 123 123",
+                  preprocess(code));
+}
+
 void ifdef1() {
     const char code[] = "#ifdef A\n"
                         "1\n"
@@ -105,6 +129,8 @@ int main() {
     comment();
     define1();
     define2();
+    define3();
+    define4();
     ifdef1();
     ifdef2();
     return 0;

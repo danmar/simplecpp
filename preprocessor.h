@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <cctype>
 
 extern const unsigned int DEFINE;
 
@@ -22,16 +23,27 @@ public:
         str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
     {}
 
-    static unsigned int encode(unsigned int index, bool isname, unsigned char strlen) {
-        return index | (isname << 16U) | (strlen << 17U);
+    static unsigned int encode(unsigned int index, const std::string &s) {
+        unsigned int name    = (s[0] == '_' || std::isalpha(s[0]));
+        unsigned int comment = s[0] == '/';
+        unsigned int number  = std::isdigit(s[0]);
+        return index | (name << 23U) | (comment << 22U) | (number << 21) | (s.size() << 24U);
+    }
+
+    bool isnumber() const {
+        return (str >> 21U) & 1U;
+    }
+
+    bool iscomment() const {
+        return (str >> 22U) & 1U;
     }
 
     bool isname() const {
-        return (str >> 16U) & 1U;
+        return (str >> 23U) & 1U;
     }
 
-    unsigned char strlen() const {
-        return (str >> 17U) & 255U;
+    unsigned int strlen() const {
+        return (str >> 24U);
     }
 
     unsigned int str;
