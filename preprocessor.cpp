@@ -129,12 +129,7 @@ public:
 
             if (macro->name) {
                 // Handling macro parameter..
-                unsigned int par = 0;
-                while (par < args.size()) {
-                    if (macro->str == args[par])
-                        break;
-                    par++;
-                }
+                const unsigned int par = getargnum(macro->str);
                 if (par < args.size()) {
                     TokenList tokenListHash;
                     TokenList *out = hash ? &tokenListHash : output;
@@ -213,6 +208,16 @@ private:
         endToken = valueToken;
         while (endToken && endToken->location.line == nameToken->location.line)
             endToken = endToken->next;
+    }
+
+    unsigned int getargnum(const TokenString &str) const {
+        unsigned int par;
+        while (par < args.size()) {
+            if (str == args[par])
+                return par;
+            par++;
+        }
+        return ~0U;
     }
 
     const Token *nameToken;
