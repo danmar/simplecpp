@@ -93,6 +93,14 @@ void define5() {
     ASSERT_EQUALS(" 1 + 2 + 3", preprocess(code));
 }
 
+void hash() {
+    const char code[] = "#define a(x) #x\n"
+                        "a(1)\n"
+                        "a(2+3)";
+    ASSERT_EQUALS(" \"1\"\n \"2+3\"", preprocess(code));
+}
+
+
 void ifdef1() {
     const char code[] = "#ifdef A\n"
                         "1\n"
@@ -143,6 +151,7 @@ int main() {
     define3();
     define4();
     define5();
+    hash();
     ifdef1();
     ifdef2();
     tokenMacro1();

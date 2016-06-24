@@ -123,6 +123,10 @@ public:
 
         // expand
         for (const Token *macro = valueToken; macro != endToken;) {
+            const bool hash = (macro->op == '#' && macro->next->name);
+            if (hash)
+                macro = macro->next;
+
             if (macro->name) {
                 // Handling macro parameter..
                 unsigned int par = 0;
@@ -132,14 +136,22 @@ public:
                     par++;
                 }
                 if (par < args.size()) {
+                    TokenList tokenListHash;
+                    TokenList *out = hash ? &tokenListHash : output;
                     for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1];) {
                         const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
                         if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
-                            partok = it->second.expand(output, loc, partok, macros, expandedmacros);
+                            partok = it->second.expand(out, loc, partok, macros, expandedmacros);
                         else {
-                            output->push_back(newMacroToken(partok->str, loc));
+                            out->push_back(newMacroToken(partok->str, loc));
                             partok = partok->next;
                         }
+                    }
+                    if (hash) {
+                        std::string s;
+                        for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
+                            s += hashtok->str;
+                        output->push_back(newMacroToken('\"' + s + '\"', loc));
                     }
                     macro = macro->next;
                     continue;
