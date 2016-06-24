@@ -8,11 +8,11 @@
 #include <set>
 #include <vector>
 
-const unsigned int DEFINE  = 256U | (1U << 23U) | (6U << 24U);
-const unsigned int IFDEF   = 257U | (1U << 23U) | (5U << 24U);
-const unsigned int IFNDEF  = 258U | (1U << 23U) | (6U << 24U);
-const unsigned int ELSE    = 259U | (1U << 23U) | (4U << 24U);
-const unsigned int ENDIF   = 260U | (1U << 23U) | (5U << 24U);
+const unsigned int DEFINE  = Token::encode(256U, "define");
+const unsigned int IFDEF   = Token::encode(257U, "ifdef");
+const unsigned int IFNDEF  = Token::encode(258U, "ifndef");
+const unsigned int ELSE    = Token::encode(259U, "else");
+const unsigned int ENDIF   = Token::encode(260U, "endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
