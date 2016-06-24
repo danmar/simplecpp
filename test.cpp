@@ -12,27 +12,13 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static std::string stringify(const TokenList &tokens, const std::map<std::string,unsigned int> &stringlist) {
+static std::string stringify(const TokenList &tokens) {
     std::ostringstream out;
 
     for (const Token *tok = tokens.cbegin(); tok; tok = tok->next) {
         if (tok->previous && tok->previous->location.line != tok->location.line)
             out << '\n';
-        if (tok->str < 256U)
-            out << ' ' << (char)tok->str;
-        else {
-            std::string str;
-            for (std::map<std::string,unsigned int>::const_iterator it = stringlist.begin(); it != stringlist.end(); ++it) {
-                if (it->second == tok->str) {
-                    str = it->first;
-                    break;
-                }
-            }
-            if (str.empty())
-                out << ' ' << tok->str;
-            else
-                out << ' ' << str;
-        }
+        out << ' ' << tok->str;
     }
 
     return out.str();
@@ -40,17 +26,12 @@ static std::string stringify(const TokenList &tokens, const std::map<std::string
 
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
-    std::map<std::string,unsigned int> stringlist;
-    const TokenList tokens = readfile(istr, &stringlist);
-    return stringify(tokens,stringlist);
+    return stringify(readfile(istr));
 }
 
 static std::string preprocess(const char code[]) {
     std::istringstream istr(code);
-    std::map<std::string,unsigned int> stringlist;
-    const TokenList tokens1 = readfile(istr, &stringlist);
-    const TokenList tokens2 = preprocess(tokens1);
-    return stringify(tokens2,stringlist);
+    return stringify(preprocess(readfile(istr)));
 }
 
 

@@ -1,11 +1,15 @@
-#ifndef PREPROCESSOR_HEADER_GUARD
-#define PREPROCESSOR_HEADER_GUARD
+/*
+ * preprocessor library by daniel marjamäki
+ */
+
+#ifndef preprocessorH
+#define preprocessorH
 
 #include <string>
 #include <map>
 #include <cctype>
 
-extern const unsigned int DEFINE;
+typedef std::string TokenString;
 
 struct Location {
     unsigned int file;
@@ -15,38 +19,30 @@ struct Location {
 
 class Token {
 public:
-    Token(unsigned int str, const Location &location) :
+    Token(const TokenString &str, const Location &location) :
         str(str), location(location), previous(nullptr), next(nullptr)
-    {}
+    {
+        flags();
+    }
 
     Token(const Token &tok) :
         str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
-    {}
-
-    static unsigned int encode(unsigned int index, const std::string &s) {
-        unsigned int name    = (s[0] == '_' || std::isalpha(s[0]));
-        unsigned int comment = s[0] == '/';
-        unsigned int number  = std::isdigit(s[0]);
-        return index | (name << 23U) | (comment << 22U) | (number << 21) | (s.size() << 24U);
+    {
+        flags();
     }
 
-    bool isnumber() const {
-        return (str >> 21U) & 1U;
+    void flags() {
+        name = (str[0] == '_' || std::isalpha(str[0]));
+        comment = (str[0] == '/');
+        number = std::isdigit(str[0]);
+        op = (str.size() == 1U) ? str[0] : '\0';
     }
 
-    bool iscomment() const {
-        return (str >> 22U) & 1U;
-    }
-
-    bool isname() const {
-        return (str >> 23U) & 1U;
-    }
-
-    unsigned int strlen() const {
-        return (str >> 24U);
-    }
-
-    unsigned int str;
+    char op;
+    TokenString str;
+    bool comment;
+    bool name;
+    bool number;
     Location location;
     Token *previous;
     Token *next;
@@ -82,7 +78,7 @@ private:
     Token *last;
 };
 
-TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stringlist);
+TokenList readfile(std::istream &istr);
 TokenList preprocess(const TokenList &rawtokens);
 
 

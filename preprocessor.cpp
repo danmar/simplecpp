@@ -1,3 +1,6 @@
+/*
+ * preprocessor library by daniel marjamäki
+ */
 
 #include "preprocessor.h"
 
@@ -8,11 +11,11 @@
 #include <set>
 #include <vector>
 
-const unsigned int DEFINE  = Token::encode(256U, "define");
-const unsigned int IFDEF   = Token::encode(257U, "ifdef");
-const unsigned int IFNDEF  = Token::encode(258U, "ifndef");
-const unsigned int ELSE    = Token::encode(259U, "else");
-const unsigned int ENDIF   = Token::encode(260U, "endif");
+const TokenString DEFINE("define");
+const TokenString IFDEF("ifdef");
+const TokenString IFNDEF("ifndef");
+const TokenString ELSE("else");
+const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
@@ -57,13 +60,13 @@ public:
     explicit Macro(const Token *tok) : nameToken(nullptr) {
         if (tok->previous && tok->previous->location.line == tok->location.line)
             throw 1;
-        if (tok->str != '#')
+        if (tok->op != '#')
             throw 1;
         tok = tok->next;
         if (!tok || tok->str != DEFINE)
             throw 1;
         tok = tok->next;
-        if (!tok || !tok->isname())
+        if (!tok || !tok->name)
             throw 1;
         parsedef(tok);
     }
@@ -77,11 +80,11 @@ public:
             parsedef(macro.nameToken);
     }
 
-    const Token * expand(TokenList * const output, const Location &loc, const Token *tok, const std::map<unsigned int,Macro> &macros, std::set<unsigned int> expandedmacros) const {
+    const Token * expand(TokenList * const output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
         expandedmacros.insert(nameToken->str);
         if (args.empty()) {
             for (const Token *macro = valueToken; macro != endToken;) {
-                const std::map<unsigned int, Macro>::const_iterator it = macros.find(macro->str);
+                const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
                     macro = it->second.expand(output, loc, macro, macros, expandedmacros);
                 } else {
@@ -92,7 +95,7 @@ public:
             return tok->next;
         }
 
-        if (!tok->next || tok->next->str != '(') {
+        if (!tok->next || tok->next->op != '(') {
             std::cerr << "error: macro call" << std::endl;
             return tok->next;
         }
@@ -102,16 +105,16 @@ public:
         parametertokens.push_back(tok->next);
         unsigned int par = 0U;
         for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
-            if (calltok->str == '(')
+            if (calltok->op == '(')
                 ++par;
-            else if (calltok->str == ')') {
+            else if (calltok->op == ')') {
                 if (par == 0U) {
                     parametertokens.push_back(calltok);
                     break;
                 }
                 --par;
             }
-            else if (par == 0U && calltok->str == ',')
+            else if (par == 0U && calltok->op == ',')
                 parametertokens.push_back(calltok);
         }
 
@@ -122,7 +125,7 @@ public:
 
         // expand
         for (const Token *macro = valueToken; macro != endToken;) {
-            if (macro->isname()) {
+            if (macro->name) {
                 // Handling macro parameter..
                 unsigned int par = 0;
                 while (par < args.size()) {
@@ -138,7 +141,7 @@ public:
                 }
 
                 // Macro..
-                const std::map<unsigned int, Macro>::const_iterator it = macros.find(macro->str);
+                const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
                     macro = it->second.expand(output, loc, macro, macros, expandedmacros);
                     continue;
@@ -151,7 +154,7 @@ public:
         return parametertokens[args.size()]->next;
     }
 
-    unsigned int name() const {
+    TokenString name() const {
         return nameToken->str;
     }
 
@@ -166,13 +169,13 @@ private:
 
         // function like macro..
         if (nameToken->next &&
-                nameToken->next->str == '(' &&
+                nameToken->next->op == '(' &&
                 nameToken->location.line == nameToken->next->location.line &&
-                nameToken->next->location.col == nameToken->location.col + nameToken->strlen()) {
+                nameToken->next->location.col == nameToken->location.col + nameToken->str.size()) {
             args.clear();
             const Token *argtok = nameToken->next->next;
-            while (argtok && argtok->str != ')') {
-                if (argtok->str != ',')
+            while (argtok && argtok->op != ')') {
+                if (argtok->op != ',')
                     args.push_back(argtok->str);
                 argtok = argtok->next;
             }
@@ -190,7 +193,7 @@ private:
     }
 
     const Token *nameToken;
-    std::vector<unsigned int> args;
+    std::vector<TokenString> args;
     const Token *valueToken;
     const Token *endToken;
 };
@@ -199,16 +202,8 @@ static bool sameline(const Token *tok1, const Token *tok2) {
     return (tok1 && tok2 && tok1->location.line == tok2->location.line);
 }
 
-TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stringlist)
+TokenList readfile(std::istream &istr)
 {
-    if (stringlist->empty()) {
-        (*stringlist)["define"]  = DEFINE;
-        (*stringlist)["ifdef"]   = IFDEF;
-        (*stringlist)["ifndef"]  = IFNDEF;
-        (*stringlist)["else"]    = ELSE;
-        (*stringlist)["endif"]   = ENDIF;
-    }
-
     TokenList tokens;
     Location location;
     location.file = 0U;
@@ -231,7 +226,7 @@ TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stri
         if (std::isspace(ch))
             continue;
 
-        std::string currentToken;
+        TokenString currentToken;
 
         // number or name
         if (std::isalnum(ch) || ch == '_') {
@@ -275,21 +270,12 @@ TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stri
             currentToken += ch;
         }
 
-        if (!currentToken.empty()) {
-            const std::map<std::string,unsigned int>::const_iterator str = stringlist->find(currentToken);
-            unsigned int stringindex;
-            if (str == stringlist->end()) {
-                stringindex = Token::encode(256U + stringlist->size(),currentToken);
-                (*stringlist)[currentToken] = stringindex;
-            } else {
-                stringindex = str->second;
-            }
-            tokens.push_back(new Token(stringindex, location));
-            location.col += currentToken.size() - 1U;
-            continue;
+        else {
+            currentToken += ch;
         }
 
-        tokens.push_back(new Token(ch, location));
+        tokens.push_back(new Token(currentToken, location));
+        location.col += currentToken.size() - 1U;
     }
 
     return tokens;
@@ -298,7 +284,7 @@ TokenList readfile(std::istream &istr, std::map<std::string, unsigned int> *stri
 const Token *skipcode(const Token *rawtok) {
     int state = 0;
     while (rawtok) {
-        if (rawtok->str == '#')
+        if (rawtok->op == '#')
             state = 1;
         else if (state == 1 && (rawtok->str == ELSE || rawtok->str == ENDIF))
             return rawtok->previous;
@@ -312,9 +298,9 @@ const Token *skipcode(const Token *rawtok) {
 TokenList preprocess(const TokenList &rawtokens)
 {
     TokenList output;
-    std::map<unsigned int, Macro> macros;
+    std::map<TokenString, Macro> macros;
     for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
-        if (rawtok->str == '#' && !sameline(rawtok->previous, rawtok)) {
+        if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
             if (rawtok->next->str == DEFINE) {
                 try {
                     const Macro &macro = Macro(rawtok);
@@ -356,9 +342,9 @@ TokenList preprocess(const TokenList &rawtokens)
         }
 
         if (macros.find(rawtok->str) != macros.end()) {
-            std::map<unsigned int,Macro>::const_iterator macro = macros.find(rawtok->str);
+            std::map<TokenString,Macro>::const_iterator macro = macros.find(rawtok->str);
             if (macro != macros.end()) {
-                std::set<unsigned int> expandedmacros;
+                std::set<TokenString> expandedmacros;
                 rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
                 continue;
             }
