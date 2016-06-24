@@ -5,6 +5,7 @@
 #ifndef preprocessorH
 #define preprocessorH
 
+#include <istream>
 #include <string>
 #include <map>
 #include <cctype>
@@ -26,7 +27,7 @@ public:
     }
 
     Token(const Token &tok) :
-        str(tok.str), location(tok.location), previous(nullptr), next(nullptr)
+        str(tok.str), macro(tok.macro), location(tok.location), previous(nullptr), next(nullptr)
     {
         flags();
     }
@@ -40,6 +41,7 @@ public:
 
     char op;
     TokenString str;
+    TokenString macro;
     bool comment;
     bool name;
     bool number;
@@ -78,9 +80,9 @@ private:
     Token *last;
 };
 
+namespace Preprocessor {
 TokenList readfile(std::istream &istr);
 TokenList preprocess(const TokenList &rawtokens);
-
-
+}
 
 #endif

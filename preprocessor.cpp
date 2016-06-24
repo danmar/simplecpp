@@ -4,18 +4,18 @@
 
 #include "preprocessor.h"
 
-#include <iostream>
 #include <cctype>
 #include <list>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
-const TokenString DEFINE("define");
-const TokenString IFDEF("ifdef");
-const TokenString IFNDEF("ifndef");
-const TokenString ELSE("else");
-const TokenString ENDIF("endif");
+static const TokenString DEFINE("define");
+static const TokenString IFDEF("ifdef");
+static const TokenString IFNDEF("ifndef");
+static const TokenString ELSE("else");
+static const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
@@ -53,21 +53,22 @@ void TokenList::push_back(Token *tok) {
     last = tok;
 }
 
+namespace {
 class Macro {
 public:
     Macro() : nameToken(nullptr) {}
 
     explicit Macro(const Token *tok) : nameToken(nullptr) {
         if (tok->previous && tok->previous->location.line == tok->location.line)
-            throw 1;
+            throw std::runtime_error("bad macro syntax");
         if (tok->op != '#')
-            throw 1;
+            throw std::runtime_error("bad macro syntax");
         tok = tok->next;
         if (!tok || tok->str != DEFINE)
-            throw 1;
+            throw std::runtime_error("bad macro syntax");
         tok = tok->next;
         if (!tok || !tok->name)
-            throw 1;
+            throw std::runtime_error("bad macro syntax");
         parsedef(tok);
     }
 
@@ -88,17 +89,15 @@ public:
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
                     macro = it->second.expand(output, loc, macro, macros, expandedmacros);
                 } else {
-                    output->push_back(new Token(macro->str, loc));
+                    output->push_back(newMacroToken(macro->str, loc));
                     macro = macro->next;
                 }
             }
             return tok->next;
         }
 
-        if (!tok->next || tok->next->op != '(') {
-            std::cerr << "error: macro call" << std::endl;
-            return tok->next;
-        }
+        if (!tok->next || tok->next->op != '(')
+            throw std::runtime_error("error: macro call");
 
         // Parse macro-call
         std::vector<const Token*> parametertokens;
@@ -118,10 +117,8 @@ public:
                 parametertokens.push_back(calltok);
         }
 
-        if (parametertokens.size() != args.size() + 1U) {
-            std::cerr << "error: macro call" << std::endl;
-            return tok->next;
-        }
+        if (parametertokens.size() != args.size() + 1U)
+            throw std::runtime_error("error: macro call");
 
         // expand
         for (const Token *macro = valueToken; macro != endToken;) {
@@ -135,7 +132,7 @@ public:
                 }
                 if (par < args.size()) {
                     for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1]; partok = partok->next)
-                        output->push_back(new Token(partok->str, loc));
+                        output->push_back(newMacroToken(partok->str, loc));
                     macro = macro->next;
                     continue;
                 }
@@ -147,7 +144,7 @@ public:
                     continue;
                 }
             }
-            output->push_back(new Token(macro->str, loc));
+            output->push_back(newMacroToken(macro->str, loc));
             macro = macro->next;
         }
 
@@ -159,6 +156,12 @@ public:
     }
 
 private:
+    Token *newMacroToken(const TokenString &str, const Location &loc) const {
+        Token *tok = new Token(str,loc);
+        tok->macro = nameToken->str;
+        return tok;
+    }
+
     void parsedef(const Token *nametoken) {
         nameToken = nametoken;
         if (!nameToken) {
@@ -197,12 +200,13 @@ private:
     const Token *valueToken;
     const Token *endToken;
 };
+}
 
 static bool sameline(const Token *tok1, const Token *tok2) {
     return (tok1 && tok2 && tok1->location.line == tok2->location.line);
 }
 
-TokenList readfile(std::istream &istr)
+TokenList Preprocessor::readfile(std::istream &istr)
 {
     TokenList tokens;
     Location location;
@@ -281,7 +285,7 @@ TokenList readfile(std::istream &istr)
     return tokens;
 }
 
-const Token *skipcode(const Token *rawtok) {
+static const Token *skipcode(const Token *rawtok) {
     int state = 0;
     while (rawtok) {
         if (rawtok->op == '#')
@@ -295,7 +299,7 @@ const Token *skipcode(const Token *rawtok) {
     return nullptr;
 }
 
-TokenList preprocess(const TokenList &rawtokens)
+TokenList Preprocessor::preprocess(const TokenList &rawtokens)
 {
     TokenList output;
     std::map<TokenString, Macro> macros;

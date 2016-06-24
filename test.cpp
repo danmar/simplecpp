@@ -26,12 +26,12 @@ static std::string stringify(const TokenList &tokens) {
 
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
-    return stringify(readfile(istr));
+    return stringify(Preprocessor::readfile(istr));
 }
 
 static std::string preprocess(const char code[]) {
     std::istringstream istr(code);
-    return stringify(preprocess(readfile(istr)));
+    return stringify(Preprocessor::preprocess(Preprocessor::readfile(istr)));
 }
 
 
@@ -106,6 +106,14 @@ void ifdef2() {
     ASSERT_EQUALS(" 1", preprocess(code));
 }
 
+void tokenMacro1() {
+    const char code[] = "#define A 123\n"
+                        "A";
+    std::istringstream istr(code);
+    const TokenList tokenList(Preprocessor::preprocess(Preprocessor::readfile(istr)));
+    ASSERT_EQUALS("A", tokenList.cend()->macro);
+}
+
 int main() {
     comment();
     define1();
@@ -114,5 +122,6 @@ int main() {
     define4();
     ifdef1();
     ifdef2();
+    tokenMacro1();
     return 0;
 }
