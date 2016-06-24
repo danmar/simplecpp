@@ -87,6 +87,12 @@ void define4() {
                   preprocess(code));
 }
 
+void define5() {
+    const char code[] = "#define add(x,y) x+y\n"
+                        "add(add(1,2),3)";
+    ASSERT_EQUALS(" 1 + 2 + 3", preprocess(code));
+}
+
 void ifdef1() {
     const char code[] = "#ifdef A\n"
                         "1\n"
@@ -114,14 +120,32 @@ void tokenMacro1() {
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
+void tokenMacro2() {
+    const char code[] = "#define ADD(X,Y) X+Y\n"
+                        "ADD(1,2)";
+    std::istringstream istr(code);
+    const TokenList tokenList(Preprocessor::preprocess(Preprocessor::readfile(istr)));
+    const Token *tok = tokenList.cbegin();
+    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("ADD", tok->macro);
+    tok = tok->next;
+    ASSERT_EQUALS("+", tok->str);
+    ASSERT_EQUALS("ADD", tok->macro);
+    tok = tok->next;
+    ASSERT_EQUALS("2", tok->str);
+    ASSERT_EQUALS("ADD", tok->macro);
+}
+
 int main() {
     comment();
     define1();
     define2();
     define3();
     define4();
+    define5();
     ifdef1();
     ifdef2();
     tokenMacro1();
+    tokenMacro2();
     return 0;
 }

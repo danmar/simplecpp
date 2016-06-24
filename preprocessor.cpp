@@ -82,6 +82,7 @@ public:
     }
 
     const Token * expand(TokenList * const output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
+        const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
         if (args.empty()) {
             for (const Token *macro = valueToken; macro != endToken;) {
@@ -118,7 +119,7 @@ public:
         }
 
         if (parametertokens.size() != args.size() + 1U)
-            throw std::runtime_error("error: macro call");
+            throw std::runtime_error("wrong number of parameters");
 
         // expand
         for (const Token *macro = valueToken; macro != endToken;) {
@@ -131,15 +132,22 @@ public:
                     par++;
                 }
                 if (par < args.size()) {
-                    for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1]; partok = partok->next)
-                        output->push_back(newMacroToken(partok->str, loc));
+                    for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1];) {
+                        const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
+                        if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
+                            partok = it->second.expand(output, loc, partok, macros, expandedmacros);
+                        else {
+                            output->push_back(newMacroToken(partok->str, loc));
+                            partok = partok->next;
+                        }
+                    }
                     macro = macro->next;
                     continue;
                 }
 
                 // Macro..
                 const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
-                if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
+                if (it != macros.end() && expandedmacros1.find(macro->str) == expandedmacros1.end()) {
                     macro = it->second.expand(output, loc, macro, macros, expandedmacros);
                     continue;
                 }
@@ -313,7 +321,7 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens)
                     while (rawtok && rawtok->location.line == line)
                         rawtok = rawtok->next;
                     continue;
-                } catch (...) {
+                } catch (const std::runtime_error &) {
                 }
             } else if (rawtok->next->str == IFDEF) {
                 if (macros.find(rawtok->next->next->str) != macros.end()) {
