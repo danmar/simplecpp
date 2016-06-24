@@ -122,45 +122,20 @@ public:
             throw std::runtime_error("wrong number of parameters");
 
         // expand
-        for (const Token *macro = valueToken; macro != endToken;) {
-            const bool hash = (macro->op == '#' && macro->next->name);
-            if (hash)
-                macro = macro->next;
+        for (const Token *tok = valueToken; tok != endToken;) {
+            if (tok->op == '#') {
+                tok = tok->next;
 
-            if (macro->name) {
-                // Handling macro parameter..
-                const unsigned int par = getargnum(macro->str);
-                if (par < args.size()) {
-                    TokenList tokenListHash;
-                    TokenList *out = hash ? &tokenListHash : output;
-                    for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1];) {
-                        const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
-                        if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
-                            partok = it->second.expand(out, loc, partok, macros, expandedmacros);
-                        else {
-                            out->push_back(newMacroToken(partok->str, loc));
-                            partok = partok->next;
-                        }
-                    }
-                    if (hash) {
-                        std::string s;
-                        for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
-                            s += hashtok->str;
-                        output->push_back(newMacroToken('\"' + s + '\"', loc));
-                    }
-                    macro = macro->next;
-                    continue;
-                }
+                TokenList tokenListHash;
+                tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
 
-                // Macro..
-                const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
-                if (it != macros.end() && expandedmacros1.find(macro->str) == expandedmacros1.end()) {
-                    macro = it->second.expand(output, loc, macro, macros, expandedmacros);
-                    continue;
-                }
+                std::string s;
+                for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
+                    s += hashtok->str;
+                output->push_back(newMacroToken('\"' + s + '\"', loc));
+            } else {
+                tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
             }
-            output->push_back(newMacroToken(macro->str, loc));
-            macro = macro->next;
         }
 
         return parametertokens[args.size()]->next;
@@ -218,6 +193,39 @@ private:
             par++;
         }
         return ~0U;
+    }
+
+    const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros1, std::set<TokenString> expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        // Not name..
+        if (!tok->name) {
+            output->push_back(newMacroToken(tok->str, loc));
+            return tok->next;
+        }
+
+        // Not macro parameter..
+        const unsigned int par = getargnum(tok->str);
+        if (par >= args.size()) {
+            // Macro..
+            const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+            if (it != macros.end() && expandedmacros1.find(tok->str) == expandedmacros1.end())
+                return it->second.expand(output, loc, tok, macros, expandedmacros);
+
+            output->push_back(newMacroToken(tok->str, loc));
+            return tok->next;
+        }
+
+        // Expand parameter..
+        for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1];) {
+            const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
+            if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
+                partok = it->second.expand(output, loc, partok, macros, expandedmacros);
+            else {
+                output->push_back(newMacroToken(partok->str, loc));
+                partok = partok->next;
+            }
+        }
+
+        return tok->next;
     }
 
     const Token *nameToken;
