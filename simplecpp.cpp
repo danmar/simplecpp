@@ -2,7 +2,7 @@
  * preprocessor library by daniel marjamäki
  */
 
-#include "preprocessor.h"
+#include "simplecpp.h"
 
 #include <cctype>
 #include <list>

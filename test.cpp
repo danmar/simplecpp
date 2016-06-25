@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "preprocessor.h"
+#include "simplecpp.h"
 
 #define ASSERT_EQUALS(expected, actual)  assertEquals((expected), (actual), __LINE__);
 

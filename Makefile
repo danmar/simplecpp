@@ -1,2 +1,6 @@
-test:	test.cpp	preprocessor.cpp	preprocessor.h
-	g++ -Wall -Wextra -pedantic -g -std=c++11 preprocessor.cpp test.cpp -o test
+testrunner:	test.cpp	simplecpp.cpp	simplecpp.h
+	g++ -Wall -Wextra -pedantic -g -std=c++11 simplecpp.cpp test.cpp -o testrunner
+
+test:	testrunner
+	./testrunner
+
