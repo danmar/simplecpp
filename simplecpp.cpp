@@ -86,6 +86,7 @@ public:
     const Token * expand(TokenList * const output, const Location &loc, const Token * const nameToken, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
         const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
+
         if (args.empty()) {
             Token * const token1 = output->end();
             for (const Token *macro = valueToken; macro != endToken;) {
@@ -103,8 +104,11 @@ public:
 
         // Parse macro-call
         const std::vector<const Token*> parametertokens(getMacroParameters(nameToken));
-        if (parametertokens.size() != args.size() + 1U)
-            throw std::runtime_error("wrong number of parameters");
+        if (parametertokens.size() != args.size() + 1U) {
+            // wrong number of parameters => don't expand
+            output->push_back(newMacroToken(nameToken->str, loc, false));
+            return nameToken->next;
+        }
 
         // expand
         for (const Token *tok = valueToken; tok != endToken;) {
@@ -206,7 +210,7 @@ private:
 
     std::vector<const Token *> getMacroParameters(const Token *nameToken) const {
         if (!nameToken->next || nameToken->next->op != '(')
-            throw std::runtime_error("error: macro call");
+            return std::vector<const Token *>();
 
         std::vector<const Token *> parametertokens;
         parametertokens.push_back(nameToken->next);
