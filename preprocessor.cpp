@@ -92,7 +92,7 @@ public:
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
                     macro = it->second.expand(output, loc, macro, macros, expandedmacros);
                 } else {
-                    output->push_back(newMacroToken(macro->str, loc));
+                    output->push_back(newMacroToken(macro->str, loc, false));
                     macro = macro->next;
                 }
             }
@@ -106,31 +106,32 @@ public:
 
         // expand
         for (const Token *tok = valueToken; tok != endToken;) {
-            if (tok->op == '#') {
-                tok = tok->next;
-                if (tok->op == '#') {
-                    // A##B => AB
-                    Token *A = output->end();
-                    if (!A)
-                        throw std::runtime_error("invalid ##");
-                    tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
-                    Token *next = A->next;
-                    if (!next)
-                        throw std::runtime_error("invalid ##");
-                    A->str = A->str + A->next->str;
-                    A->flags();
-                    output->deleteToken(A->next);
-                } else {
-                    // #123 => "123"
-                    TokenList tokenListHash;
-                    tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
-                    std::string s;
-                    for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
-                        s += hashtok->str;
-                    output->push_back(newMacroToken('\"' + s + '\"', loc));
-                }
-            } else {
+            if (tok->op != '#') {
                 tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                continue;
+            }
+
+            tok = tok->next;
+            if (tok->op == '#') {
+                // A##B => AB
+                Token *A = output->end();
+                if (!A)
+                    throw std::runtime_error("invalid ##");
+                tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+                Token *next = A->next;
+                if (!next)
+                    throw std::runtime_error("invalid ##");
+                A->str = A->str + A->next->str;
+                A->flags();
+                output->deleteToken(A->next);
+            } else {
+                // #123 => "123"
+                TokenList tokenListHash;
+                tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                std::string s;
+                for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
+                    s += hashtok->str;
+                output->push_back(newMacroToken('\"' + s + '\"', loc, expandedmacros1.empty()));
             }
         }
 
@@ -142,9 +143,10 @@ public:
     }
 
 private:
-    Token *newMacroToken(const TokenString &str, const Location &loc) const {
+    Token *newMacroToken(const TokenString &str, const Location &loc, bool rawCode) const {
         Token *tok = new Token(str,loc);
-        tok->macro = nameToken->str;
+        if (!rawCode)
+            tok->macro = nameToken->str;
         return tok;
     }
 
@@ -217,7 +219,7 @@ private:
     const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros1, std::set<TokenString> expandedmacros, const std::vector<const Token*> &parametertokens) const {
         // Not name..
         if (!tok->name) {
-            output->push_back(newMacroToken(tok->str, loc));
+            output->push_back(newMacroToken(tok->str, loc, false));
             return tok->next;
         }
 
@@ -229,7 +231,7 @@ private:
             if (it != macros.end() && expandedmacros1.find(tok->str) == expandedmacros1.end())
                 return it->second.expand(output, loc, tok, macros, expandedmacros);
 
-            output->push_back(newMacroToken(tok->str, loc));
+            output->push_back(newMacroToken(tok->str, loc, false));
             return tok->next;
         }
 
@@ -239,12 +241,20 @@ private:
             if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
                 partok = it->second.expand(output, loc, partok, macros, expandedmacros);
             else {
-                output->push_back(newMacroToken(partok->str, loc));
+                output->push_back(newMacroToken(partok->str, loc, expandedmacros1.empty()));
                 partok = partok->next;
             }
         }
 
         return tok->next;
+    }
+
+    void setMacro(Token *tok) const {
+        while (tok) {
+            if (!tok->macro.empty())
+                tok->macro = nameToken->str;
+            tok = tok->next;
+        }
     }
 
     const Token *nameToken;

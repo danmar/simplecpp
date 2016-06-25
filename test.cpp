@@ -144,13 +144,30 @@ void tokenMacro2() {
     const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
-    ASSERT_EQUALS("ADD", tok->macro);
+    ASSERT_EQUALS("", tok->macro);
     tok = tok->next;
     ASSERT_EQUALS("+", tok->str);
     ASSERT_EQUALS("ADD", tok->macro);
     tok = tok->next;
     ASSERT_EQUALS("2", tok->str);
+    ASSERT_EQUALS("", tok->macro);
+}
+
+void tokenMacro3() {
+    const char code[] = "#define ADD(X,Y) X+Y\n"
+                        "#define FRED  1\n"
+                        "ADD(FRED,2)";
+    std::istringstream istr(code);
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::Token *tok = tokenList.cbegin();
+    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("FRED", tok->macro);
+    tok = tok->next;
+    ASSERT_EQUALS("+", tok->str);
     ASSERT_EQUALS("ADD", tok->macro);
+    tok = tok->next;
+    ASSERT_EQUALS("2", tok->str);
+    ASSERT_EQUALS("", tok->macro);
 }
 
 int main() {
@@ -166,5 +183,6 @@ int main() {
     ifdef2();
     tokenMacro1();
     tokenMacro2();
+    tokenMacro3();
     return 0;
 }
