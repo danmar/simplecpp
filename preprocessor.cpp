@@ -167,7 +167,7 @@ private:
     }
 
     unsigned int getargnum(const TokenString &str) const {
-        unsigned int par;
+        unsigned int par = 0;
         while (par < args.size()) {
             if (str == args[par])
                 return par;
