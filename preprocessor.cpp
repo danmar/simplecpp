@@ -106,14 +106,27 @@ public:
         for (const Token *tok = valueToken; tok != endToken;) {
             if (tok->op == '#') {
                 tok = tok->next;
-
-                TokenList tokenListHash;
-                tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
-
-                std::string s;
-                for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
-                    s += hashtok->str;
-                output->push_back(newMacroToken('\"' + s + '\"', loc));
+                if (tok->op == '#') {
+                    // A##B => AB
+                    Token *A = output->end();
+                    if (!A)
+                        throw std::runtime_error("invalid ##");
+                    tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+                    Token *next = A->next;
+                    if (!next)
+                        throw std::runtime_error("invalid ##");
+                    A->str = A->str + A->next->str;
+                    A->flags();
+                    output->deleteToken(A->next);
+                } else {
+					// #123 => "123"
+                    TokenList tokenListHash;
+                    tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                    std::string s;
+                    for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
+                        s += hashtok->str;
+                    output->push_back(newMacroToken('\"' + s + '\"', loc));
+                }
             } else {
                 tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
             }

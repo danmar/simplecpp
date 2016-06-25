@@ -75,6 +75,22 @@ public:
     const Token *cend() const {
         return last;
     }
+
+    void deleteToken(Token *tok) {
+        if (!tok)
+            return;
+        Token *prev = tok->previous;
+        Token *next = tok->next;
+        if (prev)
+            prev->next = next;
+        if (next)
+            next->previous = prev;
+        if (first == tok)
+            first = next;
+        if (last == tok)
+            last = prev;
+        delete tok;
+    }
 private:
     Token *first;
     Token *last;
