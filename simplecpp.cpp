@@ -10,6 +10,7 @@
 #include <set>
 #include <stdexcept>
 #include <vector>
+#include <cstring>
 
 using namespace simplecpp;
 
@@ -377,6 +378,15 @@ static const Token *skipcode(const Token *rawtok) {
     return nullptr;
 }
 
+static void combineOperators(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
+            tok->str += "=";
+            expr.deleteToken(tok->next);
+        }
+    }
+}
+
 static void simplifySizeof(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (tok->str != "sizeof")
@@ -413,8 +423,41 @@ static void simplifySizeof(TokenList &expr) {
     }
 }
 
+static void simplifyComparison(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (!std::strchr("<>=!", tok->str[0]))
+            continue;
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        int result;
+        if (tok->str == "==")
+            result = (std::stoll(tok->previous->str) == std::stoll(tok->next->str));
+        else if (tok->str == "!=")
+            result = (std::stoll(tok->previous->str) != std::stoll(tok->next->str));
+        else if (tok->str == ">")
+            result = (std::stoll(tok->previous->str) > std::stoll(tok->next->str));
+        else if (tok->str == ">=")
+            result = (std::stoll(tok->previous->str) >= std::stoll(tok->next->str));
+        else if (tok->str == "<")
+            result = (std::stoll(tok->previous->str) < std::stoll(tok->next->str));
+        else if (tok->str == "<=")
+            result = (std::stoll(tok->previous->str) <= std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->str = result ? "1" : "0";
+        expr.deleteToken(tok->previous);
+        expr.deleteToken(tok->next);
+    }
+}
+
 static int evaluate(TokenList expr) {
+    combineOperators(expr);
     simplifySizeof(expr);
+    simplifyComparison(expr);
     return std::stoi(expr.cbegin()->str);
 }
 

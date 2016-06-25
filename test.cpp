@@ -130,7 +130,7 @@ void ifdef2() {
 }
 
 void ifSizeof() {
-    const char code[] = "#if sizeof(unsigned short)\n"
+    const char code[] = "#if sizeof(unsigned short)==2\n"
                         "X\n"
                         "#else\n"
                         "Y\n"
