@@ -382,6 +382,7 @@ static void combineOperators(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
             tok->str += "=";
+            tok->op = '\0';
             expr.deleteToken(tok->next);
         }
     }
