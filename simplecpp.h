@@ -2,8 +2,8 @@
  * preprocessor library by daniel marjamäki
  */
 
-#ifndef preprocessorH
-#define preprocessorH
+#ifndef simplecppH
+#define simplecppH
 
 #include <istream>
 #include <string>
