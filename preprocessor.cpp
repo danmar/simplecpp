@@ -176,25 +176,25 @@ private:
         return ~0U;
     }
 
-    std::vector<const Token *> getMacroParameters(const Token *tok) const {
-        if (!tok->next || tok->next->op != '(')
+    std::vector<const Token *> getMacroParameters(const Token *nameToken) const {
+        if (!nameToken->next || nameToken->next->op != '(')
             throw std::runtime_error("error: macro call");
 
         std::vector<const Token *> parametertokens;
-        parametertokens.push_back(tok->next);
+        parametertokens.push_back(nameToken->next);
         unsigned int par = 0U;
-        for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
-            if (calltok->op == '(')
+        for (const Token *tok = nameToken->next->next; tok; tok = tok->next) {
+            if (tok->op == '(')
                 ++par;
-            else if (calltok->op == ')') {
+            else if (tok->op == ')') {
                 if (par == 0U) {
-                    parametertokens.push_back(calltok);
+                    parametertokens.push_back(tok);
                     break;
                 }
                 --par;
             }
-            else if (par == 0U && calltok->op == ',')
-                parametertokens.push_back(calltok);
+            else if (par == 0U && tok->op == ',')
+                parametertokens.push_back(tok);
         }
         return parametertokens;
     }
