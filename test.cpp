@@ -129,6 +129,15 @@ void ifdef2() {
     ASSERT_EQUALS(" 1", preprocess(code));
 }
 
+void ifSizeof() {
+    const char code[] = "#if sizeof(unsigned short)\n"
+                        "X\n"
+                        "#else\n"
+                        "Y\n"
+                        "#endif";
+    ASSERT_EQUALS(" X", preprocess(code));
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -192,6 +201,7 @@ int main() {
     hashhash();
     ifdef1();
     ifdef2();
+    ifSizeof();
     tokenMacro1();
     tokenMacro2();
     tokenMacro3();

@@ -14,6 +14,7 @@
 using namespace simplecpp;
 
 static const TokenString DEFINE("define");
+static const TokenString IF("if");
 static const TokenString IFDEF("ifdef");
 static const TokenString IFNDEF("ifndef");
 static const TokenString ELSE("else");
@@ -21,7 +22,7 @@ static const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
-TokenList::TokenList(const TokenList &other) {
+TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr) {
     *this = other;
 }
 
@@ -376,6 +377,47 @@ static const Token *skipcode(const Token *rawtok) {
     return nullptr;
 }
 
+static void simplifySizeof(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->str != "sizeof")
+            continue;
+        Token *tok1 = tok->next;
+        Token *tok2 = tok1->next;
+        if (tok1->op == '(') {
+            while (tok2->op != ')')
+                tok2 = tok2->next;
+            tok2 = tok2->next;
+        }
+
+        unsigned int sz = 0;
+        for (Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
+            if (typeToken->str == "char")
+                sz = sizeof(char);
+            if (typeToken->str == "short")
+                sz = sizeof(short);
+            if (typeToken->str == "int")
+                sz = sizeof(int);
+            if (typeToken->str == "long")
+                sz = sizeof(long);
+            if (typeToken->str == "float")
+                sz = sizeof(float);
+            if (typeToken->str == "double")
+                sz = sizeof(double);
+        }
+
+        tok->str = std::to_string(sz);
+        tok->flags();
+
+        while (tok->next != tok2)
+            expr.deleteToken(tok->next);
+    }
+}
+
+static int evaluate(TokenList expr) {
+    simplifySizeof(expr);
+    return std::stoi(expr.cbegin()->str);
+}
+
 TokenList Preprocessor::preprocess(const TokenList &rawtokens)
 {
     TokenList output;
@@ -395,6 +437,26 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens)
             } else if (rawtok->next->str == IFDEF) {
                 if (macros.find(rawtok->next->next->str) != macros.end()) {
                     rawtok = rawtok->next->next->next;
+                } else {
+                    rawtok = skipcode(rawtok);
+                    if (rawtok)
+                        rawtok = rawtok->next;
+                    if (rawtok)
+                        rawtok = rawtok->next;
+                    if (!rawtok)
+                        break;
+                }
+
+            } else if (rawtok->next->str == IF) {
+                TokenList expr;
+                for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next)
+                    expr.push_back(new Token(tok->str,tok->location));
+                if (evaluate(expr)) {
+                    const Token *rawtok1 = rawtok;
+                    while (rawtok && sameline(rawtok,rawtok1))
+                        rawtok = rawtok->next;
+                    if (!rawtok)
+                        break;
                 } else {
                     rawtok = skipcode(rawtok);
                     if (rawtok)
