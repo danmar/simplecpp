@@ -170,6 +170,17 @@ void tokenMacro3() {
     ASSERT_EQUALS("", tok->macro);
 }
 
+void tokenMacro4() {
+    const char code[] = "#define A B\n"
+                        "#define B 1\n"
+                        "A";
+    std::istringstream istr(code);
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::Token *tok = tokenList.cbegin();
+    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("A", tok->macro);
+}
+
 int main() {
     comment();
     define1();
@@ -184,5 +195,6 @@ int main() {
     tokenMacro1();
     tokenMacro2();
     tokenMacro3();
+    tokenMacro4();
     return 0;
 }

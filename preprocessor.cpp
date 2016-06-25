@@ -87,6 +87,7 @@ public:
         const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
         if (args.empty()) {
+            Token * const token1 = output->end();
             for (const Token *macro = valueToken; macro != endToken;) {
                 const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
@@ -96,6 +97,7 @@ public:
                     macro = macro->next;
                 }
             }
+            setMacroName(output, token1, expandedmacros1);
             return nameToken->next;
         }
 
@@ -148,6 +150,15 @@ private:
         if (!rawCode)
             tok->macro = nameToken->str;
         return tok;
+    }
+
+    void setMacroName(TokenList *output, Token *token1, const std::set<std::string> &expandedmacros1) const {
+        if (!expandedmacros1.empty())
+            return;
+        for (Token *tok = token1 ? token1->next : output->begin(); tok; tok = tok->next) {
+            if (!tok->macro.empty())
+                tok->macro = nameToken->str;
+        }
     }
 
     void parseDefine(const Token *nametoken) {
