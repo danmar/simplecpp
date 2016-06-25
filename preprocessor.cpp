@@ -97,27 +97,8 @@ public:
             return tok->next;
         }
 
-        if (!tok->next || tok->next->op != '(')
-            throw std::runtime_error("error: macro call");
-
         // Parse macro-call
-        std::vector<const Token*> parametertokens;
-        parametertokens.push_back(tok->next);
-        unsigned int par = 0U;
-        for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
-            if (calltok->op == '(')
-                ++par;
-            else if (calltok->op == ')') {
-                if (par == 0U) {
-                    parametertokens.push_back(calltok);
-                    break;
-                }
-                --par;
-            }
-            else if (par == 0U && calltok->op == ',')
-                parametertokens.push_back(calltok);
-        }
-
+        const std::vector<const Token*> parametertokens(getMacroParameters(tok));
         if (parametertokens.size() != args.size() + 1U)
             throw std::runtime_error("wrong number of parameters");
 
@@ -193,6 +174,29 @@ private:
             par++;
         }
         return ~0U;
+    }
+
+    std::vector<const Token *> getMacroParameters(const Token *tok) const {
+        if (!tok->next || tok->next->op != '(')
+            throw std::runtime_error("error: macro call");
+
+        std::vector<const Token *> parametertokens;
+        parametertokens.push_back(tok->next);
+        unsigned int par = 0U;
+        for (const Token *calltok = tok->next->next; calltok; calltok = calltok->next) {
+            if (calltok->op == '(')
+                ++par;
+            else if (calltok->op == ')') {
+                if (par == 0U) {
+                    parametertokens.push_back(calltok);
+                    break;
+                }
+                --par;
+            }
+            else if (par == 0U && calltok->op == ',')
+                parametertokens.push_back(calltok);
+        }
+        return parametertokens;
     }
 
     const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros1, std::set<TokenString> expandedmacros, const std::vector<const Token*> &parametertokens) const {
