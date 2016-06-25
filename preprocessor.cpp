@@ -69,7 +69,7 @@ public:
         tok = tok->next;
         if (!tok || !tok->name)
             throw std::runtime_error("bad macro syntax");
-        parsedef(tok);
+        parseDefine(tok);
     }
 
     Macro(const Macro &macro) {
@@ -78,7 +78,7 @@ public:
 
     void operator=(const Macro &macro) {
         if (this != &macro)
-            parsedef(macro.nameToken);
+            parseDefine(macro.nameToken);
     }
 
     const Token * expand(TokenList * const output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
@@ -133,7 +133,7 @@ private:
         return tok;
     }
 
-    void parsedef(const Token *nametoken) {
+    void parseDefine(const Token *nametoken) {
         nameToken = nametoken;
         if (!nameToken) {
             valueToken = endToken = nullptr;
