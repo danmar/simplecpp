@@ -1,11 +1,12 @@
-# preprocessor
+Simple C/C++ preprocessor
 
-C/C++ preprocessor
+This is a simple and easy to use preprocessor.
 
-It is written primarily for Cppcheck. But hopefully it will be reused in other projects also. This is a simple preprocessor that is easy to use. It has no Cppcheck-dependencies.
+Written primarily for Cppcheck. But hopefully it will be reused in other projects also. There are no Cppcheck dependencies.
 
-Preprocessing usually hides details so that static analysis can't be done properly. This preprocessor tries to achieve high fidelity:
- * Preprocessor directives are saved.
- * Comments are saved.
- * Source code
+The intention is that this preprocessor will have good fidelity.
+ * Preprocessor directives will be saved.
+ * Comments will be saved.
+ * Tracking which macro is expanded
+This information is normally lost during preprocessing but it can be necessary for proper static analysis.
 
