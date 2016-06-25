@@ -10,6 +10,8 @@
 #include <map>
 #include <cctype>
 
+namespace simplecpp {
+
 typedef std::string TokenString;
 
 struct Location {
@@ -99,6 +101,7 @@ private:
 namespace Preprocessor {
 TokenList readfile(std::istream &istr);
 TokenList preprocess(const TokenList &rawtokens);
+}
 }
 
 #endif

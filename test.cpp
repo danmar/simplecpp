@@ -7,15 +7,18 @@
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line) {
     std::cerr << "line " << line << ": Assertion " << ((expected == actual) ? "success" : "failed") << std::endl;
-    if (expected != actual)
-        std::cerr << "<<<" << actual << ">>>" << std::endl;
+    if (expected != actual) {
+        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "expected:" << expected << std::endl;
+        std::cerr << "actual:" << actual << std::endl;
+    }
     return (expected == actual);
 }
 
-static std::string stringify(const TokenList &tokens) {
+static std::string stringify(const simplecpp::TokenList &tokens) {
     std::ostringstream out;
 
-    for (const Token *tok = tokens.cbegin(); tok; tok = tok->next) {
+    for (const simplecpp::Token *tok = tokens.cbegin(); tok; tok = tok->next) {
         if (tok->previous && tok->previous->location.line != tok->location.line)
             out << '\n';
         out << ' ' << tok->str;
@@ -26,12 +29,12 @@ static std::string stringify(const TokenList &tokens) {
 
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
-    return stringify(Preprocessor::readfile(istr));
+    return stringify(simplecpp::Preprocessor::readfile(istr));
 }
 
 static std::string preprocess(const char code[]) {
     std::istringstream istr(code);
-    return stringify(Preprocessor::preprocess(Preprocessor::readfile(istr)));
+    return stringify(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
 }
 
 
@@ -130,7 +133,7 @@ void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
     std::istringstream istr(code);
-    const TokenList tokenList(Preprocessor::preprocess(Preprocessor::readfile(istr)));
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
@@ -138,8 +141,8 @@ void tokenMacro2() {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "ADD(1,2)";
     std::istringstream istr(code);
-    const TokenList tokenList(Preprocessor::preprocess(Preprocessor::readfile(istr)));
-    const Token *tok = tokenList.cbegin();
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("ADD", tok->macro);
     tok = tok->next;

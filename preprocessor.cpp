@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace simplecpp;
+
 static const TokenString DEFINE("define");
 static const TokenString IFDEF("ifdef");
 static const TokenString IFNDEF("ifndef");
@@ -119,7 +121,7 @@ public:
                     A->flags();
                     output->deleteToken(A->next);
                 } else {
-					// #123 => "123"
+                    // #123 => "123"
                     TokenList tokenListHash;
                     tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
                     std::string s;
