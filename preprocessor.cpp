@@ -166,7 +166,7 @@ private:
             endToken = endToken->next;
     }
 
-    unsigned int getargnum(const TokenString &str) const {
+    unsigned int getArgNum(const TokenString &str) const {
         unsigned int par = 0;
         while (par < args.size()) {
             if (str == args[par])
@@ -207,7 +207,7 @@ private:
         }
 
         // Not macro parameter..
-        const unsigned int par = getargnum(tok->str);
+        const unsigned int par = getArgNum(tok->str);
         if (par >= args.size()) {
             // Macro..
             const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
