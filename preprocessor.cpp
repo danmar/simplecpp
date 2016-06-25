@@ -81,7 +81,7 @@ public:
             parseDefine(macro.nameToken);
     }
 
-    const Token * expand(TokenList * const output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
+    const Token * expand(TokenList * const output, const Location &loc, const Token * const nameToken, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
         const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
         if (args.empty()) {
@@ -94,11 +94,11 @@ public:
                     macro = macro->next;
                 }
             }
-            return tok->next;
+            return nameToken->next;
         }
 
         // Parse macro-call
-        const std::vector<const Token*> parametertokens(getMacroParameters(tok));
+        const std::vector<const Token*> parametertokens(getMacroParameters(nameToken));
         if (parametertokens.size() != args.size() + 1U)
             throw std::runtime_error("wrong number of parameters");
 
