@@ -142,7 +142,7 @@ public:
                 Token *next = A->next;
                 if (!next)
                     throw std::runtime_error("invalid ##");
-                A->str = A->str + A->next->str;
+                A->setstr(A->str + A->next->str);
                 A->flags();
                 output->deleteToken(A->next);
             } else {

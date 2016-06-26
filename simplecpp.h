@@ -22,14 +22,14 @@ struct Location {
 
 class Token {
 public:
-    Token(const TokenString &str, const Location &location) :
-        str(str), location(location), previous(nullptr), next(nullptr)
+    Token(const TokenString &s, const Location &location) :
+        str(string), location(location), previous(nullptr), next(nullptr), string(s)
     {
         flags();
     }
 
     Token(const Token &tok) :
-        str(tok.str), macro(tok.macro), location(tok.location), previous(nullptr), next(nullptr)
+        str(string), macro(tok.macro), location(tok.location), previous(nullptr), next(nullptr), string(tok.str)
     {
         flags();
     }
@@ -42,12 +42,12 @@ public:
     }
 
     void setstr(const std::string &s) {
-        str = s;
+        string = s;
         flags();
     }
 
     char op;
-    TokenString str;
+    const TokenString &str;
     TokenString macro;
     bool comment;
     bool name;
@@ -55,6 +55,8 @@ public:
     Location location;
     Token *previous;
     Token *next;
+private:
+    TokenString string;
 };
 
 class TokenList {
