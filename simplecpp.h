@@ -62,6 +62,7 @@ private:
 class TokenList {
 public:
     TokenList();
+    TokenList(std::istringstream &istr);
     TokenList(const TokenList &other);
     ~TokenList();
     void operator=(const TokenList &other);
@@ -70,6 +71,8 @@ public:
     void push_back(Token *token);
 
     void printOut() const;
+
+    void readfile(std::istream &istr);
 
     Token *begin() {
         return first;
@@ -102,13 +105,15 @@ public:
             last = prev;
         delete tok;
     }
+
 private:
+    void combineOperators();
+
     Token *first;
     Token *last;
 };
 
 namespace Preprocessor {
-TokenList readfile(std::istream &istr);
 TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines);
 }
 }

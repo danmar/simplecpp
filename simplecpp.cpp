@@ -25,6 +25,10 @@ static const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
+TokenList::TokenList(std::istringstream &istr) : first(nullptr), last(nullptr) {
+    readfile(istr);
+}
+
 TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr) {
     *this = other;
 }
@@ -69,8 +73,99 @@ void TokenList::printOut() const {
     }
 }
 
+void TokenList::readfile(std::istream &istr)
+{
+    Location location;
+    location.file = 0U;
+    location.line = 1U;
+    location.col  = 0U;
+    while (istr.good()) {
+        unsigned char ch = (unsigned char)istr.get();
+        if (!istr.good())
+            break;
+        location.col = (ch == '\t') ? ((location.col + 8) & (~7)) : (location.col + 1);
 
-namespace {
+        if (ch == '\r' || ch == '\n') {
+            if (ch == '\r' && istr.peek() == '\n')
+                istr.get();
+            ++location.line;
+            location.col = 0;
+            continue;
+        }
+
+        if (std::isspace(ch))
+            continue;
+
+        TokenString currentToken;
+
+        // number or name
+        if (std::isalnum(ch) || ch == '_') {
+            while (istr.good() && (std::isalnum(ch) || ch == '_')) {
+                currentToken += ch;
+                ch = (unsigned char)istr.get();
+            }
+            istr.unget();
+        }
+
+        // comment
+        else if (ch == '/' && istr.peek() == '/') {
+            while (istr.good() && ch != '\r' && ch != '\n') {
+                currentToken += ch;
+                ch = (unsigned char)istr.get();
+            }
+            istr.unget();
+        }
+
+        // comment
+        else if (ch == '/' && istr.peek() == '*') {
+            while (istr.good() && !(currentToken.size() > 2U && ch == '*' && istr.peek() == '/')) {
+                currentToken += ch;
+                ch = (unsigned char)istr.get();
+            }
+            istr.unget();
+        }
+
+        // string / char literal
+        else if (ch == '\"' || ch == '\'') {
+            do {
+                currentToken += ch;
+                ch = (unsigned char)istr.get();
+                if (istr.good() && ch == '\\') {
+                    currentToken += ch;
+                    ch = (unsigned char)istr.get();
+                    currentToken += ch;
+                    ch = (unsigned char)istr.get();
+                }
+            } while (istr.good() && ch != '\"' && ch != '\'');
+            currentToken += ch;
+        }
+
+        else {
+            currentToken += ch;
+        }
+
+        push_back(new Token(currentToken, location));
+        location.col += currentToken.size() - 1U;
+    }
+    
+    combineOperators();
+}
+
+void TokenList::combineOperators() {
+    for (Token *tok = begin(); tok; tok = tok->next) {
+        if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
+            continue;
+        if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
+            tok->setstr(tok->str + "=");
+            deleteToken(tok->next);
+        } else if ((tok->op == '|' || tok->op == '&') && tok->op == tok->next->op) {
+            tok->setstr(tok->str + tok->next->str);
+            deleteToken(tok->next);
+        }
+    }
+}
+
+namespace simplecpp {
 class Macro {
 public:
     Macro() : nameToken(nullptr) {}
@@ -298,85 +393,6 @@ static bool sameline(const Token *tok1, const Token *tok2) {
     return (tok1 && tok2 && tok1->location.line == tok2->location.line);
 }
 
-TokenList Preprocessor::readfile(std::istream &istr)
-{
-    TokenList tokens;
-    Location location;
-    location.file = 0U;
-    location.line = 1U;
-    location.col  = 0U;
-    while (istr.good()) {
-        unsigned char ch = (unsigned char)istr.get();
-        if (!istr.good())
-            break;
-        location.col = (ch == '\t') ? ((location.col + 8) & (~7)) : (location.col + 1);
-
-        if (ch == '\r' || ch == '\n') {
-            if (ch == '\r' && istr.peek() == '\n')
-                istr.get();
-            ++location.line;
-            location.col = 0;
-            continue;
-        }
-
-        if (std::isspace(ch))
-            continue;
-
-        TokenString currentToken;
-
-        // number or name
-        if (std::isalnum(ch) || ch == '_') {
-            while (istr.good() && (std::isalnum(ch) || ch == '_')) {
-                currentToken += ch;
-                ch = (unsigned char)istr.get();
-            }
-            istr.unget();
-        }
-
-        // comment
-        else if (ch == '/' && istr.peek() == '/') {
-            while (istr.good() && ch != '\r' && ch != '\n') {
-                currentToken += ch;
-                ch = (unsigned char)istr.get();
-            }
-            istr.unget();
-        }
-
-        // comment
-        else if (ch == '/' && istr.peek() == '*') {
-            while (istr.good() && !(currentToken.size() > 2U && ch == '*' && istr.peek() == '/')) {
-                currentToken += ch;
-                ch = (unsigned char)istr.get();
-            }
-            istr.unget();
-        }
-
-        // string / char literal
-        else if (ch == '\"' || ch == '\'') {
-            do {
-                currentToken += ch;
-                ch = (unsigned char)istr.get();
-                if (istr.good() && ch == '\\') {
-                    currentToken += ch;
-                    ch = (unsigned char)istr.get();
-                    currentToken += ch;
-                    ch = (unsigned char)istr.get();
-                }
-            } while (istr.good() && ch != '\"' && ch != '\'');
-            currentToken += ch;
-        }
-
-        else {
-            currentToken += ch;
-        }
-
-        tokens.push_back(new Token(currentToken, location));
-        location.col += currentToken.size() - 1U;
-    }
-
-    return tokens;
-}
-
 static const Token *skipcode(const Token *rawtok) {
     int state = 0;
     while (rawtok) {
@@ -389,20 +405,6 @@ static const Token *skipcode(const Token *rawtok) {
         rawtok = rawtok->next;
     }
     return nullptr;
-}
-
-static void combineOperators(TokenList &expr) {
-    for (Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
-            continue;
-        if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
-            tok->setstr(tok->str + "=");
-            expr.deleteToken(tok->next);
-        } else if ((tok->op == '|' || tok->op == '&') && tok->op == tok->next->op) {
-            tok->setstr(tok->str + tok->next->str);
-            expr.deleteToken(tok->next);
-        }
-    }
 }
 
 static void simplifySizeof(TokenList &expr) {
@@ -540,7 +542,6 @@ static bool simplifyParentheses(TokenList &expr) {
 }
 
 static int evaluate(TokenList expr) {
-    combineOperators(expr);
     simplifySizeof(expr);
     simplifyName(expr);
     simplifyNumbers(expr);
@@ -608,7 +609,7 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                     const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
                     if (it != defines.end()) {
                         std::istringstream istr(it->second.empty() ? "1" : "0");
-                        const TokenList &value = readfile(istr);
+                        const TokenList &value(istr);
                         for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                             expr.push_back(new Token(tok2->str, tok->location));
                     } else {
