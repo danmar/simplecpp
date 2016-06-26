@@ -147,6 +147,19 @@ void ifdef2() {
     ASSERT_EQUALS("1", preprocess(code));
 }
 
+void ifndef() {
+    const char code1[] = "#define A\n"
+                         "#ifndef A\n"
+                         "1\n"
+                         "#endif";
+    ASSERT_EQUALS("", preprocess(code1));
+
+    const char code2[] = "#ifndef A\n"
+                         "1\n"
+                         "#endif";
+    ASSERT_EQUALS("1", preprocess(code2));
+}
+
 void ifA() {
     const char code[] = "#if A==1\n"
                         "X\n"
@@ -259,6 +272,7 @@ int main() {
     hashhash();
     ifdef1();
     ifdef2();
+    ifndef();
     ifA();
     ifDefined();
     ifLogical();

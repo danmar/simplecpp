@@ -625,60 +625,58 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                     continue;
                 } catch (const std::runtime_error &) {
                 }
-            } else if (rawtok->next->str == IFDEF) {
-                if (macros.find(rawtok->next->next->str) != macros.end()) {
-                    rawtok = rawtok->next->next->next;
-                } else {
-                    rawtok = skipcode(rawtok);
-                    if (rawtok)
-                        rawtok = rawtok->next;
-                    if (rawtok)
-                        rawtok = rawtok->next;
-                    if (!rawtok)
-                        break;
+            } else if (rawtok->next->str == IF || rawtok->next->str == IFDEF || rawtok->next->str == IFNDEF) {
+                bool conditionIsTrue;
+                if (rawtok->next->str == IFDEF)
+                    conditionIsTrue = (macros.find(rawtok->next->next->str) != macros.end());
+                else if (rawtok->next->str == IFNDEF)
+                    conditionIsTrue = (macros.find(rawtok->next->next->str) == macros.end());
+                else {
+                    TokenList expr;
+                    for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next) {
+                        if (!tok->name) {
+                            expr.push_back(new Token(tok->str,tok->location));
+                            continue;
+                        }
+
+                        if (tok->str == "defined") {
+                            tok = tok->next;
+                            const bool par = (tok && tok->op == '(');
+                            if (par)
+                                tok = tok->next;
+                            if (!tok)
+                                break;
+                            if (macros.find(tok->str) != macros.end() || defines.find(tok->str) != defines.end())
+                                expr.push_back(new Token("1", tok->location));
+                            else
+                                expr.push_back(new Token("0", tok->location));
+                            if (tok && par)
+                                tok = tok->next;
+                            continue;
+                        }
+
+                        const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
+                        if (it != defines.end()) {
+                            std::istringstream istr(it->second.empty() ? std::string("0") : it->second);
+                            const TokenList &value(istr);
+                            for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
+                                expr.push_back(new Token(tok2->str, tok->location));
+                        } else {
+                            expr.push_back(new Token(tok->str, tok->location));
+                        }
+                    }
+                    conditionIsTrue = evaluate(expr);
                 }
 
-            } else if (rawtok->next->str == IF) {
-                TokenList expr;
-                for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next) {
-                    if (!tok->name) {
-                        expr.push_back(new Token(tok->str,tok->location));
-                        continue;
-                    }
+                // Goto next line
+                const Token *rawtok1 = rawtok;
+                while (rawtok && sameline(rawtok,rawtok1))
+                    rawtok = rawtok->next;
+                if (!rawtok)
+                    break;
 
-                    if (tok->str == "defined") {
-                        tok = tok->next;
-                        const bool par = (tok && tok->op == '(');
-                        if (par)
-                            tok = tok->next;
-                        if (!tok)
-                            break;
-                        if (macros.find(tok->str) != macros.end() || defines.find(tok->str) != defines.end())
-                            expr.push_back(new Token("1", tok->location));
-                        else
-                            expr.push_back(new Token("0", tok->location));
-                        if (tok && par)
-                            tok = tok->next;
-                        continue;
-                    }
 
-                    const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
-                    if (it != defines.end()) {
-                        std::istringstream istr(it->second.empty() ? std::string("0") : it->second);
-                        const TokenList &value(istr);
-                        for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
-                            expr.push_back(new Token(tok2->str, tok->location));
-                    } else {
-                        expr.push_back(new Token(tok->str, tok->location));
-                    }
-                }
-                if (evaluate(expr)) {
-                    const Token *rawtok1 = rawtok;
-                    while (rawtok && sameline(rawtok,rawtok1))
-                        rawtok = rawtok->next;
-                    if (!rawtok)
-                        break;
-                } else {
+                if (!conditionIsTrue) {
                     rawtok = skipcode(rawtok);
                     if (rawtok)
                         rawtok = rawtok->next;
