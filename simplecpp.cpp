@@ -147,7 +147,7 @@ void TokenList::readfile(std::istream &istr)
         push_back(new Token(currentToken, location));
         location.col += currentToken.size() - 1U;
     }
-    
+
     combineOperators();
 }
 
@@ -608,7 +608,7 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
 
                     const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
                     if (it != defines.end()) {
-                        std::istringstream istr(it->second.empty() ? "1" : "0");
+                        std::istringstream istr(it->second.empty() ? std::string("0") : it->second);
                         const TokenList &value(istr);
                         for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                             expr.push_back(new Token(tok2->str, tok->location));
