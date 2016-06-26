@@ -41,6 +41,11 @@ public:
         op = (str.size() == 1U) ? str[0] : '\0';
     }
 
+    void setstr(const std::string &s) {
+        str = s;
+        flags();
+    }
+
     char op;
     TokenString str;
     TokenString macro;
@@ -100,7 +105,7 @@ private:
 
 namespace Preprocessor {
 TokenList readfile(std::istream &istr);
-TokenList preprocess(const TokenList &rawtokens);
+TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines);
 }
 }
 

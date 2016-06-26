@@ -32,11 +32,15 @@ static std::string readfile(const char code[]) {
     return stringify(simplecpp::Preprocessor::readfile(istr));
 }
 
-static std::string preprocess(const char code[]) {
+static std::string preprocess(const char code[], const std::map<std::string,std::string> &defines) {
     std::istringstream istr(code);
-    return stringify(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    return stringify(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr),defines));
 }
 
+static std::string preprocess(const char code[]) {
+    std::map<std::string,std::string> nodefines;
+    return preprocess(code,nodefines);
+}
 
 void comment() {
     const char code[] = "// abc";
@@ -129,6 +133,17 @@ void ifdef2() {
     ASSERT_EQUALS(" 1", preprocess(code));
 }
 
+void ifA() {
+    const char code[] = "#if A==1\n"
+                        "X\n"
+                        "#endif";
+    ASSERT_EQUALS("", preprocess(code));
+
+    std::map<std::string,std::string> defines;
+    defines["A"] = "1";
+    ASSERT_EQUALS(" X", preprocess(code, defines));
+}
+
 void ifSizeof() {
     const char code[] = "#if sizeof(unsigned short)==2\n"
                         "X\n"
@@ -141,16 +156,18 @@ void ifSizeof() {
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
+    std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr), nodefines));
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
 void tokenMacro2() {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "ADD(1,2)";
+    std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("", tok->macro);
@@ -166,8 +183,9 @@ void tokenMacro3() {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "#define FRED  1\n"
                         "ADD(FRED,2)";
+    std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("FRED", tok->macro);
@@ -183,8 +201,9 @@ void tokenMacro4() {
     const char code[] = "#define A B\n"
                         "#define B 1\n"
                         "A";
+    std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr)));
+    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::Preprocessor::readfile(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("A", tok->macro);
@@ -201,6 +220,7 @@ int main() {
     hashhash();
     ifdef1();
     ifdef2();
+    ifA();
     ifSizeof();
     tokenMacro1();
     tokenMacro2();

@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <vector>
 #include <cstring>
+#include <sstream>
 
 using namespace simplecpp;
 
@@ -381,8 +382,7 @@ static const Token *skipcode(const Token *rawtok) {
 static void combineOperators(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
-            tok->str += "=";
-            tok->op = '\0';
+            tok->setstr(tok->str + "=");
             expr.deleteToken(tok->next);
         }
     }
@@ -416,11 +416,17 @@ static void simplifySizeof(TokenList &expr) {
                 sz = sizeof(double);
         }
 
-        tok->str = std::to_string(sz);
-        tok->flags();
+        tok->setstr(std::to_string(sz));
 
         while (tok->next != tok2)
             expr.deleteToken(tok->next);
+    }
+}
+
+static void simplifyName(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->name)
+            tok->setstr("0");
     }
 }
 
@@ -458,11 +464,12 @@ static void simplifyComparison(TokenList &expr) {
 static int evaluate(TokenList expr) {
     combineOperators(expr);
     simplifySizeof(expr);
+    simplifyName(expr);
     simplifyComparison(expr);
     return std::stoi(expr.cbegin()->str);
 }
 
-TokenList Preprocessor::preprocess(const TokenList &rawtokens)
+TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines)
 {
     TokenList output;
     std::map<TokenString, Macro> macros;
@@ -493,8 +500,22 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens)
 
             } else if (rawtok->next->str == IF) {
                 TokenList expr;
-                for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next)
-                    expr.push_back(new Token(tok->str,tok->location));
+                for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next) {
+                    if (!tok->name) {
+                        expr.push_back(new Token(tok->str,tok->location));
+                        continue;
+                    }
+
+                    const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
+                    if (it != defines.end()) {
+                        std::istringstream istr(it->second);
+                        const TokenList &value = readfile(istr);
+                        for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
+                            expr.push_back(new Token(tok2->str, tok->location));
+                    } else {
+                        expr.push_back(new Token(tok->str, tok->location));
+                    }
+                }
                 if (evaluate(expr)) {
                     const Token *rawtok1 = rawtok;
                     while (rawtok && sameline(rawtok,rawtok1))
