@@ -381,8 +381,13 @@ static const Token *skipcode(const Token *rawtok) {
 
 static void combineOperators(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
+            continue;
         if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
             tok->setstr(tok->str + "=");
+            expr.deleteToken(tok->next);
+        } else if ((tok->op == '|' || tok->op == '&') && tok->op == tok->next->op) {
+            tok->setstr(tok->str + tok->next->str);
             expr.deleteToken(tok->next);
         }
     }
@@ -430,6 +435,15 @@ static void simplifyName(TokenList &expr) {
     }
 }
 
+static void simplifyNot(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->op == '!' && tok->next && tok->next->number) {
+            tok->setstr(tok->next->str == "0" ? "1" : "0");
+            expr.deleteToken(tok->next);
+        }
+    }
+}
+
 static void simplifyComparison(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (!std::strchr("<>=!", tok->str[0]))
@@ -461,11 +475,36 @@ static void simplifyComparison(TokenList &expr) {
     }
 }
 
+static void simplifyLogical(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->str != "&&" && tok->str != "||")
+            continue;
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        int result;
+        if (tok->str == "||")
+            result = (std::stoll(tok->previous->str) || std::stoll(tok->next->str));
+        else if (tok->str == "&&")
+            result = (std::stoll(tok->previous->str) && std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->str = result ? "1" : "0";
+        expr.deleteToken(tok->previous);
+        expr.deleteToken(tok->next);
+    }
+}
+
 static int evaluate(TokenList expr) {
     combineOperators(expr);
     simplifySizeof(expr);
     simplifyName(expr);
+    simplifyNot(expr);
     simplifyComparison(expr);
+    simplifyLogical(expr);
     return std::stoi(expr.cbegin()->str);
 }
 
@@ -517,11 +556,8 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                             expr.push_back(new Token("1", tok->location));
                         else
                             expr.push_back(new Token("0", tok->location));
-                        tok = tok->next;
                         if (tok && par)
                             tok = tok->next;
-                        if (!tok)
-                            break;
                         continue;
                     }
 
