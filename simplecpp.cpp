@@ -153,7 +153,7 @@ void TokenList::readfile(std::istream &istr)
 }
 
 void TokenList::constFold() {
-    while (1) {
+    while (begin()) {
         // goto last '('
         Token *tok = end();
         while (tok && tok->op != '(')
