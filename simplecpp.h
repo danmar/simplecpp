@@ -70,7 +70,7 @@ public:
     void clear();
     void push_back(Token *token);
 
-    void printOut() const;
+    void dump() const;
 
     void readfile(std::istream &istr);
     void constFold();

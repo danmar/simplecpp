@@ -63,7 +63,7 @@ void TokenList::push_back(Token *tok) {
     last = tok;
 }
 
-void TokenList::printOut() const {
+void TokenList::dump() const {
     for (const Token *tok = cbegin(); tok; tok = tok->next) {
         if (tok->previous && tok->previous->location.line != tok->location.line)
             std::cout << std::endl;
@@ -71,6 +71,7 @@ void TokenList::printOut() const {
             std::cout << ' ';
         std::cout << tok->str;
     }
+    std::cout << std::endl;
 }
 
 void TokenList::readfile(std::istream &istr)

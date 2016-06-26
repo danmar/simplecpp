@@ -21,7 +21,9 @@ static std::string stringify(const simplecpp::TokenList &tokens) {
     for (const simplecpp::Token *tok = tokens.cbegin(); tok; tok = tok->next) {
         if (tok->previous && tok->previous->location.line != tok->location.line)
             out << '\n';
-        out << ' ' << tok->str;
+        else if (tok->previous)
+            out << ' ';
+        out << tok->str;
     }
 
     return out.str();
@@ -51,34 +53,34 @@ static std::string testConstFold(const char code[]) {
 
 void comment() {
     const char code[] = "// abc";
-    ASSERT_EQUALS(" // abc",
+    ASSERT_EQUALS("// abc",
                   readfile(code));
-    ASSERT_EQUALS(" // abc",
+    ASSERT_EQUALS("// abc",
                   preprocess(code));
 }
 
 static void constFold() {
-    ASSERT_EQUALS(" 7", testConstFold("1+2*3"));
-    ASSERT_EQUALS(" 15", testConstFold("1+2*(3+4)"));
+    ASSERT_EQUALS("7", testConstFold("1+2*3"));
+    ASSERT_EQUALS("15", testConstFold("1+2*(3+4)"));
 }
 
 void define1() {
     const char code[] = "#define A 1+2\n"
                         "a=A+3;";
-    ASSERT_EQUALS(" # define A 1 + 2\n"
-                  " a = A + 3 ;",
+    ASSERT_EQUALS("# define A 1 + 2\n"
+                  "a = A + 3 ;",
                   readfile(code));
-    ASSERT_EQUALS(" a = 1 + 2 + 3 ;",
+    ASSERT_EQUALS("a = 1 + 2 + 3 ;",
                   preprocess(code));
 }
 
 void define2() {
     const char code[] = "#define ADD(A,B) A+B\n"
                         "ADD(1+2,3);";
-    ASSERT_EQUALS(" # define ADD ( A , B ) A + B\n"
-                  " ADD ( 1 + 2 , 3 ) ;",
+    ASSERT_EQUALS("# define ADD ( A , B ) A + B\n"
+                  "ADD ( 1 + 2 , 3 ) ;",
                   readfile(code));
-    ASSERT_EQUALS(" 1 + 2 + 3 ;",
+    ASSERT_EQUALS("1 + 2 + 3 ;",
                   preprocess(code));
 }
 
@@ -86,11 +88,11 @@ void define3() {
     const char code[] = "#define A   123\n"
                         "#define B   A\n"
                         "A B";
-    ASSERT_EQUALS(" # define A 123\n"
-                  " # define B A\n"
-                  " A B",
+    ASSERT_EQUALS("# define A 123\n"
+                  "# define B A\n"
+                  "A B",
                   readfile(code));
-    ASSERT_EQUALS(" 123 123",
+    ASSERT_EQUALS("123 123",
                   preprocess(code));
 }
 
@@ -98,32 +100,32 @@ void define4() {
     const char code[] = "#define A      123\n"
                         "#define B(C)   A\n"
                         "A B(1)";
-    ASSERT_EQUALS(" # define A 123\n"
-                  " # define B ( C ) A\n"
-                  " A B ( 1 )",
+    ASSERT_EQUALS("# define A 123\n"
+                  "# define B ( C ) A\n"
+                  "A B ( 1 )",
                   readfile(code));
-    ASSERT_EQUALS(" 123 123",
+    ASSERT_EQUALS("123 123",
                   preprocess(code));
 }
 
 void define5() {
     const char code[] = "#define add(x,y) x+y\n"
                         "add(add(1,2),3)";
-    ASSERT_EQUALS(" 1 + 2 + 3", preprocess(code));
+    ASSERT_EQUALS("1 + 2 + 3", preprocess(code));
 }
 
 void hash() {
     const char code[] = "#define a(x) #x\n"
                         "a(1)\n"
                         "a(2+3)";
-    ASSERT_EQUALS(" \"1\"\n"
-                  " \"2+3\"", preprocess(code));
+    ASSERT_EQUALS("\"1\"\n"
+                  "\"2+3\"", preprocess(code));
 }
 
 void hashhash() { // #4703
     const char code[] = "#define MACRO( A, B, C ) class A##B##C##Creator {};\n"
                         "MACRO( B\t, U , G )";
-    ASSERT_EQUALS(" class BUGCreator { } ;", preprocess(code));
+    ASSERT_EQUALS("class BUGCreator { } ;", preprocess(code));
 }
 
 void ifdef1() {
@@ -132,7 +134,7 @@ void ifdef1() {
                         "#else\n"
                         "2\n"
                         "#endif";
-    ASSERT_EQUALS(" 2", preprocess(code));
+    ASSERT_EQUALS("2", preprocess(code));
 }
 
 void ifdef2() {
@@ -142,7 +144,7 @@ void ifdef2() {
                         "#else\n"
                         "2\n"
                         "#endif";
-    ASSERT_EQUALS(" 1", preprocess(code));
+    ASSERT_EQUALS("1", preprocess(code));
 }
 
 void ifA() {
@@ -153,7 +155,7 @@ void ifA() {
 
     std::map<std::string,std::string> defines;
     defines["A"] = "1";
-    ASSERT_EQUALS(" X", preprocess(code, defines));
+    ASSERT_EQUALS("X", preprocess(code, defines));
 }
 
 void ifDefined() {
@@ -163,7 +165,7 @@ void ifDefined() {
     std::map<std::string, std::string> defs;
     ASSERT_EQUALS("", preprocess(code, defs));
     defs["A"] = "1";
-    ASSERT_EQUALS(" X", preprocess(code, defs));
+    ASSERT_EQUALS("X", preprocess(code, defs));
 }
 
 void ifLogical() {
@@ -174,10 +176,10 @@ void ifLogical() {
     ASSERT_EQUALS("", preprocess(code, defs));
     defs.clear();
     defs["A"] = "1";
-    ASSERT_EQUALS(" X", preprocess(code, defs));
+    ASSERT_EQUALS("X", preprocess(code, defs));
     defs.clear();
     defs["B"] = "1";
-    ASSERT_EQUALS(" X", preprocess(code, defs));
+    ASSERT_EQUALS("X", preprocess(code, defs));
 }
 
 void ifSizeof() {
@@ -186,7 +188,7 @@ void ifSizeof() {
                         "#else\n"
                         "Y\n"
                         "#endif";
-    ASSERT_EQUALS(" X", preprocess(code));
+    ASSERT_EQUALS("X", preprocess(code));
 }
 
 void tokenMacro1() {
