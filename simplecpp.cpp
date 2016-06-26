@@ -151,6 +151,37 @@ void TokenList::readfile(std::istream &istr)
     combineOperators();
 }
 
+void TokenList::constFold() {
+    while (1) {
+        // goto last '('
+        Token *tok = end();
+        while (tok && tok->op != '(')
+            tok = tok->previous;
+
+        // no '(', goto first token
+        if (!tok)
+            tok = begin();
+
+        // Constant fold expression
+        constFoldNot(tok);
+        constFoldMulDivRem(tok);
+        constFoldAddSub(tok);
+        constFoldComparison(tok);
+        constFoldLogicalOp(tok);
+
+        // If there is no '(' we are done with the constant folding
+        if (tok->op != '(')
+            break;
+
+        if (!tok->next || !tok->next->next || tok->next->next->op != ')')
+            break;
+
+        tok = tok->next;
+        deleteToken(tok->previous);
+        deleteToken(tok->next);
+    }
+}
+
 void TokenList::combineOperators() {
     for (Token *tok = begin(); tok; tok = tok->next) {
         if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
@@ -164,6 +195,114 @@ void TokenList::combineOperators() {
         }
     }
 }
+
+void TokenList::constFoldNot(Token *tok) {
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (tok->op == '!' && tok->next && tok->next->number) {
+            tok->setstr(tok->next->str == "0" ? "1" : "0");
+            deleteToken(tok->next);
+        }
+    }
+}
+
+void TokenList::constFoldMulDivRem(Token *tok) {
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        long long result;
+        if (tok->op == '*')
+            result = (std::stoll(tok->previous->str) * std::stoll(tok->next->str));
+        else if (tok->op == '/')
+            result = (std::stoll(tok->previous->str) / std::stoll(tok->next->str));
+        else if (tok->op == '%')
+            result = (std::stoll(tok->previous->str) % std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->setstr(std::to_string(result));
+        deleteToken(tok->previous);
+        deleteToken(tok->next);
+    }
+}
+
+void TokenList::constFoldAddSub(Token *tok) {
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        long long result;
+        if (tok->op == '+')
+            result = (std::stoll(tok->previous->str) + std::stoll(tok->next->str));
+        else if (tok->op == '-')
+            result = (std::stoll(tok->previous->str) - std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->setstr(std::to_string(result));
+        deleteToken(tok->previous);
+        deleteToken(tok->next);
+    }
+}
+
+void TokenList::constFoldComparison(Token *tok) {
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (!std::strchr("<>=!", tok->str[0]))
+            continue;
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        int result;
+        if (tok->str == "==")
+            result = (std::stoll(tok->previous->str) == std::stoll(tok->next->str));
+        else if (tok->str == "!=")
+            result = (std::stoll(tok->previous->str) != std::stoll(tok->next->str));
+        else if (tok->str == ">")
+            result = (std::stoll(tok->previous->str) > std::stoll(tok->next->str));
+        else if (tok->str == ">=")
+            result = (std::stoll(tok->previous->str) >= std::stoll(tok->next->str));
+        else if (tok->str == "<")
+            result = (std::stoll(tok->previous->str) < std::stoll(tok->next->str));
+        else if (tok->str == "<=")
+            result = (std::stoll(tok->previous->str) <= std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->setstr(std::to_string(result));
+        deleteToken(tok->previous);
+        deleteToken(tok->next);
+    }
+}
+
+void TokenList::constFoldLogicalOp(Token *tok) {
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (tok->str != "&&" && tok->str != "||")
+            continue;
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        int result;
+        if (tok->str == "||")
+            result = (std::stoll(tok->previous->str) || std::stoll(tok->next->str));
+        else if (tok->str == "&&")
+            result = (std::stoll(tok->previous->str) && std::stoll(tok->next->str));
+        else
+            continue;
+
+        tok->setstr(std::to_string(result));
+        deleteToken(tok->previous);
+        deleteToken(tok->next);
+    }
+}
+
 
 namespace simplecpp {
 class Macro {
@@ -461,95 +600,11 @@ static void simplifyNumbers(TokenList &expr) {
 }
 
 
-static void simplifyNot(TokenList &expr) {
-    for (Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (tok->op == '!' && tok->next && tok->next->number) {
-            tok->setstr(tok->next->str == "0" ? "1" : "0");
-            expr.deleteToken(tok->next);
-        }
-    }
-}
-
-static void simplifyComparison(TokenList &expr) {
-    for (Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (!std::strchr("<>=!", tok->str[0]))
-            continue;
-        if (!tok->previous || !tok->previous->number)
-            continue;
-        if (!tok->next || !tok->next->number)
-            continue;
-
-        int result;
-        if (tok->str == "==")
-            result = (std::stoll(tok->previous->str) == std::stoll(tok->next->str));
-        else if (tok->str == "!=")
-            result = (std::stoll(tok->previous->str) != std::stoll(tok->next->str));
-        else if (tok->str == ">")
-            result = (std::stoll(tok->previous->str) > std::stoll(tok->next->str));
-        else if (tok->str == ">=")
-            result = (std::stoll(tok->previous->str) >= std::stoll(tok->next->str));
-        else if (tok->str == "<")
-            result = (std::stoll(tok->previous->str) < std::stoll(tok->next->str));
-        else if (tok->str == "<=")
-            result = (std::stoll(tok->previous->str) <= std::stoll(tok->next->str));
-        else
-            continue;
-
-        tok->setstr(result ? "1" : "0");
-        expr.deleteToken(tok->previous);
-        expr.deleteToken(tok->next);
-    }
-}
-
-static void simplifyLogical(TokenList &expr) {
-    for (Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (tok->str != "&&" && tok->str != "||")
-            continue;
-        if (!tok->previous || !tok->previous->number)
-            continue;
-        if (!tok->next || !tok->next->number)
-            continue;
-
-        int result;
-        if (tok->str == "||")
-            result = (std::stoll(tok->previous->str) || std::stoll(tok->next->str));
-        else if (tok->str == "&&")
-            result = (std::stoll(tok->previous->str) && std::stoll(tok->next->str));
-        else
-            continue;
-
-        tok->setstr(result ? "1" : "0");
-        expr.deleteToken(tok->previous);
-        expr.deleteToken(tok->next);
-    }
-}
-
-static bool simplifyParentheses(TokenList &expr) {
-    bool changed = false;
-    for (Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (tok->op != '(')
-            continue;
-        if (!tok->next || !tok->next->next)
-            continue;
-        if (!tok->next->number || tok->next->next->op != ')')
-            continue;
-        changed = true;
-        tok = tok->next;
-        expr.deleteToken(tok->previous);
-        expr.deleteToken(tok->next);
-    }
-    return changed;
-}
-
 static int evaluate(TokenList expr) {
     simplifySizeof(expr);
     simplifyName(expr);
     simplifyNumbers(expr);
-    do {
-        simplifyNot(expr);
-        simplifyComparison(expr);
-        simplifyLogical(expr);
-    } while (simplifyParentheses(expr));
+    expr.constFold();
     return expr.cbegin() ? std::stoi(expr.cbegin()->str) : 0;
 }
 

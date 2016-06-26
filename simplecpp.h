@@ -73,6 +73,7 @@ public:
     void printOut() const;
 
     void readfile(std::istream &istr);
+    void constFold();
 
     Token *begin() {
         return first;
@@ -108,6 +109,12 @@ public:
 
 private:
     void combineOperators();
+
+    void constFoldNot(Token *tok);
+    void constFoldMulDivRem(Token *tok);
+    void constFoldAddSub(Token *tok);
+    void constFoldComparison(Token *tok);
+    void constFoldLogicalOp(Token *tok);
 
     Token *first;
     Token *last;

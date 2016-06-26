@@ -42,12 +42,24 @@ static std::string preprocess(const char code[]) {
     return preprocess(code,nodefines);
 }
 
+static std::string testConstFold(const char code[]) {
+    std::istringstream istr(code);
+    simplecpp::TokenList expr(istr);
+    expr.constFold();
+    return stringify(expr);
+}
+
 void comment() {
     const char code[] = "// abc";
     ASSERT_EQUALS(" // abc",
                   readfile(code));
     ASSERT_EQUALS(" // abc",
                   preprocess(code));
+}
+
+static void constFold() {
+    ASSERT_EQUALS(" 7", testConstFold("1+2*3"));
+    ASSERT_EQUALS(" 15", testConstFold("1+2*(3+4)"));
 }
 
 void define1() {
@@ -235,6 +247,7 @@ void tokenMacro4() {
 
 int main() {
     comment();
+    constFold();
     define1();
     define2();
     define3();
