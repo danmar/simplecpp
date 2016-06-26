@@ -144,6 +144,16 @@ void ifA() {
     ASSERT_EQUALS(" X", preprocess(code, defines));
 }
 
+void ifDefined() {
+    const char code[] = "#if defined(A)\n"
+                        "X\n"
+                        "#endif";
+    std::map<std::string, std::string> defs;
+    ASSERT_EQUALS("", preprocess(code, defs));
+    defs["A"] = "1";
+    ASSERT_EQUALS(" X", preprocess(code, defs));
+}
+
 void ifSizeof() {
     const char code[] = "#if sizeof(unsigned short)==2\n"
                         "X\n"
@@ -221,6 +231,7 @@ int main() {
     ifdef1();
     ifdef2();
     ifA();
+    ifDefined();
     ifSizeof();
     tokenMacro1();
     tokenMacro2();

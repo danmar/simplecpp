@@ -506,6 +506,25 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                         continue;
                     }
 
+                    if (tok->str == "defined") {
+                        tok = tok->next;
+                        const bool par = (tok && tok->op == '(');
+                        if (par)
+                            tok = tok->next;
+                        if (!tok)
+                            break;
+                        if (macros.find(tok->str) != macros.end() || defines.find(tok->str) != defines.end())
+                            expr.push_back(new Token("1", tok->location));
+                        else
+                            expr.push_back(new Token("0", tok->location));
+                        tok = tok->next;
+                        if (tok && par)
+                            tok = tok->next;
+                        if (!tok)
+                            break;
+                        continue;
+                    }
+
                     const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
                     if (it != defines.end()) {
                         std::istringstream istr(it->second);
