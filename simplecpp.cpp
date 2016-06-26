@@ -12,6 +12,7 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <iostream>
 
 using namespace simplecpp;
 
@@ -57,6 +58,17 @@ void TokenList::push_back(Token *tok) {
     tok->previous = last;
     last = tok;
 }
+
+void TokenList::printOut() const {
+    for (const Token *tok = cbegin(); tok; tok = tok->next) {
+        if (tok->previous && tok->previous->location.line != tok->location.line)
+            std::cout << std::endl;
+        else if (tok->previous)
+            std::cout << ' ';
+        std::cout << tok->str;
+    }
+}
+
 
 namespace {
 class Macro {
@@ -435,6 +447,18 @@ static void simplifyName(TokenList &expr) {
     }
 }
 
+static void simplifyNumbers(TokenList &expr) {
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->str.size() == 1U)
+            continue;
+        if (tok->str.compare(0,2,"0x") == 0)
+            tok->setstr(std::to_string(std::stoll(tok->str.substr(2), nullptr, 16)));
+        else if (tok->str[0] == '\'')
+            tok->setstr(std::to_string((unsigned char)tok->str[1]));
+    }
+}
+
+
 static void simplifyNot(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (tok->op == '!' && tok->next && tok->next->number) {
@@ -469,7 +493,7 @@ static void simplifyComparison(TokenList &expr) {
         else
             continue;
 
-        tok->str = result ? "1" : "0";
+        tok->setstr(result ? "1" : "0");
         expr.deleteToken(tok->previous);
         expr.deleteToken(tok->next);
     }
@@ -492,20 +516,40 @@ static void simplifyLogical(TokenList &expr) {
         else
             continue;
 
-        tok->str = result ? "1" : "0";
+        tok->setstr(result ? "1" : "0");
         expr.deleteToken(tok->previous);
         expr.deleteToken(tok->next);
     }
+}
+
+static bool simplifyParentheses(TokenList &expr) {
+    bool changed = false;
+    for (Token *tok = expr.begin(); tok; tok = tok->next) {
+        if (tok->op != '(')
+            continue;
+        if (!tok->next || !tok->next->next)
+            continue;
+        if (!tok->next->number || tok->next->next->op != ')')
+            continue;
+        changed = true;
+        tok = tok->next;
+        expr.deleteToken(tok->previous);
+        expr.deleteToken(tok->next);
+    }
+    return changed;
 }
 
 static int evaluate(TokenList expr) {
     combineOperators(expr);
     simplifySizeof(expr);
     simplifyName(expr);
-    simplifyNot(expr);
-    simplifyComparison(expr);
-    simplifyLogical(expr);
-    return std::stoi(expr.cbegin()->str);
+    simplifyNumbers(expr);
+    do {
+        simplifyNot(expr);
+        simplifyComparison(expr);
+        simplifyLogical(expr);
+    } while (simplifyParentheses(expr));
+    return expr.cbegin() ? std::stoi(expr.cbegin()->str) : 0;
 }
 
 TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines)
@@ -563,7 +607,7 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
 
                     const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
                     if (it != defines.end()) {
-                        std::istringstream istr(it->second);
+                        std::istringstream istr(it->second.empty() ? "1" : "0");
                         const TokenList &value = readfile(istr);
                         for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                             expr.push_back(new Token(tok2->str, tok->location));
