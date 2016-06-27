@@ -324,13 +324,26 @@ public:
         parseDefine(tok);
     }
 
+    explicit Macro(const std::string &name, const std::string &value) : nameToken(nullptr) {
+        const std::string def(name + ' ' + value);
+        std::istringstream istr(def);
+        tokenListDefine.readfile(istr);
+        parseDefine(tokenListDefine.cbegin());
+    }
+
     Macro(const Macro &macro) {
         *this = macro;
     }
 
     void operator=(const Macro &macro) {
-        if (this != &macro)
-            parseDefine(macro.nameToken);
+        if (this != &macro) {
+            if (macro.tokenListDefine.empty())
+                parseDefine(macro.nameToken);
+            else {
+                tokenListDefine = macro.tokenListDefine;
+                parseDefine(tokenListDefine.cbegin());
+            }
+        }
     }
 
     const Token * expand(TokenList * const output, const Location &loc, const Token * const nameToken, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
@@ -526,6 +539,7 @@ private:
     std::vector<TokenString> args;
     const Token *valueToken;
     const Token *endToken;
+    TokenList tokenListDefine;
 };
 }
 
@@ -613,6 +627,10 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
 {
     TokenList output;
     std::map<TokenString, Macro> macros;
+    for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
+        const Macro macro(it->first, it->second.empty() ? std::string("1") : it->second);
+        macros[macro.name()] = macro;
+    }
     for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
             if (rawtok->next->str == DEFINE) {
@@ -653,7 +671,7 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                             tok = tok->next;
                         if (!tok)
                             break;
-                        if (macros.find(tok->str) != macros.end() || defines.find(tok->str) != defines.end())
+                        if (macros.find(tok->str) != macros.end())
                             expr.push_back(new Token("1", tok->location));
                         else
                             expr.push_back(new Token("0", tok->location));
@@ -662,10 +680,11 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                         continue;
                     }
 
-                    const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
-                    if (it != defines.end()) {
-                        std::istringstream istr(it->second.empty() ? std::string("0") : it->second);
-                        const TokenList &value(istr);
+                    const std::map<std::string,Macro>::const_iterator it = macros.find(tok->str);
+                    if (it != macros.end()) {
+                        TokenList value;
+                        std::set<TokenString> expandedmacros;
+                        it->second.expand(&value, tok->location, tok, macros, expandedmacros);
                         for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                             expr.push_back(new Token(tok2->str, tok->location));
                     } else {
