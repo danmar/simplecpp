@@ -68,6 +68,9 @@ public:
     void operator=(const TokenList &other);
 
     void clear();
+    bool empty() const {
+        return !cbegin();
+    }
     void push_back(Token *token);
 
     void dump() const;
