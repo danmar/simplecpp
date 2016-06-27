@@ -13,14 +13,17 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
+#include <stack>
 
 using namespace simplecpp;
 
 static const TokenString DEFINE("define");
+static const TokenString DEFINED("defined");
 static const TokenString IF("if");
 static const TokenString IFDEF("ifdef");
 static const TokenString IFNDEF("ifndef");
 static const TokenString ELSE("else");
+static const TokenString ELIF("elif");
 static const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
@@ -547,20 +550,6 @@ static bool sameline(const Token *tok1, const Token *tok2) {
     return (tok1 && tok2 && tok1->location.line == tok2->location.line);
 }
 
-static const Token *skipcode(const Token *rawtok) {
-    int state = 0;
-    while (rawtok) {
-        if (rawtok->op == '#')
-            state = 1;
-        else if (state == 1 && (rawtok->str == ELSE || rawtok->str == ENDIF))
-            return rawtok->previous;
-        else
-            state = 0;
-        rawtok = rawtok->next;
-    }
-    return nullptr;
-}
-
 static void simplifySizeof(TokenList &expr) {
     for (Token *tok = expr.begin(); tok; tok = tok->next) {
         if (tok->str != "sizeof")
@@ -623,48 +612,68 @@ static int evaluate(TokenList expr) {
     return expr.cbegin() ? std::stoi(expr.cbegin()->str) : 0;
 }
 
+static const Token *gotoNextLine(const Token *tok) {
+    const unsigned int line = tok->location.line;
+    while (tok && tok->location.line == line)
+        tok = tok->next;
+    return tok;
+}
+
 TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines)
 {
-    TokenList output;
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
         const Macro macro(it->first, it->second.empty() ? std::string("1") : it->second);
         macros[macro.name()] = macro;
     }
+
+    // TRUE => code in current #if block should be kept
+    // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.
+    // ALWAYS_FALSE => drop all code in #if and #else
+    enum IfState { TRUE, ELSE_IS_TRUE, ALWAYS_FALSE };
+    std::stack<IfState> ifstates;
+    ifstates.push(TRUE);
+
+    TokenList output;
     for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
-            if (rawtok->next->str == DEFINE) {
-                try {
-                    const Macro &macro = Macro(rawtok);
-                    macros[macro.name()] = macro;
-                    const unsigned int line = rawtok->location.line;
-                    while (rawtok && rawtok->location.line == line)
-                        rawtok = rawtok->next;
+            rawtok = rawtok->next;
+            if (!rawtok || !rawtok->name)
+                continue;
+
+            if (rawtok->str == DEFINE) {
+                if (ifstates.top() != TRUE)
                     continue;
+                try {
+                    const Macro &macro = Macro(rawtok->previous);
+                    macros[macro.name()] = macro;
                 } catch (const std::runtime_error &) {
                 }
-            } else if (rawtok->next->str == IF || rawtok->next->str == IFDEF || rawtok->next->str == IFNDEF) {
+            } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
                 bool conditionIsTrue;
-                if (rawtok->next->str == IFDEF)
-                    conditionIsTrue = (macros.find(rawtok->next->next->str) != macros.end());
-                else if (rawtok->next->str == IFNDEF)
-                    conditionIsTrue = (macros.find(rawtok->next->next->str) == macros.end());
-                else {
+                if (ifstates.top() == ALWAYS_FALSE)
+                    conditionIsTrue = false;
+                else if (rawtok->str == IFDEF)
+                    conditionIsTrue = (macros.find(rawtok->next->str) != macros.end());
+                else if (rawtok->str == IFNDEF)
+                    conditionIsTrue = (macros.find(rawtok->next->str) == macros.end());
+                else if (rawtok->str == IF || rawtok->str == ELIF) {
                     TokenList expr;
-                    for (const Token *tok = rawtok->next->next; tok && sameline(tok,rawtok); tok = tok->next) {
+                    const Token * const endToken = gotoNextLine(rawtok);
+                    for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {
                         if (!tok->name) {
                             expr.push_back(new Token(tok->str,tok->location));
                             continue;
                         }
 
-                        if (tok->str == "defined") {
+                        if (tok->str == DEFINED) {
                             tok = tok->next;
                             const bool par = (tok && tok->op == '(');
                             if (par)
                                 tok = tok->next;
                             if (!tok)
                                 break;
-                            if (macros.find(tok->str) != macros.end() || defines.find(tok->str) != defines.end())
+                            if (macros.find(tok->str) != macros.end())
                                 expr.push_back(new Token("1", tok->location));
                             else
                                 expr.push_back(new Token("0", tok->location));
@@ -686,38 +695,33 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                     conditionIsTrue = evaluate(expr);
                 }
 
-                // Goto next line
-                const Token *rawtok1 = rawtok;
-                while (rawtok && sameline(rawtok,rawtok1))
-                    rawtok = rawtok->next;
-                if (!rawtok)
-                    break;
-
-                if (!conditionIsTrue) {
-                    rawtok = skipcode(rawtok);
-                    if (rawtok)
-                        rawtok = rawtok->next;
-                    if (rawtok)
-                        rawtok = rawtok->next;
-                    if (!rawtok)
-                        break;
+                if (rawtok->str != ELIF) {
+                    // push a new ifstate..
+                    if (ifstates.top() != TRUE)
+                        ifstates.push(ALWAYS_FALSE);
+                    else
+                        ifstates.push(conditionIsTrue ? TRUE : ELSE_IS_TRUE);
+                } else if (ifstates.top() == TRUE) {
+                    ifstates.top() = ALWAYS_FALSE;
+                } else if (ifstates.top() == ELSE_IS_TRUE && conditionIsTrue) {
+                    ifstates.top() = TRUE;
                 }
-            } else if (rawtok->next->str == ELSE) {
-                rawtok = skipcode(rawtok->next);
-                if (rawtok)
-                    rawtok = rawtok->next;
-                if (rawtok)
-                    rawtok = rawtok->next;
-                if (!rawtok)
-                    break;
-            } else if (rawtok->next->str == ENDIF) {
-                if (rawtok)
-                    rawtok = rawtok->next;
-                if (rawtok)
-                    rawtok = rawtok->next;
-                if (!rawtok)
-                    break;
+            } else if (rawtok->str == ELSE) {
+                ifstates.top() = (ifstates.top() == ELSE_IS_TRUE) ? TRUE : ALWAYS_FALSE;
+            } else if (rawtok->str == ENDIF) {
+                if (ifstates.size() > 1U)
+                    ifstates.pop();
             }
+            rawtok = gotoNextLine(rawtok);
+            if (!rawtok)
+                break;
+            continue;
+        }
+
+        if (ifstates.top() != TRUE) {
+            // drop code
+            rawtok = gotoNextLine(rawtok);
+            continue;
         }
 
         if (macros.find(rawtok->str) != macros.end()) {

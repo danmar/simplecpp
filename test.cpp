@@ -204,6 +204,35 @@ void ifSizeof() {
     ASSERT_EQUALS("X", preprocess(code));
 }
 
+void elif() {
+    const char code1[] = "#ifndef X\n"
+                         "1\n"
+                         "#elif 1<2\n"
+                         "2\n"
+                         "#else\n"
+                         "3\n"
+                         "#endif";
+    ASSERT_EQUALS("1", preprocess(code1));
+
+    const char code2[] = "#ifdef X\n"
+                         "1\n"
+                         "#elif 1<2\n"
+                         "2\n"
+                         "#else\n"
+                         "3\n"
+                         "#endif";
+    ASSERT_EQUALS("2", preprocess(code2));
+
+    const char code3[] = "#ifdef X\n"
+                         "1\n"
+                         "#elif 1>2\n"
+                         "2\n"
+                         "#else\n"
+                         "3\n"
+                         "#endif";
+    ASSERT_EQUALS("3", preprocess(code3));
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -270,6 +299,7 @@ int main() {
     define5();
     hash();
     hashhash();
+
     ifdef1();
     ifdef2();
     ifndef();
@@ -277,6 +307,8 @@ int main() {
     ifDefined();
     ifLogical();
     ifSizeof();
+    elif();
+
     tokenMacro1();
     tokenMacro2();
     tokenMacro3();
