@@ -682,10 +682,11 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                             continue;
                         }
 
-                        const std::map<std::string,std::string>::const_iterator it = defines.find(tok->str);
-                        if (it != defines.end()) {
-                            std::istringstream istr(it->second.empty() ? std::string("0") : it->second);
-                            const TokenList &value(istr);
+                        const std::map<std::string,Macro>::const_iterator it = macros.find(tok->str);
+                        if (it != macros.end()) {
+                            TokenList value;
+                            std::set<TokenString> expandedmacros;
+                            it->second.expand(&value, tok->location, tok, macros, expandedmacros);
                             for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                                 expr.push_back(new Token(tok2->str, tok->location));
                         } else {
