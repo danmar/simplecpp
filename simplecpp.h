@@ -37,7 +37,7 @@ public:
     void flags() {
         name = (str[0] == '_' || std::isalpha(str[0]));
         comment = (str[0] == '/');
-        number = std::isdigit(str[0]);
+        number = std::isdigit(str[0]) || (str.size() > 1U && str[0] == '-' && std::isdigit(str[1]));
         op = (str.size() == 1U) ? str[0] : '\0';
     }
 
@@ -113,7 +113,7 @@ public:
 private:
     void combineOperators();
 
-    void constFoldNot(Token *tok);
+    void constFoldUnaryNotPosNeg(Token *tok);
     void constFoldMulDivRem(Token *tok);
     void constFoldAddSub(Token *tok);
     void constFoldComparison(Token *tok);

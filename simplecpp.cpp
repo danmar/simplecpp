@@ -167,7 +167,7 @@ void TokenList::constFold() {
             tok = begin();
 
         // Constant fold expression
-        constFoldNot(tok);
+        constFoldUnaryNotPosNeg(tok);
         constFoldMulDivRem(tok);
         constFoldAddSub(tok);
         constFoldComparison(tok);
@@ -200,11 +200,27 @@ void TokenList::combineOperators() {
     }
 }
 
-void TokenList::constFoldNot(Token *tok) {
+void TokenList::constFoldUnaryNotPosNeg(Token *tok) {
     for (; tok && tok->op != ')'; tok = tok->next) {
         if (tok->op == '!' && tok->next && tok->next->number) {
             tok->setstr(tok->next->str == "0" ? "1" : "0");
             deleteToken(tok->next);
+        }
+        else {
+            if (tok->previous && (tok->previous->number || tok->previous->name))
+                continue;
+            if (!tok->next || !tok->next->number)
+                continue;
+            switch (tok->op) {
+            case '+':
+                tok->setstr(tok->next->str);
+                deleteToken(tok->next);
+                break;
+            case '-':
+                tok->setstr(tok->op + tok->next->str);
+                deleteToken(tok->next);
+                break;
+            }
         }
     }
 }

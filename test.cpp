@@ -6,9 +6,9 @@
 #define ASSERT_EQUALS(expected, actual)  assertEquals((expected), (actual), __LINE__);
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line) {
-    std::cerr << "line " << line << ": Assertion " << ((expected == actual) ? "success" : "failed") << std::endl;
     if (expected != actual) {
         std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "line " << line << std::endl;
         std::cerr << "expected:" << expected << std::endl;
         std::cerr << "actual:" << actual << std::endl;
     }
@@ -62,6 +62,8 @@ void comment() {
 static void constFold() {
     ASSERT_EQUALS("7", testConstFold("1+2*3"));
     ASSERT_EQUALS("15", testConstFold("1+2*(3+4)"));
+    ASSERT_EQUALS("123", testConstFold("+123"));
+    ASSERT_EQUALS("1", testConstFold("-123<1"));
 }
 
 void define1() {
