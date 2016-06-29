@@ -171,6 +171,7 @@ void TokenList::constFold() {
         constFoldMulDivRem(tok);
         constFoldAddSub(tok);
         constFoldComparison(tok);
+        constFoldBitwise(tok);
         constFoldLogicalOp(tok);
 
         // If there is no '(' we are done with the constant folding
@@ -297,6 +298,31 @@ void TokenList::constFoldComparison(Token *tok) {
         tok->setstr(std::to_string(result));
         deleteToken(tok->previous);
         deleteToken(tok->next);
+    }
+}
+
+void TokenList::constFoldBitwise(Token *tok)
+{
+    Token * const tok1 = tok;
+    for (const char *op = "&^|"; *op; op++) {
+        for (tok = tok1; tok && tok->op != ')'; tok = tok->next) {
+            if (tok->op != *op)
+                continue;
+            if (!tok->previous || !tok->previous->number)
+                continue;
+            if (!tok->next || !tok->next->number)
+                continue;
+            int result;
+            if (tok->op == '&')
+                result = (std::stoll(tok->previous->str) & std::stoll(tok->next->str));
+            else if (tok->op == '^')
+                result = (std::stoll(tok->previous->str) ^ std::stoll(tok->next->str));
+            else if (tok->op == '|')
+                result = (std::stoll(tok->previous->str) | std::stoll(tok->next->str));
+            tok->setstr(std::to_string(result));
+            deleteToken(tok->previous);
+            deleteToken(tok->next);
+        }
     }
 }
 

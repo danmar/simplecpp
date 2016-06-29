@@ -117,6 +117,7 @@ private:
     void constFoldMulDivRem(Token *tok);
     void constFoldAddSub(Token *tok);
     void constFoldComparison(Token *tok);
+    void constFoldBitwise(Token *tok);
     void constFoldLogicalOp(Token *tok);
 
     Token *first;
