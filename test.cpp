@@ -67,6 +67,7 @@ static void constFold() {
     ASSERT_EQUALS("6", testConstFold("14 & 7"));
     ASSERT_EQUALS("29", testConstFold("13 ^ 16"));
     ASSERT_EQUALS("25", testConstFold("24 | 1"));
+    ASSERT_EQUALS("2", testConstFold("1?2:3"));
 }
 
 void define1() {

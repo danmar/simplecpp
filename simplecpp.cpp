@@ -173,6 +173,7 @@ void TokenList::constFold() {
         constFoldComparison(tok);
         constFoldBitwise(tok);
         constFoldLogicalOp(tok);
+        constFoldQuestionOp(tok);
 
         // If there is no '(' we are done with the constant folding
         if (tok->op != '(')
@@ -349,6 +350,27 @@ void TokenList::constFoldLogicalOp(Token *tok) {
     }
 }
 
+void TokenList::constFoldQuestionOp(Token *tok) {
+    Token * const tok1 = tok;
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (tok->str != "?")
+            continue;
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next)
+            continue;
+        if (!tok->next->next || tok->next->next->op != ':')
+            continue;
+        Token * const condTok = tok->previous;
+        Token * const trueTok = tok->next;
+        Token * const falseTok = trueTok->next->next;
+        deleteToken(condTok->next); // ?
+        deleteToken(trueTok->next); // :
+        deleteToken(condTok->str == "0" ? trueTok : falseTok);
+        deleteToken(condTok);
+        tok = tok1;
+    }
+}
 
 namespace simplecpp {
 class Macro {

@@ -119,6 +119,7 @@ private:
     void constFoldComparison(Token *tok);
     void constFoldBitwise(Token *tok);
     void constFoldLogicalOp(Token *tok);
+    void constFoldQuestionOp(Token *tok);
 
     Token *first;
     Token *last;
