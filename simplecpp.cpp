@@ -28,8 +28,9 @@ static const TokenString ENDIF("endif");
 
 TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
-TokenList::TokenList(std::istringstream &istr) : first(nullptr), last(nullptr) {
-    readfile(istr);
+TokenList::TokenList(std::istringstream &istr, const std::string &filename)
+    : first(nullptr), last(nullptr) {
+    readfile(istr,filename);
 }
 
 TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr) {
@@ -77,10 +78,10 @@ void TokenList::dump() const {
     std::cout << std::endl;
 }
 
-void TokenList::readfile(std::istream &istr)
+void TokenList::readfile(std::istream &istr, const std::string &filename)
 {
     Location location;
-    location.file = 0U;
+    location.file = filename;
     location.line = 1U;
     location.col  = 0U;
     while (istr.good()) {
@@ -122,11 +123,14 @@ void TokenList::readfile(std::istream &istr)
 
         // comment
         else if (ch == '/' && istr.peek() == '*') {
-            while (istr.good() && !(currentToken.size() > 2U && ch == '*' && istr.peek() == '/')) {
+            currentToken = "/*";
+            (void)istr.get();
+            ch = (unsigned char)istr.get();
+            while (istr.good() && (ch != '/' || currentToken.size() <= 3 || currentToken[currentToken.size()-1U] != '*')) {
                 currentToken += ch;
                 ch = (unsigned char)istr.get();
             }
-            istr.unget();
+            currentToken += '/';
         }
 
         // string / char literal
@@ -673,7 +677,8 @@ static int evaluate(TokenList expr) {
     simplifyName(expr);
     simplifyNumbers(expr);
     expr.constFold();
-    return expr.cbegin() ? std::stoi(expr.cbegin()->str) : 0;
+    // TODO: handle invalid expressions
+    return expr.cbegin() && expr.cbegin() == expr.cend() && expr.cbegin()->number ? std::stoi(expr.cbegin()->str) : 0;
 }
 
 static const Token *gotoNextLine(const Token *tok) {

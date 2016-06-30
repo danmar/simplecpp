@@ -15,7 +15,7 @@ namespace simplecpp {
 typedef std::string TokenString;
 
 struct Location {
-    unsigned int file;
+    std::string file;
     unsigned int line;
     unsigned int col;
 };
@@ -62,7 +62,7 @@ private:
 class TokenList {
 public:
     TokenList();
-    TokenList(std::istringstream &istr);
+    TokenList(std::istringstream &istr, const std::string &filename=std::string());
     TokenList(const TokenList &other);
     ~TokenList();
     void operator=(const TokenList &other);
@@ -75,7 +75,7 @@ public:
 
     void dump() const;
 
-    void readfile(std::istream &istr);
+    void readfile(std::istream &istr, const std::string &filename=std::string());
     void constFold();
 
     Token *begin() {
