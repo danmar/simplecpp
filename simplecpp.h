@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 #include <cctype>
+#include <list>
 
 namespace simplecpp {
 
@@ -135,7 +136,14 @@ private:
 };
 
 namespace Preprocessor {
-TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines);
+
+struct Output {
+    enum Type {ERROR,WARNING,INFO} type;
+    Location location;
+    std::string msg;
+};
+
+TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList = 0);
 }
 }
 

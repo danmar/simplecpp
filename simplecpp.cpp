@@ -19,6 +19,7 @@ using namespace simplecpp;
 
 static const TokenString DEFINE("define");
 static const TokenString DEFINED("defined");
+static const TokenString ERROR("error");
 static const TokenString IF("if");
 static const TokenString IFDEF("ifdef");
 static const TokenString IFNDEF("ifndef");
@@ -46,7 +47,7 @@ void TokenList::operator=(const TokenList &other) {
         return;
     clear();
     for (const Token *tok = other.cbegin(); tok; tok = tok->next)
-        push_back(new Token(tok->str, tok->location));
+        push_back(new Token(*tok));
 }
 
 void TokenList::clear() {
@@ -712,7 +713,7 @@ static const Token *gotoNextLine(const Token *tok) {
     return tok;
 }
 
-TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines)
+TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList)
 {
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
@@ -733,6 +734,17 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
             rawtok = rawtok->next;
             if (!rawtok || !rawtok->name)
                 continue;
+
+            if (ifstates.top() == TRUE && rawtok->str == ERROR) {
+                if (outputList) {
+                    Output err;
+                    err.type = Output::ERROR;
+                    err.location = rawtok->location;
+                    err.msg = rawtok->next->str;
+                    outputList->push_back(err);
+                }
+                return TokenList();
+            }
 
             if (rawtok->str == DEFINE) {
                 if (ifstates.top() != TRUE)

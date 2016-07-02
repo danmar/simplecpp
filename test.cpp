@@ -128,6 +128,17 @@ void define5() {
     ASSERT_EQUALS("1 + 2 + 3", preprocess(code));
 }
 
+void error() {
+    std::istringstream istr("#error abcd\n");
+    std::map<std::string, std::string> defines;
+    std::list<simplecpp::Preprocessor::Output> output;
+    simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr,"test.c"), defines, &output);
+    ASSERT_EQUALS(simplecpp::Preprocessor::Output::ERROR, output.front().type);
+    ASSERT_EQUALS("test.c", output.front().location.file);
+    ASSERT_EQUALS(1U, output.front().location.line);
+    ASSERT_EQUALS("abcd", output.front().msg);
+}
+
 void hash() {
     const char code[] = "#define a(x) #x\n"
                         "a(1)\n"
@@ -281,7 +292,7 @@ void tokenMacro1() {
                         "A";
     std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList &tokenList = simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines);
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
@@ -340,6 +351,8 @@ int main() {
     define3();
     define4();
     define5();
+
+    error();
 
     hash();
     hashhash();
