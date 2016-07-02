@@ -135,16 +135,16 @@ private:
     Token *last;
 };
 
-namespace Preprocessor {
-
 struct Output {
-    enum Type {ERROR,WARNING,INFO} type;
+    enum Type {
+        ERROR, /* #error */
+        WARNING /* #warning */
+    } type;
     Location location;
     std::string msg;
 };
 
 TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList = 0);
-}
 }
 
 #endif

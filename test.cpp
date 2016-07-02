@@ -46,7 +46,7 @@ static std::string readfile(const char code[]) {
 
 static std::string preprocess(const char code[], const std::map<std::string,std::string> &defines) {
     std::istringstream istr(code);
-    return stringify(simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr),defines));
+    return stringify(simplecpp::preprocess(simplecpp::TokenList(istr),defines));
 }
 
 static std::string preprocess(const char code[]) {
@@ -131,9 +131,9 @@ void define5() {
 void error() {
     std::istringstream istr("#error    hello world! \n");
     std::map<std::string, std::string> defines;
-    std::list<simplecpp::Preprocessor::Output> output;
-    simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr,"test.c"), defines, &output);
-    ASSERT_EQUALS(simplecpp::Preprocessor::Output::ERROR, output.front().type);
+    std::list<simplecpp::Output> output;
+    simplecpp::preprocess(simplecpp::TokenList(istr,"test.c"), defines, &output);
+    ASSERT_EQUALS(simplecpp::Output::ERROR, output.front().type);
     ASSERT_EQUALS("test.c", output.front().location.file);
     ASSERT_EQUALS(1U, output.front().location.line);
     ASSERT_EQUALS("hello world!", output.front().msg);
@@ -292,7 +292,7 @@ void tokenMacro1() {
                         "A";
     std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList &tokenList = simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines);
+    const simplecpp::TokenList &tokenList = simplecpp::preprocess(simplecpp::TokenList(istr), nodefines);
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
@@ -301,7 +301,7 @@ void tokenMacro2() {
                         "ADD(1,2)";
     std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("", tok->macro);
@@ -319,7 +319,7 @@ void tokenMacro3() {
                         "ADD(FRED,2)";
     std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("FRED", tok->macro);
@@ -337,7 +337,7 @@ void tokenMacro4() {
                         "A";
     std::map<std::string, std::string> nodefines;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("A", tok->macro);
