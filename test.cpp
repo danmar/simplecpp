@@ -129,14 +129,14 @@ void define5() {
 }
 
 void error() {
-    std::istringstream istr("#error abcd\n");
+    std::istringstream istr("#error    hello world! \n");
     std::map<std::string, std::string> defines;
     std::list<simplecpp::Preprocessor::Output> output;
     simplecpp::Preprocessor::preprocess(simplecpp::TokenList(istr,"test.c"), defines, &output);
     ASSERT_EQUALS(simplecpp::Preprocessor::Output::ERROR, output.front().type);
     ASSERT_EQUALS("test.c", output.front().location.file);
     ASSERT_EQUALS(1U, output.front().location.line);
-    ASSERT_EQUALS("abcd", output.front().msg);
+    ASSERT_EQUALS("hello world!", output.front().msg);
 }
 
 void hash() {

@@ -740,7 +740,11 @@ TokenList Preprocessor::preprocess(const TokenList &rawtokens, const std::map<st
                     Output err;
                     err.type = Output::ERROR;
                     err.location = rawtok->location;
-                    err.msg = rawtok->next->str;
+                    for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
+                        if (!err.msg.empty() && std::isalnum(tok->str[0]))
+                            err.msg += ' ';
+                        err.msg += tok->str;
+                    }
                     outputList->push_back(err);
                 }
                 return TokenList();
