@@ -15,6 +15,16 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
+static int assertEquals(const unsigned int expected, const unsigned int actual, int line) {
+    if (expected != actual) {
+        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "line " << line << std::endl;
+        std::cerr << "expected:" << expected << std::endl;
+        std::cerr << "actual:" << actual << std::endl;
+    }
+    return (expected == actual);
+}
+
 static std::string stringify(const simplecpp::TokenList &tokens) {
     std::ostringstream out;
 
@@ -53,10 +63,8 @@ static std::string testConstFold(const char code[]) {
 
 void comment() {
     const char code[] = "// abc";
-    ASSERT_EQUALS("// abc",
-                  readfile(code));
-    ASSERT_EQUALS("// abc",
-                  preprocess(code));
+    ASSERT_EQUALS("// abc", readfile(code));
+    ASSERT_EQUALS("// abc", preprocess(code));
 }
 
 static void constFold() {
@@ -239,6 +247,35 @@ void elif() {
     ASSERT_EQUALS("3", preprocess(code3));
 }
 
+void locationFile() {
+    const char code[] = "#file \"a.h\"\n"
+                        "1\n"
+                        "#file \"b.h\"\n"
+                        "2\n"
+                        "#endfile\n"
+                        "3\n"
+                        "#endfile\n";
+    std::istringstream istr(code);
+    const simplecpp::TokenList &tokens = simplecpp::TokenList(istr);
+
+    const simplecpp::Token *tok = tokens.cbegin();
+
+    while (tok && tok->str != "1")
+        tok = tok->next;
+    ASSERT_EQUALS("a.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
+
+    while (tok && tok->str != "2")
+        tok = tok->next;
+    ASSERT_EQUALS("b.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
+
+    while (tok && tok->str != "3")
+        tok = tok->next;
+    ASSERT_EQUALS("a.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS(3U, tok ? tok->location.line : 0U);
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -303,6 +340,7 @@ int main() {
     define3();
     define4();
     define5();
+
     hash();
     hashhash();
 
@@ -314,6 +352,8 @@ int main() {
     ifLogical();
     ifSizeof();
     elif();
+
+    locationFile();
 
     tokenMacro1();
     tokenMacro2();

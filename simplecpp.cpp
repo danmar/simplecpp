@@ -80,6 +80,8 @@ void TokenList::dump() const {
 
 void TokenList::readfile(std::istream &istr, const std::string &filename)
 {
+    std::stack<simplecpp::Location> loc;
+
     Location location;
     location.file = filename;
     location.line = 1U;
@@ -95,6 +97,28 @@ void TokenList::readfile(std::istream &istr, const std::string &filename)
                 istr.get();
             ++location.line;
             location.col = 0;
+
+            std::string lastLine;
+            for (const Token *tok = cend(); tok && tok->location.line == cend()->location.line; tok = tok->previous) {
+                if (tok->comment)
+                    continue;
+                if (!lastLine.empty())
+                    lastLine = ' ' + lastLine;
+                lastLine = (tok->str[0] == '\"' ? std::string("%str%") : tok->str) + lastLine;
+            }
+
+            if (lastLine == "# file %str%") {
+                loc.push(location);
+                location.file = cend()->str.substr(1U, cend()->str.size() - 2U);
+                location.line = 1U;
+            }
+
+            // #endfile
+            if (lastLine == "# endfile" && !loc.empty()) {
+                location = loc.top();
+                loc.pop();
+            }
+
             continue;
         }
 

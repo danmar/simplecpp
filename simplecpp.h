@@ -18,6 +18,15 @@ struct Location {
     std::string file;
     unsigned int line;
     unsigned int col;
+
+    Location &operator=(const Location &other) {
+        if (this != &other) {
+            file = other.file;
+            line = other.line;
+            col  = other.col;
+        }
+        return *this;
+    }
 };
 
 class Token {
