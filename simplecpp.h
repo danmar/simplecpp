@@ -137,6 +137,8 @@ private:
     void constFoldLogicalOp(Token *tok);
     void constFoldQuestionOp(Token *tok);
 
+    std::string lastLine() const;
+
     Token *first;
     Token *last;
 };

@@ -118,6 +118,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 {
     std::stack<simplecpp::Location> loc;
 
+    unsigned int multiline = 0U;
+
     Location location;
     location.file = filename;
     location.line = 1U;
@@ -126,31 +128,28 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         unsigned char ch = (unsigned char)istr.get();
         if (!istr.good())
             break;
-        location.col = (ch == '\t') ? ((location.col + 8) & (~7)) : (location.col + 1);
+        location.col = (ch == '\t') ? ((location.col + 8U) & (~7U)) : (location.col + 1);
 
         if (ch == '\r' || ch == '\n') {
             if (ch == '\r' && istr.peek() == '\n')
                 istr.get();
-            ++location.line;
+            if (cend() && cend()->op == '\\') {
+                ++multiline;
+                deleteToken(end());
+            } else {
+                location.line += multiline + 1;
+                multiline = 0U;
+            }
             location.col = 0;
 
-            std::string lastLine;
-            for (const Token *tok = cend(); sameline(tok,cend()); tok = tok->previous) {
-                if (tok->comment)
-                    continue;
-                if (!lastLine.empty())
-                    lastLine = ' ' + lastLine;
-                lastLine = (tok->str[0] == '\"' ? std::string("%str%") : tok->str) + lastLine;
-            }
-
-            if (lastLine == "# file %str%") {
+            if (lastLine() == "# file %str%") {
                 loc.push(location);
                 location.file = cend()->str.substr(1U, cend()->str.size() - 2U);
                 location.line = 1U;
             }
 
             // #endfile
-            if (lastLine == "# endfile" && !loc.empty()) {
+            if (lastLine() == "# endfile" && !loc.empty()) {
                 location = loc.top();
                 loc.pop();
             }
@@ -435,6 +434,18 @@ void simplecpp::TokenList::constFoldQuestionOp(Token *tok) {
         deleteToken(condTok);
         tok = tok1;
     }
+}
+
+std::string simplecpp::TokenList::lastLine() const {
+    std::string ret;
+    for (const Token *tok = cend(); sameline(tok,cend()); tok = tok->previous) {
+        if (tok->comment)
+            continue;
+        if (!ret.empty())
+            ret = ' ' + ret;
+        ret = (tok->str[0] == '\"' ? std::string("%str%") : tok->str) + ret;
+    }
+    return ret;
 }
 
 namespace simplecpp {

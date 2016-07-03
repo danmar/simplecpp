@@ -275,6 +275,15 @@ void locationFile() {
     ASSERT_EQUALS(3U, tok ? tok->location.line : 0U);
 }
 
+void multiline() {
+    const char code[] = "#define A \\\n"
+                        "1\n"
+                        "A";
+    std::map<std::string, std::string> nodefines;
+    std::istringstream istr(code);
+    ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr), nodefines).stringify());
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -355,6 +364,8 @@ int main() {
     elif();
 
     locationFile();
+
+    multiline();
 
     tokenMacro1();
     tokenMacro2();
