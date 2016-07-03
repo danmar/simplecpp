@@ -64,7 +64,7 @@ static std::string testConstFold(const char code[]) {
 void comment() {
     const char code[] = "// abc";
     ASSERT_EQUALS("// abc", readfile(code));
-    ASSERT_EQUALS("// abc", preprocess(code));
+    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void constFold() {

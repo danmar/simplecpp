@@ -773,7 +773,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     const Token * const endToken = gotoNextLine(rawtok);
                     for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {
                         if (!tok->name) {
-                            expr.push_back(new Token(tok->str,tok->location));
+                            expr.push_back(new Token(*tok));
                             continue;
                         }
 
@@ -801,7 +801,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                             for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                                 expr.push_back(new Token(tok2->str, tok->location));
                         } else {
-                            expr.push_back(new Token(tok->str, tok->location));
+                            expr.push_back(new Token(*tok));
                         }
                     }
                     conditionIsTrue = evaluate(expr);
@@ -845,7 +845,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
             }
         }
 
-        output.push_back(new Token(*rawtok));
+        if (!rawtok->comment)
+            output.push_back(new Token(*rawtok));
         rawtok = rawtok->next;
     }
     return output;
