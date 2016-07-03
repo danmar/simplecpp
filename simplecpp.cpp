@@ -494,6 +494,8 @@ public:
         const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
 
+        usageList.push_back(loc);
+
         if (args.empty()) {
             Token * const token1 = output->end();
             for (const Token *macro = valueToken; macro != endToken;) {
@@ -551,8 +553,16 @@ public:
         return parametertokens[args.size()]->next;
     }
 
-    TokenString name() const {
+    const TokenString &name() const {
         return nameToken->str;
+    }
+
+    const Location &defineLocation() const {
+        return nameToken->location;
+    }
+
+    const std::list<Location> &usage() const {
+        return usageList;
     }
 
 private:
@@ -684,6 +694,7 @@ private:
     const Token *valueToken;
     const Token *endToken;
     TokenList tokenListDefine;
+    mutable std::list<Location> usageList;
 };
 }
 
@@ -758,7 +769,7 @@ const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
 }
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList)
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList, std::list<struct MacroUsage> *macroUsage)
 {
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
@@ -900,5 +911,20 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
             output.push_back(new Token(*rawtok));
         rawtok = rawtok->next;
     }
+
+    if (macroUsage) {
+        for (std::map<TokenString, simplecpp::Macro>::const_iterator macroIt = macros.begin(); macroIt != macros.end(); ++macroIt) {
+            const Macro &macro = macroIt->second;
+            const std::list<Location> &usage = macro.usage();
+            for (std::list<Location>::const_iterator usageIt = usage.begin(); usageIt != usage.end(); ++usageIt) {
+                struct MacroUsage mu;
+                mu.macroName = macro.name();
+                mu.macroLocation = macro.defineLocation();
+                mu.useLocation = *usageIt;
+                macroUsage->push_back(mu);
+            }
+        }
+    }
+
     return output;
 }

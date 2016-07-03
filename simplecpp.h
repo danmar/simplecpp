@@ -152,7 +152,13 @@ struct Output {
     std::string msg;
 };
 
-TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList = 0);
+struct MacroUsage {
+    std::string macroName;
+    Location    macroLocation;
+    Location    useLocation;
+};
+
+TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif
