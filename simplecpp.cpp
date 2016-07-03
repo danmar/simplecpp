@@ -29,7 +29,7 @@ const simplecpp::TokenString ENDIF("endif");
 const simplecpp::TokenString UNDEF("undef");
 
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
-    return (tok1 && tok2 && tok1->location.line == tok2->location.line);
+    return (tok1 && tok2 && tok1->location.line == tok2->location.line && tok1->location.file == tok2->location.file);
 }
 }
 
@@ -763,7 +763,8 @@ int evaluate(simplecpp::TokenList expr) {
 
 const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
     const unsigned int line = tok->location.line;
-    while (tok && tok->location.line == line)
+    const std::string &file = tok->location.file;
+    while (tok && tok->location.line == line && tok->location.file == file)
         tok = tok->next;
     return tok;
 }
