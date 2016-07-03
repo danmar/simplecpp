@@ -26,6 +26,7 @@ const simplecpp::TokenString DEFINED("defined");
 const simplecpp::TokenString ELSE("else");
 const simplecpp::TokenString ELIF("elif");
 const simplecpp::TokenString ENDIF("endif");
+const simplecpp::TokenString UNDEF("undef");
 
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
     return (tok1 && tok2 && tok1->location.line == tok2->location.line);
@@ -865,6 +866,14 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
             } else if (rawtok->str == ENDIF) {
                 if (ifstates.size() > 1U)
                     ifstates.pop();
+            } else if (rawtok->str == UNDEF) {
+                if (ifstates.top() == TRUE) {
+                    const Token *tok = rawtok->next;
+                    while (sameline(rawtok,tok) && tok->comment)
+                        tok = tok->next;
+                    if (sameline(rawtok, tok))
+                        macros.erase(tok->str);
+                }
             }
             rawtok = gotoNextLine(rawtok);
             if (!rawtok)

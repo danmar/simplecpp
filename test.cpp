@@ -340,6 +340,17 @@ void tokenMacro4() {
     ASSERT_EQUALS("A", tok->macro);
 }
 
+void undef() {
+    std::istringstream istr("#define A\n"
+                            "#undef A\n"
+                            "#ifdef A\n"
+                            "123\n"
+                            "#endif");
+    const std::map<std::string, std::string> nodefines;
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
+    ASSERT_EQUALS("", tokenList.stringify());
+}
+
 int main() {
     comment();
     constFold();
@@ -371,5 +382,8 @@ int main() {
     tokenMacro2();
     tokenMacro3();
     tokenMacro4();
+
+    undef();
+
     return 0;
 }
