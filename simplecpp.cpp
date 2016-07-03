@@ -32,6 +32,23 @@ bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
 }
 }
 
+void simplecpp::Location::adjust(const std::string &str) {
+    if (str.find_first_of("\r\n") == std::string::npos) {
+        col += str.size() - 1U;
+        return;
+    }
+
+    for (unsigned int i = 0U; i < str.size(); ++i) {
+        col++;
+        if (str[i] == '\n' || str[i] == '\r') {
+            col = 0;
+            line++;
+            if (str[i] == '\r' && (i+1)<str.size() && str[i+1]=='\n')
+                ++i;
+        }
+    }
+}
+
 simplecpp::TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
 simplecpp::TokenList::TokenList(std::istringstream &istr, const std::string &filename)
@@ -74,14 +91,27 @@ void simplecpp::TokenList::push_back(Token *tok) {
 }
 
 void simplecpp::TokenList::dump() const {
+    std::cout << stringify();
+}
+
+std::string simplecpp::TokenList::stringify() const {
+    std::ostringstream ret;
+    Location loc;
     for (const Token *tok = cbegin(); tok; tok = tok->next) {
-        if (!sameline(tok->previous, tok))
-            std::cout << std::endl;
-        else if (tok->previous)
-            std::cout << ' ';
-        std::cout << tok->str;
+        while (tok->location.line > loc.line) {
+            ret << '\n';
+            loc.line++;
+        }
+
+        if (sameline(tok->previous, tok))
+            ret << ' ';
+
+        ret << tok->str;
+
+        loc.adjust(tok->str);
     }
-    std::cout << std::endl;
+
+    return ret.str();
 }
 
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename)
@@ -156,11 +186,12 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             currentToken = "/*";
             (void)istr.get();
             ch = (unsigned char)istr.get();
-            while (istr.good() && (ch != '/' || currentToken.size() <= 3 || currentToken[currentToken.size()-1U] != '*')) {
+            while (istr.good()) {
                 currentToken += ch;
+                if (currentToken.size() >= 4U && currentToken.substr(currentToken.size() - 2U) == "*/")
+                    break;
                 ch = (unsigned char)istr.get();
             }
-            currentToken += '/';
         }
 
         // string / char literal
@@ -183,7 +214,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         }
 
         push_back(new Token(currentToken, location));
-        location.col += currentToken.size() - 1U;
+        location.adjust(currentToken);
     }
 
     combineOperators();

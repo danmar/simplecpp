@@ -15,7 +15,10 @@ namespace simplecpp {
 
 typedef std::string TokenString;
 
-struct Location {
+class Location {
+public:
+    Location() : line(1U), col(0U) {}
+
     std::string file;
     unsigned int line;
     unsigned int col;
@@ -28,6 +31,8 @@ struct Location {
         }
         return *this;
     }
+
+    void adjust(const std::string &str);
 };
 
 class Token {
@@ -84,6 +89,7 @@ public:
     void push_back(Token *token);
 
     void dump() const;
+    std::string stringify() const;
 
     void readfile(std::istream &istr, const std::string &filename=std::string());
     void constFold();

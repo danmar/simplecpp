@@ -25,28 +25,14 @@ static int assertEquals(const unsigned int expected, const unsigned int actual, 
     return (expected == actual);
 }
 
-static std::string stringify(const simplecpp::TokenList &tokens) {
-    std::ostringstream out;
-
-    for (const simplecpp::Token *tok = tokens.cbegin(); tok; tok = tok->next) {
-        if (tok->previous && tok->previous->location.line != tok->location.line)
-            out << '\n';
-        else if (tok->previous)
-            out << ' ';
-        out << tok->str;
-    }
-
-    return out.str();
-}
-
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
-    return stringify(simplecpp::TokenList(istr));
+    return simplecpp::TokenList(istr).stringify();
 }
 
 static std::string preprocess(const char code[], const std::map<std::string,std::string> &defines) {
     std::istringstream istr(code);
-    return stringify(simplecpp::preprocess(simplecpp::TokenList(istr),defines));
+    return simplecpp::preprocess(simplecpp::TokenList(istr),defines).stringify();
 }
 
 static std::string preprocess(const char code[]) {
@@ -58,13 +44,14 @@ static std::string testConstFold(const char code[]) {
     std::istringstream istr(code);
     simplecpp::TokenList expr(istr);
     expr.constFold();
-    return stringify(expr);
+    return expr.stringify();
 }
 
 void comment() {
-    const char code[] = "// abc";
-    ASSERT_EQUALS("// abc", readfile(code));
-    ASSERT_EQUALS("", preprocess(code));
+    ASSERT_EQUALS("// abc", readfile("// abc"));
+    ASSERT_EQUALS("", preprocess("// abc"));
+    ASSERT_EQUALS("/*\n\n*/abc", readfile("/*\n\n*/abc"));
+    ASSERT_EQUALS("\n\nabc", preprocess("/*\n\n*/abc"));
 }
 
 static void constFold() {
@@ -84,7 +71,7 @@ void define1() {
     ASSERT_EQUALS("# define A 1 + 2\n"
                   "a = A + 3 ;",
                   readfile(code));
-    ASSERT_EQUALS("a = 1 + 2 + 3 ;",
+    ASSERT_EQUALS("\na = 1 + 2 + 3 ;",
                   preprocess(code));
 }
 
@@ -94,7 +81,7 @@ void define2() {
     ASSERT_EQUALS("# define ADD ( A , B ) A + B\n"
                   "ADD ( 1 + 2 , 3 ) ;",
                   readfile(code));
-    ASSERT_EQUALS("1 + 2 + 3 ;",
+    ASSERT_EQUALS("\n1 + 2 + 3 ;",
                   preprocess(code));
 }
 
@@ -106,7 +93,7 @@ void define3() {
                   "# define B A\n"
                   "A B",
                   readfile(code));
-    ASSERT_EQUALS("123 123",
+    ASSERT_EQUALS("\n\n123 123",
                   preprocess(code));
 }
 
@@ -118,14 +105,14 @@ void define4() {
                   "# define B ( C ) A\n"
                   "A B ( 1 )",
                   readfile(code));
-    ASSERT_EQUALS("123 123",
+    ASSERT_EQUALS("\n\n123 123",
                   preprocess(code));
 }
 
 void define5() {
     const char code[] = "#define add(x,y) x+y\n"
                         "add(add(1,2),3)";
-    ASSERT_EQUALS("1 + 2 + 3", preprocess(code));
+    ASSERT_EQUALS("\n1 + 2 + 3", preprocess(code));
 }
 
 void error() {
@@ -143,14 +130,15 @@ void hash() {
     const char code[] = "#define a(x) #x\n"
                         "a(1)\n"
                         "a(2+3)";
-    ASSERT_EQUALS("\"1\"\n"
+    ASSERT_EQUALS("\n"
+                  "\"1\"\n"
                   "\"2+3\"", preprocess(code));
 }
 
 void hashhash() { // #4703
     const char code[] = "#define MACRO( A, B, C ) class A##B##C##Creator {};\n"
                         "MACRO( B\t, U , G )";
-    ASSERT_EQUALS("class BUGCreator { } ;", preprocess(code));
+    ASSERT_EQUALS("\nclass BUGCreator { } ;", preprocess(code));
 }
 
 void ifdef1() {
@@ -159,7 +147,7 @@ void ifdef1() {
                         "#else\n"
                         "2\n"
                         "#endif";
-    ASSERT_EQUALS("2", preprocess(code));
+    ASSERT_EQUALS("\n\n\n2", preprocess(code));
 }
 
 void ifdef2() {
@@ -169,7 +157,7 @@ void ifdef2() {
                         "#else\n"
                         "2\n"
                         "#endif";
-    ASSERT_EQUALS("1", preprocess(code));
+    ASSERT_EQUALS("\n\n1", preprocess(code));
 }
 
 void ifndef() {
@@ -182,7 +170,7 @@ void ifndef() {
     const char code2[] = "#ifndef A\n"
                          "1\n"
                          "#endif";
-    ASSERT_EQUALS("1", preprocess(code2));
+    ASSERT_EQUALS("\n1", preprocess(code2));
 }
 
 void ifA() {
@@ -193,7 +181,7 @@ void ifA() {
 
     std::map<std::string,std::string> defines;
     defines["A"] = "1";
-    ASSERT_EQUALS("X", preprocess(code, defines));
+    ASSERT_EQUALS("\nX", preprocess(code, defines));
 }
 
 void ifDefined() {
@@ -203,7 +191,7 @@ void ifDefined() {
     std::map<std::string, std::string> defs;
     ASSERT_EQUALS("", preprocess(code, defs));
     defs["A"] = "1";
-    ASSERT_EQUALS("X", preprocess(code, defs));
+    ASSERT_EQUALS("\nX", preprocess(code, defs));
 }
 
 void ifLogical() {
@@ -214,10 +202,10 @@ void ifLogical() {
     ASSERT_EQUALS("", preprocess(code, defs));
     defs.clear();
     defs["A"] = "1";
-    ASSERT_EQUALS("X", preprocess(code, defs));
+    ASSERT_EQUALS("\nX", preprocess(code, defs));
     defs.clear();
     defs["B"] = "1";
-    ASSERT_EQUALS("X", preprocess(code, defs));
+    ASSERT_EQUALS("\nX", preprocess(code, defs));
 }
 
 void ifSizeof() {
@@ -226,7 +214,7 @@ void ifSizeof() {
                         "#else\n"
                         "Y\n"
                         "#endif";
-    ASSERT_EQUALS("X", preprocess(code));
+    ASSERT_EQUALS("\nX", preprocess(code));
 }
 
 void elif() {
@@ -237,7 +225,7 @@ void elif() {
                          "#else\n"
                          "3\n"
                          "#endif";
-    ASSERT_EQUALS("1", preprocess(code1));
+    ASSERT_EQUALS("\n1", preprocess(code1));
 
     const char code2[] = "#ifdef X\n"
                          "1\n"
@@ -246,7 +234,7 @@ void elif() {
                          "#else\n"
                          "3\n"
                          "#endif";
-    ASSERT_EQUALS("2", preprocess(code2));
+    ASSERT_EQUALS("\n\n\n2", preprocess(code2));
 
     const char code3[] = "#ifdef X\n"
                          "1\n"
@@ -255,7 +243,7 @@ void elif() {
                          "#else\n"
                          "3\n"
                          "#endif";
-    ASSERT_EQUALS("3", preprocess(code3));
+    ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code3));
 }
 
 void locationFile() {
