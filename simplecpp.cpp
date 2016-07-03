@@ -121,6 +121,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
     unsigned int multiline = 0U;
 
+    const Token *oldLastToken = nullptr;
+
     Location location;
     location.file = filename;
     location.line = 1U;
@@ -143,16 +145,21 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             }
             location.col = 0;
 
-            if (lastLine() == "# file %str%") {
-                loc.push(location);
-                location.file = cend()->str.substr(1U, cend()->str.size() - 2U);
-                location.line = 1U;
-            }
+            if (oldLastToken != cend()) {
+                oldLastToken = cend();
+                const std::string lastline(lastLine());
 
-            // #endfile
-            if (lastLine() == "# endfile" && !loc.empty()) {
-                location = loc.top();
-                loc.pop();
+                if (lastline == "# file %str%") {
+                    loc.push(location);
+                    location.file = cend()->str.substr(1U, cend()->str.size() - 2U);
+                    location.line = 1U;
+                }
+
+                // #endfile
+                else if (lastline == "# endfile" && !loc.empty()) {
+                    location = loc.top();
+                    loc.pop();
+                }
             }
 
             continue;
