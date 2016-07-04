@@ -521,7 +521,7 @@ public:
         // Parse macro-call
         const std::vector<const Token*> parametertokens(getMacroParameters(nameToken));
         if (parametertokens.size() != args.size() + 1U) {
-            throw wrongNumberOfParameters(nameToken->location);
+            throw wrongNumberOfParameters(nameToken->location, name());
         }
 
         // expand
@@ -536,11 +536,11 @@ public:
                 // A##B => AB
                 Token *A = output->end();
                 if (!A)
-                    throw invalidHashHash(tok->location);
+                    throw invalidHashHash(tok->location, name());
                 tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
                 Token *next = A->next;
                 if (!next)
-                    throw invalidHashHash(tok->location);
+                    throw invalidHashHash(tok->location, name());
                 A->setstr(A->str + A->next->str);
                 A->flags();
                 output->deleteToken(A->next);
@@ -577,11 +577,11 @@ public:
     };
 
     struct wrongNumberOfParameters : public Error {
-        wrongNumberOfParameters(const Location &loc) : Error(loc, "wrong number of parameters") {}
+        wrongNumberOfParameters(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Wrong number of parameters for macro \'" + macroName + "\'.") {}
     };
 
     struct invalidHashHash : public Error {
-        invalidHashHash(const Location &loc) : Error(loc, "invalid ##") {}
+        invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Invalid ## usage when expanding \'" + macroName + "\'.") {}
     };
 private:
     Token *newMacroToken(const TokenString &str, const Location &loc, bool rawCode) const {
@@ -820,6 +820,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                             err.msg += ' ';
                         err.msg += tok->str;
                     }
+                    err.msg = '#' + rawtok->str + ' ' + err.msg;
                     outputList->push_back(err);
                 }
                 return TokenList();
