@@ -143,10 +143,10 @@ private:
     Token *last;
 };
 
-struct Output {
+struct PreprocessorOutput {
     enum Type {
-        ERROR, /* #error */
-        WARNING /* #warning */
+        ERROR, /* error */
+        WARNING /* warning */
     } type;
     Location location;
     std::string msg;
@@ -158,7 +158,7 @@ struct MacroUsage {
     Location    useLocation;
 };
 
-TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct PreprocessorOutput> *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif

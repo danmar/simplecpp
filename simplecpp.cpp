@@ -521,9 +521,7 @@ public:
         // Parse macro-call
         const std::vector<const Token*> parametertokens(getMacroParameters(nameToken));
         if (parametertokens.size() != args.size() + 1U) {
-            // wrong number of parameters => don't expand
-            output->push_back(newMacroToken(nameToken->str, loc, false));
-            return nameToken->next;
+            throw wrongNumberOfParameters(nameToken->location);
         }
 
         // expand
@@ -538,11 +536,11 @@ public:
                 // A##B => AB
                 Token *A = output->end();
                 if (!A)
-                    throw std::runtime_error("invalid ##");
+                    throw invalidHashHash(tok->location);
                 tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
                 Token *next = A->next;
                 if (!next)
-                    throw std::runtime_error("invalid ##");
+                    throw invalidHashHash(tok->location);
                 A->setstr(A->str + A->next->str);
                 A->flags();
                 output->deleteToken(A->next);
@@ -572,6 +570,19 @@ public:
         return usageList;
     }
 
+    struct Error {
+        Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
+        Location location;
+        std::string what;
+    };
+
+    struct wrongNumberOfParameters : public Error {
+        wrongNumberOfParameters(const Location &loc) : Error(loc, "wrong number of parameters") {}
+    };
+
+    struct invalidHashHash : public Error {
+        invalidHashHash(const Location &loc) : Error(loc, "invalid ##") {}
+    };
 private:
     Token *newMacroToken(const TokenString &str, const Location &loc, bool rawCode) const {
         Token *tok = new Token(str,loc);
@@ -777,7 +788,7 @@ const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
 }
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct Output> *outputList, std::list<struct MacroUsage> *macroUsage)
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct simplecpp::PreprocessorOutput> *outputList, std::list<struct MacroUsage> *macroUsage)
 {
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
@@ -801,8 +812,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
 
             if (ifstates.top() == TRUE && (rawtok->str == ERROR || rawtok->str == WARNING)) {
                 if (outputList) {
-                    Output err;
-                    err.type = rawtok->str == ERROR ? Output::ERROR : Output::WARNING;
+                    simplecpp::PreprocessorOutput err;
+                    err.type = rawtok->str == ERROR ? PreprocessorOutput::ERROR : PreprocessorOutput::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
                         if (!err.msg.empty() && std::isalnum(tok->str[0]))
@@ -910,7 +921,17 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
             std::map<TokenString,Macro>::const_iterator macro = macros.find(rawtok->str);
             if (macro != macros.end()) {
                 std::set<TokenString> expandedmacros;
-                rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
+                try {
+                    rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
+                } catch (const simplecpp::Macro::Error &err) {
+                    PreprocessorOutput out;
+                    out.type = PreprocessorOutput::ERROR;
+                    out.location = err.location;
+                    out.msg = err.what;
+                    if (outputList)
+                        outputList->push_back(out);
+                    return TokenList();
+                }
                 continue;
             }
         }
