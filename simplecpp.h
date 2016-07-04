@@ -74,10 +74,21 @@ private:
     TokenString string;
 };
 
+struct Output {
+    enum Type {
+        ERROR, /* error */
+        WARNING /* warning */
+    } type;
+    Location location;
+    std::string msg;
+};
+
+typedef std::list<struct Output> OutputList;
+
 class TokenList {
 public:
     TokenList();
-    TokenList(std::istringstream &istr, const std::string &filename=std::string());
+    TokenList(std::istringstream &istr, const std::string &filename=std::string(), OutputList *outputList = 0);
     TokenList(const TokenList &other);
     ~TokenList();
     void operator=(const TokenList &other);
@@ -91,7 +102,7 @@ public:
     void dump() const;
     std::string stringify() const;
 
-    void readfile(std::istream &istr, const std::string &filename=std::string());
+    void readfile(std::istream &istr, const std::string &filename=std::string(), OutputList *outputList = 0);
     void constFold();
 
     Token *begin() {
@@ -143,22 +154,14 @@ private:
     Token *last;
 };
 
-struct PreprocessorOutput {
-    enum Type {
-        ERROR, /* error */
-        WARNING /* warning */
-    } type;
-    Location location;
-    std::string msg;
-};
-
 struct MacroUsage {
     std::string macroName;
     Location    macroLocation;
     Location    useLocation;
 };
 
-TokenList preprocess(const TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct PreprocessorOutput> *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+typedef std::map<std::string, std::string> Defines;
+TokenList preprocess(const TokenList &rawtokens, const Defines &defines, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif

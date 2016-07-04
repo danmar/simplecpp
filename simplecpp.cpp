@@ -52,9 +52,9 @@ void simplecpp::Location::adjust(const std::string &str) {
 
 simplecpp::TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
-simplecpp::TokenList::TokenList(std::istringstream &istr, const std::string &filename)
+simplecpp::TokenList::TokenList(std::istringstream &istr, const std::string &filename, OutputList *outputList)
     : first(nullptr), last(nullptr) {
-    readfile(istr,filename);
+    readfile(istr,filename,outputList);
 }
 
 simplecpp::TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr) {
@@ -115,7 +115,7 @@ std::string simplecpp::TokenList::stringify() const {
     return ret.str();
 }
 
-void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename)
+void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
 
@@ -211,6 +211,16 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     ch = (unsigned char)istr.get();
                     currentToken += ch;
                     ch = (unsigned char)istr.get();
+                } else if (istr.good() && (ch == '\r' || ch == '\n')) {
+                    clear();
+                    if (outputList) {
+                        Output err;
+                        err.type = Output::ERROR;
+                        err.location = location;
+                        err.msg = "invalid " + std::string(currentToken[0] == '\'' ? "char" : "string") + " literal.";
+                        outputList->push_back(err);
+                    }
+                    return;
                 }
             } while (istr.good() && ch != '\"' && ch != '\'');
             currentToken += ch;
@@ -788,7 +798,7 @@ const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
 }
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const std::map<std::string,std::string> &defines, std::list<struct simplecpp::PreprocessorOutput> *outputList, std::list<struct MacroUsage> *macroUsage)
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const Defines &defines, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
 {
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
@@ -812,8 +822,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
 
             if (ifstates.top() == TRUE && (rawtok->str == ERROR || rawtok->str == WARNING)) {
                 if (outputList) {
-                    simplecpp::PreprocessorOutput err;
-                    err.type = rawtok->str == ERROR ? PreprocessorOutput::ERROR : PreprocessorOutput::WARNING;
+                    simplecpp::Output err;
+                    err.type = rawtok->str == ERROR ? Output::ERROR : Output::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
                         if (!err.msg.empty() && std::isalnum(tok->str[0]))
@@ -925,8 +935,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 try {
                     rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
                 } catch (const simplecpp::Macro::Error &err) {
-                    PreprocessorOutput out;
-                    out.type = PreprocessorOutput::ERROR;
+                    Output out;
+                    out.type = Output::ERROR;
                     out.location = err.location;
                     out.msg = err.what;
                     if (outputList)
