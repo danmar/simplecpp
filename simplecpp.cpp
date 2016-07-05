@@ -274,10 +274,32 @@ void simplecpp::TokenList::combineOperators() {
     for (Token *tok = begin(); tok; tok = tok->next) {
         if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
             continue;
-        if (std::strchr("=!<>", tok->op) && tok->next->op == '=') {
+        if (tok->next->op == '=' && std::strchr("=!<>+-*/%&|^", tok->op)) {
             tok->setstr(tok->str + "=");
             deleteToken(tok->next);
         } else if ((tok->op == '|' || tok->op == '&') && tok->op == tok->next->op) {
+            tok->setstr(tok->str + tok->next->str);
+            deleteToken(tok->next);
+        } else if (tok->op == ':' && tok->next->op == ':') {
+            tok->setstr(tok->str + tok->next->str);
+            deleteToken(tok->next);
+        } else if (tok->op == '-' && tok->next->op == '>') {
+            tok->setstr(tok->str + tok->next->str);
+            deleteToken(tok->next);
+        } else if ((tok->op == '<' || tok->op == '>') && tok->op == tok->next->op) {
+            tok->setstr(tok->str + tok->next->str);
+            deleteToken(tok->next);
+            if (tok->next && tok->next->op == '=') {
+                tok->setstr(tok->str + tok->next->str);
+                deleteToken(tok->next);
+            }
+        } else if ((tok->op == '+' || tok->op == '-') && tok->op == tok->next->op) {
+            if (tok->location.col + 1U != tok->next->location.col)
+                continue;
+            if (tok->previous && tok->previous->number)
+                continue;
+            if (tok->next->next && tok->next->next->number)
+                continue;
             tok->setstr(tok->str + tok->next->str);
             deleteToken(tok->next);
         }

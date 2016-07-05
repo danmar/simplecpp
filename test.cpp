@@ -286,6 +286,12 @@ void multiline() {
     ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr), nodefines).stringify());
 }
 
+void increment() {
+    ASSERT_EQUALS("; ++ x ;", preprocess(";++x;"));
+    ASSERT_EQUALS("; x ++ ;", preprocess(";x++;"));
+    ASSERT_EQUALS("1 + + 2", preprocess("1++2"));
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -380,6 +386,8 @@ int main() {
     locationFile();
 
     multiline();
+
+    increment();
 
     tokenMacro1();
     tokenMacro2();
