@@ -359,42 +359,57 @@ void undef() {
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
-int main() {
-    comment();
+static void testcase(const char name[], void (*f)(), int argc, char **argv)
+{
+    if (argc == 1)
+        f();
+    else {
+        for (int i = 1; i < argc; i++) {
+             if (std::strcmp(name, argv[i])==0)
+                 f();
+        }
+    }
+}
 
-    constFold();
-    define1();
-    define2();
-    define3();
-    define4();
-    define5();
+#define TEST_CASE(F)    testcase(#F, F, argc, argv)
 
-    error();
+int main(int argc, char **argv) {
 
-    hash();
-    hashhash();
+    TEST_CASE(comment);
 
-    ifdef1();
-    ifdef2();
-    ifndef();
-    ifA();
-    ifDefined();
-    ifLogical();
-    ifSizeof();
-    elif();
+    TEST_CASE(constFold);
+    TEST_CASE(define1);
+    TEST_CASE(define2);
+    TEST_CASE(define3);
+    TEST_CASE(define4);
+    TEST_CASE(define5);
 
-    locationFile();
+    TEST_CASE(error);
 
-    multiline();
+    TEST_CASE(hash);
+    TEST_CASE(hashhash);
 
-    increment();
+    TEST_CASE(ifdef1);
+    TEST_CASE(ifdef2);
+    TEST_CASE(ifndef);
+    TEST_CASE(ifA);
+    TEST_CASE(ifDefined);
+    TEST_CASE(ifLogical);
+    TEST_CASE(ifSizeof);
+    TEST_CASE(elif);
 
-    tokenMacro1();
-    tokenMacro2();
-    tokenMacro3();
-    tokenMacro4();
+    TEST_CASE(locationFile);
 
-    undef();
+    TEST_CASE(multiline);
+
+    TEST_CASE(increment);
+
+    TEST_CASE(tokenMacro1);
+    TEST_CASE(tokenMacro2);
+    TEST_CASE(tokenMacro3);
+    TEST_CASE(tokenMacro4);
+
+    TEST_CASE(undef);
 
     return 0;
 }
