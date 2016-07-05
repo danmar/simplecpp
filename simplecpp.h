@@ -33,6 +33,14 @@ public:
     }
 
     void adjust(const std::string &str);
+
+    bool operator<(const Location &rhs) const {
+        if (file != rhs.file)
+            return file < rhs.file;
+        if (line != rhs.line)
+            return line < rhs.line;
+        return col < rhs.col;
+    }
 };
 
 class Token {
