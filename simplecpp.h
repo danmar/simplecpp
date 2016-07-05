@@ -51,7 +51,7 @@ public:
 
     void flags() {
         name = (str[0] == '_' || std::isalpha(str[0]));
-        comment = (str[0] == '/');
+        comment = (str.compare(0, 2, "//") == 0 || str.compare(0, 2, "/*") == 0);
         number = std::isdigit(str[0]) || (str.size() > 1U && str[0] == '-' && std::isdigit(str[1]));
         op = (str.size() == 1U) ? str[0] : '\0';
     }

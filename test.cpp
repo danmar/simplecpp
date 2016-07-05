@@ -52,6 +52,8 @@ void comment() {
     ASSERT_EQUALS("", preprocess("// abc"));
     ASSERT_EQUALS("/*\n\n*/abc", readfile("/*\n\n*/abc"));
     ASSERT_EQUALS("\n\nabc", preprocess("/*\n\n*/abc"));
+    ASSERT_EQUALS("* p = a / * b / * c ;", readfile("*p=a/ *b/ *c;"));
+    ASSERT_EQUALS("* p = a / * b / * c ;", preprocess("*p=a/ *b/ *c;"));
 }
 
 static void constFold() {
@@ -353,6 +355,7 @@ void undef() {
 
 int main() {
     comment();
+
     constFold();
     define1();
     define2();
