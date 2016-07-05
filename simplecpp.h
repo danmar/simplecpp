@@ -1,5 +1,19 @@
 /*
- * preprocessor library by daniel marjamäki
+ * simplecpp - A simple and high-fidelity C/C++ preprocessor library
+ * Copyright (C) 2016 Daniel Marjamäki.
+ *
+ * This library is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef simplecppH
@@ -15,6 +29,9 @@ namespace simplecpp {
 
 typedef std::string TokenString;
 
+/**
+ * Location in source code
+ */
 class Location {
 public:
     Location() : line(1U), col(0U) {}
@@ -32,6 +49,7 @@ public:
         return *this;
     }
 
+    /** increment this location by string */
     void adjust(const std::string &str);
 
     bool operator<(const Location &rhs) const {
@@ -43,6 +61,10 @@ public:
     }
 };
 
+/**
+ * token class.
+ * @todo don't use std::string representation - for both memory and performance reasons
+ */
 class Token {
 public:
     Token(const TokenString &s, const Location &location) :
@@ -82,6 +104,7 @@ private:
     TokenString string;
 };
 
+/** Output from preprocessor */
 struct Output {
     enum Type {
         ERROR, /* error */
@@ -93,6 +116,7 @@ struct Output {
 
 typedef std::list<struct Output> OutputList;
 
+/** List of tokens. */
 class TokenList {
 public:
     TokenList();
@@ -162,6 +186,7 @@ private:
     Token *last;
 };
 
+/** Tracking how macros are used */
 struct MacroUsage {
     std::string macroName;
     Location    macroLocation;
@@ -169,6 +194,21 @@ struct MacroUsage {
 };
 
 typedef std::map<std::string, std::string> Defines;
+
+/**
+ * Preprocess
+ *
+ * Preprocessing is done in two steps currently:
+ *   const simplecpp::TokenList tokens1 = simplecpp::TokenList(f);
+ *   const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, defines);
+ * 
+ * The "tokens1" will contain tokens for comments and for preprocessor directives. And there is no preprocessing done.
+ * This "tokens1" can be used if you need to see what comments/directives there are. Or what code is hidden in #if.
+ *
+ * The "tokens2" will have normal preprocessor output. No comments nor directives are seen.
+ *
+ * @todo simplify interface
+ */
 TokenList preprocess(const TokenList &rawtokens, const Defines &defines, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
