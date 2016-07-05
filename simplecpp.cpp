@@ -269,7 +269,7 @@ void simplecpp::TokenList::constFold() {
         constFoldComparison(tok);
         constFoldBitwise(tok);
         constFoldLogicalOp(tok);
-        constFoldQuestionOp(tok);
+        constFoldQuestionOp(&tok);
 
         // If there is no '(' we are done with the constant folding
         if (tok->op != '(')
@@ -362,8 +362,9 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok) {
         else
             continue;
 
+        tok = tok->previous;
         tok->setstr(std::to_string(result));
-        deleteToken(tok->previous);
+        deleteToken(tok->next);
         deleteToken(tok->next);
     }
 }
@@ -383,8 +384,9 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok) {
         else
             continue;
 
+        tok = tok->previous;
         tok->setstr(std::to_string(result));
-        deleteToken(tok->previous);
+        deleteToken(tok->next);
         deleteToken(tok->next);
     }
 }
@@ -414,8 +416,9 @@ void simplecpp::TokenList::constFoldComparison(Token *tok) {
         else
             continue;
 
+        tok = tok->previous;
         tok->setstr(std::to_string(result));
-        deleteToken(tok->previous);
+        deleteToken(tok->next);
         deleteToken(tok->next);
     }
 }
@@ -438,8 +441,9 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
                 result = (std::stoll(tok->previous->str) ^ std::stoll(tok->next->str));
             else if (tok->op == '|')
                 result = (std::stoll(tok->previous->str) | std::stoll(tok->next->str));
+            tok = tok->previous;
             tok->setstr(std::to_string(result));
-            deleteToken(tok->previous);
+            deleteToken(tok->next);
             deleteToken(tok->next);
         }
     }
@@ -462,15 +466,17 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
         else
             continue;
 
+        tok = tok->previous;
         tok->setstr(std::to_string(result));
-        deleteToken(tok->previous);
+        deleteToken(tok->next);
         deleteToken(tok->next);
     }
 }
 
-void simplecpp::TokenList::constFoldQuestionOp(Token *tok) {
-    Token * const tok1 = tok;
-    for (; tok && tok->op != ')'; tok = tok->next) {
+void simplecpp::TokenList::constFoldQuestionOp(Token **tok1) {
+    bool gotoTok1 = false;
+    for (Token *tok = *tok1; tok && tok->op != ')'; tok =  gotoTok1 ? *tok1 : tok->next) {
+        gotoTok1 = false;
         if (tok->str != "?")
             continue;
         if (!tok->previous || !tok->previous->number)
@@ -482,11 +488,13 @@ void simplecpp::TokenList::constFoldQuestionOp(Token *tok) {
         Token * const condTok = tok->previous;
         Token * const trueTok = tok->next;
         Token * const falseTok = trueTok->next->next;
+        if (condTok == *tok1)
+            *tok1 = (condTok->str != "0" ? trueTok : falseTok);
         deleteToken(condTok->next); // ?
         deleteToken(trueTok->next); // :
         deleteToken(condTok->str == "0" ? trueTok : falseTok);
         deleteToken(condTok);
-        tok = tok1;
+        gotoTok1 = true;
     }
 }
 

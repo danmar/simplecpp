@@ -178,7 +178,7 @@ private:
     void constFoldComparison(Token *tok);
     void constFoldBitwise(Token *tok);
     void constFoldLogicalOp(Token *tok);
-    void constFoldQuestionOp(Token *tok);
+    void constFoldQuestionOp(Token **tok);
 
     std::string lastLine() const;
 
