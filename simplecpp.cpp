@@ -562,7 +562,48 @@ public:
             for (const Token *macro = valueToken; macro != endToken;) {
                 const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
                 if (it != macros.end() && expandedmacros.find(macro->str) == expandedmacros.end()) {
-                    macro = it->second.expand(output, loc, macro, macros, expandedmacros);
+                    try {
+                        const Token *macro2 = it->second.expand(output, loc, macro, macros, expandedmacros);
+                        while (macro != macro2 && macro != endToken)
+                            macro = macro->next;
+                    } catch (const wrongNumberOfParameters &e) {
+                        if (sameline(macro,macro->next) && macro->next->op == '(') {
+                            TokenList tokens;
+                            unsigned int par = 1U;
+                            for (const Token *tok = macro->next->next; sameline(macro,tok); tok = tok->next) {
+                                if (tok->op == '(')
+                                    ++par;
+                                else if (tok->op == ')') {
+                                    --par;
+                                    if (par == 0U)
+                                        break;
+                                }
+                            }
+                            if (par > 0U) {
+                                TokenList tokens;
+                                const Token *tok;
+                                for (tok = macro; sameline(macro,tok); tok = tok->next)
+                                    tokens.push_back(new Token(*tok));
+                                for (tok = nameToken->next; tok; tok = tok->next) {
+                                    tokens.push_back(new Token(tok->str, macro->location));
+                                    if (tok->op == '(')
+                                        ++par;
+                                    else if (tok->op == ')') {
+                                        --par;
+                                        if (par == 0U)
+                                          break;
+                                    }
+                                }
+                                if (par == 0U) {
+                                    it->second.expand(output, loc, tokens.cbegin(), macros, expandedmacros);
+                                    return tok->next;
+                                }
+                            }
+                        } else {
+                            output->push_back(newMacroToken(macro->str, loc, false));
+                            macro = macro->next;
+                        }
+                    }
                 } else {
                     output->push_back(newMacroToken(macro->str, loc, false));
                     macro = macro->next;
@@ -573,7 +614,7 @@ public:
         }
 
         // Parse macro-call
-        const std::vector<const Token*> parametertokens(getMacroParameters(nameToken));
+        const std::vector<const Token*> parametertokens(getMacroParameters(nameToken, !expandedmacros1.empty()));
         if (parametertokens.size() != args.size() + 1U) {
             throw wrongNumberOfParameters(nameToken->location, name());
         }
@@ -697,14 +738,14 @@ private:
         return ~0U;
     }
 
-    std::vector<const Token *> getMacroParameters(const Token *nameToken) const {
+    std::vector<const Token *> getMacroParameters(const Token *nameToken, bool def) const {
         if (!nameToken->next || nameToken->next->op != '(')
             return std::vector<const Token *>();
 
         std::vector<const Token *> parametertokens;
         parametertokens.push_back(nameToken->next);
         unsigned int par = 0U;
-        for (const Token *tok = nameToken->next->next; tok; tok = tok->next) {
+        for (const Token *tok = nameToken->next->next; def ? sameline(tok,nameToken) : (tok != nullptr); tok = tok->next) {
             if (tok->op == '(')
                 ++par;
             else if (tok->op == ')') {

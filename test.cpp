@@ -117,6 +117,13 @@ void define5() {
     ASSERT_EQUALS("\n1 + 2 + 3", preprocess(code));
 }
 
+void define6() {
+  const char code[] = "#define A(x) (x+1)\n"
+                      "#define B    A(\n"
+                      "B(i))";
+  ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
+}
+
 void error() {
     std::istringstream istr("#error    hello world! \n");
     std::map<std::string, std::string> defines;
@@ -383,6 +390,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define3);
     TEST_CASE(define4);
     TEST_CASE(define5);
+    TEST_CASE(define6);
 
     TEST_CASE(error);
 
