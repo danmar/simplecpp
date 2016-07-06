@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -201,7 +201,7 @@ typedef std::map<std::string, std::string> Defines;
  * Preprocessing is done in two steps currently:
  *   const simplecpp::TokenList tokens1 = simplecpp::TokenList(f);
  *   const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, defines);
- * 
+ *
  * The "tokens1" will contain tokens for comments and for preprocessor directives. And there is no preprocessing done.
  * This "tokens1" can be used if you need to see what comments/directives there are. Or what code is hidden in #if.
  *

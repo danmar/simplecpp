@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -231,7 +231,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                         Output err;
                         err.type = Output::ERROR;
                         err.location = location;
-                        err.msg = "invalid " + std::string(currentToken[0] == '\'' ? "char" : "string") + " literal.";
+                        err.msg = std::string("No pair for character (") + currentToken[0] + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
                         outputList->push_back(err);
                     }
                     return;
@@ -591,7 +591,7 @@ public:
                                     else if (tok->op == ')') {
                                         --par;
                                         if (par == 0U)
-                                          break;
+                                            break;
                                     }
                                 }
                                 if (par == 0U) {
@@ -697,6 +697,7 @@ private:
 
     void parseDefine(const Token *nametoken) {
         nameToken = nametoken;
+        vaargs = false;
         if (!nameToken) {
             valueToken = endToken = nullptr;
             args.clear();
@@ -711,6 +712,16 @@ private:
             args.clear();
             const Token *argtok = nameToken->next->next;
             while (argtok && argtok->op != ')') {
+                if (argtok->op == '.' &&
+                        argtok->next && argtok->next->op == '.' &&
+                        argtok->next->next && argtok->next->next->op == '.' &&
+                        argtok->next->next->next && argtok->next->next->next->op == ')') {
+                    vaargs = true;
+                    if (!argtok->previous->name)
+                        args.push_back("__VA_ARGS__");
+                    argtok = argtok->next->next->next; // goto ')'
+                    break;
+                }
                 if (argtok->op != ',')
                     args.push_back(argtok->str);
                 argtok = argtok->next;
@@ -755,7 +766,7 @@ private:
                 }
                 --par;
             }
-            else if (par == 0U && tok->op == ',')
+            else if (par == 0U && tok->op == ',' && (!vaargs || parametertokens.size() + 1U < args.size()))
                 parametertokens.push_back(tok);
         }
         return parametertokens;
@@ -804,6 +815,7 @@ private:
 
     const Token *nameToken;
     std::vector<TokenString> args;
+    bool vaargs;
     const Token *valueToken;
     const Token *endToken;
     TokenList tokenListDefine;

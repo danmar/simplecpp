@@ -118,10 +118,16 @@ void define5() {
 }
 
 void define6() {
-  const char code[] = "#define A(x) (x+1)\n"
-                      "#define B    A(\n"
-                      "B(i))";
-  ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
+    const char code[] = "#define A(x) (x+1)\n"
+                        "#define B    A(\n"
+                        "B(i))";
+    ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
+}
+
+void define_va_args_1() {
+    const char code[] = "#define A(fmt...) dostuff(fmt)\n"
+                        "A(1,2);";
+    ASSERT_EQUALS("\ndostuff ( 1 , 2 ) ;", preprocess(code));
 }
 
 void error() {
@@ -366,14 +372,14 @@ void undef() {
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
-static void testcase(const char name[], void (*f)(), int argc, char **argv)
+static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
 {
     if (argc == 1)
         f();
     else {
         for (int i = 1; i < argc; i++) {
-             if (std::strcmp(name, argv[i])==0)
-                 f();
+            if (name == argv[i])
+                f();
         }
     }
 }
@@ -391,6 +397,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define4);
     TEST_CASE(define5);
     TEST_CASE(define6);
+    TEST_CASE(define_va_args_1);
 
     TEST_CASE(error);
 
