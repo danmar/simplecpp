@@ -130,6 +130,12 @@ void define_va_args_1() {
     ASSERT_EQUALS("\ndostuff ( 1 , 2 ) ;", preprocess(code));
 }
 
+void define_va_args_2() {
+    const char code[] = "#define A(X,...) X(#__VA_ARGS__)\n"
+                        "A(f,123);";
+    ASSERT_EQUALS("\nf ( \"123\" ) ;", preprocess(code));
+}
+
 void error() {
     std::istringstream istr("#error    hello world! \n");
     std::map<std::string, std::string> defines;
@@ -398,6 +404,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define5);
     TEST_CASE(define6);
     TEST_CASE(define_va_args_1);
+    TEST_CASE(define_va_args_2);
 
     TEST_CASE(error);
 

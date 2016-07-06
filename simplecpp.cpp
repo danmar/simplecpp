@@ -766,7 +766,7 @@ private:
                 }
                 --par;
             }
-            else if (par == 0U && tok->op == ',' && (!vaargs || parametertokens.size() + 1U < args.size()))
+            else if (par == 0U && tok->op == ',' && (!vaargs || parametertokens.size() < args.size()))
                 parametertokens.push_back(tok);
         }
         return parametertokens;
