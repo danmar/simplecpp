@@ -124,6 +124,12 @@ void define6() {
     ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
 }
 
+void define7() {
+    const char code[] = "#define A() 1\n"
+                        "A()";
+    ASSERT_EQUALS("\n1", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -403,6 +409,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define4);
     TEST_CASE(define5);
     TEST_CASE(define6);
+    TEST_CASE(define7);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
 

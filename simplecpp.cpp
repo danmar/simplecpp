@@ -557,7 +557,7 @@ public:
 
         usageList.push_back(loc);
 
-        if (args.empty()) {
+        if (!functionLike()) {
             Token * const token1 = output->end();
             for (const Token *macro = valueToken; macro != endToken;) {
                 const std::map<TokenString, Macro>::const_iterator it = macros.find(macro->str);
@@ -615,7 +615,7 @@ public:
 
         // Parse macro-call
         const std::vector<const Token*> parametertokens(getMacroParameters(nameToken, !expandedmacros1.empty()));
-        if (parametertokens.size() != args.size() + 1U) {
+        if (parametertokens.size() != args.size() + (args.empty() ? 2U : 1U)) {
             throw wrongNumberOfParameters(nameToken->location, name());
         }
 
@@ -650,7 +650,7 @@ public:
             }
         }
 
-        return parametertokens[args.size()]->next;
+        return parametertokens.back()->next;
     }
 
     const TokenString &name() const {
@@ -697,7 +697,7 @@ private:
 
     void parseDefine(const Token *nametoken) {
         nameToken = nametoken;
-        vaargs = false;
+        variadic = false;
         if (!nameToken) {
             valueToken = endToken = nullptr;
             args.clear();
@@ -705,10 +705,7 @@ private:
         }
 
         // function like macro..
-        if (nameToken->next &&
-                nameToken->next->op == '(' &&
-                sameline(nameToken, nameToken->next) &&
-                nameToken->next->location.col == nameToken->location.col + nameToken->str.size()) {
+        if (functionLike()) {
             args.clear();
             const Token *argtok = nameToken->next->next;
             while (argtok && argtok->op != ')') {
@@ -716,7 +713,7 @@ private:
                         argtok->next && argtok->next->op == '.' &&
                         argtok->next->next && argtok->next->next->op == '.' &&
                         argtok->next->next->next && argtok->next->next->next->op == ')') {
-                    vaargs = true;
+                    variadic = true;
                     if (!argtok->previous->name)
                         args.push_back("__VA_ARGS__");
                     argtok = argtok->next->next->next; // goto ')'
@@ -766,7 +763,7 @@ private:
                 }
                 --par;
             }
-            else if (par == 0U && tok->op == ',' && (!vaargs || parametertokens.size() < args.size()))
+            else if (par == 0U && tok->op == ',' && (!variadic || parametertokens.size() < args.size()))
                 parametertokens.push_back(tok);
         }
         return parametertokens;
@@ -813,9 +810,16 @@ private:
         }
     }
 
+    bool functionLike() const {
+        return nameToken->next &&
+               nameToken->next->op == '(' &&
+               sameline(nameToken, nameToken->next) &&
+               nameToken->next->location.col == nameToken->location.col + nameToken->str.size();
+    }
+
     const Token *nameToken;
     std::vector<TokenString> args;
-    bool vaargs;
+    bool variadic;
     const Token *valueToken;
     const Token *endToken;
     TokenList tokenListDefine;
