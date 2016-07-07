@@ -674,8 +674,16 @@ public:
                 if (!sameline(tok, tok->next))
                     throw invalidHashHash(tok->location, name());
 
-                A->setstr(A->str + expandArgStr(tok->next, parametertokens));
+                const std::string strAB = A->str + expandArgStr(tok->next, parametertokens);
                 tok = tok->next->next;
+
+                output->deleteToken(A);
+
+                TokenList tokens;
+                tokens.push_back(new Token(strAB, tok->location));
+                // TODO: For functionLike macros, push the (...)
+
+                expandToken(output, loc, tokens.cbegin(), macros, expandedmacros1, expandedmacros, parametertokens);
             } else {
                 // #123 => "123"
                 TokenList tokenListHash;
