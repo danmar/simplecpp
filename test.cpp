@@ -47,6 +47,21 @@ static std::string testConstFold(const char code[]) {
     return expr.stringify();
 }
 
+void combineOperators_floatliteral() {
+    ASSERT_EQUALS("1.", preprocess("1."));
+    ASSERT_EQUALS(".1", preprocess(".1"));
+    ASSERT_EQUALS("3.1", preprocess("3.1"));
+    ASSERT_EQUALS("1E7", preprocess("1E7"));
+    ASSERT_EQUALS("1E-7", preprocess("1E-7"));
+    ASSERT_EQUALS("1E+7", preprocess("1E+7"));
+}
+
+void combineOperators_increment() {
+    ASSERT_EQUALS("; ++ x ;", preprocess(";++x;"));
+    ASSERT_EQUALS("; x ++ ;", preprocess(";x++;"));
+    ASSERT_EQUALS("1 + + 2", preprocess("1++2"));
+}
+
 void comment() {
     ASSERT_EQUALS("// abc", readfile("// abc"));
     ASSERT_EQUALS("", preprocess("// abc"));
@@ -318,12 +333,6 @@ void multiline() {
     ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr), nodefines).stringify());
 }
 
-void increment() {
-    ASSERT_EQUALS("; ++ x ;", preprocess(";++x;"));
-    ASSERT_EQUALS("; x ++ ;", preprocess(";x++;"));
-    ASSERT_EQUALS("1 + + 2", preprocess("1++2"));
-}
-
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -407,9 +416,13 @@ static void testcase(const std::string &name, void (*f)(), int argc, char **argv
 
 int main(int argc, char **argv) {
 
+    TEST_CASE(combineOperators_floatliteral);
+    TEST_CASE(combineOperators_increment);
+
     TEST_CASE(comment);
 
     TEST_CASE(constFold);
+
     TEST_CASE(define1);
     TEST_CASE(define2);
     TEST_CASE(define3);
@@ -438,8 +451,6 @@ int main(int argc, char **argv) {
     TEST_CASE(locationFile);
 
     TEST_CASE(multiline);
-
-    TEST_CASE(increment);
 
     TEST_CASE(tokenMacro1);
     TEST_CASE(tokenMacro2);

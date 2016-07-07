@@ -91,6 +91,10 @@ public:
         flags();
     }
 
+    bool isOneOf(const char ops[]) const;
+    bool startsWithOneOf(const char c[]) const;
+    bool endsWithOneOf(const char c[]) const;
+
     char op;
     const TokenString &str;
     TokenString macro;

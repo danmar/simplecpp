@@ -64,6 +64,18 @@ void simplecpp::Location::adjust(const std::string &str) {
     }
 }
 
+bool simplecpp::Token::isOneOf(const char ops[]) const {
+    return (op != '\0') && (std::strchr(ops, op) != 0);
+}
+
+bool simplecpp::Token::startsWithOneOf(const char c[]) const {
+    return std::strchr(c, str[0]) != 0;
+}
+
+bool simplecpp::Token::endsWithOneOf(const char c[]) const {
+    return std::strchr(c, str[str.size() - 1U]) != 0;
+}
+
 simplecpp::TokenList::TokenList() : first(nullptr), last(nullptr) {}
 
 simplecpp::TokenList::TokenList(std::istringstream &istr, const std::string &filename, OutputList *outputList)
@@ -286,9 +298,31 @@ void simplecpp::TokenList::constFold() {
 
 void simplecpp::TokenList::combineOperators() {
     for (Token *tok = begin(); tok; tok = tok->next) {
+        if (tok->op == '.') {
+            // float literals..
+            if (tok->previous && tok->previous->number) {
+                tok->setstr(tok->previous->str + '.');
+                deleteToken(tok->previous);
+                if (tok->next && tok->next->startsWithOneOf("Ee")) {
+                    tok->setstr(tok->str + tok->next->str);
+                    deleteToken(tok->next);
+                }
+            }
+            if (tok->next && tok->next->number) {
+                tok->setstr(tok->str + tok->next->str);
+                deleteToken(tok->next);
+            }
+        }
+        // match: [0-9.]+E [+-] [0-9]+
+        if (tok->number && (tok->str.back() == 'E' || tok->str.back() == 'e') && tok->next && tok->next->isOneOf("+-") && tok->next->next && tok->next->next->number) {
+            tok->setstr(tok->str + tok->next->op + tok->next->next->str);
+            deleteToken(tok->next);
+            deleteToken(tok->next);
+        }
+
         if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
             continue;
-        if (tok->next->op == '=' && std::strchr("=!<>+-*/%&|^", tok->op)) {
+        if (tok->next->op == '=' && tok->isOneOf("=!<>+-*/%&|^")) {
             tok->setstr(tok->str + "=");
             deleteToken(tok->next);
         } else if ((tok->op == '|' || tok->op == '&') && tok->op == tok->next->op) {
@@ -393,7 +427,7 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok) {
 
 void simplecpp::TokenList::constFoldComparison(Token *tok) {
     for (; tok && tok->op != ')'; tok = tok->next) {
-        if (!std::strchr("<>=!", tok->str[0]))
+        if (!tok->startsWithOneOf("<>=!"))
             continue;
         if (!tok->previous || !tok->previous->number)
             continue;
