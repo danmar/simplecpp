@@ -666,13 +666,19 @@ public:
                 Token *A = output->end();
                 if (!A)
                     throw invalidHashHash(tok->location, name());
-                tok = expandToken(output, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
-                Token *next = A->next;
-                if (!next)
+                if (!sameline(tok, tok->next))
                     throw invalidHashHash(tok->location, name());
-                A->setstr(A->str + A->next->str);
-                A->flags();
-                output->deleteToken(A->next);
+
+                TokenList rtokens;
+                if (expandArg(&rtokens, tok->next, parametertokens)) {
+                    std::string s;
+                    for (const Token *rtok = rtokens.cbegin(); rtok; rtok = rtok->next)
+                        s += rtok->str;
+                    A->setstr(A->str + s);
+                } else {
+                    A->setstr(A->str + tok->next->str);
+                }
+                tok = tok->next->next;
             } else {
                 // #123 => "123"
                 TokenList tokenListHash;
@@ -846,6 +852,20 @@ private:
 
         output->push_back(newMacroToken(tok->str, loc, false));
         return tok->next;
+    }
+
+    bool expandArg(TokenList *output, const Token *tok, const std::vector<const Token*> &parametertokens) const {
+        if (!tok->name)
+            return false;
+
+        const unsigned int argnr = getArgNum(tok->str);
+        if (argnr >= args.size())
+            return false;
+
+        for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U]; partok = partok->next)
+            output->push_back(new Token(*partok));
+
+        return true;
     }
 
     bool expandArg(TokenList *output, const Token *tok, const Location &loc, const std::map<TokenString, Macro> &macros, std::set<TokenString> expandedmacros1, std::set<TokenString> expandedmacros, const std::vector<const Token*> &parametertokens) const {

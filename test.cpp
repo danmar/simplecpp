@@ -184,10 +184,17 @@ void hash() {
                   "\"2+3\"", preprocess(code));
 }
 
-void hashhash() { // #4703
+void hashhash1() { // #4703
     const char code[] = "#define MACRO( A, B, C ) class A##B##C##Creator {};\n"
                         "MACRO( B\t, U , G )";
     ASSERT_EQUALS("\nclass BUGCreator { } ;", preprocess(code));
+}
+
+void hashhash2() {
+    const char code[] = "#define A(x) a##x\n"
+                        "#define B 0\n"
+                        "A(B)";
+    ASSERT_EQUALS("\n\naB", preprocess(code));
 }
 
 void ifdef1() {
@@ -437,7 +444,8 @@ int main(int argc, char **argv) {
     TEST_CASE(error);
 
     TEST_CASE(hash);
-    TEST_CASE(hashhash);
+    TEST_CASE(hashhash1);
+    TEST_CASE(hashhash2);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
