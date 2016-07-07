@@ -602,7 +602,6 @@ public:
                             macro = macro->next;
                     } catch (const wrongNumberOfParameters &) {
                         if (sameline(macro,macro->next) && macro->next->op == '(') {
-                            TokenList tokens;
                             unsigned int par = 1U;
                             for (const Token *tok = macro->next->next; sameline(macro,tok); tok = tok->next) {
                                 if (tok->op == '(')
