@@ -230,15 +230,12 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         // string / char literal
         else if (ch == '\"' || ch == '\'') {
             const char ch1 = ch;
-            do {
-                currentToken += ch;
+            currentToken += ch1;
+            ch = 0;
+            while (ch != ch1) {
                 ch = (unsigned char)istr.get();
-                if (istr.good() && ch == '\\') {
-                    currentToken += ch;
-                    ch = (unsigned char)istr.get();
-                    currentToken += ch;
-                    ch = (unsigned char)istr.get();
-                } else if (istr.good() && (ch == '\r' || ch == '\n')) {
+                currentToken += ch;
+                if (!istr.good() || (ch == '\r' || ch == '\n')) {
                     clear();
                     if (outputList) {
                         Output err;
@@ -249,8 +246,9 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     }
                     return;
                 }
-            } while (istr.good() && ch != ch1);
-            currentToken += ch;
+                if (ch == '\\')
+                    currentToken += (unsigned char)istr.get();
+            }
         }
 
         else {

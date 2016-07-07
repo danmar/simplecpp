@@ -357,6 +357,7 @@ void multiline() {
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
+    ASSERT_EQUALS("( \"\\\\\\\\\" )", readfile("(\"\\\\\\\\\")"));
 }
 
 void tokenMacro1() {
