@@ -354,6 +354,11 @@ void multiline() {
     ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr), nodefines).stringify());
 }
 
+void readfile_string() {
+    const char code[] = "A = \"abc\'def\"";
+    ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -475,6 +480,8 @@ int main(int argc, char **argv) {
     TEST_CASE(locationFile);
 
     TEST_CASE(multiline);
+
+    TEST_CASE(readfile_string);
 
     TEST_CASE(tokenMacro1);
     TEST_CASE(tokenMacro2);
