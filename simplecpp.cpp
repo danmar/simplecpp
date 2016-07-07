@@ -434,7 +434,7 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
                 continue;
             if (!tok->next || !tok->next->number)
                 continue;
-            int result;
+            long long result;
             if (tok->op == '&')
                 result = (std::stoll(tok->previous->str) & std::stoll(tok->next->str));
             else if (tok->op == '^')
@@ -566,7 +566,7 @@ public:
                         const Token *macro2 = it->second.expand(output, loc, macro, macros, expandedmacros);
                         while (macro != macro2 && macro != endToken)
                             macro = macro->next;
-                    } catch (const wrongNumberOfParameters &e) {
+                    } catch (const wrongNumberOfParameters &) {
                         if (sameline(macro,macro->next) && macro->next->op == '(') {
                             TokenList tokens;
                             unsigned int par = 1U;
@@ -776,20 +776,52 @@ private:
             return tok->next;
         }
 
-        // Not macro parameter..
-        const unsigned int par = getArgNum(tok->str);
-        if (par >= args.size()) {
-            // Macro..
-            const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
-            if (it != macros.end() && expandedmacros1.find(tok->str) == expandedmacros1.end())
-                return it->second.expand(output, loc, tok, macros, expandedmacros);
-
-            output->push_back(newMacroToken(tok->str, loc, false));
+        // Macro parameter..
+        if (expandArg(output, tok, loc, macros, expandedmacros1, expandedmacros, parametertokens))
             return tok->next;
+
+        // Macro..
+        const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+        if (it != macros.end() && expandedmacros1.find(tok->str) == expandedmacros1.end()) {
+            const Macro &calledMacro = it->second;
+            if (!calledMacro.functionLike())
+                return calledMacro.expand(output, loc, tok, macros, expandedmacros);
+            if (!sameline(tok, tok->next) || tok->next->op != '(') {
+                // FIXME: handle this
+                throw wrongNumberOfParameters(tok->location, tok->str);
+            }
+            TokenList tokens;
+            tokens.push_back(new Token(*tok));
+            unsigned int par = 0;
+            const Token *tok2 = tok->next;
+            while (sameline(tok,tok2)) {
+                if (!expandArg(&tokens, tok2, tok2->location, macros, expandedmacros1, expandedmacros, parametertokens))
+                    tokens.push_back(new Token(*tok2));
+                if (tok2->op == '(')
+                    ++par;
+                else if (tok2->op == ')') {
+                    --par;
+                    if (par == 0U)
+                        break;
+                }
+                tok2 = tok2->next;
+            }
+            calledMacro.expand(output, loc, tokens.cbegin(), macros, expandedmacros);
+            return tok2->next;
         }
 
-        // Expand parameter..
-        for (const Token *partok = parametertokens[par]->next; partok != parametertokens[par+1];) {
+        output->push_back(newMacroToken(tok->str, loc, false));
+        return tok->next;
+    }
+
+    bool expandArg(TokenList *output, const Token *tok, const Location &loc, const std::map<TokenString, Macro> &macros, std::set<TokenString> expandedmacros1, std::set<TokenString> expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        if (!tok->name)
+            return false;
+        const unsigned int argnr = getArgNum(tok->str);
+        if (argnr >= args.size())
+            return false;
+
+        for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
             const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
             if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
                 partok = it->second.expand(output, loc, partok, macros, expandedmacros);
@@ -798,8 +830,7 @@ private:
                 partok = partok->next;
             }
         }
-
-        return tok->next;
+        return true;
     }
 
     void setMacro(Token *tok) const {
@@ -989,7 +1020,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                             expr.push_back(new Token(*tok));
                         }
                     }
-                    conditionIsTrue = evaluate(expr);
+                    conditionIsTrue = (evaluate(expr) != 0);
                 }
 
                 if (rawtok->str != ELIF) {

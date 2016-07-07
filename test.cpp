@@ -118,16 +118,23 @@ void define5() {
 }
 
 void define6() {
+    const char code[] = "#define A() 1\n"
+                        "A()";
+    ASSERT_EQUALS("\n1", preprocess(code));
+}
+
+void define_define_1() {
     const char code[] = "#define A(x) (x+1)\n"
                         "#define B    A(\n"
                         "B(i))";
     ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
 }
 
-void define7() {
-    const char code[] = "#define A() 1\n"
-                        "A()";
-    ASSERT_EQUALS("\n1", preprocess(code));
+void define_define_2() {
+    const char code[] = "#define A(m)    n=m\n"
+                        "#define B(x)    A(x)\n"
+                        "B(0)";
+    ASSERT_EQUALS("\n\nn = 0", preprocess(code));
 }
 
 void define_va_args_1() {
@@ -409,7 +416,8 @@ int main(int argc, char **argv) {
     TEST_CASE(define4);
     TEST_CASE(define5);
     TEST_CASE(define6);
-    TEST_CASE(define7);
+    TEST_CASE(define_define_1);
+    TEST_CASE(define_define_2);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
 
