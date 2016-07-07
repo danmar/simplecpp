@@ -656,7 +656,13 @@ public:
         // expand
         for (const Token *tok = valueToken; tok != endToken;) {
             if (tok->op != '#') {
-                tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                // A##B => AB
+                if (tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
+                    output->push_back(newMacroToken(expandArgStr(tok, parametertokens), loc, !expandedmacros1.empty()));
+                    tok = tok->next;
+                } else {
+                    tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                }
                 continue;
             }
 
@@ -669,15 +675,7 @@ public:
                 if (!sameline(tok, tok->next))
                     throw invalidHashHash(tok->location, name());
 
-                TokenList rtokens;
-                if (expandArg(&rtokens, tok->next, parametertokens)) {
-                    std::string s;
-                    for (const Token *rtok = rtokens.cbegin(); rtok; rtok = rtok->next)
-                        s += rtok->str;
-                    A->setstr(A->str + s);
-                } else {
-                    A->setstr(A->str + tok->next->str);
-                }
+                A->setstr(A->str + expandArgStr(tok->next, parametertokens));
                 tok = tok->next->next;
             } else {
                 // #123 => "123"
@@ -885,6 +883,17 @@ private:
             }
         }
         return true;
+    }
+
+    std::string expandArgStr(const Token *tok, const std::vector<const Token *> &parametertokens) const {
+        TokenList tokens;
+        if (expandArg(&tokens, tok, parametertokens)) {
+            std::string s;
+            for (const Token *tok2 = tokens.cbegin(); tok2; tok2 = tok2->next)
+                s += tok2->str;
+            return s;
+        }
+        return tok->str;
     }
 
     void setMacro(Token *tok) const {

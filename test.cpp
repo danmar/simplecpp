@@ -197,6 +197,13 @@ void hashhash2() {
     ASSERT_EQUALS("\n\naB", preprocess(code));
 }
 
+void hashhash3() {
+    const char code[] = "#define A(B) A##B\n"
+                        "#define a(B) A(B)\n"
+                        "a(A(B))";
+    ASSERT_EQUALS("\n\nAAB", preprocess(code));
+}
+
 void ifdef1() {
     const char code[] = "#ifdef A\n"
                         "1\n"
@@ -446,6 +453,7 @@ int main(int argc, char **argv) {
     TEST_CASE(hash);
     TEST_CASE(hashhash1);
     TEST_CASE(hashhash2);
+    TEST_CASE(hashhash3);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
