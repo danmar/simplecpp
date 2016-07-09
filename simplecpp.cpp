@@ -1053,7 +1053,11 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     continue;
                 try {
                     const Macro &macro = Macro(rawtok->previous, files);
-                    macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                    std::map<TokenString, Macro>::iterator it = macros.find(macro.name());
+                    if (it == macros.end())
+                        macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                    else
+                        it->second = macro;
                 } catch (const std::runtime_error &) {
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
