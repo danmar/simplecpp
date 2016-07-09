@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include "simplecpp.h"
 
 #define ASSERT_EQUALS(expected, actual)  assertEquals((expected), (actual), __LINE__);
@@ -438,6 +439,16 @@ void undef() {
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
+void userdef() {
+  std::istringstream istr("#ifdef A\n123\n#endif\n");
+  simplecpp::Defines defines;
+  defines["A"] = "1";
+  std::vector<std::string> files;
+  const simplecpp::TokenList tokens1 = simplecpp::TokenList(istr, files);
+  const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, files, defines);
+  ASSERT_EQUALS("\n123", tokens2.stringify());
+}
+
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
 {
     if (argc == 1)
@@ -501,6 +512,8 @@ int main(int argc, char **argv) {
     TEST_CASE(tokenMacro4);
 
     TEST_CASE(undef);
+
+    TEST_CASE(userdef);
 
     return 0;
 }

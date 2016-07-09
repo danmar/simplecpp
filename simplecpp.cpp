@@ -579,7 +579,7 @@ public:
         parseDefine(tokenListDefine.cbegin());
     }
 
-    Macro(const Macro &macro, std::vector<std::string> &f) : files(f), tokenListDefine(f) {
+    Macro(const Macro &macro) : nameToken(nullptr), files(macro.files), tokenListDefine(macro.files) {
         *this = macro;
     }
 
