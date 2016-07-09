@@ -27,12 +27,14 @@ static int assertEquals(const unsigned int expected, const unsigned int actual, 
 
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
-    return simplecpp::TokenList(istr).stringify();
+    std::vector<std::string> files;
+    return simplecpp::TokenList(istr,files).stringify();
 }
 
 static std::string preprocess(const char code[], const std::map<std::string,std::string> &defines) {
     std::istringstream istr(code);
-    return simplecpp::preprocess(simplecpp::TokenList(istr),defines).stringify();
+    std::vector<std::string> files;
+    return simplecpp::preprocess(simplecpp::TokenList(istr,files),files,defines).stringify();
 }
 
 static std::string preprocess(const char code[]) {
@@ -42,7 +44,8 @@ static std::string preprocess(const char code[]) {
 
 static std::string testConstFold(const char code[]) {
     std::istringstream istr(code);
-    simplecpp::TokenList expr(istr);
+    std::vector<std::string> files;
+    simplecpp::TokenList expr(istr, files);
     expr.constFold();
     return expr.stringify();
 }
@@ -173,11 +176,12 @@ void define_va_args_2() {
 
 void error() {
     std::istringstream istr("#error    hello world! \n");
-    std::map<std::string, std::string> defines;
-    std::list<simplecpp::Output> output;
-    simplecpp::preprocess(simplecpp::TokenList(istr,"test.c"), defines, &output);
+    std::vector<std::string> files;
+    const simplecpp::Defines defines;
+    simplecpp::OutputList output;
+    simplecpp::preprocess(simplecpp::TokenList(istr,files,"test.c"), files, defines, &output);
     ASSERT_EQUALS(simplecpp::Output::ERROR, output.front().type);
-    ASSERT_EQUALS("test.c", output.front().location.file);
+    // TODO ASSERT_EQUALS("test.c", output.front().location.file);
     ASSERT_EQUALS(1U, output.front().location.line);
     ASSERT_EQUALS("#error hello world!", output.front().msg);
 }
@@ -325,23 +329,24 @@ void locationFile() {
                         "3\n"
                         "#endfile\n";
     std::istringstream istr(code);
-    const simplecpp::TokenList &tokens = simplecpp::TokenList(istr);
+    std::vector<std::string> files;
+    const simplecpp::TokenList &tokens = simplecpp::TokenList(istr,files);
 
     const simplecpp::Token *tok = tokens.cbegin();
 
     while (tok && tok->str != "1")
         tok = tok->next;
-    ASSERT_EQUALS("a.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS("a.h", tok ? tok->location.file() : "");
     ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
 
     while (tok && tok->str != "2")
         tok = tok->next;
-    ASSERT_EQUALS("b.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS("b.h", tok ? tok->location.file() : "");
     ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
 
     while (tok && tok->str != "3")
         tok = tok->next;
-    ASSERT_EQUALS("a.h", tok ? tok->location.file : std::string(""));
+    ASSERT_EQUALS("a.h", tok ? tok->location.file() : "");
     ASSERT_EQUALS(3U, tok ? tok->location.line : 0U);
 }
 
@@ -349,9 +354,10 @@ void multiline() {
     const char code[] = "#define A \\\n"
                         "1\n"
                         "A";
-    std::map<std::string, std::string> nodefines;
+    const simplecpp::Defines nodefines;
     std::istringstream istr(code);
-    ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr), nodefines).stringify());
+    std::vector<std::string> files;
+    ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines).stringify());
 }
 
 void readfile_string() {
@@ -363,18 +369,20 @@ void readfile_string() {
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
-    std::map<std::string, std::string> nodefines;
+    const simplecpp::Defines nodefines;
+    std::vector<std::string> files;
     std::istringstream istr(code);
-    const simplecpp::TokenList &tokenList = simplecpp::preprocess(simplecpp::TokenList(istr), nodefines);
+    const simplecpp::TokenList &tokenList = simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines);
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
 void tokenMacro2() {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "ADD(1,2)";
-    std::map<std::string, std::string> nodefines;
+    const simplecpp::Defines nodefines;
+    std::vector<std::string> files;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("", tok->macro);
@@ -390,9 +398,10 @@ void tokenMacro3() {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "#define FRED  1\n"
                         "ADD(FRED,2)";
-    std::map<std::string, std::string> nodefines;
+    const simplecpp::Defines nodefines;
+    std::vector<std::string> files;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("FRED", tok->macro);
@@ -408,9 +417,10 @@ void tokenMacro4() {
     const char code[] = "#define A B\n"
                         "#define B 1\n"
                         "A";
-    std::map<std::string, std::string> nodefines;
+    const simplecpp::Defines nodefines;
+    std::vector<std::string> files;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("A", tok->macro);
@@ -422,8 +432,9 @@ void undef() {
                             "#ifdef A\n"
                             "123\n"
                             "#endif");
-    const std::map<std::string, std::string> nodefines;
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr), nodefines));
+    const simplecpp::Defines nodefines;
+    std::vector<std::string> files;
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr, files), files, nodefines));
     ASSERT_EQUALS("", tokenList.stringify());
 }
 

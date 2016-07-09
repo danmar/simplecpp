@@ -43,7 +43,7 @@ const simplecpp::TokenString ENDIF("endif");
 const simplecpp::TokenString UNDEF("undef");
 
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
-    return (tok1 && tok2 && tok1->location.line == tok2->location.line && tok1->location.file == tok2->location.file);
+    return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
 }
 
@@ -76,14 +76,14 @@ bool simplecpp::Token::endsWithOneOf(const char c[]) const {
     return std::strchr(c, str[str.size() - 1U]) != 0;
 }
 
-simplecpp::TokenList::TokenList() : first(nullptr), last(nullptr) {}
+simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : first(nullptr), last(nullptr), files(filenames) {}
 
-simplecpp::TokenList::TokenList(std::istringstream &istr, const std::string &filename, OutputList *outputList)
-    : first(nullptr), last(nullptr) {
+simplecpp::TokenList::TokenList(std::istringstream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
+    : first(nullptr), last(nullptr), files(filenames) {
     readfile(istr,filename,outputList);
 }
 
-simplecpp::TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr) {
+simplecpp::TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr), files(other.files) {
     *this = other;
 }
 
@@ -123,7 +123,7 @@ void simplecpp::TokenList::dump() const {
 
 std::string simplecpp::TokenList::stringify() const {
     std::ostringstream ret;
-    Location loc;
+    Location loc(files);
     for (const Token *tok = cbegin(); tok; tok = tok->next) {
         while (tok->location.line > loc.line) {
             ret << '\n';
@@ -149,8 +149,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
     const Token *oldLastToken = nullptr;
 
-    Location location;
-    location.file = filename;
+    Location location(files);
+    location.fileIndex = fileIndex(filename);
     location.line = 1U;
     location.col  = 0U;
     while (istr.good()) {
@@ -177,7 +177,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
                 if (lastline == "# file %str%") {
                     loc.push(location);
-                    location.file = cend()->str.substr(1U, cend()->str.size() - 2U);
+                    location.fileIndex = fileIndex(cend()->str.substr(1U, cend()->str.size() - 2U));
                     location.line = 1U;
                 }
 
@@ -238,7 +238,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 if (!istr.good() || (ch == '\r' || ch == '\n')) {
                     clear();
                     if (outputList) {
-                        Output err;
+                        Output err(files);
                         err.type = Output::ERROR;
                         err.location = location;
                         err.msg = std::string("No pair for character (") + currentToken[0] + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
@@ -543,12 +543,22 @@ std::string simplecpp::TokenList::lastLine() const {
     return ret;
 }
 
+unsigned int simplecpp::TokenList::fileIndex(const std::string &filename) {
+    for (unsigned int i = 0; i < files.size(); ++i) {
+        if (files[i] == filename)
+            return i;
+    }
+    files.push_back(filename);
+    return files.size() - 1U;
+}
+
+
 namespace simplecpp {
 class Macro {
 public:
-    Macro() : nameToken(nullptr) {}
+    Macro(std::vector<std::string> &f) : nameToken(nullptr), files(f), tokenListDefine(f) {}
 
-    explicit Macro(const Token *tok) : nameToken(nullptr) {
+    explicit Macro(const Token *tok, std::vector<std::string> &f) : nameToken(nullptr), files(f), tokenListDefine(f) {
         if (sameline(tok->previous, tok))
             throw std::runtime_error("bad macro syntax");
         if (tok->op != '#')
@@ -562,14 +572,14 @@ public:
         parseDefine(tok);
     }
 
-    explicit Macro(const std::string &name, const std::string &value) : nameToken(nullptr) {
+    explicit Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(nullptr), files(f), tokenListDefine(f) {
         const std::string def(name + ' ' + value);
         std::istringstream istr(def);
         tokenListDefine.readfile(istr);
         parseDefine(tokenListDefine.cbegin());
     }
 
-    Macro(const Macro &macro) {
+    Macro(const Macro &macro, std::vector<std::string> &f) : files(f), tokenListDefine(f) {
         *this = macro;
     }
 
@@ -612,7 +622,7 @@ public:
                                 }
                             }
                             if (par > 0U) {
-                                TokenList tokens;
+                                TokenList tokens(files);
                                 const Token *tok;
                                 for (tok = macro; sameline(macro,tok); tok = tok->next)
                                     tokens.push_back(new Token(*tok));
@@ -678,14 +688,14 @@ public:
 
                 output->deleteToken(A);
 
-                TokenList tokens;
+                TokenList tokens(files);
                 tokens.push_back(new Token(strAB, tok->location));
                 // TODO: For functionLike macros, push the (...)
 
                 expandToken(output, loc, tokens.cbegin(), macros, expandedmacros1, expandedmacros, parametertokens);
             } else {
                 // #123 => "123"
-                TokenList tokenListHash;
+                TokenList tokenListHash(files);
                 tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens);
                 std::string s;
                 for (const Token *hashtok = tokenListHash.cbegin(); hashtok; hashtok = hashtok->next)
@@ -834,7 +844,7 @@ private:
                 // FIXME: handle this
                 throw wrongNumberOfParameters(tok->location, tok->str);
             }
-            TokenList tokens;
+            TokenList tokens(files);
             tokens.push_back(new Token(*tok));
             unsigned int par = 0;
             const Token *tok2 = tok->next;
@@ -892,7 +902,7 @@ private:
     }
 
     std::string expandArgStr(const Token *tok, const std::vector<const Token *> &parametertokens) const {
-        TokenList tokens;
+        TokenList tokens(files);
         if (expandArg(&tokens, tok, parametertokens)) {
             std::string s;
             for (const Token *tok2 = tokens.cbegin(); tok2; tok2 = tok2->next)
@@ -922,6 +932,7 @@ private:
     bool variadic;
     const Token *valueToken;
     const Token *endToken;
+    std::vector<std::string> &files;
     TokenList tokenListDefine;
     mutable std::list<Location> usageList;
 };
@@ -992,19 +1003,19 @@ int evaluate(simplecpp::TokenList expr) {
 
 const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
     const unsigned int line = tok->location.line;
-    const std::string &file = tok->location.file;
-    while (tok && tok->location.line == line && tok->location.file == file)
+    const unsigned int file = tok->location.fileIndex;
+    while (tok && tok->location.line == line && tok->location.fileIndex == file)
         tok = tok->next;
     return tok;
 }
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, const Defines &defines, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const Defines &defines, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
 {
     std::map<TokenString, Macro> macros;
     for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
-        const Macro macro(it->first, it->second.empty() ? std::string("1") : it->second);
-        macros[macro.name()] = macro;
+        const Macro macro(it->first, it->second.empty() ? std::string("1") : it->second, files);
+        macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
     }
 
     // TRUE => code in current #if block should be kept
@@ -1014,7 +1025,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
     std::stack<IfState> ifstates;
     ifstates.push(TRUE);
 
-    TokenList output;
+    TokenList output(files);
     for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
             rawtok = rawtok->next;
@@ -1023,7 +1034,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
 
             if (ifstates.top() == TRUE && (rawtok->str == ERROR || rawtok->str == WARNING)) {
                 if (outputList) {
-                    simplecpp::Output err;
+                    simplecpp::Output err(rawtok->location.files);
                     err.type = rawtok->str == ERROR ? Output::ERROR : Output::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
@@ -1034,15 +1045,15 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     err.msg = '#' + rawtok->str + ' ' + err.msg;
                     outputList->push_back(err);
                 }
-                return TokenList();
+                return TokenList(files);
             }
 
             if (rawtok->str == DEFINE) {
                 if (ifstates.top() != TRUE)
                     continue;
                 try {
-                    const Macro &macro = Macro(rawtok->previous);
-                    macros[macro.name()] = macro;
+                    const Macro &macro = Macro(rawtok->previous, files);
+                    macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
                 } catch (const std::runtime_error &) {
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
@@ -1054,7 +1065,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 else if (rawtok->str == IFNDEF)
                     conditionIsTrue = (macros.find(rawtok->next->str) == macros.end());
                 else if (rawtok->str == IF || rawtok->str == ELIF) {
-                    TokenList expr;
+                    TokenList expr(files);
                     const Token * const endToken = gotoNextLine(rawtok);
                     for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {
                         if (!tok->name) {
@@ -1080,7 +1091,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
 
                         const std::map<std::string,Macro>::const_iterator it = macros.find(tok->str);
                         if (it != macros.end()) {
-                            TokenList value;
+                            TokenList value(files);
                             std::set<TokenString> expandedmacros;
                             it->second.expand(&value, tok->location, tok, macros, expandedmacros);
                             for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
@@ -1136,13 +1147,13 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 try {
                     rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
                 } catch (const simplecpp::Macro::Error &err) {
-                    Output out;
+                    Output out(err.location.files);
                     out.type = Output::ERROR;
                     out.location = err.location;
                     out.msg = err.what;
                     if (outputList)
                         outputList->push_back(out);
-                    return TokenList();
+                    return TokenList(files);
                 }
                 continue;
             }
@@ -1158,7 +1169,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
             const Macro &macro = macroIt->second;
             const std::list<Location> &usage = macro.usage();
             for (std::list<Location>::const_iterator usageIt = usage.begin(); usageIt != usage.end(); ++usageIt) {
-                struct MacroUsage mu;
+                struct MacroUsage mu(usageIt->files);
                 mu.macroName = macro.name();
                 mu.macroLocation = macro.defineLocation();
                 mu.useLocation = *usageIt;

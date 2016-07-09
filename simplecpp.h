@@ -24,6 +24,7 @@
 #include <map>
 #include <cctype>
 #include <list>
+#include <vector>
 
 namespace simplecpp {
 
@@ -34,15 +35,11 @@ typedef std::string TokenString;
  */
 class Location {
 public:
-    Location() : line(1U), col(0U) {}
-
-    std::string file;
-    unsigned int line;
-    unsigned int col;
+    Location(const std::vector<std::string> &f) : files(f), fileIndex(0), line(1U), col(0U) {}
 
     Location &operator=(const Location &other) {
         if (this != &other) {
-            file = other.file;
+            fileIndex = other.fileIndex;
             line = other.line;
             col  = other.col;
         }
@@ -53,12 +50,25 @@ public:
     void adjust(const std::string &str);
 
     bool operator<(const Location &rhs) const {
-        if (file != rhs.file)
-            return file < rhs.file;
+        if (fileIndex != rhs.fileIndex)
+            return fileIndex < rhs.fileIndex;
         if (line != rhs.line)
             return line < rhs.line;
         return col < rhs.col;
     }
+
+    bool sameline(const Location &other) const {
+        return fileIndex == other.fileIndex && line == other.line;
+    }
+
+    std::string file() const {
+        return fileIndex < files.size() ? files[fileIndex] : std::string("");
+    }
+
+    const std::vector<std::string> &files;
+    unsigned int fileIndex;
+    unsigned int line;
+    unsigned int col;
 };
 
 /**
@@ -110,6 +120,7 @@ private:
 
 /** Output from preprocessor */
 struct Output {
+    Output(const std::vector<std::string> &files) : type(ERROR), location(files) {}
     enum Type {
         ERROR, /* error */
         WARNING /* warning */
@@ -123,8 +134,8 @@ typedef std::list<struct Output> OutputList;
 /** List of tokens. */
 class TokenList {
 public:
-    TokenList();
-    TokenList(std::istringstream &istr, const std::string &filename=std::string(), OutputList *outputList = 0);
+    TokenList(std::vector<std::string> &filenames);
+    TokenList(std::istringstream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = 0);
     TokenList(const TokenList &other);
     ~TokenList();
     void operator=(const TokenList &other);
@@ -186,12 +197,16 @@ private:
 
     std::string lastLine() const;
 
+    unsigned int fileIndex(const std::string &filename);
+
     Token *first;
     Token *last;
+    std::vector<std::string> &files;
 };
 
 /** Tracking how macros are used */
 struct MacroUsage {
+    MacroUsage(const std::vector<std::string> &f) : macroLocation(f), useLocation(f) {}
     std::string macroName;
     Location    macroLocation;
     Location    useLocation;
@@ -213,7 +228,7 @@ typedef std::map<std::string, std::string> Defines;
  *
  * @todo simplify interface
  */
-TokenList preprocess(const TokenList &rawtokens, const Defines &defines, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+TokenList preprocess(const TokenList &rawtokens, std::vector<std::string> &files, const Defines &defines, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif
