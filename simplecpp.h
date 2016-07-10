@@ -77,8 +77,8 @@ public:
  */
 class Token {
 public:
-    Token(const TokenString &s, const Location &location) :
-        str(string), location(location), previous(nullptr), next(nullptr), string(s)
+    Token(const TokenString &s, const Location &loc) :
+        str(string), location(loc), previous(nullptr), next(nullptr), string(s)
     {
         flags();
     }
