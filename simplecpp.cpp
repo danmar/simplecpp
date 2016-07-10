@@ -466,7 +466,7 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
                 result = (std::stoll(tok->previous->str) & std::stoll(tok->next->str));
             else if (tok->op == '^')
                 result = (std::stoll(tok->previous->str) ^ std::stoll(tok->next->str));
-            else if (tok->op == '|')
+            else /*if (tok->op == '|')*/
                 result = (std::stoll(tok->previous->str) | std::stoll(tok->next->str));
             tok = tok->previous;
             tok->setstr(std::to_string(result));
@@ -488,10 +488,8 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
         int result;
         if (tok->str == "||")
             result = (std::stoll(tok->previous->str) || std::stoll(tok->next->str));
-        else if (tok->str == "&&")
+        else /*if (tok->str == "&&")*/
             result = (std::stoll(tok->previous->str) && std::stoll(tok->next->str));
-        else
-            continue;
 
         tok = tok->previous;
         tok->setstr(std::to_string(result));
@@ -1111,7 +1109,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     conditionIsTrue = (macros.find(rawtok->next->str) != macros.end());
                 else if (rawtok->str == IFNDEF)
                     conditionIsTrue = (macros.find(rawtok->next->str) == macros.end());
-                else if (rawtok->str == IF || rawtok->str == ELIF) {
+                else /*if (rawtok->str == IF || rawtok->str == ELIF)*/ {
                     TokenList expr(files);
                     const Token * const endToken = gotoNextLine(rawtok);
                     for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {
