@@ -440,13 +440,13 @@ void undef() {
 }
 
 void userdef() {
-  std::istringstream istr("#ifdef A\n123\n#endif\n");
-  simplecpp::Defines defines;
-  defines["A"] = "1";
-  std::vector<std::string> files;
-  const simplecpp::TokenList tokens1 = simplecpp::TokenList(istr, files);
-  const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, files, defines);
-  ASSERT_EQUALS("\n123", tokens2.stringify());
+    std::istringstream istr("#ifdef A\n123\n#endif\n");
+    simplecpp::Defines defines;
+    defines["A"] = "1";
+    std::vector<std::string> files;
+    const simplecpp::TokenList tokens1 = simplecpp::TokenList(istr, files);
+    const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, files, defines);
+    ASSERT_EQUALS("\n123", tokens2.stringify());
 }
 
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
