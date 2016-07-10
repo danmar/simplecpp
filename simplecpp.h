@@ -135,7 +135,7 @@ typedef std::list<struct Output> OutputList;
 class TokenList {
 public:
     TokenList(std::vector<std::string> &filenames);
-    TokenList(std::istringstream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = 0);
+    TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = 0);
     TokenList(const TokenList &other);
     ~TokenList();
     void operator=(const TokenList &other);

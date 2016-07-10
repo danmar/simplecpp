@@ -26,13 +26,19 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <fstream>
 #include <iostream>
 #include <stack>
 
 namespace {
 const simplecpp::TokenString DEFINE("define");
+const simplecpp::TokenString UNDEF("undef");
+
+const simplecpp::TokenString INCLUDE("include");
+
 const simplecpp::TokenString ERROR("error");
 const simplecpp::TokenString WARNING("warning");
+
 const simplecpp::TokenString IF("if");
 const simplecpp::TokenString IFDEF("ifdef");
 const simplecpp::TokenString IFNDEF("ifndef");
@@ -40,7 +46,6 @@ const simplecpp::TokenString DEFINED("defined");
 const simplecpp::TokenString ELSE("else");
 const simplecpp::TokenString ELIF("elif");
 const simplecpp::TokenString ENDIF("endif");
-const simplecpp::TokenString UNDEF("undef");
 
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
@@ -78,7 +83,7 @@ bool simplecpp::Token::endsWithOneOf(const char c[]) const {
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : first(nullptr), last(nullptr), files(filenames) {}
 
-simplecpp::TokenList::TokenList(std::istringstream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
+simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
     : first(nullptr), last(nullptr), files(filenames) {
     readfile(istr,filename,outputList);
 }
@@ -1025,8 +1030,17 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
     std::stack<IfState> ifstates;
     ifstates.push(TRUE);
 
+    std::list<TokenList> includes;
+    std::stack<const Token *> includetokenstack;
+
     TokenList output(files);
-    for (const Token *rawtok = rawtokens.cbegin(); rawtok;) {
+    for (const Token *rawtok = rawtokens.cbegin(); rawtok || !includetokenstack.empty();) {
+        if (rawtok == nullptr) {
+            rawtok = includetokenstack.top();
+            includetokenstack.pop();
+            continue;
+        }
+
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
             rawtok = rawtok->next;
             if (!rawtok || !rawtok->name)
@@ -1059,6 +1073,19 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     else
                         it->second = macro;
                 } catch (const std::runtime_error &) {
+                }
+            } else if (rawtok->str == INCLUDE) {
+                if (ifstates.top() == TRUE) {
+                    const std::string filename(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
+                    std::ifstream f(filename);
+                    if (f.is_open()) {
+                        includes.push_back(TokenList(f, files, filename));
+                        includetokenstack.push(gotoNextLine(rawtok));
+                        rawtok = includes.back().cbegin();
+                        continue;
+                    } else {
+                        // TODO: Write warning message
+                    }
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
                 bool conditionIsTrue;
@@ -1133,8 +1160,6 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 }
             }
             rawtok = gotoNextLine(rawtok);
-            if (!rawtok)
-                break;
             continue;
         }
 
