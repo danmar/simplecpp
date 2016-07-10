@@ -234,30 +234,19 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         // string / char literal
         else if (ch == '\"' || ch == '\'') {
-            const char ch1 = ch;
-            currentToken += ch1;
-            ch = 0;
-            while (ch != ch1) {
-                ch = (unsigned char)istr.get();
-                currentToken += ch;
-                if (!istr.good() || (ch == '\r' || ch == '\n')) {
-                    clear();
-                    if (outputList) {
-                        Output err(files);
-                        err.type = Output::ERROR;
-                        err.location = location;
-                        err.msg = std::string("No pair for character (") + currentToken[0] + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
-                        outputList->push_back(err);
-                    }
-                    return;
-                }
-                if (ch == '\\')
-                    currentToken += (unsigned char)istr.get();
-            }
+            currentToken = readUntil(istr,location,ch,ch,outputList);
+            if (currentToken.size() < 2U)
+                return;
         }
 
         else {
             currentToken += ch;
+        }
+
+        if (currentToken == "<" && lastLine() == "# include") {
+            currentToken = readUntil(istr, location, '<', '>', outputList);
+            if (currentToken.size() < 2U)
+                return;
         }
 
         push_back(new Token(currentToken, location));
@@ -534,6 +523,33 @@ void simplecpp::TokenList::constFoldQuestionOp(Token **tok1) {
         deleteToken(condTok);
         gotoTok1 = true;
     }
+}
+
+std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList) {
+    std::string ret;
+    ret += start;
+
+    char ch = 0;
+    while (ch != end && ch != '\r' && ch != '\n' && istr.good()) {
+        ch = (unsigned char)istr.get();
+        ret += ch;
+        if (ch == '\\')
+            ret += (unsigned char)istr.get();
+    }
+
+    if (!istr.good() || ch != end) {
+        clear();
+        if (outputList) {
+            Output err(files);
+            err.type = Output::ERROR;
+            err.location = location;
+            err.msg = std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
+            outputList->push_back(err);
+        }
+        return "";
+    }
+
+    return ret;
 }
 
 std::string simplecpp::TokenList::lastLine() const {

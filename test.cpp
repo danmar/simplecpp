@@ -361,6 +361,16 @@ void multiline() {
     ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr,files), files, nodefines).stringify());
 }
 
+void include1() {
+    const char code[] = "#include \"A.h\"\n";
+    ASSERT_EQUALS("# include \"A.h\"", readfile(code));
+}
+
+void include2() {
+    const char code[] = "#include <A.h>\n";
+    ASSERT_EQUALS("# include <A.h>", readfile(code));
+}
+
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
@@ -503,6 +513,9 @@ int main(int argc, char **argv) {
     TEST_CASE(locationFile);
 
     TEST_CASE(multiline);
+
+    TEST_CASE(include1);
+    TEST_CASE(include2);
 
     TEST_CASE(readfile_string);
 

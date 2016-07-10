@@ -195,6 +195,8 @@ private:
     void constFoldLogicalOp(Token *tok);
     void constFoldQuestionOp(Token **tok);
 
+    std::string readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList);
+
     std::string lastLine() const;
 
     unsigned int fileIndex(const std::string &filename);
