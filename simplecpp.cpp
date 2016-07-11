@@ -523,6 +523,16 @@ void simplecpp::TokenList::constFoldQuestionOp(Token **tok1) {
     }
 }
 
+void simplecpp::TokenList::removeComments() {
+    Token *tok = first;
+    while (tok) {
+        Token *tok1 = tok;
+        tok = tok->next;
+        if (tok1->comment)
+            deleteToken(tok1);
+    }
+}
+
 std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList) {
     std::string ret;
     ret += start;
@@ -1031,6 +1041,9 @@ const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
 
 simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const struct simplecpp::DUI &dui, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
 {
+    simplecpp::TokenList rawtokens2(rawtokens);
+    rawtokens2.removeComments();
+
     std::map<TokenString, Macro> macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
@@ -1056,7 +1069,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
     std::stack<const Token *> includetokenstack;
 
     TokenList output(files);
-    for (const Token *rawtok = rawtokens.cbegin(); rawtok || !includetokenstack.empty();) {
+    for (const Token *rawtok = rawtokens2.cbegin(); rawtok || !includetokenstack.empty();) {
         if (rawtok == nullptr) {
             rawtok = includetokenstack.top();
             includetokenstack.pop();
