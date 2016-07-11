@@ -1029,11 +1029,19 @@ const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
 }
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const Defines &defines, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const struct simplecpp::DUI &dui, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
 {
     std::map<TokenString, Macro> macros;
-    for (std::map<std::string,std::string>::const_iterator it = defines.begin(); it != defines.end(); ++it) {
-        const Macro macro(it->first, it->second.empty() ? std::string("1") : it->second, files);
+    for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
+        const std::string &macrostr = *it;
+        const std::string::size_type eq = macrostr.find("=");
+        const std::string::size_type par = macrostr.find("(");
+        const std::string macroname = macrostr.substr(0, std::min(eq,par));
+        if (dui.undefined.find(macroname) != dui.undefined.end())
+            continue;
+        const std::string lhs(macrostr.substr(0,eq));
+        const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
+        const Macro macro(lhs, rhs, files);
         macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
     }
 
@@ -1081,11 +1089,13 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     continue;
                 try {
                     const Macro &macro = Macro(rawtok->previous, files);
-                    std::map<TokenString, Macro>::iterator it = macros.find(macro.name());
-                    if (it == macros.end())
-                        macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
-                    else
-                        it->second = macro;
+                    if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
+                        std::map<TokenString, Macro>::iterator it = macros.find(macro.name());
+                        if (it == macros.end())
+                            macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                        else
+                            it->second = macro;
+                    }
                 } catch (const std::runtime_error &) {
                 }
             } else if (rawtok->str == INCLUDE) {
@@ -1109,7 +1119,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     conditionIsTrue = (macros.find(rawtok->next->str) != macros.end());
                 else if (rawtok->str == IFNDEF)
                     conditionIsTrue = (macros.find(rawtok->next->str) == macros.end());
-                else /*if (rawtok->str == IF || rawtok->str == ELIF)*/ {
+                else { /*if (rawtok->str == IF || rawtok->str == ELIF)*/
                     TokenList expr(files);
                     const Token * const endToken = gotoNextLine(rawtok);
                     for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {

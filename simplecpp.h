@@ -19,11 +19,12 @@
 #ifndef simplecppH
 #define simplecppH
 
-#include <istream>
-#include <string>
-#include <map>
 #include <cctype>
+#include <istream>
 #include <list>
+#include <map>
+#include <set>
+#include <string>
 #include <vector>
 
 namespace simplecpp {
@@ -214,7 +215,11 @@ struct MacroUsage {
     Location    useLocation;
 };
 
-typedef std::map<std::string, std::string> Defines;
+struct DUI {
+    std::list<std::string> defines;
+    std::set<std::string> undefined;
+    std::list<std::string> includePaths;
+};
 
 /**
  * Preprocess
@@ -230,7 +235,7 @@ typedef std::map<std::string, std::string> Defines;
  *
  * @todo simplify interface
  */
-TokenList preprocess(const TokenList &rawtokens, std::vector<std::string> &files, const Defines &defines, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+TokenList preprocess(const TokenList &rawtokens, std::vector<std::string> &files, const struct DUI &dui, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif
