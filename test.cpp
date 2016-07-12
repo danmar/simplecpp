@@ -347,7 +347,15 @@ void ifoverflow() {
                         "#if 0x7FFFFFFFFFFFFFFF--1\n"
                         "#endif\n"
                         "#if 0xFFFFFFFFFFFFFFFF--1\n"
-                        "#endif\n";
+                        "#endif\n"
+                        "123";
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+void ifdiv0() {
+    const char code[] = "#if 1000/0\n"
+                        "#endif\n"
+                        "123";
     ASSERT_EQUALS("", preprocess(code));
 }
 
@@ -542,6 +550,7 @@ int main(int argc, char **argv) {
     TEST_CASE(elif);
     TEST_CASE(ifif);
     TEST_CASE(ifoverflow);
+    TEST_CASE(ifdiv0);
 
     TEST_CASE(locationFile);
 

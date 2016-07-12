@@ -383,10 +383,15 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok) {
         long long result;
         if (tok->op == '*')
             result = (std::stoll(tok->previous->str) * std::stoll(tok->next->str));
-        else if (tok->op == '/')
-            result = (std::stoll(tok->previous->str) / std::stoll(tok->next->str));
-        else if (tok->op == '%')
-            result = (std::stoll(tok->previous->str) % std::stoll(tok->next->str));
+        else if (tok->op == '/' || tok->op == '%') {
+            long long rhs = std::stoll(tok->next->str);
+            if (rhs == 0)
+                throw std::overflow_error("division/modulo by zero");
+            if (tok->op == '/')
+                result = (std::stoll(tok->previous->str) / rhs);
+            else
+                result = (std::stoll(tok->previous->str) % rhs);
+        }
         else
             continue;
 
@@ -1171,11 +1176,11 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     }
                     try {
                         conditionIsTrue = (evaluate(expr) != 0);
-                    } catch (const std::out_of_range &) {
+                    } catch (const std::exception &) {
                         Output out(rawtok->location.files);
                         out.type = Output::ERROR;
                         out.location = rawtok->location;
-                        out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + "condition";
+                        out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
                         if (outputList)
                             outputList->push_back(out);
                         return TokenList(files);
