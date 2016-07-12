@@ -1126,7 +1126,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
                 bool conditionIsTrue;
-                if (ifstates.top() == ALWAYS_FALSE)
+                if (ifstates.top() == ALWAYS_FALSE || (ifstates.top() == ELSE_IS_TRUE && rawtok->str != ELIF))
                     conditionIsTrue = false;
                 else if (rawtok->str == IFDEF)
                     conditionIsTrue = (macros.find(rawtok->next->str) != macros.end());

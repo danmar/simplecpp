@@ -325,6 +325,15 @@ void elif() {
     ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code3));
 }
 
+void ifif() {
+    // source code from LLVM
+    const char code[] = "#if defined(__has_include)\n"
+                        "#if __has_include(<sanitizer / coverage_interface.h>)\n"
+                        "#endif\n"
+                        "#endif\n";
+    ASSERT_EQUALS("", preprocess(code));
+}
+
 void locationFile() {
     const char code[] = "#file \"a.h\"\n"
                         "1\n"
@@ -514,6 +523,7 @@ int main(int argc, char **argv) {
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);
+    TEST_CASE(ifif);
 
     TEST_CASE(locationFile);
 
