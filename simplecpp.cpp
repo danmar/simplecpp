@@ -18,6 +18,7 @@
 
 #include "simplecpp.h"
 
+#include <algorithm>
 #include <cctype>
 #include <list>
 #include <map>
