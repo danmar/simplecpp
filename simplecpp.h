@@ -150,7 +150,7 @@ public:
     void dump() const;
     std::string stringify() const;
 
-    void readfile(std::istream &istr, const std::string &filename=std::string(), OutputList *outputList = 0);
+    void readfile(std::istream &istr, const std::string &filename, OutputList *outputList = 0);
     void constFold();
 
     void removeComments();
@@ -187,6 +187,10 @@ public:
         delete tok;
     }
 
+    std::string getFileName() const {
+        return fileName_;
+    }
+
 private:
     void combineOperators();
 
@@ -207,6 +211,7 @@ private:
     Token *first;
     Token *last;
     std::vector<std::string> &files;
+    std::string fileName_;
 };
 
 /** Tracking how macros are used */

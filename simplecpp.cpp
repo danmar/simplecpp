@@ -82,14 +82,14 @@ bool simplecpp::Token::endsWithOneOf(const char c[]) const {
     return std::strchr(c, str[str.size() - 1U]) != 0;
 }
 
-simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : first(nullptr), last(nullptr), files(filenames) {}
+simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : first(nullptr), last(nullptr), files(filenames), fileName_("") {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : first(nullptr), last(nullptr), files(filenames) {
-    readfile(istr,filename,outputList);
+    : first(nullptr), last(nullptr), files(filenames), fileName_(filename) {
+    readfile(istr,filename, outputList);
 }
 
-simplecpp::TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr), files(other.files) {
+simplecpp::TokenList::TokenList(const TokenList &other) : first(nullptr), last(nullptr), files(other.files), fileName_(other.fileName_) {
     *this = other;
 }
 
@@ -101,6 +101,7 @@ void simplecpp::TokenList::operator=(const TokenList &other) {
     if (this == &other)
         return;
     clear();
+    fileName_ = other.fileName_;
     for (const Token *tok = other.cbegin(); tok; tok = tok->next)
         push_back(new Token(*tok));
 }
@@ -112,6 +113,7 @@ void simplecpp::TokenList::clear() {
         first = next;
     }
     last = nullptr;
+    fileName_.clear();
 }
 
 void simplecpp::TokenList::push_back(Token *tok) {
@@ -149,6 +151,9 @@ std::string simplecpp::TokenList::stringify() const {
 
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
+    clear();
+    fileName_ = filename;
+
     std::stack<simplecpp::Location> loc;
 
     unsigned int multiline = 0U;
@@ -610,7 +615,7 @@ public:
     explicit Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(nullptr), files(f), tokenListDefine(f) {
         const std::string def(name + ' ' + value);
         std::istringstream istr(def);
-        tokenListDefine.readfile(istr);
+        tokenListDefine.readfile(istr,"");
         parseDefine(tokenListDefine.cbegin());
     }
 
