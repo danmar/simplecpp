@@ -1016,19 +1016,19 @@ void simplifyNumbers(simplecpp::TokenList &expr) {
         if (tok->str.size() == 1U)
             continue;
         if (tok->str.compare(0,2,"0x") == 0)
-            tok->setstr(std::to_string(std::stoll(tok->str.substr(2), nullptr, 16)));
+            tok->setstr(std::to_string(std::stoull(tok->str.substr(2), nullptr, 16)));
         else if (tok->str[0] == '\'')
             tok->setstr(std::to_string((unsigned char)tok->str[1]));
     }
 }
 
-int evaluate(simplecpp::TokenList expr) {
+long long evaluate(simplecpp::TokenList expr) {
     simplifySizeof(expr);
     simplifyName(expr);
     simplifyNumbers(expr);
     expr.constFold();
     // TODO: handle invalid expressions
-    return expr.cbegin() && expr.cbegin() == expr.cend() && expr.cbegin()->number ? std::stoi(expr.cbegin()->str) : 0;
+    return expr.cbegin() && expr.cbegin() == expr.cend() && expr.cbegin()->number ? std::stoll(expr.cbegin()->str) : 0LL;
 }
 
 const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok) {
@@ -1169,7 +1169,17 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                             expr.push_back(new Token(*tok));
                         }
                     }
-                    conditionIsTrue = (evaluate(expr) != 0);
+                    try {
+                        conditionIsTrue = (evaluate(expr) != 0);
+                    } catch (const std::out_of_range &) {
+                        Output out(rawtok->location.files);
+                        out.type = Output::ERROR;
+                        out.location = rawtok->location;
+                        out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + "condition";
+                        if (outputList)
+                            outputList->push_back(out);
+                        return TokenList(files);
+                    }
                 }
 
                 if (rawtok->str != ELIF) {

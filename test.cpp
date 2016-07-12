@@ -334,6 +334,23 @@ void ifif() {
     ASSERT_EQUALS("", preprocess(code));
 }
 
+void ifoverflow() {
+    // source code from CLANG
+    const char code[] = "#if 0x7FFFFFFFFFFFFFFF*2\n"
+                        "#endif\n"
+                        "#if 0xFFFFFFFFFFFFFFFF*2\n"
+                        "#endif\n"
+                        "#if 0x7FFFFFFFFFFFFFFF+1\n"
+                        "#endif\n"
+                        "#if 0xFFFFFFFFFFFFFFFF+1\n"
+                        "#endif\n"
+                        "#if 0x7FFFFFFFFFFFFFFF--1\n"
+                        "#endif\n"
+                        "#if 0xFFFFFFFFFFFFFFFF--1\n"
+                        "#endif\n";
+    ASSERT_EQUALS("", preprocess(code));
+}
+
 void locationFile() {
     const char code[] = "#file \"a.h\"\n"
                         "1\n"
@@ -524,6 +541,7 @@ int main(int argc, char **argv) {
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);
     TEST_CASE(ifif);
+    TEST_CASE(ifoverflow);
 
     TEST_CASE(locationFile);
 
