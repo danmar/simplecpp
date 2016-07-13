@@ -74,6 +74,14 @@ void comment() {
     ASSERT_EQUALS("* p = a / * b / * c ;", preprocess("*p=a/ *b/ *c;"));
 }
 
+void comment_multiline() {
+    const char code[] = "#define ABC {// \\\n"
+                        "}\n"
+                        "void f() ABC\n";
+    ASSERT_EQUALS("\n\nvoid f ( ) { }", preprocess(code));
+}
+
+
 static void constFold() {
     ASSERT_EQUALS("7", testConstFold("1+2*3"));
     ASSERT_EQUALS("15", testConstFold("1+2*(3+4)"));
@@ -517,6 +525,7 @@ int main(int argc, char **argv) {
     TEST_CASE(combineOperators_increment);
 
     TEST_CASE(comment);
+    TEST_CASE(comment_multiline);
 
     TEST_CASE(constFold);
 

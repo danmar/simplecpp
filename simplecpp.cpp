@@ -217,7 +217,12 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 currentToken += ch;
                 ch = (unsigned char)istr.get();
             }
-            istr.unget();
+            if (currentToken[currentToken.size() - 1U] == '\\') {
+                multiline = 1;
+                currentToken = currentToken.erase(currentToken.size() - 1U);
+            } else {
+                istr.unget();
+            }
         }
 
         // comment
