@@ -1166,8 +1166,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     conditionIsTrue = (macros.find(rawtok->next->str) == macros.end());
                 else { /*if (rawtok->str == IF || rawtok->str == ELIF)*/
                     TokenList expr(files);
-                    const Token * const endToken = gotoNextLine(rawtok);
-                    for (const Token *tok = rawtok->next; tok != endToken; tok = tok->next) {
+                    for (const Token *tok = rawtok->next; tok && tok->location.sameline(rawtok->location); tok = tok->next) {
                         if (!tok->name) {
                             expr.push_back(new Token(*tok));
                             continue;
