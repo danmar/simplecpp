@@ -1197,7 +1197,17 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                         if (it != macros.end()) {
                             TokenList value(files);
                             std::set<TokenString> expandedmacros;
-                            it->second.expand(&value, tok->location, tok, macros, expandedmacros);
+                            try {
+                                it->second.expand(&value, tok->location, tok, macros, expandedmacros);
+                            } catch (Macro::Error &err) {
+                                Output out(rawtok->location.files);
+                                out.type = Output::ERROR;
+                                out.location = err.location;
+                                out.msg = "failed to expand \'" + tok->str + "\', " + err.what;
+                                if (outputList)
+                                    outputList->push_back(out);
+                                return TokenList(files);
+                            }
                             for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
                                 expr.push_back(new Token(tok2->str, tok->location));
                         } else {
