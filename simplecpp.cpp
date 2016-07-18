@@ -1092,7 +1092,7 @@ std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &fil
         if (filedata.find(s) != filedata.end())
             return s;
     }
-    
+
     return "";
 }
 
@@ -1107,7 +1107,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 {
     simplecpp::TokenList rawtokens2(rawtokens);
     rawtokens2.removeComments();
-    
+
     std::map<std::string, simplecpp::TokenList*> ret;
 
     std::list<const Token *> filelist;
@@ -1143,7 +1143,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         ret[header2] = tokens;
         filelist.push_back(tokens->cbegin());
     }
-    
+
     return ret;
 }
 

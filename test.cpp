@@ -35,7 +35,8 @@ static std::string readfile(const char code[]) {
 static std::string preprocess(const char code[], const simplecpp::DUI &dui) {
     std::istringstream istr(code);
     std::vector<std::string> files;
-    return simplecpp::preprocess(simplecpp::TokenList(istr,files),files,dui).stringify();
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    return simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui).stringify();
 }
 
 static std::string preprocess(const char code[]) {
@@ -191,8 +192,9 @@ void define_va_args_2() {
 void error() {
     std::istringstream istr("#error    hello world! \n");
     std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList output;
-    simplecpp::preprocess(simplecpp::TokenList(istr,files,"test.c"), files, simplecpp::DUI(), &output);
+    simplecpp::preprocess(simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &output);
     ASSERT_EQUALS(simplecpp::Output::ERROR, output.front().type);
     // TODO ASSERT_EQUALS("test.c", output.front().location.file);
     ASSERT_EQUALS(1U, output.front().location.line);
@@ -404,7 +406,8 @@ void multiline() {
     const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
-    ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr,files), files, dui).stringify());
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    ASSERT_EQUALS("\n\n1", simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui).stringify());
 }
 
 void include1() {
@@ -428,8 +431,9 @@ void tokenMacro1() {
                         "A";
     const simplecpp::DUI dui;
     std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
-    const simplecpp::TokenList &tokenList = simplecpp::preprocess(simplecpp::TokenList(istr,files), files, dui);
+    const simplecpp::TokenList &tokenList = simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui);
     ASSERT_EQUALS("A", tokenList.cend()->macro);
 }
 
@@ -438,8 +442,9 @@ void tokenMacro2() {
                         "ADD(1,2)";
     const simplecpp::DUI dui;
     std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, dui));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("", tok->macro);
@@ -457,8 +462,9 @@ void tokenMacro3() {
                         "ADD(FRED,2)";
     const simplecpp::DUI dui;
     std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, dui));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("FRED", tok->macro);
@@ -476,8 +482,9 @@ void tokenMacro4() {
                         "A";
     const simplecpp::DUI dui;
     std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, dui));
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui));
     const simplecpp::Token *tok = tokenList.cbegin();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("A", tok->macro);
@@ -491,7 +498,8 @@ void undef() {
                             "#endif");
     const simplecpp::DUI dui;
     std::vector<std::string> files;
-    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr, files), files, dui));
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    const simplecpp::TokenList tokenList(simplecpp::preprocess(simplecpp::TokenList(istr, files), files, filedata, dui));
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
@@ -501,7 +509,8 @@ void userdef() {
     dui.defines.push_back("A=1");
     std::vector<std::string> files;
     const simplecpp::TokenList tokens1 = simplecpp::TokenList(istr, files);
-    const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, files, dui);
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    const simplecpp::TokenList tokens2 = simplecpp::preprocess(tokens1, files, filedata, dui);
     ASSERT_EQUALS("\n123", tokens2.stringify());
 }
 
