@@ -1073,9 +1073,81 @@ std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::s
 
     return "";
 }
+
+std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui) {
+    if (sourcefile.find_first_of("\\/") != std::string::npos) {
+        const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
+        if (filedata.find(s) != filedata.end())
+            return s;
+    } else {
+        if (filedata.find(header) != filedata.end())
+            return header;
+    }
+
+    for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
+        std::string s = *it;
+        if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
+            s += '/';
+        s += header;
+        if (filedata.find(s) != filedata.end())
+            return s;
+    }
+    
+    return "";
 }
 
-simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const struct simplecpp::DUI &dui, OutputList *outputList, std::list<struct MacroUsage> *macroUsage)
+bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui) {
+    return !getFileName(filedata, sourcefile, header, dui).empty();
+}
+
+}
+
+
+std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const struct simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+{
+    simplecpp::TokenList rawtokens2(rawtokens);
+    rawtokens2.removeComments();
+    
+    std::map<std::string, simplecpp::TokenList*> ret;
+
+    std::list<const Token *> filelist;
+
+    for (const Token *rawtok = rawtokens2.cbegin(); rawtok || !filelist.empty(); rawtok = rawtok->next) {
+        if (rawtok == nullptr) {
+            rawtok = filelist.back();
+            filelist.pop_back();
+        }
+
+        if (rawtok->op != '#' || sameline(rawtok->previous, rawtok))
+            continue;
+
+        rawtok = rawtok->next;
+        if (!rawtok || rawtok->str != INCLUDE)
+            continue;
+
+        const std::string &sourcefile = rawtok->location.file();
+
+        const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
+        if (hasFile(ret, sourcefile, header, dui))
+            continue;
+
+        std::ifstream f;
+        const std::string header2 = openHeader(f,dui,sourcefile,header);
+        if (!f.is_open())
+            continue;
+
+        TokenList *tokens = new TokenList(f, fileNumbers, header2);
+        tokens->removeComments();
+        if (!tokens->cbegin())
+            continue;
+        ret[header2] = tokens;
+        filelist.push_back(tokens->cbegin());
+    }
+    
+    return ret;
+}
+
+simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, simplecpp::TokenList *> &filedata, const struct simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<struct simplecpp::MacroUsage> *macroUsage)
 {
     simplecpp::TokenList rawtokens2(rawtokens);
     rawtokens2.removeComments();
@@ -1101,7 +1173,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
     std::stack<IfState> ifstates;
     ifstates.push(TRUE);
 
-    std::list<TokenList> includes;
+    std::list<TokenList *> includes;
     std::stack<const Token *> includetokenstack;
 
     TokenList output(files);
@@ -1149,13 +1221,11 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 }
             } else if (rawtok->str == INCLUDE) {
                 if (ifstates.top() == TRUE) {
-                    std::ifstream f;
                     const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
-                    const std::string header2 = openHeader(f,dui,rawtok->location.file(),header);
-                    if (f.is_open()) {
-                        includes.push_back(TokenList(f, files, header2));
+                    const std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui);
+                    if (!header2.empty()) {
                         includetokenstack.push(gotoNextLine(rawtok));
-                        rawtok = includes.back().cbegin();
+                        rawtok = filedata.find(header2)->second->cbegin();
                         continue;
                     } else {
                         // TODO: Write warning message

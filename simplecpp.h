@@ -223,6 +223,8 @@ struct DUI {
     std::list<std::string> includePaths;
 };
 
+std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const struct DUI &dui, OutputList *outputList = 0);
+
 /**
  * Preprocess
  *
@@ -237,7 +239,7 @@ struct DUI {
  *
  * @todo simplify interface
  */
-TokenList preprocess(const TokenList &rawtokens, std::vector<std::string> &files, const struct DUI &dui, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+TokenList preprocess(const TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, TokenList*> &filedata, const struct DUI &dui, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
 }
 
 #endif
