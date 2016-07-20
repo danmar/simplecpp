@@ -273,6 +273,13 @@ void ifA() {
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
+void ifCharLiteral() {
+    const char code[] = "#if ('A'==0x41)\n"
+                        "123\n"
+                        "#endif";
+    ASSERT_EQUALS("\n123", preprocess(code));
+}
+
 void ifDefined() {
     const char code[] = "#if defined(A)\n"
                         "X\n"
@@ -562,6 +569,7 @@ int main(int argc, char **argv) {
     TEST_CASE(ifdef2);
     TEST_CASE(ifndef);
     TEST_CASE(ifA);
+    TEST_CASE(ifCharLiteral);
     TEST_CASE(ifDefined);
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);

@@ -1131,7 +1131,7 @@ void simplifyNumbers(simplecpp::TokenList &expr) {
         if (tok->str.compare(0,2,"0x") == 0)
             tok->setstr(toString(std::stoull(tok->str.substr(2), nullptr, 16)));
         else if (tok->str[0] == '\'')
-            tok->setstr(toString((unsigned char)tok->str[1]));
+            tok->setstr(toString((unsigned int)tok->str[1] & 0xffU));
     }
 }
 
