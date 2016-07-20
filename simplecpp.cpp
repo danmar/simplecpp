@@ -147,6 +147,79 @@ std::string simplecpp::TokenList::stringify() const {
     return ret.str();
 }
 
+static unsigned char readChar(std::istream &istr, unsigned int bom)
+{
+    unsigned char ch = (unsigned char)istr.get();
+
+    // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
+    // character is non-ASCII character then replace it with 0xff
+    if (bom == 0xfeff || bom == 0xfffe) {
+        const unsigned char ch2 = (unsigned char)istr.get();
+        const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
+        ch = (unsigned char)((ch16 >= 0x80) ? 0xff : ch16);
+    }
+
+    // Handling of newlines..
+    if (ch == '\r') {
+        ch = '\n';
+        if (bom == 0 && (char)istr.peek() == '\n')
+            (void)istr.get();
+        else if (bom == 0xfeff || bom == 0xfffe) {
+            int c1 = istr.get();
+            int c2 = istr.get();
+            int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
+            if (ch16 != '\n') {
+                istr.unget();
+                istr.unget();
+            }
+        }
+    }
+
+    return ch;
+}
+
+static unsigned char peekChar(std::istream &istr, unsigned int bom) {
+    unsigned char ch = (unsigned char)istr.peek();
+
+    // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
+    // character is non-ASCII character then replace it with 0xff
+    if (bom == 0xfeff || bom == 0xfffe) {
+        const unsigned char ch2 = (unsigned char)istr.peek();
+        const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
+        ch = (unsigned char)((ch16 >= 0x80) ? 0xff : ch16);
+    }
+
+    // Handling of newlines..
+    if (ch == '\r') {
+        ch = '\n';
+        if (bom != 0)
+            (void)istr.peek();
+    }
+
+    return ch;
+}
+
+static unsigned short getAndSkipBOM(std::istream &istr) {
+    const unsigned char ch1 = istr.peek();
+
+    // The UTF-16 BOM is 0xfffe or 0xfeff.
+    if (ch1 >= 0xfe) {
+        unsigned short bom = ((unsigned char)istr.get() << 8);
+        if (istr.peek() >= 0xfe)
+            return bom | (unsigned char)istr.get();
+        return 0;
+    }
+
+    if (ch1 == 0xef && istr.peek() == 0xbb && istr.peek() == 0xbf) {
+        // Skip BOM 0xefbbbf
+        (void)istr.get();
+        (void)istr.get();
+        (void)istr.get();
+    }
+
+    return 0;
+}
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -155,19 +228,19 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
     const Token *oldLastToken = nullptr;
 
+    const unsigned short bom = getAndSkipBOM(istr);
+
     Location location(files);
     location.fileIndex = fileIndex(filename);
     location.line = 1U;
     location.col  = 0U;
     while (istr.good()) {
-        unsigned char ch = (unsigned char)istr.get();
+        unsigned char ch = readChar(istr,bom);
         if (!istr.good())
             break;
         location.col++;
 
-        if (ch == '\r' || ch == '\n') {
-            if (ch == '\r' && istr.peek() == '\n')
-                istr.get();
+        if (ch == '\n') {
             if (cend() && cend()->op == '\\') {
                 ++multiline;
                 deleteToken(end());
@@ -206,16 +279,16 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         if (std::isalnum(ch) || ch == '_') {
             while (istr.good() && (std::isalnum(ch) || ch == '_')) {
                 currentToken += ch;
-                ch = (unsigned char)istr.get();
+                ch = readChar(istr,bom);
             }
             istr.unget();
         }
 
         // comment
-        else if (ch == '/' && istr.peek() == '/') {
+        else if (ch == '/' && peekChar(istr,bom) == '/') {
             while (istr.good() && ch != '\r' && ch != '\n') {
                 currentToken += ch;
-                ch = (unsigned char)istr.get();
+                ch = readChar(istr, bom);
             }
             if (currentToken[currentToken.size() - 1U] == '\\') {
                 multiline = 1;
@@ -226,15 +299,15 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         }
 
         // comment
-        else if (ch == '/' && istr.peek() == '*') {
+        else if (ch == '/' && peekChar(istr,bom) == '*') {
             currentToken = "/*";
-            (void)istr.get();
-            ch = (unsigned char)istr.get();
+            (void)readChar(istr,bom);
+            ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
                 if (currentToken.size() >= 4U && currentToken.substr(currentToken.size() - 2U) == "*/")
                     break;
-                ch = (unsigned char)istr.get();
+                ch = readChar(istr,bom);
             }
         }
 
