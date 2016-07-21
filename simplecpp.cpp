@@ -1232,16 +1232,20 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             filelist.pop_back();
         }
 
-        if (rawtok->op != '#' || sameline(rawtok->previous, rawtok))
+        if (rawtok->op != '#' || sameline(rawtok->previousSkipComments(), rawtok))
             continue;
 
-        rawtok = rawtok->next;
+        rawtok = rawtok->nextSkipComments();
         if (!rawtok || rawtok->str != INCLUDE)
             continue;
 
         const std::string &sourcefile = rawtok->location.file();
 
-        const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
+        const Token *htok = rawtok->nextSkipComments();
+        if (!sameline(rawtok, htok))
+            continue;
+
+        const std::string header(htok->str.substr(1U, htok->str.size() - 2U));
         if (hasFile(ret, sourcefile, header, dui))
             continue;
 
