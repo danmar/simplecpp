@@ -45,6 +45,28 @@ static std::string preprocess(const char code[]) {
     return preprocess(code,simplecpp::DUI());
 }
 
+static std::string toString(const simplecpp::OutputList &outputList) {
+    std::ostringstream ostr;
+    for (const simplecpp::Output &output : outputList) {
+        ostr << output.location.file() << ',' << output.location.line << ',';
+
+        switch (output.type) {
+        case simplecpp::Output::Type::ERROR:
+            ostr << "error,";
+            break;
+        case simplecpp::Output::Type::WARNING:
+            ostr << "warning,";
+            break;
+        case simplecpp::Output::Type::MISSING_INCLUDE:
+            ostr << "missing_include,";
+            break;
+        }
+
+        ostr << output.msg << '\n';
+    }
+    return ostr.str();
+}
+
 static std::string testConstFold(const char code[]) {
     std::istringstream istr(code);
     std::vector<std::string> files;
@@ -408,6 +430,37 @@ void locationFile() {
     ASSERT_EQUALS(3U, tok ? tok->location.line : 0U);
 }
 
+void missingInclude1() {
+    const simplecpp::DUI dui;
+    std::istringstream istr("#include \"notexist.h\"\n");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    (void)simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS(",1,missing_include,Header not found: \"notexist.h\"\n", toString(outputList));
+}
+
+void missingInclude2() {
+    const simplecpp::DUI dui;
+    std::istringstream istr("#include \"foo.h\"\n"); // this file exists
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    filedata["foo.h"] = 0;
+    simplecpp::OutputList outputList;
+    (void)simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+
+void missingInclude3() {
+    const simplecpp::DUI dui;
+    std::istringstream istr("#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"); // this file is not included
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    (void)simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 void multiline() {
     const char code[] = "#define A \\\n"
                         "1\n"
@@ -581,6 +634,10 @@ int main(int argc, char **argv) {
     TEST_CASE(ifdiv0);
 
     TEST_CASE(locationFile);
+
+    TEST_CASE(missingInclude1);
+    TEST_CASE(missingInclude2);
+    TEST_CASE(missingInclude3);
 
     TEST_CASE(multiline);
 

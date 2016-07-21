@@ -1327,18 +1327,21 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     }
                 } catch (const std::runtime_error &) {
                 }
-            } else if (rawtok->str == INCLUDE) {
-                if (ifstates.top() == TRUE) {
-                    const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
-                    const std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui);
-                    if (!header2.empty() && pragmaOnce.find(header2) == pragmaOnce.end()) {
-                        includetokenstack.push(gotoNextLine(rawtok));
-                        const TokenList *includetokens = filedata.find(header2)->second;
-                        rawtok = includetokens ? includetokens->cbegin() : 0;
-                        continue;
-                    } else {
-                        // TODO: Write warning message
-                    }
+            } else if (ifstates.top() == TRUE && rawtok->str == INCLUDE) {
+                const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
+                const std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui);
+                if (!header2.empty() && pragmaOnce.find(header2) == pragmaOnce.end()) {
+                    includetokenstack.push(gotoNextLine(rawtok));
+                    const TokenList *includetokens = filedata.find(header2)->second;
+                    rawtok = includetokens ? includetokens->cbegin() : 0;
+                    continue;
+                } else {
+                    simplecpp::Output output(files);
+                    output.type = Output::Type::MISSING_INCLUDE;
+                    output.location = rawtok->location;
+                    output.msg = "Header not found: " + rawtok->next->str;
+                    if (outputList)
+                        outputList->push_back(output);
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
                 bool conditionIsTrue;
