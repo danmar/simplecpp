@@ -390,7 +390,7 @@ void ifoverflow() {
                         "#if 0xFFFFFFFFFFFFFFFF--1\n"
                         "#endif\n"
                         "123";
-    ASSERT_EQUALS("", preprocess(code));
+    (void)preprocess(code);
 }
 
 void ifdiv0() {
