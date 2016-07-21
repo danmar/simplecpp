@@ -36,7 +36,9 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui) {
     std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    return simplecpp::preprocess(simplecpp::TokenList(istr,files), files, filedata, dui).stringify();
+    simplecpp::TokenList tokens(istr,files);
+    tokens.removeComments();
+    return simplecpp::preprocess(tokens, files, filedata, dui).stringify();
 }
 
 static std::string preprocess(const char code[]) {
