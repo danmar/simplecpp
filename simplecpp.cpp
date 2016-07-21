@@ -48,6 +48,9 @@ const simplecpp::TokenString ELSE("else");
 const simplecpp::TokenString ELIF("elif");
 const simplecpp::TokenString ENDIF("endif");
 
+const simplecpp::TokenString PRAGMA("pragma");
+const simplecpp::TokenString ONCE("once");
+
 template<class T> std::string toString(T t) {
     std::ostringstream ostr;
     ostr << t;
@@ -1279,6 +1282,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
     std::list<TokenList *> includes;
     std::stack<const Token *> includetokenstack;
 
+    std::set<std::string> pragmaOnce;
+
     TokenList output(files);
     for (const Token *rawtok = rawtokens.cbegin(); rawtok || !includetokenstack.empty();) {
         if (rawtok == nullptr) {
@@ -1326,7 +1331,7 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                 if (ifstates.top() == TRUE) {
                     const std::string header(rawtok->next->str.substr(1U, rawtok->next->str.size() - 2U));
                     const std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui);
-                    if (!header2.empty()) {
+                    if (!header2.empty() && pragmaOnce.find(header2) == pragmaOnce.end()) {
                         includetokenstack.push(gotoNextLine(rawtok));
                         const TokenList *includetokens = filedata.find(header2)->second;
                         rawtok = includetokens ? includetokens->cbegin() : 0;
@@ -1425,6 +1430,8 @@ simplecpp::TokenList simplecpp::preprocess(const simplecpp::TokenList &rawtokens
                     if (sameline(rawtok, tok))
                         macros.erase(tok->str);
                 }
+            } else if (ifstates.top() == TRUE && rawtok->str == PRAGMA && rawtok->next && rawtok->next->str == ONCE && sameline(rawtok,rawtok->next)) {
+                pragmaOnce.insert(rawtok->location.file());
             }
             rawtok = gotoNextLine(rawtok);
             continue;
