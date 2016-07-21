@@ -1223,7 +1223,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
     std::list<const Token *> filelist;
 
-    for (const Token *rawtok = rawtokens2.cbegin(); rawtok || !filelist.empty(); rawtok = rawtok->next) {
+    for (const Token *rawtok = rawtokens.cbegin(); rawtok || !filelist.empty(); rawtok = rawtok->next) {
         if (rawtok == NULL) {
             rawtok = filelist.back();
             filelist.pop_back();
