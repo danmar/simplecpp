@@ -1219,9 +1219,6 @@ bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedata, cons
 
 std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const struct simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
-    simplecpp::TokenList rawtokens2(rawtokens);
-    rawtokens2.removeComments();
-
     std::map<std::string, simplecpp::TokenList*> ret;
 
     std::list<const Token *> filelist;
