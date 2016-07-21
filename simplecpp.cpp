@@ -61,24 +61,24 @@ template<class T> std::string toString(T t) {
 
 long long stoll(const std::string &s)
 {
-  long long ret;
-  bool hex = (s.compare(0, 2, "0x") == 0);
-  std::istringstream istr(hex ? s.substr(2) : s);
-  if (hex)
-    istr >> std::hex;
-  istr >> ret;
-  return ret;
+    long long ret;
+    bool hex = (s.compare(0, 2, "0x") == 0);
+    std::istringstream istr(hex ? s.substr(2) : s);
+    if (hex)
+        istr >> std::hex;
+    istr >> ret;
+    return ret;
 }
 
 unsigned long long stoull(const std::string &s)
 {
-  unsigned long long ret;
-  bool hex = (s.compare(0, 2, "0x") == 0);
-  std::istringstream istr(hex ? s.substr(2) : s);
-  if (hex)
-    istr >> std::hex;
-  istr >> ret;
-  return ret;
+    unsigned long long ret;
+    bool hex = (s.compare(0, 2, "0x") == 0);
+    std::istringstream istr(hex ? s.substr(2) : s);
+    if (hex)
+        istr >> std::hex;
+    istr >> ret;
+    return ret;
 }
 
 
