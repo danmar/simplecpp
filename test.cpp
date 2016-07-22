@@ -182,6 +182,12 @@ void define7() {
     ASSERT_EQUALS("\n1 + 1", preprocess(code));
 }
 
+void define8() {
+    const char code[] = "#define A(X) \n"
+                        "int A[10];";
+    ASSERT_EQUALS("\nint A [ 10 ] ;", preprocess(code));
+}
+
 void define_define_1() {
     const char code[] = "#define A(x) (x+1)\n"
                         "#define B    A(\n"
@@ -621,6 +627,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define5);
     TEST_CASE(define6);
     TEST_CASE(define7);
+    TEST_CASE(define8);
     TEST_CASE(define_define_1);
     TEST_CASE(define_define_2);
     TEST_CASE(define_define_3);
