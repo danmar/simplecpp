@@ -579,19 +579,26 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
 {
     Token * const tok1 = tok;
     for (const char *op = "&^|"; *op; op++) {
+        std::string altop;
+        if (*op == '&')
+            altop = "bitand";
+        else if (*op == '|')
+            altop = "bitor";
+        else
+            altop = "xor";
         for (tok = tok1; tok && tok->op != ')'; tok = tok->next) {
-            if (tok->op != *op)
+            if (tok->op != *op && tok->str != altop)
                 continue;
             if (!tok->previous || !tok->previous->number)
                 continue;
             if (!tok->next || !tok->next->number)
                 continue;
             long long result;
-            if (tok->op == '&')
+            if (*op == '&')
                 result = (stringToLL(tok->previous->str) & stringToLL(tok->next->str));
-            else if (tok->op == '^')
+            else if (*op == '^')
                 result = (stringToLL(tok->previous->str) ^ stringToLL(tok->next->str));
-            else /*if (tok->op == '|')*/
+            else /*if (*op == '|')*/
                 result = (stringToLL(tok->previous->str) | stringToLL(tok->next->str));
             tok = tok->previous;
             tok->setstr(toString(result));
@@ -603,7 +610,7 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
 
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
     for (; tok && tok->op != ')'; tok = tok->next) {
-        if (tok->str != "&&" && tok->str != "||")
+        if (tok->str != "&&" && tok->str != "||" && tok->str != "and" && tok->str != "or")
             continue;
         if (!tok->previous || !tok->previous->number)
             continue;
@@ -611,7 +618,7 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
             continue;
 
         int result;
-        if (tok->str == "||")
+        if (tok->str == "||" || tok->str == "or")
             result = (stringToLL(tok->previous->str) || stringToLL(tok->next->str));
         else /*if (tok->str == "&&")*/
             result = (stringToLL(tok->previous->str) && stringToLL(tok->next->str));
@@ -1135,9 +1142,25 @@ void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std:
 }
 
 void simplifyName(simplecpp::TokenList &expr) {
+    std::set<std::string> altop;
+    altop.insert("and");
+    altop.insert("or");
+    altop.insert("bitand");
+    altop.insert("bitor");
+    altop.insert("xor");
     for (simplecpp::Token *tok = expr.begin(); tok; tok = tok->next) {
-        if (tok->name)
+        if (tok->name) {
+            if (altop.find(tok->str) != altop.end()) {
+                bool alt = true;
+                if (!tok->previous || !tok->next)
+                    alt = false;
+                if (!(tok->previous->number || tok->previous->op == ')'))
+                    alt = false;
+                if (alt)
+                    continue;
+            }
             tok->setstr("0");
+        }
     }
 }
 

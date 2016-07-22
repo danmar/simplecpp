@@ -409,6 +409,24 @@ void ifdiv0() {
     ASSERT_EQUALS("", preprocess(code));
 }
 
+void ifalt() { // using "and", "or", etc
+    const char *code;
+
+    code = "#if 1 and 1\n"
+           "1\n"
+           "#else\n"
+           "2\n"
+           "#endif\n";
+    ASSERT_EQUALS("\n1", preprocess(code));
+
+    code = "#if 1 or 0\n"
+           "1\n"
+           "#else\n"
+           "2\n"
+           "#endif\n";
+    ASSERT_EQUALS("\n1", preprocess(code));
+}
+
 void locationFile() {
     const char code[] = "#file \"a.h\"\n"
                         "1\n"
@@ -653,6 +671,7 @@ int main(int argc, char **argv) {
     TEST_CASE(ifif);
     TEST_CASE(ifoverflow);
     TEST_CASE(ifdiv0);
+    TEST_CASE(ifalt); // using "and", "or", etc
 
     TEST_CASE(locationFile);
 
