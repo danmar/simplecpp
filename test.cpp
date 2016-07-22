@@ -182,7 +182,7 @@ void define7() {
     ASSERT_EQUALS("\n1 + 1", preprocess(code));
 }
 
-void define8() {
+void define8() { // 6.10.3.10
     const char code[] = "#define A(X) \n"
                         "int A[10];";
     ASSERT_EQUALS("\nint A [ 10 ] ;", preprocess(code));
