@@ -217,9 +217,11 @@ public:
     }
 
     void takeTokens(TokenList &other) {
-        if (!last) {
+        if (!other.first)
+            return;
+        if (!first) {
             first = other.first;
-        } else if (other.first) {
+        } else {
             last->next = other.first;
             other.first->previous = last;
         }
