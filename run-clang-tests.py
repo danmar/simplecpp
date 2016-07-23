@@ -46,7 +46,6 @@ todo = [
          'macro_fn_comma_swallow.c',
          'macro_fn_comma_swallow2.c',
          'macro_fn_lparen_scan.c',
-         'macro_disable.c',
          'macro_expand.c',
          'macro_expand_empty.c',
          'macro_fn_disable_expand.c',
