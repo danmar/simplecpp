@@ -62,9 +62,6 @@ static std::string toString(const simplecpp::OutputList &outputList) {
         case simplecpp::Output::Type::MISSING_INCLUDE:
             ostr << "missing_include,";
             break;
-        case simplecpp::Output::Type::PORTABILITY:
-            ostr << "portability,";
-            break;
         }
 
         ostr << output.msg << '\n';
