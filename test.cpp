@@ -32,19 +32,19 @@ static std::string readfile(const char code[]) {
     return simplecpp::TokenList(istr,files).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui) {
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = NULL) {
     std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens(istr,files);
     tokens.removeComments();
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, tokens, files, filedata, dui);
+    simplecpp::preprocess(tokens2, tokens, files, filedata, dui, outputList);
     return tokens2.stringify();
 }
 
 static std::string preprocess(const char code[]) {
-    return preprocess(code,simplecpp::DUI());
+    return preprocess(code, simplecpp::DUI());
 }
 
 static std::string toString(const simplecpp::OutputList &outputList) {
@@ -61,6 +61,9 @@ static std::string toString(const simplecpp::OutputList &outputList) {
             break;
         case simplecpp::Output::Type::MISSING_INCLUDE:
             ostr << "missing_include,";
+            break;
+        case simplecpp::Output::Type::PORTABILITY:
+            ostr << "portability,";
             break;
         }
 
@@ -220,7 +223,20 @@ void define_define_5() {
     const char code[] = "#define X() Y\n"
                         "#define Y() X\n"
                         "A: X()()()\n";
-    ASSERT_EQUALS("\n\nA : Y", preprocess(code));
+    // mcpp outputs "A: X()" and gcc/clang outputs "A: Y"
+    ASSERT_EQUALS("\n\nA : X ( )", preprocess(code)); // <- match the output from mcpp
+
+    // Portability warning..
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS(",3,portability,Preprocessors can have different output (compare mcpp and gcc output)\n", toString(outputList));
+}
+
+void define_define_6() {
+    const char code[] = "#define f(a) a*g\n"
+                        "#define g f\n"
+                        "a: f(2)(9)\n";
+    ASSERT_EQUALS("\n\na : 2 * f ( 9 )", preprocess(code));
 }
 
 void define_va_args_1() {
@@ -239,13 +255,10 @@ void error() {
     std::istringstream istr("#error    hello world! \n");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::OutputList output;
+    simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &output);
-    ASSERT_EQUALS(simplecpp::Output::ERROR, output.front().type);
-    // TODO ASSERT_EQUALS("test.c", output.front().location.file);
-    ASSERT_EQUALS(1U, output.front().location.line);
-    ASSERT_EQUALS("#error hello world!", output.front().msg);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("test.c,1,error,#error hello world!\n", toString(outputList));
 }
 
 void hash() {
@@ -665,6 +678,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_3);
     TEST_CASE(define_define_4);
     TEST_CASE(define_define_5);
+    TEST_CASE(define_define_6);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
 

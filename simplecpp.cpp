@@ -1567,10 +1567,22 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     std::set<TokenString> expandedmacros;
                     TokenList output2(files);
                     rawtok = macro->second.expand(&output2,rawtok->location,rawtok,macros,expandedmacros);
+                    expandedmacros.insert(macro->first);
                     while (rawtok && rawtok->op == '(' && output2.cend()) {
                         macro = macros.find(output2.cend()->str);
                         if (macro == macros.end() || !macro->second.functionLike())
                             break;
+                        if (expandedmacros.find(macro->first) != expandedmacros.end()) {
+                            // there is different behaviour for such macros in mcpp/gcc/clang
+                            if (outputList) {
+                                Output out(files);
+                                out.type = Output::PORTABILITY;
+                                out.location = rawtok->location;
+                                out.msg = "Preprocessors can have different output (compare mcpp and gcc output)";
+                                outputList->push_back(out);
+                            }
+                            break;
+                        }
                         TokenList rawtokens2(files);
                         rawtokens2.push_back(new Token(*output2.cend()));
                         output2.deleteToken(output2.end());
@@ -1590,6 +1602,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             break;
                         if (macro->second.expand(&output2, rawtok->location, rawtokens2.cbegin(), macros, expandedmacros) != NULL)
                             break;
+                        expandedmacros.insert(macro->first);
                         rawtok = rawtok2->next;
                     }
                     output.takeTokens(output2);
