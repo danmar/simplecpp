@@ -50,7 +50,7 @@ static std::string preprocess(const char code[]) {
 static std::string toString(const simplecpp::OutputList &outputList) {
     std::ostringstream ostr;
     for (const simplecpp::Output &output : outputList) {
-        ostr << output.location.file() << ',' << output.location.line << ',';
+        ostr << "file" << output.location.fileIndex << ',' << output.location.line << ',';
 
         switch (output.type) {
         case simplecpp::Output::Type::ERROR:
@@ -229,7 +229,7 @@ void define_define_5() {
     // Portability warning..
     simplecpp::OutputList outputList;
     preprocess(code, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS(",3,portability,Preprocessors can have different output (compare mcpp and gcc output)\n", toString(outputList));
+    ASSERT_EQUALS("file0,3,portability,Preprocessors can have different output (compare mcpp and gcc output)\n", toString(outputList));
 }
 
 void define_define_6() {
@@ -258,7 +258,7 @@ void error() {
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS("test.c,1,error,#error hello world!\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,error,#error hello world!\n", toString(outputList));
 }
 
 void hash() {
@@ -492,7 +492,7 @@ void missingInclude1() {
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
-    ASSERT_EQUALS(",1,missing_include,Header not found: \"notexist.h\"\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,missing_include,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
 void missingInclude2() {
