@@ -56,7 +56,6 @@ todo = [
          'macro_paste_identifier_error.c',
          'macro_paste_simple.c',
          'macro_paste_spacing.c',
-         'macro_rescan.c',
          'macro_rescan_varargs.c',
          'macro_rescan2.c',
 
