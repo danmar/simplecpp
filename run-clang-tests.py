@@ -53,9 +53,6 @@ todo = [
          'macro_paste_commaext.c',
          'macro_paste_hard.c',
          'macro_paste_hashhash.c',
-         'macro_paste_identifier_error.c',
-         'macro_paste_simple.c',
-         'macro_paste_spacing.c',
          'macro_rescan_varargs.c',
 
          # todo, high priority
