@@ -216,6 +216,13 @@ void define_define_4() {
     ASSERT_EQUALS("\n\nFOO1", preprocess(code));
 }
 
+void define_define_5() {
+    const char code[] = "#define X() Y\n"
+                        "#define Y() X\n"
+                        "A: X()()()\n";
+    ASSERT_EQUALS("\n\nA : Y", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -657,6 +664,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_2);
     TEST_CASE(define_define_3);
     TEST_CASE(define_define_4);
+    TEST_CASE(define_define_5);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
 

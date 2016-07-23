@@ -886,6 +886,13 @@ public:
         return usageList;
     }
 
+    bool functionLike() const {
+        return nameToken->next &&
+               nameToken->next->op == '(' &&
+               sameline(nameToken, nameToken->next) &&
+               nameToken->next->location.col == nameToken->location.col + nameToken->str.size();
+    }
+
     struct Error {
         Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
         Location location;
@@ -1066,15 +1073,15 @@ private:
             if (!calledMacro.functionLike())
                 return calledMacro.expand(output, loc, tok, macros, expandedmacros);
             if (!sameline(tok, tok->next) || tok->next->op != '(') {
-                // FIXME: handle this
-                throw wrongNumberOfParameters(tok->location, tok->str);
+                output->push_back(newMacroToken(tok->str, loc, false));
+                return tok->next;
             }
             TokenList tokens(files);
             tokens.push_back(new Token(*tok));
             const Token *tok2 = appendTokens(&tokens, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
             if (!tok2) {
-                // FIXME: handle this
-                throw wrongNumberOfParameters(tok->location, tok->str);
+                output->push_back(newMacroToken(tok->str, loc, false));
+                return tok->next;
             }
             calledMacro.expand(output, loc, tokens.cbegin(), macros, expandedmacros);
             return tok2->next;
@@ -1134,13 +1141,6 @@ private:
                 tok->macro = nameToken->str;
             tok = tok->next;
         }
-    }
-
-    bool functionLike() const {
-        return nameToken->next &&
-               nameToken->next->op == '(' &&
-               sameline(nameToken, nameToken->next) &&
-               nameToken->next->location.col == nameToken->location.col + nameToken->str.size();
     }
 
     const Token *nameToken;
@@ -1491,8 +1491,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         const std::map<std::string,Macro>::const_iterator it = macros.find(tok->str);
                         if (it != macros.end()) {
                             TokenList value(files);
-                            std::set<TokenString> expandedmacros;
                             try {
+                                std::set<TokenString> expandedmacros;
                                 it->second.expand(&value, tok->location, tok, macros, expandedmacros);
                             } catch (Macro::Error &err) {
                                 Output out(rawtok->location.files);
@@ -1504,8 +1504,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 output.clear();
                                 return;
                             }
-                            for (const Token *tok2 = value.cbegin(); tok2; tok2 = tok2->next)
-                                expr.push_back(new Token(tok2->str, tok->location));
+                            expr.takeTokens(value);
                         } else {
                             expr.push_back(new Token(*tok));
                         }
@@ -1564,9 +1563,36 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         if (macros.find(rawtok->str) != macros.end()) {
             std::map<TokenString,Macro>::const_iterator macro = macros.find(rawtok->str);
             if (macro != macros.end()) {
-                std::set<TokenString> expandedmacros;
                 try {
-                    rawtok = macro->second.expand(&output,rawtok->location,rawtok,macros,expandedmacros);
+                    std::set<TokenString> expandedmacros;
+                    TokenList output2(files);
+                    rawtok = macro->second.expand(&output2,rawtok->location,rawtok,macros,expandedmacros);
+                    while (rawtok && rawtok->op == '(' && output2.cend()) {
+                        macro = macros.find(output2.cend()->str);
+                        if (macro == macros.end() || !macro->second.functionLike())
+                            break;
+                        TokenList rawtokens2(files);
+                        rawtokens2.push_back(new Token(*output2.cend()));
+                        output2.deleteToken(output2.end());
+                        unsigned int par = 0;
+                        const Token *rawtok2 = rawtok;
+                        for (; rawtok2; rawtok2 = rawtok2->next) {
+                            rawtokens2.push_back(new Token(*rawtok2));
+                            if (rawtok2->op == '(')
+                                ++par;
+                            else if (rawtok2->op == ')') {
+                                if (par <= 1U)
+                                    break;
+                                --par;
+                            }
+                        }
+                        if (!rawtok2 || par != 1U)
+                            break;
+                        if (macro->second.expand(&output2, rawtok->location, rawtokens2.cbegin(), macros, expandedmacros) != NULL)
+                            break;
+                        rawtok = rawtok2->next;
+                    }
+                    output.takeTokens(output2);
                 } catch (const simplecpp::Macro::Error &err) {
                     Output out(err.location.files);
                     out.type = Output::ERROR;
