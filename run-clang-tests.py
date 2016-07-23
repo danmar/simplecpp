@@ -6,10 +6,10 @@ import subprocess
 def cleanup(out):
   ret = ''
   for s in out.split('\n'):
-    s = "".join(s.split())
-    if len(s) == 0 or s[0] == '#':
+    if len(s) > 1 and s[0] == '#':
       continue
-    ret = ret + s + '\n'
+    s = "".join(s.split())
+    ret = ret + s
   return ret
 
 commands = []
@@ -57,7 +57,7 @@ todo = [
          'macro_paste_simple.c',
          'macro_paste_spacing.c',
          'macro_rescan_varargs.c',
-     
+
          # todo, high priority
          'c99-6_10_3_3_p4.c',
          'c99-6_10_3_4_p5.c',
@@ -68,10 +68,7 @@ todo = [
          'cxx_not_eq.cpp',  # if A not_eq B
          'cxx_oper_keyword_ms_compat.cpp',
          'expr_usual_conversions.c', # condition is true: 4U - 30 >= 0
-         'hash_line.c',
          'macro_fn_varargs_named.c',  # named vararg arguments
-         'mi_opt2.c',  # stringify
-         'print_line_include.c',  #stringify
          'stdint.c',
          'stringize_misc.c']
 
