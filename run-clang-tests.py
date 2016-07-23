@@ -45,7 +45,6 @@ todo = [
          'macro_fn_comma_swallow.c',
          'macro_fn_comma_swallow2.c',
          'macro_fn_lparen_scan.c',
-         'macro_fn_lparen_scan2.c',
          'macro_disable.c',
          'macro_expand.c',
          'macro_expand_empty.c',
@@ -60,21 +59,15 @@ todo = [
          'macro_rescan.c',
          'macro_rescan_varargs.c',
          'macro_rescan2.c',
-         'macro_space.c',
 
          # todo, high priority
          'c99-6_10_3_3_p4.c',
          'c99-6_10_3_4_p5.c',
          'c99-6_10_3_4_p6.c',
          'comment_save.c',
-         'cxx_and.cpp', # if A and B
-         'cxx_bitand.cpp',
-         'cxx_bitor.cpp', # if A bitor B
          'cxx_compl.cpp',  # if A compl B
          'cxx_not.cpp',
          'cxx_not_eq.cpp',  # if A not_eq B
-         'cxx_or.cpp',  # if A or B
-         'cxx_xor.cpp',  # if A xor B
          'cxx_oper_keyword_ms_compat.cpp',
          'expr_usual_conversions.c', # condition is true: 4U - 30 >= 0
          'hash_line.c',
@@ -86,7 +79,8 @@ todo = [
 
 numberOfSkipped = 0
 numberOfFailed = 0
-numberOfTodos = 0
+
+usedTodos = []
 
 for cmd in set(commands):
   if cmd[cmd.rfind('/')+1:] in skip:
@@ -109,13 +103,17 @@ for cmd in set(commands):
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
-      numberOfTodos = numberOfTodos + 1
+      usedTodos.append(filename)
     else:
       print('FAILED ' + cmd)
       numberOfFailed = numberOfFailed + 1
 
+for filename in todo:
+    if not filename in usedTodos:
+        print('FIXED ' + filename)
+
 print('Number of tests: ' + str(len(commands)))
 print('Number of skipped: ' + str(numberOfSkipped))
-print('Number of todos: ' + str(numberOfTodos))
+print('Number of todos: ' + str(len(usedTodos)))
 print('Number of failed: ' + str(numberOfFailed))
 
