@@ -57,7 +57,6 @@ todo = [
          'macro_paste_simple.c',
          'macro_paste_spacing.c',
          'macro_rescan_varargs.c',
-         'macro_rescan2.c', # does not match mcpp output
      
          # todo, high priority
          'c99-6_10_3_3_p4.c',
