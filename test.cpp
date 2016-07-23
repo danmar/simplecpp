@@ -223,20 +223,20 @@ void define_define_5() {
     const char code[] = "#define X() Y\n"
                         "#define Y() X\n"
                         "A: X()()()\n";
-    // mcpp outputs "A: X()" and gcc/clang outputs "A: Y"
-    ASSERT_EQUALS("\n\nA : X ( )", preprocess(code)); // <- match the output from mcpp
-
-    // Portability warning..
-    simplecpp::OutputList outputList;
-    preprocess(code, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS("file0,3,portability,Preprocessors can have different output (compare mcpp and gcc output)\n", toString(outputList));
+    // mcpp outputs "A: X()" and gcc/clang/vc outputs "A: Y"
+    ASSERT_EQUALS("\n\nA : Y", preprocess(code)); // <- match the output from gcc/clang/vc
 }
 
 void define_define_6() {
-    const char code[] = "#define f(a) a*g\n"
-                        "#define g f\n"
-                        "a: f(2)(9)\n";
-    ASSERT_EQUALS("\n\na : 2 * f ( 9 )", preprocess(code));
+    const char code1[] = "#define f(a) a*g\n"
+                         "#define g f\n"
+                         "a: f(2)(9)\n";
+    ASSERT_EQUALS("\n\na : 2 * f ( 9 )", preprocess(code1));
+
+    const char code2[] = "#define f(a) a*g\n"
+                         "#define g(a) f(a)\n"
+                         "a: f(2)(9)\n";
+    ASSERT_EQUALS("\n\na : 2 * 9 * g", preprocess(code2));
 }
 
 void define_va_args_1() {
