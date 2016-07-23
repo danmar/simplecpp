@@ -242,6 +242,13 @@ void define_define_6() {
     ASSERT_EQUALS("\n\na : 2 * 9 * g", preprocess(code2));
 }
 
+void define_define_7() {
+    const char code[] = "#define f(x) g(x\n"
+                        "#define g(x) x()\n"
+                        "f(f))\n";
+    ASSERT_EQUALS("\n\nf ( )", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -683,6 +690,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_4);
     TEST_CASE(define_define_5);
     TEST_CASE(define_define_6);
+    TEST_CASE(define_define_7);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
 
