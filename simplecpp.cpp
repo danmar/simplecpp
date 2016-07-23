@@ -1068,7 +1068,7 @@ private:
 
         // Macro..
         const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
-        if (it != macros.end() && expandedmacros1.find(tok->str) == expandedmacros1.end()) {
+        if (it != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
             const Macro &calledMacro = it->second;
             if (!calledMacro.functionLike())
                 return calledMacro.expand(output, loc, tok, macros, expandedmacros);

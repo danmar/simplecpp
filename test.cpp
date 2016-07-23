@@ -188,6 +188,12 @@ void define8() { // 6.10.3.10
     ASSERT_EQUALS("\nint A [ 10 ] ;", preprocess(code));
 }
 
+void define9() {
+    const char code[] = "#define AB ab.AB\n"
+                        "AB.CD\n";
+    ASSERT_EQUALS("\nab . AB . CD", preprocess(code));
+}
+
 void define_define_1() {
     const char code[] = "#define A(x) (x+1)\n"
                         "#define B    A(\n"
@@ -670,6 +676,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define6);
     TEST_CASE(define7);
     TEST_CASE(define8);
+    TEST_CASE(define9);
     TEST_CASE(define_define_1);
     TEST_CASE(define_define_2);
     TEST_CASE(define_define_3);
