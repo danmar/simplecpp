@@ -161,7 +161,7 @@ void simplecpp::TokenList::push_back(Token *tok) {
 }
 
 void simplecpp::TokenList::dump() const {
-    std::cout << stringify();
+    std::cout << stringify() << std::endl;
 }
 
 std::string simplecpp::TokenList::stringify() const {
