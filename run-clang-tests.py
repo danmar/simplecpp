@@ -27,6 +27,7 @@ for f in sorted(glob.glob(os.path.expanduser('~/llvm/tools/clang/test/Preprocess
 # skipping tests..
 skip = ['assembler-with-cpp.c',
         'builtin_line.c',
+        'comment_save.c', # _Pragma
         'has_attribute.c',
         'line-directive-output.c',
         'microsoft-ext.c',
@@ -56,7 +57,6 @@ todo = [
          'c99-6_10_3_3_p4.c',
          'c99-6_10_3_4_p5.c',
          'c99-6_10_3_4_p6.c',
-         'comment_save.c',
          'cxx_compl.cpp',  # if A compl B
          'cxx_not.cpp',
          'cxx_not_eq.cpp',  # if A not_eq B
