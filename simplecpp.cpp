@@ -117,6 +117,22 @@ bool simplecpp::Token::endsWithOneOf(const char c[]) const {
     return std::strchr(c, str[str.size() - 1U]) != 0;
 }
 
+void simplecpp::Token::printAll() const {
+    const Token *tok = this;
+    while (tok->previous)
+        tok = tok->previous;
+    for (const Token *tok = this; tok; tok = tok->next)
+        std::cout << ' ' << tok->str;
+    std::cout << std::endl;
+}
+
+void simplecpp::Token::printOut() const {
+    for (const Token *tok = this; tok; tok = tok->next)
+        std::cout << ' ' << tok->str;
+    std::cout << std::endl;
+}
+
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : first(NULL), last(NULL), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
