@@ -1467,8 +1467,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
             rawtok = rawtok->next;
-            if (!rawtok || !rawtok->name)
+            if (!rawtok || !rawtok->name) {
+                if (rawtok)
+                    rawtok = gotoNextLine(rawtok);
                 continue;
+            }
 
             if (ifstates.top() == TRUE && (rawtok->str == ERROR || rawtok->str == WARNING)) {
                 if (outputList) {
