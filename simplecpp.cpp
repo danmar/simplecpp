@@ -872,16 +872,22 @@ public:
                 if (!sameline(tok, tok->next))
                     throw invalidHashHash(tok->location, name());
 
-                const std::string strAB = A->str + expandArgStr(tok->next, parametertokens);
+                std::string strAB = A->str + expandArgStr(tok->next, parametertokens);
+
+                bool removeComma = false;
+                if (variadic && strAB == "," && tok->previous->previous->str == "," && args.size() >= 1U && tok->next->str == args[args.size()-1U])
+                    removeComma = true;
+
                 tok = tok->next->next;
 
                 output->deleteToken(A);
 
-                TokenList tokens(files);
-                tokens.push_back(new Token(strAB, tok->location));
-                // TODO: For functionLike macros, push the (...)
-
-                expandToken(output, loc, tokens.cbegin(), macros, expandedmacros1, expandedmacros, parametertokens);
+                if (!removeComma) {
+                    TokenList tokens(files);
+                    tokens.push_back(new Token(strAB, tok->location));
+                    // TODO: For functionLike macros, push the (...)
+                    expandToken(output, loc, tokens.cbegin(), macros, expandedmacros1, expandedmacros, parametertokens);
+                }
             } else {
                 // #123 => "123"
                 TokenList tokenListHash(files);
