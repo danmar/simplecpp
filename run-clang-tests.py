@@ -29,6 +29,7 @@ skip = ['assembler-with-cpp.c',
         'builtin_line.c',
         'comment_save.c', # _Pragma
         'has_attribute.c',
+        'header_lookup1.c', # missing include <stddef.h>
         'line-directive-output.c',
         'microsoft-ext.c',
         '_Pragma-location.c',
@@ -41,7 +42,6 @@ skip = ['assembler-with-cpp.c',
 
 todo = [
          # todo, low priority: wrong number of macro arguments, pragma, etc
-         'header_lookup1.c',
          'macro_backslash.c',
          'macro_fn_comma_swallow.c',
          'macro_fn_comma_swallow2.c',
