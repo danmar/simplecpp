@@ -1187,10 +1187,10 @@ private:
 
 namespace simplecpp {
 std::string simplifyPath(std::string path) {
+    std::string::size_type pos;
+
     // replace backslash separators
-    std::string::size_type pos = 0;
-    while ((pos = path.find("\\",pos)) != std::string::npos)
-        path[pos] = '/';
+    std::replace(path.begin(), path.end(), '\\', '/');
 
     // "./" at the start
     if (path.size() > 3 && path.compare(0,2,"./") == 0 && path[2] != '/')
