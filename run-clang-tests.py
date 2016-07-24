@@ -88,13 +88,13 @@ for cmd in set(commands):
   comm = p.communicate()
   gcc_output = cleanup(comm[0])
 
-  cppcheck_cmd = [os.path.expanduser('~/cppcheck/cppcheck'), '-q']
-  cppcheck_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(cppcheck_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  simplecpp_cmd = ['./simplecpp']
+  simplecpp_cmd.extend(cmd.split(' '))
+  p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
-  cppcheck_output = cleanup(comm[0])
+  simplecpp_output = cleanup(comm[0])
 
-  if cppcheck_output != clang_output and cppcheck_output != gcc_output:
+  if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
