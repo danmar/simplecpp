@@ -4,6 +4,7 @@
 #include <vector>
 #include "simplecpp.h"
 
+
 #define ASSERT_EQUALS(expected, actual)  assertEquals((expected), (actual), __LINE__);
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line) {
@@ -25,6 +26,22 @@ static int assertEquals(const unsigned int expected, const unsigned int actual, 
     }
     return (expected == actual);
 }
+
+static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
+{
+    if (argc == 1)
+        f();
+    else {
+        for (int i = 1; i < argc; i++) {
+            if (name == argv[i])
+                f();
+        }
+    }
+}
+
+#define TEST_CASE(F)    testcase(#F, F, argc, argv)
+
+
 
 static std::string readfile(const char code[]) {
     std::istringstream istr(code);
@@ -657,19 +674,17 @@ void userdef() {
     ASSERT_EQUALS("\n123", tokens2.stringify());
 }
 
-static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
-{
-    if (argc == 1)
-        f();
-    else {
-        for (int i = 1; i < argc; i++) {
-            if (name == argv[i])
-                f();
-        }
-    }
+namespace simplecpp {
+std::string simplifyPath(std::string);
 }
 
-#define TEST_CASE(F)    testcase(#F, F, argc, argv)
+void simplifyPath() {
+    ASSERT_EQUALS("1.c", simplecpp::simplifyPath("./1.c"));
+    ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/../1.c"));
+    ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/c/../../1.c"));
+    ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/c/../.././1.c"));
+}
+
 
 int main(int argc, char **argv) {
 
@@ -743,6 +758,9 @@ int main(int argc, char **argv) {
     TEST_CASE(undef);
 
     TEST_CASE(userdef);
+
+    // utility functions.
+    TEST_CASE(simplifyPath);
 
     return 0;
 }
