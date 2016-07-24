@@ -836,8 +836,13 @@ public:
             }
 
             // Parse macro-call
-            if (parametertokens.size() != args.size() + (args.empty() ? 2U : 1U)) {
-                throw wrongNumberOfParameters(nameToken->location, name());
+            if (variadic) {
+                if (parametertokens.size() < args.size()) {
+                    throw wrongNumberOfParameters(nameToken->location, name());
+                }
+            } else {
+                if (parametertokens.size() != args.size() + (args.empty() ? 2U : 1U))
+                    throw wrongNumberOfParameters(nameToken->location, name());
             }
         }
 

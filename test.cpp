@@ -261,6 +261,12 @@ void define_va_args_2() {
     ASSERT_EQUALS("\nf ( \"123\" ) ;", preprocess(code));
 }
 
+void define_va_args_3() { // min number of arguments
+    const char code[] = "#define A(x, y, z...) 1\n"
+                        "A(1, 2)\n";
+    ASSERT_EQUALS("\n1", preprocess(code));
+}
+
 void error() {
     std::istringstream istr("#error    hello world! \n");
     std::vector<std::string> files;
@@ -693,6 +699,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_7);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
+    TEST_CASE(define_va_args_3);
 
     TEST_CASE(error);
 
