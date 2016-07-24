@@ -29,7 +29,6 @@ skip = ['assembler-with-cpp.c',
         'builtin_line.c',
         'has_attribute.c',
         'line-directive-output.c',
-        'macro_paste_empty.c', # simplecpp works like gcc
         'microsoft-ext.c',
         '_Pragma-location.c',
         '_Pragma-dependency.c',
@@ -47,7 +46,6 @@ todo = [
          'macro_fn_comma_swallow2.c',
          'macro_fn_lparen_scan.c',
          'macro_expand.c',
-         'macro_expand_empty.c',
          'macro_fn_disable_expand.c',
          'macro_paste_commaext.c',
          'macro_paste_hard.c',
@@ -82,15 +80,21 @@ for cmd in set(commands):
   clang_cmd.extend(cmd.split(' '))
   p = subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
-  clang_output = comm[0]
+  clang_output = cleanup(comm[0])
+
+  gcc_cmd = ['gcc']
+  gcc_cmd.extend(cmd.split(' '))
+  p = subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  comm = p.communicate()
+  gcc_output = cleanup(comm[0])
 
   cppcheck_cmd = [os.path.expanduser('~/cppcheck/cppcheck'), '-q']
   cppcheck_cmd.extend(cmd.split(' '))
   p = subprocess.Popen(cppcheck_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
-  cppcheck_output = comm[0]
+  cppcheck_output = cleanup(comm[0])
 
-  if cleanup(clang_output) != cleanup(cppcheck_output):
+  if cppcheck_output != clang_output and cppcheck_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
