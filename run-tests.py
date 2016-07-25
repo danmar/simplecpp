@@ -13,8 +13,8 @@ def cleanup(out):
   return ret
 
 commands = []
-for f in sorted(glob.glob(os.path.expanduser('testsuite/*/*.c*'))):
 
+for f in sorted(glob.glob(os.path.expanduser('testsuite/clang-preprocessor-tests/*.c*'))):
   for line in open(f, 'rt'):
     if line.startswith('// RUN: %clang_cc1 '):
       cmd = ''
@@ -22,7 +22,11 @@ for f in sorted(glob.glob(os.path.expanduser('testsuite/*/*.c*'))):
         if arg == '-E' or (len(arg) >= 3 and arg[:2] == '-D'):
           cmd = cmd + ' ' + arg
       if len(cmd) > 1:
-        commands.append(cmd[1:] + ' ' + f)
+        newcmd = cmd[1:] + ' ' + f
+        if not newcmd in commands:
+          commands.append(cmd[1:] + ' ' + f)
+for f in sorted(glob.glob(os.path.expanduser('testsuite/gcc-preprocessor-tests/*.c*'))):
+  commands.append('-E ' + f)
 
 # skipping tests..
 skip = ['assembler-with-cpp.c',
@@ -38,7 +42,15 @@ skip = ['assembler-with-cpp.c',
         '_Pragma-physloc.c',
         'pragma-pushpop-macro.c', # pragma push/pop
         'x86_target_features.c',
-        'warn-disabled-macro-expansion.c']
+        'warn-disabled-macro-expansion.c',
+
+        # GCC..
+        'diagnostic-pragma-1.c',
+        'pr45457.c',
+        'pr57580.c',
+        'pr58844-1.c',
+        'pr58844-2.c'
+       ]
 
 todo = [
          # todo, low priority: wrong number of macro arguments, pragma, etc
@@ -70,7 +82,7 @@ numberOfFailed = 0
 
 usedTodos = []
 
-for cmd in set(commands):
+for cmd in commands:
   if cmd[cmd.rfind('/')+1:] in skip:
     numberOfSkipped = numberOfSkipped + 1
     continue
