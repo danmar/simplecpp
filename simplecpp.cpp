@@ -847,6 +847,19 @@ public:
 
         usageList.push_back(loc);
 
+        if (nameToken->str == "__FILE__") {
+            output->push_back(new Token('\"'+loc.file()+'\"', loc));
+            return nameToken->next;
+        }
+        if (nameToken->str == "__LINE__") {
+            output->push_back(new Token(toString(loc.line), loc));
+            return nameToken->next;
+        }
+        if (nameToken->str == "__COUNTER__") {
+            output->push_back(new Token(toString(usageList.size()), loc));
+            return nameToken->next;
+        }
+
         const std::vector<const Token*> parametertokens(getMacroParameters(nameToken, !expandedmacros1.empty()));
 
         Token * const output_end_1 = output->end();
@@ -1474,6 +1487,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const Macro macro(lhs, rhs, files);
         macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
     }
+
+    macros.insert(std::pair<TokenString,Macro>("__FILE__", Macro("__FILE__", "__FILE__", files)));
+    macros.insert(std::pair<TokenString,Macro>("__LINE__", Macro("__LINE__", "__LINE__", files)));
+    macros.insert(std::pair<TokenString,Macro>("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", files)));
 
     // TRUE => code in current #if block should be kept
     // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.

@@ -86,6 +86,13 @@ static std::string toString(const simplecpp::OutputList &outputList) {
     return ostr.str();
 }
 
+void builtin() {
+    ASSERT_EQUALS("\"\" 1 1", preprocess("__FILE__ __LINE__ __COUNTER__"));
+    ASSERT_EQUALS("\n\n3", preprocess("\n\n__LINE__"));
+    ASSERT_EQUALS("\n\n1", preprocess("\n\n__COUNTER__"));
+    ASSERT_EQUALS("\n\n1 2", preprocess("\n\n__COUNTER__ __COUNTER__"));
+}
+
 static std::string testConstFold(const char code[]) {
     std::istringstream istr(code);
     std::vector<std::string> files;
@@ -693,6 +700,7 @@ void simplifyPath() {
 
 
 int main(int argc, char **argv) {
+    TEST_CASE(builtin);
 
     TEST_CASE(combineOperators_floatliteral);
     TEST_CASE(combineOperators_increment);
