@@ -42,14 +42,7 @@ skip = ['assembler-with-cpp.c',
         '_Pragma-physloc.c',
         'pragma-pushpop-macro.c', # pragma push/pop
         'x86_target_features.c',
-        'warn-disabled-macro-expansion.c',
-
-        # GCC..
-        'diagnostic-pragma-1.c',
-        'pr45457.c',
-        'pr57580.c',
-        'pr58844-1.c',
-        'pr58844-2.c'
+        'warn-disabled-macro-expansion.c'
        ]
 
 todo = [
@@ -75,7 +68,15 @@ todo = [
          'cxx_oper_keyword_ms_compat.cpp',
          'expr_usual_conversions.c', # condition is true: 4U - 30 >= 0
          'stdint.c',
-         'stringize_misc.c']
+         'stringize_misc.c',
+
+         # GCC..
+         'diagnostic-pragma-1.c',
+         'pr45457.c',
+         'pr57580.c',
+         'pr58844-1.c',
+         'pr58844-2.c'
+         ]
 
 numberOfSkipped = 0
 numberOfFailed = 0
