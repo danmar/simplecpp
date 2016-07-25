@@ -1670,11 +1670,25 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             continue;
         }
 
+        bool hash=false, hashhash=false;
+        if (rawtok->op == '#' && sameline(rawtok,rawtok->next)) {
+            if (rawtok->next->op != '#') {
+                hash = true;
+                rawtok = rawtok->next; // skip '#'
+            } else if (sameline(rawtok,rawtok->next->next)) {
+                hashhash = true;
+                rawtok = rawtok->next->next; // skip '#' '#'
+            }
+        }
+
+        const Location loc(rawtok->location);
+        TokenList tokens(files);
+
         if (macros.find(rawtok->str) != macros.end()) {
             std::map<TokenString,Macro>::const_iterator macro = macros.find(rawtok->str);
             if (macro != macros.end()) {
                 try {
-                    rawtok = macro->second.expand(&output, rawtok, macros, files);
+                    rawtok = macro->second.expand(&tokens, rawtok, macros, files);
                 } catch (const simplecpp::Macro::Error &err) {
                     Output out(err.location.files);
                     out.type = Output::ERROR;
@@ -1685,13 +1699,28 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     output.clear();
                     return;
                 }
-                continue;
             }
         }
 
-        if (!rawtok->comment)
-            output.push_back(new Token(*rawtok));
-        rawtok = rawtok->next;
+        else {
+            if (!rawtok->comment)
+                tokens.push_back(new Token(*rawtok));
+            rawtok = rawtok->next;
+        }
+
+        if (hash || hashhash) {
+            std::string s;
+            for (const Token *hashtok = tokens.cbegin(); hashtok; hashtok = hashtok->next)
+                s += hashtok->str;
+            if (hash)
+                output.push_back(new Token('\"' + s + '\"', loc));
+            else if (output.end())
+                output.end()->setstr(output.cend()->str + s);
+            else
+                output.push_back(new Token(s, loc));
+        } else {
+            output.takeTokens(tokens);
+        }
     }
 
     if (macroUsage) {

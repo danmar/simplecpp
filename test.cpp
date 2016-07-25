@@ -302,12 +302,15 @@ void error() {
 }
 
 void hash() {
+    ASSERT_EQUALS("x = \"1\"", preprocess("x=#__LINE__"));
+
     const char code[] = "#define a(x) #x\n"
                         "a(1)\n"
                         "a(2+3)";
     ASSERT_EQUALS("\n"
                   "\"1\"\n"
                   "\"2+3\"", preprocess(code));
+
 }
 
 void hashhash1() { // #4703
@@ -334,6 +337,10 @@ void hashhash4() {  // nonstandard gcc/clang extension for empty varargs
     const char code[] = "#define A(x,y...)  a(x,##y)\n"
                         "A(1)\n";
     ASSERT_EQUALS("\na ( 1 )", preprocess(code));
+}
+
+void hashhash5() {
+    ASSERT_EQUALS("x1", preprocess("x##__LINE__"));
 }
 
 void ifdef1() {
@@ -737,6 +744,7 @@ int main(int argc, char **argv) {
     TEST_CASE(hashhash2);
     TEST_CASE(hashhash3);
     TEST_CASE(hashhash4);
+    TEST_CASE(hashhash5);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
