@@ -6,8 +6,8 @@ testrunner:	test.cpp	simplecpp.o
 simplecpp.o:	simplecpp.cpp	simplecpp.h
 	g++ -Wall -Wextra -pedantic -Wno-long-long -g -c simplecpp.cpp
 
-test:	testrunner
-	./testrunner
+test:	testrunner	simplecpp
+	./testrunner && python run-tests.py
 
 simplecpp:	main.cpp	simplecpp.o
 	g++ -Wall -g -std=c++11 main.cpp simplecpp.o -o simplecpp

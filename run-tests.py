@@ -13,7 +13,7 @@ def cleanup(out):
   return ret
 
 commands = []
-for f in sorted(glob.glob(os.path.expanduser('~/llvm/tools/clang/test/Preprocessor/*.c*'))):
+for f in sorted(glob.glob(os.path.expanduser('testsuite/*/*.c*'))):
 
   for line in open(f, 'rt'):
     if line.startswith('// RUN: %clang_cc1 '):
