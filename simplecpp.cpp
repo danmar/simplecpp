@@ -740,9 +740,9 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename) {
 namespace simplecpp {
 class Macro {
 public:
-    Macro(std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {}
+    explicit Macro(std::vector<std::string> &f) : nameToken(NULL), variadic(false), valueToken(NULL), endToken(NULL), files(f), tokenListDefine(f) {}
 
-    explicit Macro(const Token *tok, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
+    Macro(const Token *tok, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
         if (sameline(tok->previous, tok))
             throw std::runtime_error("bad macro syntax");
         if (tok->op != '#')
@@ -756,7 +756,7 @@ public:
         parseDefine(tok);
     }
 
-    explicit Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
+    Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
         const std::string def(name + ' ' + value);
         std::istringstream istr(def);
         tokenListDefine.readfile(istr);
@@ -1018,7 +1018,7 @@ private:
                     args.push_back(argtok->str);
                 argtok = argtok->next;
             }
-            valueToken = argtok->next;
+            valueToken = argtok ? argtok->next : NULL;
         } else {
             args.clear();
             valueToken = nameToken->next;
