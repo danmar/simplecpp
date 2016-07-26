@@ -33,6 +33,15 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (!filename) {
+        std::cout << "Syntax:" << std::endl;
+        std::cout << "simplecpp [options] filename" << std::endl;
+        std::cout << "  -D  Define NAME." << std::endl;
+        std::cout << "  -I  Include path." << std::endl;
+        std::cout << "  -U  Undefine NAME." << std::endl;
+        std::exit(0);
+    }
+
     // Perform preprocessing
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
