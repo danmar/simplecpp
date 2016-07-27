@@ -4,11 +4,13 @@
 #include <vector>
 #include "simplecpp.h"
 
+int numberOfFailedAssertions = 0;
 
-#define ASSERT_EQUALS(expected, actual)  assertEquals((expected), (actual), __LINE__);
+#define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line) {
     if (expected != actual) {
+        numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
         std::cerr << "line " << line << std::endl;
         std::cerr << "expected:" << expected << std::endl;
@@ -19,6 +21,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
 
 static int assertEquals(const unsigned int expected, const unsigned int actual, int line) {
     if (expected != actual) {
+        numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
         std::cerr << "line " << line << std::endl;
         std::cerr << "expected:" << expected << std::endl;
@@ -39,7 +42,7 @@ static void testcase(const std::string &name, void (*f)(), int argc, char **argv
     }
 }
 
-#define TEST_CASE(F)    testcase(#F, F, argc, argv)
+#define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
 
 
@@ -600,6 +603,11 @@ void readfile_string() {
     ASSERT_EQUALS("( \"\\\\\\\\\" )", readfile("(\"\\\\\\\\\")"));
 }
 
+void readfile_rawstring() {
+    ASSERT_EQUALS("A = \"abc\\\\def\"", readfile("A = R\"(abc\\\\def)\""));
+    ASSERT_EQUALS("A = \"abc\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -772,6 +780,7 @@ int main(int argc, char **argv) {
     TEST_CASE(include2);
 
     TEST_CASE(readfile_string);
+    TEST_CASE(readfile_rawstring);
 
     TEST_CASE(tokenMacro1);
     TEST_CASE(tokenMacro2);
@@ -785,5 +794,5 @@ int main(int argc, char **argv) {
     // utility functions.
     TEST_CASE(simplifyPath);
 
-    return 0;
+    return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }

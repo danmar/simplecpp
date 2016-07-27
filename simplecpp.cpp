@@ -81,7 +81,9 @@ unsigned long long stringToULL(const std::string &s)
     return ret;
 }
 
-
+bool endsWith(const std::string &s, const std::string &e) {
+    return (s.size() >= e.size() && s.compare(s.size() - e.size(), e.size(), e) == 0);
+}
 
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
@@ -259,6 +261,12 @@ static unsigned char peekChar(std::istream &istr, unsigned int bom) {
     return ch;
 }
 
+static void ungetChar(std::istream &istr, unsigned int bom) {
+    istr.unget();
+    if (bom != 0)
+        istr.unget();
+}
+
 static unsigned short getAndSkipBOM(std::istream &istr) {
     const unsigned char ch1 = istr.peek();
 
@@ -341,7 +349,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 currentToken += ch;
                 ch = readChar(istr,bom);
             }
-            istr.unget();
+
+            ungetChar(istr,bom);
         }
 
         // comment
@@ -373,8 +382,33 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         // string / char literal
         else if (ch == '\"' || ch == '\'') {
+            // C++11 raw string literal
+            if (ch == '\"' && cend() && cend()->op == 'R') {
+                std::string delim;
+                ch = readChar(istr,bom);
+                while (istr.good() && ch != '(' && ch != '\"' && ch != '\n') {
+                    delim += ch;
+                    ch = readChar(istr,bom);
+                }
+                if (!istr.good() || ch == '\"' || ch == '\n')
+                    // TODO report
+                    return;
+                currentToken = '\"';
+                const std::string endOfRawString(')' + delim + '\"');
+                while (istr.good() && !endsWith(currentToken, endOfRawString))
+                    currentToken += readChar(istr,bom);
+                if (!endsWith(currentToken, endOfRawString))
+                    // TODO report
+                    return;
+                currentToken.erase(currentToken.size() - endOfRawString.size(), endOfRawString.size() - 1U);
+                end()->setstr(currentToken);
+                location.col += currentToken.size() + 2U + 2 * delim.size();
+                continue;
+            }
+
             currentToken = readUntil(istr,location,ch,ch,outputList);
             if (currentToken.size() < 2U)
+                // TODO report
                 return;
         }
 
