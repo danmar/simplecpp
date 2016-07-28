@@ -1563,7 +1563,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     err.type = rawtok->str == ERROR ? Output::ERROR : Output::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
-                        if (!err.msg.empty() && std::isalnum(tok->str[0]))
+                        if (!err.msg.empty() && std::isalnum((unsigned char)tok->str[0]))
                             err.msg += ' ';
                         err.msg += tok->str;
                     }
