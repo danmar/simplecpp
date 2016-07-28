@@ -1447,7 +1447,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
     std::list<const Token *> filelist;
 
-    for (const Token *rawtok = rawtokens.cbegin(); rawtok || !filelist.empty(); rawtok = rawtok->next) {
+    for (const Token *rawtok = rawtokens.cbegin(); rawtok || !filelist.empty(); rawtok = rawtok ? rawtok->next : NULL) {
         if (rawtok == NULL) {
             rawtok = filelist.back();
             filelist.pop_back();
