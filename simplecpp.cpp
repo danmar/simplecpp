@@ -749,14 +749,17 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
     return ret;
 }
 
-std::string simplecpp::TokenList::lastLine() const {
+std::string simplecpp::TokenList::lastLine(int maxsize) const {
     std::string ret;
+    int count = 0;
     for (const Token *tok = cend(); sameline(tok,cend()); tok = tok->previous) {
         if (tok->comment)
             continue;
         if (!ret.empty())
             ret = ' ' + ret;
         ret = (tok->str[0] == '\"' ? std::string("%str%") : tok->str) + ret;
+        if (++count > maxsize)
+            return "";
     }
     return ret;
 }
