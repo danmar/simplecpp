@@ -290,7 +290,7 @@ static unsigned short getAndSkipBOM(std::istream &istr) {
 
 bool isNameChar(unsigned char ch) {
     return std::isalnum(ch) || ch == '_' || ch == '$';
-}   
+}
 
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
