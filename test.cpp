@@ -90,10 +90,16 @@ static std::string toString(const simplecpp::OutputList &outputList) {
 }
 
 void builtin() {
-    ASSERT_EQUALS("\"\" 1 1", preprocess("__FILE__ __LINE__ __COUNTER__"));
+    ASSERT_EQUALS("\"\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__"));
     ASSERT_EQUALS("\n\n3", preprocess("\n\n__LINE__"));
-    ASSERT_EQUALS("\n\n1", preprocess("\n\n__COUNTER__"));
-    ASSERT_EQUALS("\n\n1 2", preprocess("\n\n__COUNTER__ __COUNTER__"));
+    ASSERT_EQUALS("\n\n0", preprocess("\n\n__COUNTER__"));
+    ASSERT_EQUALS("\n\n0 1", preprocess("\n\n__COUNTER__ __COUNTER__"));
+
+    ASSERT_EQUALS("\n0 + 0", preprocess("#define A(c)  c+c\n"
+                                        "A(__COUNTER__)\n"));
+
+    ASSERT_EQUALS("\n0 + 0 + 1", preprocess("#define A(c)  c+c+__COUNTER__\n"
+                                            "A(__COUNTER__)\n"));
 }
 
 static std::string testConstFold(const char code[]) {
