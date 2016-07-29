@@ -288,6 +288,10 @@ static unsigned short getAndSkipBOM(std::istream &istr) {
     return 0;
 }
 
+bool isNameChar(unsigned char ch) {
+    return std::isalnum(ch) || ch == '_' || ch == '$';
+}   
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -344,8 +348,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         TokenString currentToken;
 
         // number or name
-        if (std::isalnum(ch) || ch == '_') {
-            while (istr.good() && (std::isalnum(ch) || ch == '_')) {
+        if (isNameChar(ch)) {
+            while (istr.good() && isNameChar(ch)) {
                 currentToken += ch;
                 ch = readChar(istr,bom);
             }
@@ -1562,7 +1566,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     err.type = rawtok->str == ERROR ? Output::ERROR : Output::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
-                        if (!err.msg.empty() && std::isalnum((unsigned char)tok->str[0]))
+                        if (!err.msg.empty() && isNameChar(tok->str[0]))
                             err.msg += ' ';
                         err.msg += tok->str;
                     }
