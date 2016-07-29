@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     const char *filename = NULL;
 
     // Settings..
-    struct simplecpp::DUI dui;
+    simplecpp::DUI dui;
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
         if (*arg == '-') {

@@ -120,9 +120,9 @@ public:
     bool startsWithOneOf(const char c[]) const;
     bool endsWithOneOf(const char c[]) const;
 
-    char op;
     const TokenString &str;
     TokenString macro;
+    char op;
     bool comment;
     bool name;
     bool number;
@@ -162,7 +162,7 @@ struct SIMPLECPP_LIB Output {
     std::string msg;
 };
 
-typedef std::list<struct Output> OutputList;
+typedef std::list<Output> OutputList;
 
 /** List of tokens. */
 class SIMPLECPP_LIB TokenList {
@@ -271,7 +271,7 @@ struct SIMPLECPP_LIB DUI {
     std::list<std::string> includePaths;
 };
 
-SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const struct DUI &dui, OutputList *outputList = 0);
+SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = 0);
 
 /**
  * Preprocess
@@ -287,7 +287,7 @@ SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens,
  *
  * @todo simplify interface
  */
-SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, TokenList*> &filedata, const struct DUI &dui, OutputList *outputList = 0, std::list<struct MacroUsage> *macroUsage = 0);
+SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, TokenList*> &filedata, const DUI &dui, OutputList *outputList = 0, std::list<MacroUsage> *macroUsage = 0);
 }
 
 #endif

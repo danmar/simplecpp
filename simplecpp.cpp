@@ -96,7 +96,7 @@ void simplecpp::Location::adjust(const std::string &str) {
         return;
     }
 
-    for (unsigned int i = 0U; i < str.size(); ++i) {
+    for (std::size_t i = 0U; i < str.size(); ++i) {
         col++;
         if (str[i] == '\n' || str[i] == '\r') {
             col = 0;
@@ -1444,7 +1444,7 @@ bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedata, cons
 }
 }
 
-std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const struct simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::map<std::string, simplecpp::TokenList*> ret;
 
@@ -1491,7 +1491,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
     return ret;
 }
 
-void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, simplecpp::TokenList *> &filedata, const struct simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<struct simplecpp::MacroUsage> *macroUsage)
+void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage)
 {
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
     sizeOfType.insert(std::pair<std::string, std::size_t>(std::string("char"), sizeof(char)));
@@ -1769,7 +1769,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             const Macro &macro = macroIt->second;
             const std::list<Location> &usage = macro.usage();
             for (std::list<Location>::const_iterator usageIt = usage.begin(); usageIt != usage.end(); ++usageIt) {
-                struct MacroUsage mu(usageIt->files);
+                MacroUsage mu(usageIt->files);
                 mu.macroName = macro.name();
                 mu.macroLocation = macro.defineLocation();
                 mu.useLocation = *usageIt;
