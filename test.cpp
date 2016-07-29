@@ -522,7 +522,7 @@ void locationFile() {
     std::vector<std::string> files;
     const simplecpp::TokenList &tokens = simplecpp::TokenList(istr,files);
 
-    const simplecpp::Token *tok = tokens.cbegin();
+    const simplecpp::Token *tok = tokens.cfront();
 
     while (tok && tok->str != "1")
         tok = tok->next;
@@ -617,7 +617,7 @@ void tokenMacro1() {
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
-    ASSERT_EQUALS("A", tokenList.cend()->macro);
+    ASSERT_EQUALS("A", tokenList.cback()->macro);
 }
 
 void tokenMacro2() {
@@ -629,7 +629,7 @@ void tokenMacro2() {
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
-    const simplecpp::Token *tok = tokenList.cbegin();
+    const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("", tok->macro);
     tok = tok->next;
@@ -650,7 +650,7 @@ void tokenMacro3() {
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
-    const simplecpp::Token *tok = tokenList.cbegin();
+    const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("FRED", tok->macro);
     tok = tok->next;
@@ -671,7 +671,7 @@ void tokenMacro4() {
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
-    const simplecpp::Token *tok = tokenList.cbegin();
+    const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str);
     ASSERT_EQUALS("A", tok->macro);
 }
