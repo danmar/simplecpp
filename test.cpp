@@ -555,7 +555,7 @@ void missingInclude3() {
     ASSERT_EQUALS("", toString(outputList));
 }
 
-void multiline() {
+void multiline1() {
     const char code[] = "#define A \\\n"
                         "1\n"
                         "A";
@@ -565,6 +565,22 @@ void multiline() {
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui);
+    ASSERT_EQUALS("\n\n1", tokens2.stringify());
+}
+
+void multiline2() {
+    const char code[] = "#define A /*\\\n"
+                        "*/1\n"
+                        "A";
+    const simplecpp::DUI dui;
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files);
+    ASSERT_EQUALS("# define A /**/ 1\n\nA", rawtokens.stringify());
+    rawtokens.removeComments();
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui);
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
@@ -755,7 +771,8 @@ int main(int argc, char **argv) {
     TEST_CASE(missingInclude2);
     TEST_CASE(missingInclude3);
 
-    TEST_CASE(multiline);
+    TEST_CASE(multiline1);
+    TEST_CASE(multiline2);
 
     TEST_CASE(include1);
     TEST_CASE(include2);

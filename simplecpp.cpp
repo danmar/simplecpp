@@ -365,8 +365,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 ch = readChar(istr, bom);
             }
             if (currentToken[currentToken.size() - 1U] == '\\') {
-                multiline = 1;
-                currentToken = currentToken.erase(currentToken.size() - 1U);
+                ++multiline;
+                currentToken.erase(currentToken.size() - 1U);
             } else {
                 istr.unget();
             }
@@ -379,9 +379,15 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
-                if (currentToken.size() >= 4U && currentToken.substr(currentToken.size() - 2U) == "*/")
+                if (currentToken.size() >= 4U && endsWith(currentToken, "*/"))
                     break;
                 ch = readChar(istr,bom);
+            }
+            // multiline..
+            std::string::size_type pos = 0;
+            while ((pos = currentToken.find("\\\n",pos)) != std::string::npos) {
+                currentToken.erase(pos,2);
+                ++multiline;
             }
         }
 
