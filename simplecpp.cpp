@@ -92,7 +92,7 @@ bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
 
 void simplecpp::Location::adjust(const std::string &str) {
     if (str.find_first_of("\r\n") == std::string::npos) {
-        col += str.size() - 1U;
+        col += str.size();
         return;
     }
 
@@ -298,19 +298,16 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
     unsigned int multiline = 0U;
 
-    const Token *oldLastToken = NULL;
-
     const unsigned short bom = getAndSkipBOM(istr);
 
     Location location(files);
     location.fileIndex = fileIndex(filename);
     location.line = 1U;
-    location.col  = 0U;
+    location.col  = 1U;
     while (istr.good()) {
         unsigned char ch = readChar(istr,bom);
         if (!istr.good())
             break;
-        location.col++;
 
         if (ch == '\n') {
             if (cback() && cback()->op == '\\') {
@@ -320,30 +317,14 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 location.line += multiline + 1;
                 multiline = 0U;
             }
-            location.col = 0;
-
-            if (oldLastToken != cback()) {
-                oldLastToken = cback();
-                const std::string lastline(lastLine());
-
-                if (lastline == "# file %str%") {
-                    loc.push(location);
-                    location.fileIndex = fileIndex(cback()->str.substr(1U, cback()->str.size() - 2U));
-                    location.line = 1U;
-                }
-
-                // #endfile
-                else if (lastline == "# endfile" && !loc.empty()) {
-                    location = loc.top();
-                    loc.pop();
-                }
-            }
-
+            location.col = 1;
             continue;
         }
 
-        if (std::isspace(ch))
+        if (std::isspace(ch)) {
+            location.col++;
             continue;
+        }
 
         TokenString currentToken;
 

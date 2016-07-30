@@ -521,36 +521,6 @@ void ifalt() { // using "and", "or", etc
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
-void locationFile() {
-    const char code[] = "#file \"a.h\"\n"
-                        "1\n"
-                        "#file \"b.h\"\n"
-                        "2\n"
-                        "#endfile\n"
-                        "3\n"
-                        "#endfile\n";
-    std::istringstream istr(code);
-    std::vector<std::string> files;
-    const simplecpp::TokenList &tokens = simplecpp::TokenList(istr,files);
-
-    const simplecpp::Token *tok = tokens.cfront();
-
-    while (tok && tok->str != "1")
-        tok = tok->next;
-    ASSERT_EQUALS("a.h", tok ? tok->location.file() : "");
-    ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
-
-    while (tok && tok->str != "2")
-        tok = tok->next;
-    ASSERT_EQUALS("b.h", tok ? tok->location.file() : "");
-    ASSERT_EQUALS(1U, tok ? tok->location.line : 0U);
-
-    while (tok && tok->str != "3")
-        tok = tok->next;
-    ASSERT_EQUALS("a.h", tok ? tok->location.file() : "");
-    ASSERT_EQUALS(3U, tok ? tok->location.line : 0U);
-}
-
 void missingInclude1() {
     const simplecpp::DUI dui;
     std::istringstream istr("#include \"notexist.h\"\n");
@@ -780,8 +750,6 @@ int main(int argc, char **argv) {
     TEST_CASE(ifoverflow);
     TEST_CASE(ifdiv0);
     TEST_CASE(ifalt); // using "and", "or", etc
-
-    TEST_CASE(locationFile);
 
     TEST_CASE(missingInclude1);
     TEST_CASE(missingInclude2);
