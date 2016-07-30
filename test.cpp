@@ -19,17 +19,6 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int expected, const unsigned int actual, int line) {
-    if (expected != actual) {
-        numberOfFailedAssertions++;
-        std::cerr << "------ assertion failed ---------" << std::endl;
-        std::cerr << "line " << line << std::endl;
-        std::cerr << "expected:" << expected << std::endl;
-        std::cerr << "actual:" << actual << std::endl;
-    }
-    return (expected == actual);
-}
-
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
 {
     if (argc == 1)
@@ -81,6 +70,9 @@ static std::string toString(const simplecpp::OutputList &outputList) {
             break;
         case simplecpp::Output::Type::MISSING_INCLUDE:
             ostr << "missing_include,";
+            break;
+        case simplecpp::Output::Type::SYNTAX_ERROR:
+            ostr << "syntax_error,";
             break;
         }
 
@@ -313,6 +305,10 @@ void error() {
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,error,#error hello world!\n", toString(outputList));
+}
+
+void garbage() {
+    preprocess("#ifdef");
 }
 
 void hash() {
@@ -745,6 +741,8 @@ int main(int argc, char **argv) {
     TEST_CASE(dollar);
 
     TEST_CASE(error);
+
+    TEST_CASE(garbage);
 
     TEST_CASE(hash);
     TEST_CASE(hashhash1);

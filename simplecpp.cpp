@@ -1653,6 +1653,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         outputList->push_back(output);
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
+                if (!sameline(rawtok,rawtok->next)) {
+                    simplecpp::Output out(files);
+                    out.type = Output::SYNTAX_ERROR;
+                    out.location = rawtok->location;
+                    out.msg = "Syntax error in #" + rawtok->str;
+                    if (outputList)
+                        outputList->push_back(out);
+                    output.clear();
+                    return;
+                }
+
                 bool conditionIsTrue;
                 if (ifstates.top() == ALWAYS_FALSE || (ifstates.top() == ELSE_IS_TRUE && rawtok->str != ELIF))
                     conditionIsTrue = false;
@@ -1691,7 +1702,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 it->second.expand(&value, tok, macros, files);
                             } catch (Macro::Error &err) {
                                 Output out(rawtok->location.files);
-                                out.type = Output::ERROR;
+                                out.type = Output::SYNTAX_ERROR;
                                 out.location = err.location;
                                 out.msg = "failed to expand \'" + tok->str + "\', " + err.what;
                                 if (outputList)
