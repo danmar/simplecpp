@@ -298,6 +298,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
     unsigned int multiline = 0U;
 
+    const Token *oldLastToken = NULL;
+
     const unsigned short bom = getAndSkipBOM(istr);
 
     Location location(files);
@@ -318,6 +320,24 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 multiline = 0U;
             }
             location.col = 1;
+
+            if (oldLastToken != cback()) {
+                oldLastToken = cback();
+                const std::string lastline(lastLine());
+
+                if (lastline == "# file %str%") {
+                    loc.push(location);
+                    location.fileIndex = fileIndex(cback()->str.substr(1U, cback()->str.size() - 2U));
+                    location.line = 1U;
+                }
+
+                // #endfile
+                else if (lastline == "# endfile" && !loc.empty()) {
+                    location = loc.top();
+                    loc.pop();
+                }
+            }
+
             continue;
         }
 
