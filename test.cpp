@@ -19,6 +19,10 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
+static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line) {
+    return assertEquals(std::to_string(expected), std::to_string(actual), line);
+}
+
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
 {
     if (argc == 1)
@@ -617,6 +621,34 @@ void include2() {
     ASSERT_EQUALS("# include <A.h>", readfile(code));
 }
 
+void include3() { // #16 - crash when expanding macro from header
+    const char code_c[] = "#include \"A.h\"\n"
+                          "glue(1,2,3,4)\n" ;
+    const char code_h[] = "#define glue(a,b,c,d) a##b##c##d\n";
+
+    std::vector<std::string> files;
+
+    std::istringstream istr_c(code_c);
+    simplecpp::TokenList rawtokens_c(istr_c, files, "A.c");
+
+    std::istringstream istr_h(code_h);
+    simplecpp::TokenList rawtokens_h(istr_h, files, "A.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("A.c", files[0]);
+    ASSERT_EQUALS("A.h", files[1]);
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["A.c"] = &rawtokens_c;
+    filedata["A.h"] = &rawtokens_h;
+
+    simplecpp::TokenList out(files);
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, simplecpp::DUI());
+
+    ASSERT_EQUALS("\n1234", out.stringify());
+}
+
+
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
@@ -803,6 +835,7 @@ int main(int argc, char **argv) {
 
     TEST_CASE(include1);
     TEST_CASE(include2);
+    TEST_CASE(include3);
 
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);

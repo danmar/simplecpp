@@ -1182,8 +1182,6 @@ private:
                 if (variadic && strAB == "," && tok->previous->previous->str == "," && args.size() >= 1U && tok->next->str == args[args.size()-1U])
                     removeComma = true;
 
-                tok = tok->next->next;
-
                 output->deleteToken(A);
 
                 if (!removeComma) {
@@ -1192,6 +1190,8 @@ private:
                     // TODO: For functionLike macros, push the (...)
                     expandToken(output, loc, tokens.cfront(), macros, expandedmacros1, expandedmacros, parametertokens2);
                 }
+
+                tok = tok->next->next;
             } else {
                 // #123 => "123"
                 TokenList tokenListHash(files);
