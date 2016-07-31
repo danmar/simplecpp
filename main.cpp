@@ -68,6 +68,9 @@ int main(int argc, char **argv) {
         case simplecpp::Output::MISSING_INCLUDE:
             std::cerr << "missing include: ";
             break;
+        case simplecpp::Output::SYNTAX_ERROR:
+            std::cerr << "syntax error: ";
+            break;
         }
         std::cerr << output.msg << std::endl;
     }
