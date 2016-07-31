@@ -1196,10 +1196,16 @@ private:
                 // #123 => "123"
                 TokenList tokenListHash(files);
                 tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens2);
-                std::string s;
-                for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next)
-                    s += hashtok->str;
-                output->push_back(newMacroToken('\"' + s + '\"', loc, expandedmacros1.empty()));
+                std::ostringstream ostr;
+                for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next) {
+                    for (unsigned int i = 0; i < hashtok->str.size(); i++) {
+                        unsigned char c = hashtok->str[i];
+                        if (c == '\"' || c == '\\' || c == '\'')
+                            ostr << '\\';
+                        ostr << c;
+                    }
+                }
+                output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, expandedmacros1.empty()));
             }
         }
 
