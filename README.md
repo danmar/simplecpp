@@ -9,6 +9,3 @@ The intention is that this preprocessor will have good fidelity.
  * Comments will be saved.
  * Tracking which macro is expanded
 This information is normally lost during preprocessing but it can be necessary for proper static analysis.
-
-Webpage:
-http://danmar.github.io/simplecpp
