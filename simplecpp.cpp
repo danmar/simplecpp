@@ -532,8 +532,19 @@ void simplecpp::TokenList::combineOperators() {
     }
 }
 
+static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt) {
+   return ((tok->name && tok->str == alt) &&
+           (!tok->previous || tok->previous->op == '(') &&
+           (tok->next && (tok->next->name || tok->next->number)));
+}
+
 void simplecpp::TokenList::constFoldUnaryNotPosNeg(simplecpp::Token *tok) {
+    const std::string NOT("not");
     for (; tok && tok->op != ')'; tok = tok->next) {
+        // "not" might be !
+        if (isAlternativeUnaryOp(tok, NOT))
+            tok->op = '!';
+
         if (tok->op == '!' && tok->next && tok->next->number) {
             tok->setstr(tok->next->str == "0" ? "1" : "0");
             deleteToken(tok->next);
@@ -1389,15 +1400,21 @@ void simplifyName(simplecpp::TokenList &expr) {
     altop.insert("or");
     altop.insert("bitand");
     altop.insert("bitor");
+    altop.insert("not");
+    altop.insert("not_eq");
     altop.insert("xor");
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->name) {
             if (altop.find(tok->str) != altop.end()) {
                 bool alt = true;
-                if (!tok->previous || !tok->next)
-                    alt = false;
-                if (!(tok->previous->number || tok->previous->op == ')'))
-                    alt = false;
+                if (tok->str == "not") {
+                    alt = isAlternativeUnaryOp(tok,tok->str);
+                } else {
+                    if (!tok->previous || !tok->next)
+                        alt = false;
+                    if (!(tok->previous->number || tok->previous->op == ')'))
+                        alt = false;
+                }
                 if (alt)
                     continue;
             }
