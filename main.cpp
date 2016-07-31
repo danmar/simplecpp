@@ -78,5 +78,8 @@ int main(int argc, char **argv) {
         std::cerr << output.msg << std::endl;
     }
 
+    // cleanup included tokenlists
+    simplecpp::cleanup(included);
+
     return 0;
 }

@@ -1881,3 +1881,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         }
     }
 }
+
+void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata) {
+    for (std::map<std::string, TokenList*>::iterator it = filedata.begin(); it != filedata.end(); ++it)
+        delete it->second;
+    filedata.clear();
+}
