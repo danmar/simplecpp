@@ -55,11 +55,9 @@ todo = [
          'macro_fn_disable_expand.c',
          'macro_paste_commaext.c',
          'macro_paste_hard.c',
-         'macro_paste_hashhash.c',
          'macro_rescan_varargs.c',
 
          # todo, high priority
-         'c99-6_10_3_3_p4.c',
          'c99-6_10_3_4_p5.c',
          'c99-6_10_3_4_p6.c',
          'cxx_compl.cpp',  # if A compl B
