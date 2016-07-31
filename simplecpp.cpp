@@ -88,6 +88,22 @@ bool endsWith(const std::string &s, const std::string &e) {
 bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2) {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
+
+
+static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt) {
+    return (tok->name &&
+            tok->str == alt &&
+            tok->previous &&
+            tok->next &&
+            (tok->previous->number || tok->previous->name || tok->previous->op == ')') &&
+            (tok->next->number || tok->next->name || tok->next->op == '('));
+}
+
+static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt) {
+    return ((tok->name && tok->str == alt) &&
+            (!tok->previous || tok->previous->op == '(') &&
+            (tok->next && (tok->next->name || tok->next->number)));
+}
 }
 
 void simplecpp::Location::adjust(const std::string &str) {
@@ -532,12 +548,6 @@ void simplecpp::TokenList::combineOperators() {
     }
 }
 
-static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt) {
-   return ((tok->name && tok->str == alt) &&
-           (!tok->previous || tok->previous->op == '(') &&
-           (tok->next && (tok->next->name || tok->next->number)));
-}
-
 void simplecpp::TokenList::constFoldUnaryNotPosNeg(simplecpp::Token *tok) {
     const std::string NOT("not");
     for (; tok && tok->op != ')'; tok = tok->next) {
@@ -623,7 +633,12 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok) {
 }
 
 void simplecpp::TokenList::constFoldComparison(Token *tok) {
+    const std::string NOTEQ("not_eq");
+
     for (; tok && tok->op != ')'; tok = tok->next) {
+        if (isAlternativeBinaryOp(tok,NOTEQ))
+            tok->setstr("!=");
+
         if (!tok->startsWithOneOf("<>=!"))
             continue;
         if (!tok->previous || !tok->previous->number)
@@ -666,7 +681,7 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
         else
             altop = "xor";
         for (tok = tok1; tok && tok->op != ')'; tok = tok->next) {
-            if (tok->op != *op && tok->str != altop)
+            if (tok->op != *op && !isAlternativeBinaryOp(tok, altop))
                 continue;
             if (!tok->previous || !tok->previous->number)
                 continue;
@@ -688,8 +703,17 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
 }
 
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
+    const std::string AND("and");
+    const std::string OR("or");
+
     for (; tok && tok->op != ')'; tok = tok->next) {
-        if (tok->str != "&&" && tok->str != "||" && tok->str != "and" && tok->str != "or")
+        if (tok->name) {
+            if (isAlternativeBinaryOp(tok,AND))
+                tok->setstr("&&");
+            else if (isAlternativeBinaryOp(tok,OR))
+                tok->setstr("||");
+        }
+        if (tok->str != "&&" && tok->str != "||")
             continue;
         if (!tok->previous || !tok->previous->number)
             continue;
@@ -697,7 +721,7 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok) {
             continue;
 
         int result;
-        if (tok->str == "||" || tok->str == "or")
+        if (tok->str == "||")
             result = (stringToLL(tok->previous->str) || stringToLL(tok->next->str));
         else /*if (tok->str == "&&")*/
             result = (stringToLL(tok->previous->str) && stringToLL(tok->next->str));
@@ -1406,14 +1430,11 @@ void simplifyName(simplecpp::TokenList &expr) {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->name) {
             if (altop.find(tok->str) != altop.end()) {
-                bool alt = true;
+                bool alt;
                 if (tok->str == "not") {
                     alt = isAlternativeUnaryOp(tok,tok->str);
                 } else {
-                    if (!tok->previous || !tok->next)
-                        alt = false;
-                    if (!(tok->previous->number || tok->previous->op == ')'))
-                        alt = false;
+                    alt = isAlternativeBinaryOp(tok,tok->str);
                 }
                 if (alt)
                     continue;
