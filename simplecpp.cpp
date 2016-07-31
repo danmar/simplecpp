@@ -989,14 +989,14 @@ private:
         return ~0U;
     }
 
-    std::vector<const Token *> getMacroParameters(const Token *nameToken, bool def) const {
+    std::vector<const Token *> getMacroParameters(const Token *nameToken, bool calledInDefine) const {
         if (!nameToken->next || nameToken->next->op != '(' || !functionLike())
             return std::vector<const Token *>();
 
         std::vector<const Token *> parametertokens;
         parametertokens.push_back(nameToken->next);
         unsigned int par = 0U;
-        for (const Token *tok = nameToken->next->next; def ? sameline(tok,nameToken) : (tok != NULL); tok = tok->next) {
+        for (const Token *tok = nameToken->next->next; calledInDefine ? sameline(tok,nameToken) : (tok != NULL); tok = tok->next) {
             if (tok->op == '(')
                 ++par;
             else if (tok->op == ')') {
@@ -1056,7 +1056,10 @@ private:
             return nameToken->next;
         }
 
-        std::vector<const Token*> parametertokens1(getMacroParameters(nameToken, !expandedmacros1.empty()));
+        const bool calledInDefine = (loc.fileIndex != nameToken->location.fileIndex ||
+                                     loc.line < nameToken->location.line);
+
+        std::vector<const Token*> parametertokens1(getMacroParameters(nameToken, calledInDefine));
 
         if (functionLike()) {
             // No arguments => not macro expansion

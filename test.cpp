@@ -274,6 +274,14 @@ void define_define_7() {
     ASSERT_EQUALS("\n\nf ( )", preprocess(code));
 }
 
+void define_define_8() { // line break in nested macro call
+    const char code[] = "#define A(X,Y)  ((X)*(Y))\n"
+                        "#define B(X,Y)  ((X)+(Y))\n"
+                        "B(0,A(255,x+\n"
+                        "y))\n";
+    ASSERT_EQUALS("\n\n( ( 0 ) + ( ( ( 255 ) * ( x + y ) ) ) )", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -734,6 +742,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_5);
     TEST_CASE(define_define_6);
     TEST_CASE(define_define_7);
+    TEST_CASE(define_define_8); // line break in nested macro call
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
