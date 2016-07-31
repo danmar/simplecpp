@@ -60,13 +60,16 @@ int main(int argc, char **argv) {
         std::cerr << output.location.file() << ':' << output.location.line << ": ";
         switch (output.type) {
         case simplecpp::Output::ERROR:
-            std::cerr << "error: ";
+            std::cerr << "#error: ";
             break;
         case simplecpp::Output::WARNING:
-            std::cerr << "warning: ";
+            std::cerr << "#warning: ";
             break;
-        case simplecpp::Output::MISSING_INCLUDE:
-            std::cerr << "missing include: ";
+        case simplecpp::Output::MISSING_HEADER:
+            std::cerr << "missing header: ";
+            break;
+        case simplecpp::Output::INCLUDE_NESTED_TOO_DEEPLY:
+            std::cerr << "include nested too deeply: ";
             break;
         case simplecpp::Output::SYNTAX_ERROR:
             std::cerr << "syntax error: ";

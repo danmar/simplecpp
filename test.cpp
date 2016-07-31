@@ -63,13 +63,16 @@ static std::string toString(const simplecpp::OutputList &outputList) {
 
         switch (output.type) {
         case simplecpp::Output::Type::ERROR:
-            ostr << "error,";
+            ostr << "#error,";
             break;
         case simplecpp::Output::Type::WARNING:
-            ostr << "warning,";
+            ostr << "#warning,";
             break;
-        case simplecpp::Output::Type::MISSING_INCLUDE:
-            ostr << "missing_include,";
+        case simplecpp::Output::Type::MISSING_HEADER:
+            ostr << "missing_header,";
+            break;
+        case simplecpp::Output::Type::INCLUDE_NESTED_TOO_DEEPLY:
+            ostr << "include_nested_too_deeply,";
             break;
         case simplecpp::Output::Type::SYNTAX_ERROR:
             ostr << "syntax_error,";
@@ -312,7 +315,7 @@ void error() {
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS("file0,1,error,#error hello world!\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,#error,#error hello world!\n", toString(outputList));
 }
 
 void garbage() {
@@ -525,7 +528,7 @@ void ifalt() { // using "and", "or", etc
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
-void missingInclude1() {
+void missingHeader1() {
     const simplecpp::DUI dui;
     std::istringstream istr("#include \"notexist.h\"\n");
     std::vector<std::string> files;
@@ -533,10 +536,10 @@ void missingInclude1() {
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
-    ASSERT_EQUALS("file0,1,missing_include,Header not found: \"notexist.h\"\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
-void missingInclude2() {
+void missingHeader2() {
     const simplecpp::DUI dui;
     std::istringstream istr("#include \"foo.h\"\n"); // this file exists
     std::vector<std::string> files;
@@ -548,7 +551,7 @@ void missingInclude2() {
     ASSERT_EQUALS("", toString(outputList));
 }
 
-void missingInclude3() {
+void missingHeader3() {
     const simplecpp::DUI dui;
     std::istringstream istr("#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"); // this file is not included
     std::vector<std::string> files;
@@ -557,6 +560,22 @@ void missingInclude3() {
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
     ASSERT_EQUALS("", toString(outputList));
+}
+
+void nestedInclude()
+{
+    std::istringstream istr("#include \"test.h\"\n");
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files,"test.h");
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    filedata["test.h"] = &rawtokens;
+
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui, &outputList);
+
+    ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
 }
 
 void multiline1() {
@@ -774,9 +793,10 @@ int main(int argc, char **argv) {
     TEST_CASE(ifdiv0);
     TEST_CASE(ifalt); // using "and", "or", etc
 
-    TEST_CASE(missingInclude1);
-    TEST_CASE(missingInclude2);
-    TEST_CASE(missingInclude3);
+    TEST_CASE(missingHeader1);
+    TEST_CASE(missingHeader2);
+    TEST_CASE(missingHeader3);
+    TEST_CASE(nestedInclude);
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
