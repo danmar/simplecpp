@@ -1,4 +1,4 @@
-Simple C/C++ preprocessor
+# Simple C/C++ preprocessor
 
 This is a simple C/C++ preprocessor.
 
@@ -12,7 +12,10 @@ Simplecpp has better fidelity than normal C/C++ preprocessors.
  * Tracking macro usage.
 This information is normally lost during preprocessing but it can be necessary for proper static analysis.
 
+## Compiling
+
 Compiling standalone simplecpp preprocessor:
+
 Either:
 
     g++ -o simplecpp main.cpp simplecpp.cpp
