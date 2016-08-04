@@ -14,10 +14,15 @@ This information is normally lost during preprocessing but it can be necessary f
 
 Compiling standalone simplecpp preprocessor:
 Either:
+
     g++ -o simplecpp main.cpp simplecpp.cpp
+
 Or:
+
     make
 
+
 Compiling and running tests (you need python to run the gcc/clang test cases)
+
     make test
 
