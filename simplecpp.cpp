@@ -1058,16 +1058,26 @@ private:
         unsigned int par = 0;
         const Token *tok = lpar;
         while (sameline(lpar, tok)) {
-            if (!expandArg(tokens, tok, tok->location, macros, expandedmacros1, expandedmacros, parametertokens))
-                tokens->push_back(new Token(*tok));
-            if (tok->op == '(')
-                ++par;
-            else if (tok->op == ')') {
-                --par;
-                if (par == 0U)
-                    break;
+            if (tok->op == '#' && sameline(tok,tok->next) && tok->next->op == '#' && sameline(tok,tok->next->next)) {
+                // A##B => AB
+                const std::string strB(expandArgStr(tok->next->next, parametertokens));
+                if (variadic && strB.empty() && tok->previous->op == ',')
+                    tokens->deleteToken(tokens->back());
+                else
+                    tokens->back()->setstr(tokens->back()->str + strB);
+                tok = tok->next->next->next;
+            } else {
+                if (!expandArg(tokens, tok, tok->location, macros, expandedmacros1, expandedmacros, parametertokens))
+                    tokens->push_back(new Token(*tok));
+                if (tok->op == '(')
+                    ++par;
+                else if (tok->op == ')') {
+                    --par;
+                    if (par == 0U)
+                        break;
+                }
+                tok = tok->next;
             }
-            tok = tok->next;
         }
         return sameline(lpar,tok) ? tok : NULL;
     }

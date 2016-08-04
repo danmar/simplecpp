@@ -289,6 +289,15 @@ void define_define_8() { // line break in nested macro call
     ASSERT_EQUALS("\n\n( ( 0 ) + ( ( ( 255 ) * ( x + y ) ) ) )", preprocess(code));
 }
 
+void define_define_9() {
+    const char code[] = "#define glue(a, b) a ## b\n"
+                        "#define xglue(a, b) glue(a, b)\n"
+                        "#define AB 1\n"
+                        "#define B B 2\n"
+                        "xglue(A, B)\n";
+    ASSERT_EQUALS("\n\n\n\n1 2", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -360,9 +369,16 @@ void hashhash3() {
 }
 
 void hashhash4() {  // nonstandard gcc/clang extension for empty varargs
-    const char code[] = "#define A(x,y...)  a(x,##y)\n"
-                        "A(1)\n";
+    const char *code;
+
+    code = "#define A(x,y...)  a(x,##y)\n"
+           "A(1)\n";
     ASSERT_EQUALS("\na ( 1 )", preprocess(code));
+
+    code = "#define A(x, ...)   a(x, ## __VA_ARGS__)\n"
+           "#define B(x, ...)   A(x, ## __VA_ARGS__)\n"
+           "B(1);";
+    ASSERT_EQUALS("\n\na ( 1 ) ;", preprocess(code));
 }
 
 void hashhash5() {
