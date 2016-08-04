@@ -1,11 +1,12 @@
 Simple C/C++ preprocessor
 
-This is a simple and easy to use preprocessor.
+This is a simple C/C++ preprocessor.
 
-Written primarily for Cppcheck. But hopefully it will be reused in other projects also. There are no Cppcheck dependencies.
+To see how you can use simplecpp in your project, you can look at the file main.cpp.
 
-The intention is that this preprocessor will have good fidelity.
- * Preprocessor directives will be saved.
- * Comments will be saved.
- * Tracking which macro is expanded
+Simplecpp has better fidelity than normal C/C++ preprocessors.
+ * Preprocessor directives are available.
+ * Comments are available.
+ * Tracking macro usage.
 This information is normally lost during preprocessing but it can be necessary for proper static analysis.
+
