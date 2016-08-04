@@ -10,6 +10,7 @@ Simplecpp has better fidelity than normal C/C++ preprocessors.
  * Preprocessor directives are available.
  * Comments are available.
  * Tracking macro usage.
+
 This information is normally lost during preprocessing but it can be necessary for proper static analysis.
 
 ## Compiling
