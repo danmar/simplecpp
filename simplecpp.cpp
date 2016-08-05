@@ -861,6 +861,15 @@ public:
         }
     }
 
+    /**
+     * Expand macro. This will recursively expand inner macros.
+     * @param output   destination tokenlist
+     * @param rawtok   macro token
+     * @param macros   list of macros
+     * @param files    the files
+     * @return token after macro
+     * @throw Can throw wrongNumberOfParameters or invalidHashHash
+     */
     const Token * expand(TokenList * const output,
                          const Token * rawtok,
                          const std::map<TokenString,Macro> &macros,
@@ -924,18 +933,22 @@ public:
         return rawtok;
     }
 
+    /** macro name */
     const TokenString &name() const {
         return nameToken->str;
     }
 
+    /** location for macro definition */
     const Location &defineLocation() const {
         return nameToken->location;
     }
 
+    /** how has this macro been used so far */
     const std::list<Location> &usage() const {
         return usageList;
     }
 
+    /** is this a function like macro */
     bool functionLike() const {
         return nameToken->next &&
                nameToken->next->op == '(' &&
@@ -943,34 +956,29 @@ public:
                nameToken->next->location.col == nameToken->location.col + nameToken->str.size();
     }
 
+    /** base class for errors */
     struct Error {
         Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
         Location location;
         std::string what;
     };
 
+    /** Struct that is thrown when macro is expanded with wrong number of parameters */
     struct wrongNumberOfParameters : public Error {
         wrongNumberOfParameters(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Wrong number of parameters for macro \'" + macroName + "\'.") {}
     };
 
+    /** Struct that is thrown when there is invalid ## usage */
     struct invalidHashHash : public Error {
         invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Invalid ## usage when expanding \'" + macroName + "\'.") {}
     };
 private:
-    Token *newMacroToken(const TokenString &str, const Location &loc, bool rawCode) const {
+    /** Create new token where Token::macro is set for replaced tokens */
+    Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced) const {
         Token *tok = new Token(str,loc);
-        if (!rawCode)
+        if (replaced)
             tok->macro = nameToken->str;
         return tok;
-    }
-
-    void setMacroName(TokenList *output, Token *token1, const std::set<std::string> &expandedmacros) const {
-        if (!isRawToken(expandedmacros))
-            return;
-        for (Token *tok = token1 ? token1->next : output->front(); tok; tok = tok->next) {
-            if (!tok->macro.empty())
-                tok->macro = nameToken->str;
-        }
     }
 
     void parseDefine(const Token *nametoken) {
@@ -1160,7 +1168,7 @@ private:
             if (tok->op != '#') {
                 // A##B => AB
                 if (tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
-                    output->push_back(newMacroToken(expandArgStr(tok, parametertokens2), loc, !isRawToken(expandedmacros)));
+                    output->push_back(newMacroToken(expandArgStr(tok, parametertokens2), loc, isReplaced(expandedmacros)));
                     tok = tok->next;
                 } else {
                     tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens2);
@@ -1182,8 +1190,11 @@ private:
             }
         }
 
-        if (!functionLike())
-            setMacroName(output, output_end_1, expandedmacros);
+        if (!functionLike()) {
+            for (Token *tok = output_end_1 ? output_end_1->next : output->front(); tok; tok = tok->next) {
+                tok->macro = nameToken->str;
+            }
+        }
 
         if (!parametertokens1.empty())
             parametertokens1.swap(parametertokens2);
@@ -1194,7 +1205,7 @@ private:
     const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         // Not name..
         if (!tok->name) {
-            output->push_back(newMacroToken(tok->str, loc, false));
+            output->push_back(newMacroToken(tok->str, loc, true));
             return tok->next;
         }
 
@@ -1241,21 +1252,21 @@ private:
             if (!calledMacro.functionLike())
                 return calledMacro.expand(output, loc, tok, macros, expandedmacros);
             if (!sameline(tok, tok->next) || tok->next->op != '(') {
-                output->push_back(newMacroToken(tok->str, loc, false));
+                output->push_back(newMacroToken(tok->str, loc, true));
                 return tok->next;
             }
             TokenList tokens(files);
             tokens.push_back(new Token(*tok));
             const Token *tok2 = appendTokens(&tokens, tok->next, macros, expandedmacros, parametertokens);
             if (!tok2) {
-                output->push_back(newMacroToken(tok->str, loc, false));
+                output->push_back(newMacroToken(tok->str, loc, true));
                 return tok->next;
             }
             calledMacro.expand(output, loc, tokens.cfront(), macros, expandedmacros);
             return tok2->next;
         }
 
-        output->push_back(newMacroToken(tok->str, loc, false));
+        output->push_back(newMacroToken(tok->str, loc, true));
         return tok->next;
     }
 
@@ -1290,13 +1301,19 @@ private:
             if (it != macros.end() && (partok->str == name() || expandedmacros.find(partok->str) == expandedmacros.end()))
                 partok = it->second.expand(output, loc, partok, macros, expandedmacros);
             else {
-                output->push_back(newMacroToken(partok->str, loc, isRawToken(expandedmacros)));
+                output->push_back(newMacroToken(partok->str, loc, isReplaced(expandedmacros)));
                 partok = partok->next;
             }
         }
         return true;
     }
 
+    /**
+     * Get string for token. If token is argument, the expanded string is returned.
+     * @param tok              The token
+     * @param parametertokens  parameters given when expanding this macro
+     * @return string
+     */
     std::string expandArgStr(const Token *tok, const std::vector<const Token *> &parametertokens) const {
         TokenList tokens(files);
         if (expandArg(&tokens, tok, parametertokens)) {
@@ -1330,7 +1347,7 @@ private:
                 ostr << c;
             }
         }
-        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, isRawToken(expandedmacros)));
+        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, isReplaced(expandedmacros)));
         return tok;
     }
 
@@ -1371,36 +1388,47 @@ private:
         return B->next;
     }
 
-    void setMacro(Token *tok) const {
-        while (tok) {
-            if (!tok->macro.empty())
-                tok->macro = nameToken->str;
-            tok = tok->next;
-        }
-    }
-
-    bool isRawToken(const std::set<std::string> expandedmacros) const {
-        // return true if size <= 1
+    bool isReplaced(const std::set<std::string> &expandedmacros) const {
+        // return true if size > 1
         std::set<std::string>::const_iterator it = expandedmacros.begin();
         if (it == expandedmacros.end())
-            return true;
+            return false;
         ++it;
-        return (it == expandedmacros.end());
+        return (it != expandedmacros.end());
     }
 
+    /** name token in definition */
     const Token *nameToken;
+
+    /** arguments for macro */
     std::vector<TokenString> args;
+
+    /** is macro variadic? */
     bool variadic;
+
+    /** first token in replacement string */
     const Token *valueToken;
+
+    /** token after replacement string */
     const Token *endToken;
+
+    /** files */
     std::vector<std::string> &files;
+
+    /** this is used for -D where the definition is not seen anywhere in code */
     TokenList tokenListDefine;
+
+    /** usage of this macro */
     mutable std::list<Location> usageList;
 };
 }
 
 
 namespace simplecpp {
+
+/**
+ * perform path simplifications for . and ..
+ */
 std::string simplifyPath(std::string path) {
     std::string::size_type pos;
 
@@ -1434,6 +1462,7 @@ std::string simplifyPath(std::string path) {
 }
 
 namespace {
+/** Evaluate sizeof(type) */
 void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType) {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->str != "sizeof")
