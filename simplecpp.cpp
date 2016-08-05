@@ -964,8 +964,8 @@ private:
         return tok;
     }
 
-    void setMacroName(TokenList *output, Token *token1, const std::set<std::string> &expandedmacros1) const {
-        if (!expandedmacros1.empty())
+    void setMacroName(TokenList *output, Token *token1, const std::set<std::string> &expandedmacros) const {
+        if (!isRawToken(expandedmacros))
             return;
         for (Token *tok = token1 ? token1->next : output->front(); tok; tok = tok->next) {
             if (!tok->macro.empty())
@@ -1050,7 +1050,6 @@ private:
     const Token *appendTokens(TokenList *tokens,
                               const Token *lpar,
                               const std::map<TokenString,Macro> &macros,
-                              const std::set<TokenString> &expandedmacros1,
                               const std::set<TokenString> &expandedmacros,
                               const std::vector<const Token*> &parametertokens) const {
         if (!lpar || lpar->op != '(')
@@ -1060,11 +1059,11 @@ private:
         while (sameline(lpar, tok)) {
             if (tok->op == '#' && sameline(tok,tok->next) && tok->next->op == '#' && sameline(tok,tok->next->next)) {
                 // A##B => AB
-                tok = expandHashHash(tokens, tok->location, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                tok = expandHashHash(tokens, tok->location, tok, macros, expandedmacros, parametertokens);
             } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
-                tok = expandHash(tokens, tok->location, tok, macros, expandedmacros1, expandedmacros, parametertokens);
+                tok = expandHash(tokens, tok->location, tok, macros, expandedmacros, parametertokens);
             } else {
-                if (!expandArg(tokens, tok, tok->location, macros, expandedmacros1, expandedmacros, parametertokens))
+                if (!expandArg(tokens, tok, tok->location, macros, expandedmacros, parametertokens))
                     tokens->push_back(new Token(*tok));
                 if (tok->op == '(')
                     ++par;
@@ -1080,7 +1079,6 @@ private:
     }
 
     const Token * expand(TokenList * const output, const Location &loc, const Token * const nameToken, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
-        const std::set<TokenString> expandedmacros1(expandedmacros);
         expandedmacros.insert(nameToken->str);
 
         usageList.push_back(loc);
@@ -1162,10 +1160,10 @@ private:
             if (tok->op != '#') {
                 // A##B => AB
                 if (tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
-                    output->push_back(newMacroToken(expandArgStr(tok, parametertokens2), loc, !expandedmacros1.empty()));
+                    output->push_back(newMacroToken(expandArgStr(tok, parametertokens2), loc, !isRawToken(expandedmacros)));
                     tok = tok->next;
                 } else {
-                    tok = expandToken(output, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens2);
+                    tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens2);
                 }
                 continue;
             }
@@ -1177,15 +1175,15 @@ private:
             }
             if (tok->op == '#') {
                 // A##B => AB
-                tok = expandHashHash(output, loc, tok->previous, macros, expandedmacros1, expandedmacros, parametertokens2);
+                tok = expandHashHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
             } else {
                 // #123 => "123"
-                tok = expandHash(output, loc, tok->previous, macros, expandedmacros1, expandedmacros, parametertokens2);
+                tok = expandHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
             }
         }
 
         if (!functionLike())
-            setMacroName(output, output_end_1, expandedmacros1);
+            setMacroName(output, output_end_1, expandedmacros);
 
         if (!parametertokens1.empty())
             parametertokens1.swap(parametertokens2);
@@ -1193,7 +1191,7 @@ private:
         return functionLike() ? parametertokens2.back()->next : nameToken->next;
     }
 
-    const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+    const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         // Not name..
         if (!tok->name) {
             output->push_back(newMacroToken(tok->str, loc, false));
@@ -1203,7 +1201,7 @@ private:
         // Macro parameter..
         {
             TokenList temp(files);
-            if (expandArg(&temp, tok, loc, macros, expandedmacros1, expandedmacros, parametertokens)) {
+            if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
                 if (!(temp.cback() && temp.cback()->name && tok->next && tok->next->op == '(')) {
                     output->takeTokens(temp);
                     return tok->next;
@@ -1224,7 +1222,7 @@ private:
                 TokenList temp2(files);
                 temp2.push_back(new Token(temp.cback()->str, tok->location));
 
-                const Token *tok2 = appendTokens(&temp2, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+                const Token *tok2 = appendTokens(&temp2, tok->next, macros, expandedmacros, parametertokens);
                 if (!tok2)
                     return tok->next;
 
@@ -1248,7 +1246,7 @@ private:
             }
             TokenList tokens(files);
             tokens.push_back(new Token(*tok));
-            const Token *tok2 = appendTokens(&tokens, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+            const Token *tok2 = appendTokens(&tokens, tok->next, macros, expandedmacros, parametertokens);
             if (!tok2) {
                 output->push_back(newMacroToken(tok->str, loc, false));
                 return tok->next;
@@ -1279,7 +1277,7 @@ private:
         return true;
     }
 
-    bool expandArg(TokenList *output, const Token *tok, const Location &loc, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+    bool expandArg(TokenList *output, const Token *tok, const Location &loc, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         if (!tok->name)
             return false;
         const unsigned int argnr = getArgNum(tok->str);
@@ -1289,10 +1287,10 @@ private:
             return true;
         for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
             const std::map<TokenString, Macro>::const_iterator it = macros.find(partok->str);
-            if (it != macros.end() && expandedmacros1.find(partok->str) == expandedmacros1.end())
+            if (it != macros.end() && (partok->str == name() || expandedmacros.find(partok->str) == expandedmacros.end()))
                 partok = it->second.expand(output, loc, partok, macros, expandedmacros);
             else {
-                output->push_back(newMacroToken(partok->str, loc, expandedmacros1.empty()));
+                output->push_back(newMacroToken(partok->str, loc, isRawToken(expandedmacros)));
                 partok = partok->next;
             }
         }
@@ -1316,14 +1314,13 @@ private:
      * @param loc     location for expanded token
      * @param tok     The # token
      * @param macros  all macros
-     * @param expandedmacros1  set with expanded macros, before this macro was expanded  (TODO: This should be removed)
      * @param expandedmacros   set with expanded macros, with this macro
      * @param parametertokens  parameters given when expanding this macro
      * @return token after the X
      */
-    const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+    const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         TokenList tokenListHash(files);
-        tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+        tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros, parametertokens);
         std::ostringstream ostr;
         for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next) {
             for (unsigned int i = 0; i < hashtok->str.size(); i++) {
@@ -1333,7 +1330,7 @@ private:
                 ostr << c;
             }
         }
-        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, expandedmacros1.empty()));
+        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, isRawToken(expandedmacros)));
         return tok;
     }
 
@@ -1344,12 +1341,11 @@ private:
      * @param loc     location for expanded token
      * @param tok     first # token
      * @param macros  all macros
-     * @param expandedmacros1  set with expanded macros, before this macro was expanded  (TODO: This should be removed)
      * @param expandedmacros   set with expanded macros, with this macro
      * @param parametertokens  parameters given when expanding this macro
      * @return token after B
      */
-    const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+    const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         Token *A = output->back();
         if (!A)
             throw invalidHashHash(tok->location, name());
@@ -1369,7 +1365,7 @@ private:
             TokenList tokens(files);
             tokens.push_back(new Token(strAB, tok->location));
             // TODO: For functionLike macros, push the (...)
-            expandToken(output, loc, tokens.cfront(), macros, expandedmacros1, expandedmacros, parametertokens);
+            expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
         }
 
         return B->next;
@@ -1381,6 +1377,15 @@ private:
                 tok->macro = nameToken->str;
             tok = tok->next;
         }
+    }
+
+    bool isRawToken(const std::set<std::string> expandedmacros) const {
+        // return true if size <= 1
+        std::set<std::string>::const_iterator it = expandedmacros.begin();
+        if (it == expandedmacros.end())
+            return true;
+        ++it;
+        return (it == expandedmacros.end());
     }
 
     const Token *nameToken;
