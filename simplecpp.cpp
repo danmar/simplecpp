@@ -1060,12 +1060,7 @@ private:
         while (sameline(lpar, tok)) {
             if (tok->op == '#' && sameline(tok,tok->next) && tok->next->op == '#' && sameline(tok,tok->next->next)) {
                 // A##B => AB
-                const std::string strB(expandArgStr(tok->next->next, parametertokens));
-                if (variadic && strB.empty() && tok->previous->op == ',')
-                    tokens->deleteToken(tokens->back());
-                else
-                    tokens->back()->setstr(tokens->back()->str + strB);
-                tok = tok->next->next->next;
+                tok = expandHashHash(tokens, tok->location, tok, macros, expandedmacros1, expandedmacros, parametertokens);
             } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
                 tok = expandHash(tokens, tok->location, tok, macros, expandedmacros1, expandedmacros, parametertokens);
             } else {
@@ -1182,28 +1177,7 @@ private:
             }
             if (tok->op == '#') {
                 // A##B => AB
-                Token *A = output->back();
-                if (!A)
-                    throw invalidHashHash(tok->location, name());
-                if (!sameline(tok, tok->next))
-                    throw invalidHashHash(tok->location, name());
-
-                std::string strAB = A->str + expandArgStr(tok->next, parametertokens2);
-
-                bool removeComma = false;
-                if (variadic && strAB == "," && tok->previous->previous->str == "," && args.size() >= 1U && tok->next->str == args[args.size()-1U])
-                    removeComma = true;
-
-                output->deleteToken(A);
-
-                if (!removeComma) {
-                    TokenList tokens(files);
-                    tokens.push_back(new Token(strAB, tok->location));
-                    // TODO: For functionLike macros, push the (...)
-                    expandToken(output, loc, tokens.cfront(), macros, expandedmacros1, expandedmacros, parametertokens2);
-                }
-
-                tok = tok->next->next;
+                tok = expandHashHash(output, loc, tok->previous, macros, expandedmacros1, expandedmacros, parametertokens2);
             } else {
                 // #123 => "123"
                 tok = expandHash(output, loc, tok->previous, macros, expandedmacros1, expandedmacros, parametertokens2);
@@ -1336,6 +1310,17 @@ private:
         return tok->str;
     }
 
+    /**
+     * Expand #X => "X"
+     * @param output  destination tokenlist
+     * @param loc     location for expanded token
+     * @param tok     The # token
+     * @param macros  all macros
+     * @param expandedmacros1  set with expanded macros, before this macro was expanded  (TODO: This should be removed)
+     * @param expandedmacros   set with expanded macros, with this macro
+     * @param parametertokens  parameters given when expanding this macro
+     * @return token after the X
+     */
     const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
         TokenList tokenListHash(files);
         tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
@@ -1350,6 +1335,44 @@ private:
         }
         output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, expandedmacros1.empty()));
         return tok;
+    }
+
+    /**
+     * Expand A##B => AB
+     * The A should already be expanded. Call this when you reach the first # token
+     * @param output  destination tokenlist
+     * @param loc     location for expanded token
+     * @param tok     first # token
+     * @param macros  all macros
+     * @param expandedmacros1  set with expanded macros, before this macro was expanded  (TODO: This should be removed)
+     * @param expandedmacros   set with expanded macros, with this macro
+     * @param parametertokens  parameters given when expanding this macro
+     * @return token after B
+     */
+    const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        Token *A = output->back();
+        if (!A)
+            throw invalidHashHash(tok->location, name());
+        if (!sameline(tok, tok->next))
+            throw invalidHashHash(tok->location, name());
+
+        Token *B = tok->next->next;
+        const std::string strAB = A->str + expandArgStr(B, parametertokens);
+
+        bool removeComma = false;
+        if (variadic && strAB == "," && tok->previous->str == "," && args.size() >= 1U && B->str == args[args.size()-1U])
+            removeComma = true;
+
+        output->deleteToken(A);
+
+        if (!removeComma) {
+            TokenList tokens(files);
+            tokens.push_back(new Token(strAB, tok->location));
+            // TODO: For functionLike macros, push the (...)
+            expandToken(output, loc, tokens.cfront(), macros, expandedmacros1, expandedmacros, parametertokens);
+        }
+
+        return B->next;
     }
 
     void setMacro(Token *tok) const {
