@@ -346,6 +346,11 @@ void hash() {
                   "\"2+3\"", preprocess(code));
 
     ASSERT_EQUALS("\n\"\\\"abc\\\\0\\\"\"", preprocess("#define str(x) #x\nstr(\"abc\\0\")\n"));
+
+    ASSERT_EQUALS("\n\n( \"123\" )",
+                  preprocess("#define A(x)  (x)\n"
+                             "#define B(x)  A(#x)\n"
+                             "B(123)"));
 }
 
 void hashhash1() { // #4703

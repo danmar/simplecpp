@@ -1066,6 +1066,8 @@ private:
                 else
                     tokens->back()->setstr(tokens->back()->str + strB);
                 tok = tok->next->next->next;
+            } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
+                tok = expandHash(tokens, tok->location, tok, macros, expandedmacros1, expandedmacros, parametertokens);
             } else {
                 if (!expandArg(tokens, tok, tok->location, macros, expandedmacros1, expandedmacros, parametertokens))
                     tokens->push_back(new Token(*tok));
@@ -1204,18 +1206,7 @@ private:
                 tok = tok->next->next;
             } else {
                 // #123 => "123"
-                TokenList tokenListHash(files);
-                tok = expandToken(&tokenListHash, loc, tok, macros, expandedmacros1, expandedmacros, parametertokens2);
-                std::ostringstream ostr;
-                for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next) {
-                    for (unsigned int i = 0; i < hashtok->str.size(); i++) {
-                        unsigned char c = hashtok->str[i];
-                        if (c == '\"' || c == '\\' || c == '\'')
-                            ostr << '\\';
-                        ostr << c;
-                    }
-                }
-                output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, expandedmacros1.empty()));
+                tok = expandHash(output, loc, tok->previous, macros, expandedmacros1, expandedmacros, parametertokens2);
             }
         }
 
@@ -1343,6 +1334,22 @@ private:
             return s;
         }
         return tok->str;
+    }
+
+    const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString, Macro> &macros, const std::set<TokenString> &expandedmacros1, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        TokenList tokenListHash(files);
+        tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros1, expandedmacros, parametertokens);
+        std::ostringstream ostr;
+        for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next) {
+            for (unsigned int i = 0; i < hashtok->str.size(); i++) {
+                unsigned char c = hashtok->str[i];
+                if (c == '\"' || c == '\\' || c == '\'')
+                    ostr << '\\';
+                ostr << c;
+            }
+        }
+        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, expandedmacros1.empty()));
+        return tok;
     }
 
     void setMacro(Token *tok) const {
