@@ -1615,6 +1615,25 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
     std::list<const Token *> filelist;
 
+    // -include files
+    for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
+        if (ret.find(*it) != ret.end())
+            continue;
+
+        std::ifstream fin(it->c_str());
+        if (!fin.is_open())
+            continue;
+
+        TokenList *tokenlist = new TokenList(fin, fileNumbers, *it, outputList);
+        if (!tokenlist->front()) {
+            delete tokenlist;
+            continue;
+        }
+
+        ret[*it] = tokenlist;
+        filelist.push_back(tokenlist->front());
+    }
+
     for (const Token *rawtok = rawtokens.cfront(); rawtok || !filelist.empty(); rawtok = rawtok ? rawtok->next : NULL) {
         if (rawtok == NULL) {
             rawtok = filelist.back();
@@ -1710,7 +1729,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
     std::set<std::string> pragmaOnce;
 
-    for (const Token *rawtok = rawtokens.cfront(); rawtok || !includetokenstack.empty();) {
+    includetokenstack.push(rawtokens.cfront());
+    for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
+        const std::map<std::string, TokenList*>::const_iterator f = filedata.find(*it);
+        if (f != filedata.end())
+            includetokenstack.push(f->second->cfront());
+    }
+
+    for (const Token *rawtok = NULL; rawtok || !includetokenstack.empty();) {
         if (rawtok == NULL) {
             rawtok = includetokenstack.top();
             includetokenstack.pop();

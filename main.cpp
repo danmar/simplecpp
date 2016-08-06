@@ -3,7 +3,7 @@
 
 #include <fstream>
 #include <iostream>
-
+#include <cstring>
 
 int main(int argc, char **argv) {
     const char *filename = NULL;
@@ -14,18 +14,22 @@ int main(int argc, char **argv) {
         const char *arg = argv[i];
         if (*arg == '-') {
             char c = arg[1];
-            if (c != 'D' && c != 'U' && c != 'I')
+            if (c != 'D' && c != 'U' && c != 'I' && c != 'i')
                 continue;  // Ignored
             const char *value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
-            case 'D':
+            case 'D': // define symbol
                 dui.defines.push_back(value);
                 break;
-            case 'U':
+            case 'U': // undefine symbol
                 dui.undefined.insert(value);
                 break;
-            case 'I':
+            case 'I': // include path
                 dui.includePaths.push_back(value);
+                break;
+            case 'i':
+                if (std::strncmp(arg, "-include=",9)==0)
+                    dui.includes.push_back(arg+9);
                 break;
             };
         } else {
@@ -36,9 +40,10 @@ int main(int argc, char **argv) {
     if (!filename) {
         std::cout << "Syntax:" << std::endl;
         std::cout << "simplecpp [options] filename" << std::endl;
-        std::cout << "  -D  Define NAME." << std::endl;
-        std::cout << "  -I  Include path." << std::endl;
-        std::cout << "  -U  Undefine NAME." << std::endl;
+        std::cout << "  -DNAME          Define NAME." << std::endl;
+        std::cout << "  -IPATH          Include path." << std::endl;
+        std::cout << "  -include=FILE   Include FILE." << std::endl;
+        std::cout << "  -UNAME          Undefine NAME." << std::endl;
         std::exit(0);
     }
 

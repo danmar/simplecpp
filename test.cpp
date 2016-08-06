@@ -671,6 +671,35 @@ void include3() { // #16 - crash when expanding macro from header
 }
 
 
+void include4() { // #27 - -include
+    const char code_c[] = "X\n" ;
+    const char code_h[] = "#define X 123\n";
+
+    std::vector<std::string> files;
+
+    std::istringstream istr_c(code_c);
+    simplecpp::TokenList rawtokens_c(istr_c, files, "27.c");
+
+    std::istringstream istr_h(code_h);
+    simplecpp::TokenList rawtokens_h(istr_h, files, "27.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("27.c", files[0]);
+    ASSERT_EQUALS("27.h", files[1]);
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["27.c"] = &rawtokens_c;
+    filedata["27.h"] = &rawtokens_h;
+
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    dui.includes.push_back("27.h");
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
+
+    ASSERT_EQUALS("123", out.stringify());
+}
+
+
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
@@ -858,6 +887,7 @@ int main(int argc, char **argv) {
     TEST_CASE(include1);
     TEST_CASE(include2);
     TEST_CASE(include3);
+    TEST_CASE(include4); // -include
 
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);
