@@ -39,8 +39,8 @@ static void testcase(const std::string &name, void (*f)(), int argc, char **argv
 
 
 
-static std::string readfile(const char code[]) {
-    std::istringstream istr(code);
+static std::string readfile(const char code[], int sz=-1) {
+    std::istringstream istr(sz == -1 ? std::string(code) : std::string(code,sz));
     std::vector<std::string> files;
     return simplecpp::TokenList(istr,files).stringify();
 }
@@ -861,8 +861,8 @@ void utf8() {
 }
 
 void unicode() {
-  ASSERT_EQUALS("12", readfile("\xFF\xFE\x00\x31\x00\x32"));
-  ASSERT_EQUALS("12", readfile("\xFE\xFF\x31\x00\x32\x00"));
+  ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
+  ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
 }
 
 namespace simplecpp {
