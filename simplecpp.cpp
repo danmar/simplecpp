@@ -887,8 +887,31 @@ public:
                          const std::map<TokenString,Macro> &macros,
                          std::vector<std::string> &files) const {
         std::set<TokenString> expandedmacros;
+
         TokenList output2(files);
-        rawtok = expand(&output2, rawtok->location, rawtok, macros, expandedmacros);
+
+        if (functionLike() && rawtok->next && rawtok->next->op == '(') {
+            // Copy macro call to a new tokenlist with no linebreaks
+            const Token * const rawtok1 = rawtok;
+            TokenList rawtokens2(files);
+            rawtokens2.push_back(new Token(rawtok->str, rawtok1->location));
+            rawtok = rawtok->next;
+            rawtokens2.push_back(new Token(rawtok->str, rawtok1->location));
+            rawtok = rawtok->next;
+            int par = 1;
+            while (rawtok && par > 0) {
+                if (rawtok->op == '(')
+                    ++par;
+                else if (rawtok->op == ')')
+                    --par;
+                rawtokens2.push_back(new Token(rawtok->str, rawtok1->location));
+                rawtok = rawtok->next;
+            }
+            if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
+                rawtok = rawtok1->next;
+        } else {
+            rawtok = expand(&output2, rawtok->location, rawtok, macros, expandedmacros);
+        }
         while (output2.cback() && rawtok) {
             unsigned int par = 0;
             Token* macro2tok = output2.back();

@@ -289,7 +289,14 @@ void define_define_8() { // line break in nested macro call
     ASSERT_EQUALS("\n\n( ( 0 ) + ( ( ( 255 ) * ( x + y ) ) ) )", preprocess(code));
 }
 
-void define_define_9() {
+void define_define_9() { // line break in nested macro call
+    const char code[] = "#define A(X) X\n"
+                        "#define B(X) X\n"
+                        "A(\nB(dostuff(1,\n2)))\n";
+    ASSERT_EQUALS("\n\ndostuff ( 1 , 2 )", preprocess(code));
+}
+
+void define_define_10() {
     const char code[] = "#define glue(a, b) a ## b\n"
                         "#define xglue(a, b) glue(a, b)\n"
                         "#define AB 1\n"
@@ -878,6 +885,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_6);
     TEST_CASE(define_define_7);
     TEST_CASE(define_define_8); // line break in nested macro call
+    TEST_CASE(define_define_9); // line break in nested macro call
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
