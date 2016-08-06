@@ -845,6 +845,10 @@ void userdef() {
     ASSERT_EQUALS("\n123", tokens2.stringify());
 }
 
+void utf8() {
+    ASSERT_EQUALS("123", readfile("\xEF\xBB\xBF 123"));
+}
+
 namespace simplecpp {
 std::string simplifyPath(std::string);
 }
@@ -943,6 +947,9 @@ int main(int argc, char **argv) {
     TEST_CASE(undef);
 
     TEST_CASE(userdef);
+
+    // utf/unicode
+    TEST_CASE(utf8);
 
     // utility functions.
     TEST_CASE(simplifyPath);

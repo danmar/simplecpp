@@ -298,11 +298,15 @@ static unsigned short getAndSkipBOM(std::istream &istr) {
         return 0;
     }
 
-    if (ch1 == 0xef && istr.peek() == 0xbb && istr.peek() == 0xbf) {
-        // Skip BOM 0xefbbbf
-        (void)istr.get();
-        (void)istr.get();
-        (void)istr.get();
+    // Skip UTF-8 BOM 0xefbbbf
+    if (ch1 == 0xef) {
+        istr.get();
+        if (istr.get() == 0xbb && istr.peek() == 0xbf) {
+            (void)istr.get();
+        } else {
+            istr.unget();
+            istr.unget();
+        }
     }
 
     return 0;
