@@ -673,6 +673,17 @@ void multiline4() { // #28 - macro with multiline comment
     ASSERT_EQUALS("\n\n\n1", tokens2.stringify());
 }
 
+void multiline5() { // column
+    const char code[] = "#define A\\\n"
+                        "(";
+    const simplecpp::DUI dui;
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files);
+    ASSERT_EQUALS("# define A (", rawtokens.stringify());
+    ASSERT_EQUALS(11, rawtokens.back()->location.col);
+}
+
 void include1() {
     const char code[] = "#include \"A.h\"\n";
     ASSERT_EQUALS("# include \"A.h\"", readfile(code));
@@ -931,15 +942,16 @@ int main(int argc, char **argv) {
     TEST_CASE(missingHeader3);
     TEST_CASE(nestedInclude);
 
-    TEST_CASE(multiline1);
-    TEST_CASE(multiline2);
-    TEST_CASE(multiline3);
-    TEST_CASE(multiline4);
-
     TEST_CASE(include1);
     TEST_CASE(include2);
     TEST_CASE(include3);
     TEST_CASE(include4); // -include
+
+    TEST_CASE(multiline1);
+    TEST_CASE(multiline2);
+    TEST_CASE(multiline3);
+    TEST_CASE(multiline4);
+    TEST_CASE(multiline5); // column
 
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);

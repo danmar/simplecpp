@@ -343,7 +343,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 location.line += multiline + 1;
                 multiline = 0U;
             }
-            location.col = 1;
+            if (!multiline)
+                location.col = 1;
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
@@ -466,7 +467,11 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         }
 
         push_back(new Token(currentToken, location));
-        location.adjust(currentToken);
+
+        if (multiline)
+            location.col += currentToken.size();
+        else
+            location.adjust(currentToken);
     }
 
     combineOperators();
