@@ -849,6 +849,11 @@ void utf8() {
     ASSERT_EQUALS("123", readfile("\xEF\xBB\xBF 123"));
 }
 
+void unicode() {
+  ASSERT_EQUALS("12", readfile("\xFF\xFE\x00\x31\x00\x32"));
+  ASSERT_EQUALS("12", readfile("\xFE\xFF\x31\x00\x32\x00"));
+}
+
 namespace simplecpp {
 std::string simplifyPath(std::string);
 }
@@ -950,6 +955,7 @@ int main(int argc, char **argv) {
 
     // utf/unicode
     TEST_CASE(utf8);
+    TEST_CASE(unicode);
 
     // utility functions.
     TEST_CASE(simplifyPath);
