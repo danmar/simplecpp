@@ -634,6 +634,22 @@ void multiline2() {
 }
 
 void multiline3() { // #28 - macro with multiline comment
+    const char code[] = "#define A /*\\\n"
+                        "           */ 1\n"
+                        "A";
+    const simplecpp::DUI dui;
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files);
+    ASSERT_EQUALS("# define A /*           */ 1\n\nA", rawtokens.stringify());
+    rawtokens.removeComments();
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui);
+    ASSERT_EQUALS("\n\n1", tokens2.stringify());
+}
+
+void multiline4() { // #28 - macro with multiline comment
     const char code[] = "#define A \\\n"
                         "          /*\\\n"
                         "           */ 1\n"
@@ -901,6 +917,7 @@ int main(int argc, char **argv) {
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
     TEST_CASE(multiline3);
+    TEST_CASE(multiline4);
 
     TEST_CASE(include1);
     TEST_CASE(include2);
