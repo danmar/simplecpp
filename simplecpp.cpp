@@ -796,7 +796,7 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
         clear();
         if (outputList) {
             Output err(files);
-            err.type = Output::ERROR;
+            err.type = Output::SYNTAX_ERROR;
             err.location = location;
             err.msg = std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
             outputList->push_back(err);
@@ -977,12 +977,12 @@ public:
 
     /** Struct that is thrown when macro is expanded with wrong number of parameters */
     struct wrongNumberOfParameters : public Error {
-        wrongNumberOfParameters(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Wrong number of parameters for macro \'" + macroName + "\'.") {}
+        wrongNumberOfParameters(const Location &loc, const std::string &macroName) : Error(loc, "Wrong number of parameters for macro \'" + macroName + "\'.") {}
     };
 
     /** Struct that is thrown when there is invalid ## usage */
     struct invalidHashHash : public Error {
-        invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Syntax error. Invalid ## usage when expanding \'" + macroName + "\'.") {}
+        invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Invalid ## usage when expanding \'" + macroName + "\'.") {}
     };
 private:
     /** Create new token where Token::macro is set for replaced tokens */
@@ -1885,7 +1885,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         conditionIsTrue = (evaluate(expr, sizeOfType) != 0);
                     } catch (const std::exception &) {
                         Output out(rawtok->location.files);
-                        out.type = Output::ERROR;
+                        out.type = Output::SYNTAX_ERROR;
                         out.location = rawtok->location;
                         out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
                         if (outputList)
@@ -1953,7 +1953,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     rawtok = macro->second.expand(&tokens, rawtok, macros, files);
                 } catch (const simplecpp::Macro::Error &err) {
                     Output out(err.location.files);
-                    out.type = Output::ERROR;
+                    out.type = Output::SYNTAX_ERROR;
                     out.location = err.location;
                     out.msg = err.what;
                     if (outputList)
