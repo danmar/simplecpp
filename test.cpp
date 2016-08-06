@@ -861,8 +861,9 @@ void utf8() {
 }
 
 void unicode() {
-  ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
-  ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
+    ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
+    ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
+    ASSERT_EQUALS("\n//1", readfile("\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00",16));
 }
 
 namespace simplecpp {
