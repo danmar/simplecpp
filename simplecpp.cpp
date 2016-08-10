@@ -322,14 +322,14 @@ bool isNameChar(unsigned char ch) {
 
 static std::string escapeString(const std::string &str) {
     std::ostringstream ostr;
-    ostr << '"';
+    ostr << '\"';
     for (std::size_t i = 1U; i < str.size() - 1; ++i) {
         char c = str[i];
-        if (c == '\\' || c == '"')
+        if (c == '\\' || c == '\"' || c == '\'')
             ostr << '\\';
         ostr << c;
     }
-    ostr << '"';
+    ostr << '\"';
     return ostr.str();
 }
 
@@ -1400,15 +1400,11 @@ private:
         TokenList tokenListHash(files);
         tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros, parametertokens);
         std::ostringstream ostr;
-        for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next) {
-            for (unsigned int i = 0; i < hashtok->str.size(); i++) {
-                unsigned char c = hashtok->str[i];
-                if (c == '\"' || c == '\\' || c == '\'')
-                    ostr << '\\';
-                ostr << c;
-            }
-        }
-        output->push_back(newMacroToken('\"' + ostr.str() + '\"', loc, isReplaced(expandedmacros)));
+        ostr << '\"';
+        for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next)
+            ostr << hashtok->str;
+        ostr << '\"';
+        output->push_back(newMacroToken(escapeString(ostr.str()), loc, isReplaced(expandedmacros)));
         return tok;
     }
 
