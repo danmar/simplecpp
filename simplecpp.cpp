@@ -1821,8 +1821,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     err.msg = '#' + rawtok->str + ' ' + err.msg;
                     outputList->push_back(err);
                 }
-                output.clear();
-                return;
+                if (rawtok->str == ERROR) {
+                    output.clear();
+                    return;
+                }
             }
 
             if (rawtok->str == DEFINE) {

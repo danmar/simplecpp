@@ -896,6 +896,17 @@ void unicode() {
     ASSERT_EQUALS("\n//1", readfile("\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00",16));
 }
 
+void warning() {
+    std::istringstream istr("#warning MSG\n1");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("\n1", tokens2.stringify());
+    ASSERT_EQUALS("file0,1,#warning,#warning MSG\n", toString(outputList));
+}
+
 namespace simplecpp {
 std::string simplifyPath(std::string);
 }
@@ -1001,6 +1012,8 @@ int main(int argc, char **argv) {
     // utf/unicode
     TEST_CASE(utf8);
     TEST_CASE(unicode);
+
+    TEST_CASE(warning);
 
     // utility functions.
     TEST_CASE(simplifyPath);
