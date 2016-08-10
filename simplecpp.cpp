@@ -315,6 +315,19 @@ bool isNameChar(unsigned char ch) {
     return std::isalnum(ch) || ch == '_' || ch == '$';
 }
 
+static std::string escapeString(const std::string &str) {
+    std::ostringstream ostr;
+    ostr << '"';
+    for (std::size_t i = 1U; i < str.size() - 1; ++i) {
+      char c = str[i];
+      if (c == '\\' || c == '"')
+          ostr << '\\';
+      ostr << c;
+    }
+    ostr << '"';
+    return ostr.str();
+}
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -444,7 +457,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     // TODO report
                     return;
                 currentToken.erase(currentToken.size() - endOfRawString.size(), endOfRawString.size() - 1U);
-                back()->setstr(currentToken);
+                back()->setstr(escapeString(currentToken));
                 location.col += currentToken.size() + 2U + 2 * delim.size();
                 continue;
             }

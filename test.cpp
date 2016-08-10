@@ -758,8 +758,11 @@ void readfile_string() {
 }
 
 void readfile_rawstring() {
-    ASSERT_EQUALS("A = \"abc\\\\def\"", readfile("A = R\"(abc\\\\def)\""));
-    ASSERT_EQUALS("A = \"abc\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
+    ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"(abc\\\\def)\""));
+    ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
+    ASSERT_EQUALS("A = \"\"", readfile("A = R\"()\""));
+    ASSERT_EQUALS("A = \"\\\\\"", readfile("A = R\"(\\)\""));
+    ASSERT_EQUALS("A = \"\\\"\"", readfile("A = R\"(\")\""));
 }
 
 void tokenMacro1() {
