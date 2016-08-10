@@ -324,10 +324,10 @@ static std::string escapeString(const std::string &str) {
     std::ostringstream ostr;
     ostr << '"';
     for (std::size_t i = 1U; i < str.size() - 1; ++i) {
-      char c = str[i];
-      if (c == '\\' || c == '"')
-          ostr << '\\';
-      ostr << c;
+        char c = str[i];
+        if (c == '\\' || c == '"')
+            ostr << '\\';
+        ostr << c;
     }
     ostr << '"';
     return ostr.str();
