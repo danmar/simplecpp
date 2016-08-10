@@ -762,6 +762,33 @@ void readfile_rawstring() {
     ASSERT_EQUALS("A = \"abc\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
 }
 
+void stringify1() {
+    const char code_c[] = "#include \"A.h\"\n"
+                          "#include \"A.h\"\n";
+    const char code_h[] = "1\n2";
+
+    std::vector<std::string> files;
+
+    std::istringstream istr_c(code_c);
+    simplecpp::TokenList rawtokens_c(istr_c, files, "A.c");
+
+    std::istringstream istr_h(code_h);
+    simplecpp::TokenList rawtokens_h(istr_h, files, "A.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("A.c", files[0]);
+    ASSERT_EQUALS("A.h", files[1]);
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["A.c"] = &rawtokens_c;
+    filedata["A.h"] = &rawtokens_h;
+
+    simplecpp::TokenList out(files);
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, simplecpp::DUI());
+
+    ASSERT_EQUALS("\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.h\"\n1\n2", out.stringify());
+}
+
 void tokenMacro1() {
     const char code[] = "#define A 123\n"
                         "A";
@@ -956,6 +983,8 @@ int main(int argc, char **argv) {
 
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);
+
+    TEST_CASE(stringify1);
 
     TEST_CASE(tokenMacro1);
     TEST_CASE(tokenMacro2);

@@ -213,6 +213,11 @@ std::string simplecpp::TokenList::stringify() const {
     std::ostringstream ret;
     Location loc(files);
     for (const Token *tok = cfront(); tok; tok = tok->next) {
+        if (tok->location.line < loc.line || tok->location.fileIndex != loc.fileIndex) {
+            ret << "\n#line " << tok->location.line << " \"" << tok->location.file() << "\"\n";
+            loc = tok->location;
+        }
+
         while (tok->location.line > loc.line) {
             ret << '\n';
             loc.line++;
