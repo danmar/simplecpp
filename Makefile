@@ -1,7 +1,7 @@
 all:	testrunner	simplecpp
 
 testrunner:	test.cpp	simplecpp.o
-	$(CXX) -Wall -Wextra -pedantic -g -std=c++11 simplecpp.o test.cpp -o testrunner
+	$(CXX) -Wall -Wextra -pedantic -g -std=c++0x simplecpp.o test.cpp -o testrunner
 
 simplecpp.o:	simplecpp.cpp	simplecpp.h
 	$(CXX) -Wall -Wextra -pedantic -Wno-long-long -g -c simplecpp.cpp
