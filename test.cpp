@@ -124,6 +124,10 @@ void combineOperators_increment() {
     ASSERT_EQUALS("1 + + 2", preprocess("1++2"));
 }
 
+void combineOperators_coloncolon() {
+    ASSERT_EQUALS("x ? y : :: z", preprocess("x ? y : ::z"));
+}
+
 void comment() {
     ASSERT_EQUALS("// abc", readfile("// abc"));
     ASSERT_EQUALS("", preprocess("// abc"));
@@ -924,6 +928,7 @@ int main(int argc, char **argv) {
 
     TEST_CASE(combineOperators_floatliteral);
     TEST_CASE(combineOperators_increment);
+    TEST_CASE(combineOperators_coloncolon);
 
     TEST_CASE(comment);
     TEST_CASE(comment_multiline);

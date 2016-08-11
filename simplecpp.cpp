@@ -554,6 +554,11 @@ void simplecpp::TokenList::combineOperators() {
 
         if (tok->op == '\0' || !tok->next || tok->next->op == '\0')
             continue;
+        if (!sameline(tok,tok->next))
+            continue;
+        if (tok->location.col + 1U != tok->next->location.col)
+            continue;
+
         if (tok->next->op == '=' && tok->isOneOf("=!<>+-*/%&|^")) {
             tok->setstr(tok->str + "=");
             deleteToken(tok->next);
