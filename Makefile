@@ -1,14 +1,18 @@
 all:	testrunner	simplecpp
 
+CXXFLAGS ?= -Wall -Wextra -pedantic -g -std=c++0x -Wno-long-long
+
 testrunner:	test.cpp	simplecpp.o
-	$(CXX) -Wall -Wextra -pedantic -g -std=c++0x simplecpp.o test.cpp -o testrunner
+	$(CXX) $(CXXFLAGS) simplecpp.o test.cpp -o testrunner
+
+clean:
+	rm -f simplecpp.o simplecpp  testrunner
 
 simplecpp.o:	simplecpp.cpp	simplecpp.h
-	$(CXX) -Wall -Wextra -pedantic -Wno-long-long -g -c simplecpp.cpp
+	$(CXX) $(CXXFLAGS) -c simplecpp.cpp
 
 test:	testrunner	simplecpp
 	./testrunner && python run-tests.py
 
 simplecpp:	main.cpp	simplecpp.o
-	$(CXX) -Wall -g -std=c++0x main.cpp simplecpp.o -o simplecpp
-
+	$(CXX) $(CXXFLAGS) main.cpp simplecpp.o -o simplecpp
