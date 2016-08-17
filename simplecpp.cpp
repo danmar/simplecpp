@@ -1487,14 +1487,13 @@ private:
 
 
 namespace simplecpp {
-
-#if defined(__linux__) || defined(__sun) || defined(__hpux)
-#define windowsLowerCase(f)  f
-#else
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 std::string windowsLowerCase(std::string f) {
     std::transform(f.begin(), f.end(), f.begin(), static_cast<int(*)(int)>(std::tolower));
     return f;
 }
+#else
+#define windowsLowerCase(f)  f
 #endif
 
 /**
