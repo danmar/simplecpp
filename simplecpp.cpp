@@ -1243,6 +1243,8 @@ private:
             if (tok->op != '#') {
                 // A##B => AB
                 if (tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
+                    if (!sameline(tok, tok->next->next->next))
+                        throw invalidHashHash(tok->location, name());
                     output->push_back(newMacroToken(expandArgStr(tok, parametertokens2), loc, isReplaced(expandedmacros)));
                     tok = tok->next;
                 } else {

@@ -344,6 +344,7 @@ void error() {
 
 void garbage() {
     preprocess("#ifdef");
+    preprocess("#define TEST2() A ##\nTEST2()\n");
 }
 
 void hash() {
