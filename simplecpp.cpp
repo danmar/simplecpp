@@ -1146,8 +1146,20 @@ private:
             } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
                 tok = expandHash(tokens, tok->location, tok, macros, expandedmacros, parametertokens);
             } else {
-                if (!expandArg(tokens, tok, tok->location, macros, expandedmacros, parametertokens))
-                    tokens->push_back(new Token(*tok));
+                if (!expandArg(tokens, tok, tok->location, macros, expandedmacros, parametertokens)) {
+                    bool expanded = false;
+                    if (macros.find(tok->str) != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
+                        const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+                        const Macro &m = it->second;
+                        if (!m.functionLike()) {
+                            m.expand(tokens, tok, macros, files);
+                            expanded = true;
+                        }
+                    }
+                    if (!expanded)
+                        tokens->push_back(new Token(*tok));
+                }
+
                 if (tok->op == '(')
                     ++par;
                 else if (tok->op == ')') {

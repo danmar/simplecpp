@@ -42,7 +42,9 @@ skip = ['assembler-with-cpp.c',
         '_Pragma-physloc.c',
         'pragma-pushpop-macro.c', # pragma push/pop
         'x86_target_features.c',
-        'warn-disabled-macro-expansion.c'
+        'warn-disabled-macro-expansion.c',
+        'c99-6_10_3_3_p4.c',
+        'macro_paste_hashhash.c'
        ]
 
 todo = [

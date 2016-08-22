@@ -309,6 +309,15 @@ void define_define_10() {
     ASSERT_EQUALS("\n\n\n\n1 2", preprocess(code));
 }
 
+void define_define_11() {
+    const char code[] = "#define XY(x, y)   x ## y\n"
+                        "#define XY2(x, y)  XY(x, y)\n"
+                        "#define PORT       XY2(P, 2)\n"
+                        "#define ABC        XY2(PORT, DIR)\n"
+                        "ABC;\n";
+    ASSERT_EQUALS("\n\n\n\nP2DIR ;", preprocess(code));
+}
+
 void define_va_args_1() {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
@@ -954,6 +963,8 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_7);
     TEST_CASE(define_define_8); // line break in nested macro call
     TEST_CASE(define_define_9); // line break in nested macro call
+    //TEST_CASE(define_define_10);
+    TEST_CASE(define_define_11);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
