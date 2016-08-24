@@ -1455,7 +1455,19 @@ private:
             throw invalidHashHash(tok->location, name());
 
         Token *B = tok->next->next;
-        const std::string strAB = A->str + expandArgStr(B, parametertokens);
+        std::string strAB;
+
+        TokenList tokensB(files);
+        if (expandArg(&tokensB, B, parametertokens)) {
+            if (tokensB.empty())
+                strAB = A->str;
+            else {
+                strAB = A->str + tokensB.cfront()->str;
+                tokensB.deleteToken(tokensB.front());
+            }
+        } else {
+            strAB = A->str + B->str;
+        }
 
         bool removeComma = false;
         if (variadic && strAB == "," && tok->previous->str == "," && args.size() >= 1U && B->str == args[args.size()-1U])
@@ -1468,6 +1480,9 @@ private:
             tokens.push_back(new Token(strAB, tok->location));
             // TODO: For functionLike macros, push the (...)
             expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
+            for (Token *b = tokensB.front(); b; b = b->next)
+                b->location = loc;
+            output->takeTokens(tokensB);
         }
 
         return B->next;

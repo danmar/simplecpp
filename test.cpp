@@ -963,7 +963,7 @@ int main(int argc, char **argv) {
     TEST_CASE(define_define_7);
     TEST_CASE(define_define_8); // line break in nested macro call
     TEST_CASE(define_define_9); // line break in nested macro call
-    //TEST_CASE(define_define_10);
+    TEST_CASE(define_define_10);
     TEST_CASE(define_define_11);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
