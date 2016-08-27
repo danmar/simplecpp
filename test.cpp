@@ -411,6 +411,20 @@ void hashhash5() {
     ASSERT_EQUALS("x1", preprocess("x##__LINE__"));
 }
 
+void hashhash6() {
+    const char *code;
+
+    code = "#define A(X, ...) LOG(X, ##__VA_ARGS__)\n"
+           "A(1,(int)2)";
+    ASSERT_EQUALS("\nLOG ( 1 , ( int ) 2 )", preprocess(code));
+
+    code = "#define A(X, ...) LOG(X, ##__VA_ARGS__)\n"
+           "#define B(X, ...) A(X, ##__VA_ARGS__)\n"
+           "#define C(X, ...) B(X, ##__VA_ARGS__)\n"
+           "C(1,(int)2)";
+    ASSERT_EQUALS("\n\n\nLOG ( 1 , ( int ) 2 )", preprocess(code));
+}
+
 void ifdef1() {
     const char code[] = "#ifdef A\n"
                         "1\n"
@@ -981,6 +995,7 @@ int main(int argc, char **argv) {
     TEST_CASE(hashhash3);
     TEST_CASE(hashhash4);
     TEST_CASE(hashhash5);
+    TEST_CASE(hashhash6);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
