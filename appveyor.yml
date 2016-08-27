@@ -7,11 +7,6 @@ environment:
       configuration: "Debug"
       vcvarsall_platform: "x86"
       PlatformToolset: "v140"
-    - VisualStudioVersion: 14.0
-      platform: "x64"
-      configuration: "Debug"
-      vcvarsall_platform: "x64"
-      PlatformToolset: "v140"
 
 build_script:
   - ECHO Building %configuration% %platform% with MSVC %VisualStudioVersion% using %PlatformToolset% PlatformToolset
@@ -19,3 +14,6 @@ build_script:
   - dir
   - 'CALL "C:\Program Files (x86)\Microsoft Visual Studio %VisualStudioVersion%\VC\vcvarsall.bat" %vcvarsall_platform%'
   - msbuild "simplecpp.sln" /consoleloggerparameters:Verbosity=minimal /target:Build /property:Configuration="%configuration%";Platform=%platform% /p:PlatformToolset=%PlatformToolset% /maxcpucount /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+test_script:
+  - debug\testrunner.exe
