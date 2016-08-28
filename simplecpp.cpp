@@ -1265,6 +1265,19 @@ private:
                 continue;
             }
 
+            int numberOfHash = 1;
+            const Token *hashToken = tok->next;
+            while (sameline(tok,hashToken) && hashToken->op == '#') {
+                hashToken = hashToken->next;
+                ++numberOfHash;
+            }
+            if (numberOfHash == 4) {
+                // # ## #  => ##
+                output->push_back(newMacroToken("##", loc, isReplaced(expandedmacros)));
+                tok = hashToken;
+                continue;
+            }
+
             tok = tok->next;
             if (tok == endToken) {
                 output->push_back(new Token(*tok->previous));
