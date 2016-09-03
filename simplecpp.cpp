@@ -1464,7 +1464,7 @@ private:
         Token *A = output->back();
         if (!A)
             throw invalidHashHash(tok->location, name());
-        if (!sameline(tok, tok->next))
+        if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
             throw invalidHashHash(tok->location, name());
 
         Token *B = tok->next->next;

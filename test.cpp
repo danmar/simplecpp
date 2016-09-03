@@ -361,6 +361,7 @@ void error() {
 void garbage() {
     preprocess("#ifdef");
     preprocess("#define TEST2() A ##\nTEST2()\n");
+    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n");
 }
 
 void hash() {
