@@ -814,6 +814,26 @@ void include4() { // #27 - -include
     ASSERT_EQUALS("123", out.stringify());
 }
 
+void include5() {  // #3 - handle #include MACRO
+    const char code_c[] = "#define A \"3.h\"\n#include A\n";
+    const char code_h[] = "123\n";
+
+    std::vector<std::string> files;
+    std::istringstream istr_c(code_c);
+    simplecpp::TokenList rawtokens_c(istr_c, files, "3.c");
+    std::istringstream istr_h(code_h);
+    simplecpp::TokenList rawtokens_h(istr_h, files, "3.h");
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["3.c"] = &rawtokens_c;
+    filedata["3.h"] = &rawtokens_h;
+
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
+
+    ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
+}
 
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
@@ -1060,6 +1080,7 @@ int main(int argc, char **argv) {
     TEST_CASE(include2);
     TEST_CASE(include3);
     TEST_CASE(include4); // -include
+    TEST_CASE(include5); // #include MACRO
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
