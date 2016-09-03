@@ -79,6 +79,9 @@ int main(int argc, char **argv) {
         case simplecpp::Output::SYNTAX_ERROR:
             std::cerr << "syntax error: ";
             break;
+        case simplecpp::Output::PORTABILITY_BACKSLASH:
+            std::cerr << "portability: ";
+            break;
         }
         std::cerr << output.msg << std::endl;
     }

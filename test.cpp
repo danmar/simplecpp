@@ -39,10 +39,10 @@ static void testcase(const std::string &name, void (*f)(), int argc, char **argv
 
 
 
-static std::string readfile(const char code[], int sz=-1) {
+static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList *outputList=nullptr) {
     std::istringstream istr(sz == -1 ? std::string(code) : std::string(code,sz));
     std::vector<std::string> files;
-    return simplecpp::TokenList(istr,files).stringify();
+    return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
 }
 
 static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = NULL) {
@@ -81,11 +81,30 @@ static std::string toString(const simplecpp::OutputList &outputList) {
         case simplecpp::Output::Type::SYNTAX_ERROR:
             ostr << "syntax_error,";
             break;
+        case simplecpp::Output::Type::PORTABILITY_BACKSLASH:
+            ostr << "portability_backslash,";
+            break;
         }
 
         ostr << output.msg << '\n';
     }
     return ostr.str();
+}
+
+void backslash() {
+    // <backslash><space><newline> preprocessed differently
+    simplecpp::OutputList outputList;
+
+    readfile("//123 \\\n456", -1, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+    readfile("//123 \\ \n456", -1, &outputList);
+    ASSERT_EQUALS("file0,1,portability_backslash,Combination 'backslash space newline' is not portable.\n", toString(outputList));
+
+    outputList.clear();
+    readfile("#define A \\\n123", -1, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+    readfile("#define A \\ \n123", -1, &outputList);
+    ASSERT_EQUALS("file0,1,portability_backslash,Combination 'backslash space newline' is not portable.\n", toString(outputList));
 }
 
 void builtin() {
@@ -965,6 +984,8 @@ void simplifyPath() {
 
 
 int main(int argc, char **argv) {
+    TEST_CASE(backslash);
+
     TEST_CASE(builtin);
 
     TEST_CASE(combineOperators_floatliteral);

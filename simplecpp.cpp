@@ -342,6 +342,16 @@ static std::string escapeString(const std::string &str) {
     return ostr.str();
 }
 
+static void portabilityBackslash(simplecpp::OutputList *outputList, const std::vector<std::string> &files, const simplecpp::Location &location) {
+    if (!outputList)
+        return;
+    simplecpp::Output err(files);
+    err.type = simplecpp::Output::PORTABILITY_BACKSLASH;
+    err.location = location;
+    err.msg = "Combination 'backslash space newline' is not portable.";
+    outputList->push_back(err);
+}
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -363,6 +373,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         if (ch == '\n') {
             if (cback() && cback()->op == '\\') {
+                if (location.col > cback()->location.col + 1U)
+                    portabilityBackslash(outputList, files, cback()->location);
                 ++multiline;
                 deleteToken(back());
             } else {
@@ -415,6 +427,9 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 currentToken += ch;
                 ch = readChar(istr, bom);
             }
+            const std::string::size_type pos = currentToken.find_last_not_of(" \t");
+            if (pos < currentToken.size() - 1U && currentToken[pos] == '\\')
+                portabilityBackslash(outputList, files, location);
             if (currentToken[currentToken.size() - 1U] == '\\') {
                 ++multiline;
                 currentToken.erase(currentToken.size() - 1U);
