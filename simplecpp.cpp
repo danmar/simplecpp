@@ -1567,14 +1567,14 @@ namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 
 static bool realFileName(const std::vector<TCHAR> &buf, std::ostream &ostr) {
-  WIN32_FIND_DATA FindFileData;
-  HANDLE hFind = FindFirstFile(&buf[0], &FindFileData);
-  if (hFind == INVALID_HANDLE_VALUE)
-      return false;
-  for (const TCHAR *c = FindFileData.cFileName; *c; c++)
-      ostr << (char)*c;
-  FindClose(hFind);
-  return true;
+    WIN32_FIND_DATA FindFileData;
+    HANDLE hFind = FindFirstFile(&buf[0], &FindFileData);
+    if (hFind == INVALID_HANDLE_VALUE)
+        return false;
+    for (const TCHAR *c = FindFileData.cFileName; *c; c++)
+        ostr << (char)*c;
+    FindClose(hFind);
+    return true;
 }
 
 std::string realFilename(const std::string &f) {
