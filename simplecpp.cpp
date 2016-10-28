@@ -1640,7 +1640,13 @@ void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std:
         if (tok->str != "sizeof")
             continue;
         simplecpp::Token *tok1 = tok->next;
+        if (!tok1) {
+            throw std::runtime_error("missed sizeof argument");
+        }
         simplecpp::Token *tok2 = tok1->next;
+        if (!tok2) {
+            throw std::runtime_error("missed sizeof argument");
+        }
         if (tok1->op == '(') {
             tok1 = tok1->next;
             while (tok2->op != ')')
