@@ -72,8 +72,6 @@ todo = [
          'diagnostic-pragma-1.c',
          'pr45457.c',
          'pr57580.c',
-         'pr58844-1.c',
-         'pr58844-2.c'
          ]
 
 numberOfSkipped = 0
