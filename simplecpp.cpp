@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <limits>
 #include <list>
 #include <map>
@@ -32,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <stack>
+#include <string>
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #include <windows.h>
@@ -392,8 +394,14 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     loc.push(location);
                     location.fileIndex = fileIndex(cback()->str.substr(1U, cback()->str.size() - 2U));
                     location.line = 1U;
+                } else if (lastline == "# line %num%") {
+                    loc.push(location);
+                    location.line = std::atol(cback()->str.c_str());
+                } else if (lastline == "# line %num% %str%") {
+                    loc.push(location);
+                    location.fileIndex = fileIndex(cback()->str.substr(1U, cback()->str.size() - 2U));
+                    location.line = std::atol(cback()->previous->str.c_str());
                 }
-
                 // #endfile
                 else if (lastline == "# endfile" && !loc.empty()) {
                     location = loc.top();
@@ -870,7 +878,8 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const {
             continue;
         if (!ret.empty())
             ret = ' ' + ret;
-        ret = (tok->str[0] == '\"' ? std::string("%str%") : tok->str) + ret;
+        ret = (tok->str[0] == '\"' ? std::string("%str%")
+               : std::isdigit(static_cast<unsigned char>(tok->str[0])) ? std::string("%num%") : tok->str) + ret;
         if (++count > maxsize)
             return "";
     }
