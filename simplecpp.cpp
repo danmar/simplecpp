@@ -1576,6 +1576,14 @@ namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 
 static bool realFileName(const std::vector<TCHAR> &buf, std::ostream &ostr) {
+    // Detect root directory, see simplecpp:realFileName returns the wrong root path #45
+    if ((buf.size()==2 || (buf.size()>2 && buf[2]=='\0'))
+            && std::isalpha(buf[0]) && buf[1]==':')
+    {
+        ostr << (char)buf[0];
+        ostr << (char)buf[1];
+        return true;
+    }
     WIN32_FIND_DATA FindFileData;
     HANDLE hFind = FindFirstFile(&buf[0], &FindFileData);
     if (hFind == INVALID_HANDLE_VALUE)
