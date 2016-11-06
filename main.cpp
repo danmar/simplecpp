@@ -54,16 +54,16 @@ int main(int argc, char **argv) {
     simplecpp::TokenList rawtokens(f,files,filename,&outputList);
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(rawtokens, files, dui, &outputList);
-    for (std::pair<std::string, simplecpp::TokenList *> i : included)
-        i.second->removeComments();
+    for (std::map<std::string, simplecpp::TokenList *>::const_iterator i = included.begin(); i!=included.end(); ++i)
+        i->second->removeComments();
     simplecpp::TokenList output(files);
     simplecpp::preprocess(output, rawtokens, files, included, dui, &outputList);
 
     // Output
     std::cout << output.stringify() << std::endl;
-    for (const simplecpp::Output &output : outputList) {
-        std::cerr << output.location.file() << ':' << output.location.line << ": ";
-        switch (output.type) {
+	for (simplecpp::OutputList::const_iterator output = outputList.begin(); output!=outputList.end(); ++output) {
+        std::cerr << output->location.file() << ':' << output->location.line << ": ";
+        switch (output->type) {
         case simplecpp::Output::ERROR:
             std::cerr << "#error: ";
             break;
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
             std::cerr << "portability: ";
             break;
         }
-        std::cerr << output.msg << std::endl;
+        std::cerr << output->msg << std::endl;
     }
 
     // cleanup included tokenlists
