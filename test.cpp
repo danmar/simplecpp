@@ -835,6 +835,21 @@ void include5() {  // #3 - handle #include MACRO
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
 }
 
+void include6() { // #57 - incomplete macro  #include MACRO(,)
+    const char code[] = "#define MACRO(X,Y) X##Y\n#include MACRO(,)\n";
+
+    std::vector<std::string> files;
+    std::istringstream istr(code);
+    simplecpp::TokenList rawtokens(istr, files, "57.c");
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["57.c"] = &rawtokens;
+
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    simplecpp::preprocess(out, rawtokens, files, filedata, dui);
+}
+
 void readfile_string() {
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
@@ -1081,6 +1096,7 @@ int main(int argc, char **argv) {
     TEST_CASE(include3);
     TEST_CASE(include4); // -include
     TEST_CASE(include5); // #include MACRO
+    TEST_CASE(include6); // invalid code: #include MACRO(,)
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);

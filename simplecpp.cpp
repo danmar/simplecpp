@@ -2021,7 +2021,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     inc2.takeTokens(inc1);
                 }
 
-                if (inc2.empty()) {
+                if (inc2.empty() || inc2.cfront()->str.size() <= 2U) {
                     simplecpp::Output err(files);
                     err.type = Output::SYNTAX_ERROR;
                     err.location = rawtok->location;
