@@ -521,6 +521,30 @@ void ifDefined() {
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
+void ifDefinedInvalid1() { // #50 - invalid unterminated defined
+    const char code[] = "#if defined(A";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    simplecpp::TokenList tokens2(files);
+    std::istringstream istr(code);
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
+}
+
+void ifDefinedInvalid2() {
+    const char code[] = "#if defined";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    simplecpp::TokenList tokens2(files);
+    std::istringstream istr(code);
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
+}
+
 void ifLogical() {
     const char code[] = "#if defined(A) || defined(B)\n"
                         "X\n"
@@ -1078,6 +1102,8 @@ int main(int argc, char **argv) {
     TEST_CASE(ifA);
     TEST_CASE(ifCharLiteral);
     TEST_CASE(ifDefined);
+    TEST_CASE(ifDefinedInvalid1);
+    TEST_CASE(ifDefinedInvalid2);
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);

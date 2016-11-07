@@ -2089,14 +2089,24 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const bool par = (tok && tok->op == '(');
                             if (par)
                                 tok = tok->next;
-                            if (!tok)
-                                break;
-                            if (macros.find(tok->str) != macros.end())
-                                expr.push_back(new Token("1", tok->location));
-                            else
-                                expr.push_back(new Token("0", tok->location));
-                            if (tok && par)
-                                tok = tok->next;
+                            if (tok) {
+                                if (macros.find(tok->str) != macros.end())
+                                    expr.push_back(new Token("1", tok->location));
+                                else
+                                    expr.push_back(new Token("0", tok->location));
+                            }
+                            if (par)
+                                tok = tok ? tok->next : NULL;
+                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
+                                Output out(rawtok->location.files);
+                                out.type = Output::SYNTAX_ERROR;
+                                out.location = rawtok->location;
+                                out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
+                                if (outputList)
+                                    outputList->push_back(out);
+                                output.clear();
+                                return;
+                            }
                             continue;
                         }
 
