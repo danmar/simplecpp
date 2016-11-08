@@ -912,14 +912,16 @@ public:
         tok = tok->next;
         if (!tok || !tok->name)
             throw std::runtime_error("bad macro syntax");
-        parseDefine(tok);
+        if (!parseDefine(tok))
+            throw std::runtime_error("bad macro syntax");
     }
 
     Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
         const std::string def(name + ' ' + value);
         std::istringstream istr(def);
         tokenListDefine.readfile(istr);
-        parseDefine(tokenListDefine.cfront());
+        if (!parseDefine(tokenListDefine.cfront()))
+            throw std::runtime_error("bad macro syntax");
     }
 
     Macro(const Macro &macro) : nameToken(NULL), files(macro.files), tokenListDefine(macro.files) {
@@ -1080,20 +1082,20 @@ private:
         return tok;
     }
 
-    void parseDefine(const Token *nametoken) {
+    bool parseDefine(const Token *nametoken) {
         nameToken = nametoken;
         variadic = false;
         if (!nameToken) {
             valueToken = endToken = NULL;
             args.clear();
-            return;
+            return false;
         }
 
         // function like macro..
         if (functionLike()) {
             args.clear();
             const Token *argtok = nameToken->next->next;
-            while (argtok && argtok->op != ')') {
+            while (sameline(nametoken, argtok) && argtok->op != ')') {
                 if (argtok->op == '.' &&
                         argtok->next && argtok->next->op == '.' &&
                         argtok->next->next && argtok->next->next->op == '.' &&
@@ -1108,6 +1110,9 @@ private:
                     args.push_back(argtok->str);
                 argtok = argtok->next;
             }
+            if (!sameline(nametoken, argtok)) {
+                return false;
+            }
             valueToken = argtok ? argtok->next : NULL;
         } else {
             args.clear();
@@ -1119,6 +1124,7 @@ private:
         endToken = valueToken;
         while (sameline(endToken, nameToken))
             endToken = endToken->next;
+        return true;
     }
 
     unsigned int getArgNum(const TokenString &str) const {
@@ -2003,6 +2009,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             it->second = macro;
                     }
                 } catch (const std::runtime_error &) {
+                    simplecpp::Output err(files);
+                    err.type = Output::SYNTAX_ERROR;
+                    err.location = rawtok->location;
+                    err.msg = "Failed to parse #define";
+                    if (outputList)
+                        outputList->push_back(err);
+                    output.clear();
+                    return;
                 }
             } else if (ifstates.top() == TRUE && rawtok->str == INCLUDE) {
                 TokenList inc1(files);
