@@ -124,7 +124,11 @@ static std::string testConstFold(const char code[]) {
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList expr(istr, files);
-    expr.constFold();
+    try {
+        expr.constFold();
+    } catch (std::exception &) {
+        return "exception";
+    }
     return expr.stringify();
 }
 
@@ -173,6 +177,8 @@ static void constFold() {
     ASSERT_EQUALS("29", testConstFold("13 ^ 16"));
     ASSERT_EQUALS("25", testConstFold("24 | 1"));
     ASSERT_EQUALS("2", testConstFold("1?2:3"));
+    ASSERT_EQUALS("exception", testConstFold("!1 ? 2 :"));
+    ASSERT_EQUALS("exception", testConstFold("?2:3"));
 }
 
 void define1() {

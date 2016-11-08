@@ -814,15 +814,17 @@ void simplecpp::TokenList::constFoldQuestionOp(Token **tok1) {
         gotoTok1 = false;
         if (tok->str != "?")
             continue;
-        if (!tok->previous || !tok->previous->number)
+        if (!tok->previous || !tok->next || !tok->next->next)
+            throw std::runtime_error("invalid expression");
+        if (!tok->previous->number)
             continue;
-        if (!tok->next)
-            continue;
-        if (!tok->next->next || tok->next->next->op != ':')
+        if (tok->next->next->op != ':')
             continue;
         Token * const condTok = tok->previous;
         Token * const trueTok = tok->next;
         Token * const falseTok = trueTok->next->next;
+        if (!falseTok)
+            throw std::runtime_error("invalid expression");
         if (condTok == *tok1)
             *tok1 = (condTok->str != "0" ? trueTok : falseTok);
         deleteToken(condTok->next); // ?
