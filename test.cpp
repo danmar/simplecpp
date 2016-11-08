@@ -249,8 +249,18 @@ void define9() {
     ASSERT_EQUALS("\nab . AB . CD", preprocess(code));
 }
 
-void define_invalid() {
+void define_invalid_1() {
     std::istringstream istr("#define  A(\nB\n");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
+}
+
+void define_invalid_2() {
+    std::istringstream istr("#define\nhas#");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1075,7 +1085,8 @@ int main(int argc, char **argv) {
     TEST_CASE(define7);
     TEST_CASE(define8);
     TEST_CASE(define9);
-    TEST_CASE(define_invalid);
+    TEST_CASE(define_invalid_1);
+    TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
     TEST_CASE(define_define_2);
     TEST_CASE(define_define_3);

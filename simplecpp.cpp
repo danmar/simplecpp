@@ -906,11 +906,12 @@ public:
             throw std::runtime_error("bad macro syntax");
         if (tok->op != '#')
             throw std::runtime_error("bad macro syntax");
+        const Token * const hashtok = tok;
         tok = tok->next;
         if (!tok || tok->str != DEFINE)
             throw std::runtime_error("bad macro syntax");
         tok = tok->next;
-        if (!tok || !tok->name)
+        if (!tok || !tok->name || !sameline(hashtok,tok))
             throw std::runtime_error("bad macro syntax");
         if (!parseDefine(tok))
             throw std::runtime_error("bad macro syntax");
