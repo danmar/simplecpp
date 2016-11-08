@@ -1904,7 +1904,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     return true;
 }
 
-void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, const std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage)
+void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage)
 {
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
     sizeOfType.insert(std::pair<std::string, std::size_t>(std::string("char"), sizeof(char)));
@@ -2053,7 +2053,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 const bool systemheader = (inctok->op == '<');
                 const std::string header(realFilename(inctok->str.substr(1U, inctok->str.size() - 2U)));
-                const std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui, systemheader);
+                std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui, systemheader);
+                if (header2.empty()) {
+                    // try to load file..
+                    std::ifstream f;
+                    header2 = openHeader(f, dui, rawtok->location.file(), header, systemheader);
+                    if (f.is_open()) {
+                        TokenList *tokens = new TokenList(f, files, header2, outputList);
+                        filedata[header2] = tokens;
+                    }
+                }
                 if (header2.empty()) {
                     simplecpp::Output output(files);
                     output.type = Output::MISSING_HEADER;
