@@ -466,7 +466,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             }
             if (multiline || startsWith(lastLine(10),"# ")) {
                 pos = 0;
-                while ((pos = currentToken.find("\n",pos)) != std::string::npos) {
+                while ((pos = currentToken.find('\n',pos)) != std::string::npos) {
                     currentToken.erase(pos,1);
                     ++multiline;
                 }
@@ -1646,7 +1646,7 @@ std::string simplifyPath(std::string path) {
     // remove "xyz/../"
     pos = 1U;
     while ((pos = path.find("/../", pos)) != std::string::npos) {
-        const std::string::size_type pos1 = path.rfind("/", pos - 1U);
+        const std::string::size_type pos1 = path.rfind('/', pos - 1U);
         if (pos1 == std::string::npos)
             pos++;
         else {
@@ -1683,7 +1683,7 @@ void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std:
         for (simplecpp::Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
             if ((typeToken->str == "unsigned" || typeToken->str == "signed") && typeToken->next->name)
                 continue;
-            if (typeToken->str == "*" && type.find("*") != std::string::npos)
+            if (typeToken->str == "*" && type.find('*') != std::string::npos)
                 continue;
             if (!type.empty())
                 type += ' ';
@@ -1931,8 +1931,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     std::map<TokenString, Macro> macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
-        const std::string::size_type eq = macrostr.find("=");
-        const std::string::size_type par = macrostr.find("(");
+        const std::string::size_type eq = macrostr.find('=');
+        const std::string::size_type par = macrostr.find('(');
         const std::string macroname = macrostr.substr(0, std::min(eq,par));
         if (dui.undefined.find(macroname) != dui.undefined.end())
             continue;
