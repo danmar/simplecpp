@@ -1980,6 +1980,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 continue;
             }
 
+            if (ifstates.size() <= 1U && (rawtok->str == ELIF || rawtok->str == ELSE || rawtok->str == ENDIF)) {
+                simplecpp::Output err(files);
+                err.type = Output::SYNTAX_ERROR;
+                err.location = rawtok->location;
+                err.msg = "#" + rawtok->str + " without #if";
+                if (outputList)
+                    outputList->push_back(err);
+                output.clear();
+                return;
+            }
+
             if (ifstates.top() == TRUE && (rawtok->str == ERROR || rawtok->str == WARNING)) {
                 if (outputList) {
                     simplecpp::Output err(rawtok->location.files);
@@ -2170,8 +2181,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             } else if (rawtok->str == ELSE) {
                 ifstates.top() = (ifstates.top() == ELSE_IS_TRUE) ? TRUE : ALWAYS_FALSE;
             } else if (rawtok->str == ENDIF) {
-                if (ifstates.size() > 1U)
-                    ifstates.pop();
+                ifstates.pop();
             } else if (rawtok->str == UNDEF) {
                 if (ifstates.top() == TRUE) {
                     const Token *tok = rawtok->next;

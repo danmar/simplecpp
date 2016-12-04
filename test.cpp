@@ -404,9 +404,37 @@ void error() {
 }
 
 void garbage() {
-    preprocess("#ifdef");
-    preprocess("#define TEST2() A ##\nTEST2()\n");
-    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n");
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    outputList.clear();
+    preprocess("#ifdef\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Syntax error in #ifdef\n", toString(outputList));
+
+    outputList.clear();
+    preprocess("#define TEST2() A ##\nTEST2()\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2'.\n", toString(outputList));
+
+    outputList.clear();
+    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
+}
+
+void garbage_endif() {
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    outputList.clear();
+    preprocess("#elif A<0\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,#elif without #if\n", toString(outputList));
+
+    outputList.clear();
+    preprocess("#else\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,#else without #if\n", toString(outputList));
+
+    outputList.clear();
+    preprocess("#endif\n", dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,#endif without #if\n", toString(outputList));
 }
 
 void hash() {
@@ -1114,6 +1142,7 @@ int main(int argc, char **argv) {
     TEST_CASE(error);
 
     TEST_CASE(garbage);
+    TEST_CASE(garbage_endif);
 
     TEST_CASE(hash);
     TEST_CASE(hashhash1);
