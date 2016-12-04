@@ -165,7 +165,7 @@ void simplecpp::Token::printAll() const
     const Token *tok = this;
     while (tok->previous)
         tok = tok->previous;
-    for (const Token *tok = this; tok; tok = tok->next) {
+    for (; tok; tok = tok->next) {
         if (tok->previous) {
             std::cout << (sameline(tok, tok->previous) ? ' ' : '\n');
         }
@@ -937,9 +937,9 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 namespace simplecpp {
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameToken(NULL), variadic(false), valueToken(NULL), endToken(NULL), files(f), tokenListDefine(f) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(NULL), variadic(false), valueToken(NULL), endToken(NULL), files(f), tokenListDefine(f) {}
 
-        Macro(const Token *tok, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
+        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(NULL), files(f), tokenListDefine(f) {
             if (sameline(tok->previous, tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -955,7 +955,7 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax");
         }
 
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameToken(NULL), files(f), tokenListDefine(f) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(NULL), files(f), tokenListDefine(f) {
             const std::string def(name + ' ' + value);
             std::istringstream istr(def);
             tokenListDefine.readfile(istr);
@@ -963,14 +963,14 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax");
         }
 
-        Macro(const Macro &macro) : nameToken(NULL), files(macro.files), tokenListDefine(macro.files) {
+        Macro(const Macro &macro) : nameTokDef(NULL), files(macro.files), tokenListDefine(macro.files) {
             *this = macro;
         }
 
         void operator=(const Macro &macro) {
             if (this != &macro) {
                 if (macro.tokenListDefine.empty())
-                    parseDefine(macro.nameToken);
+                    parseDefine(macro.nameTokDef);
                 else {
                     tokenListDefine = macro.tokenListDefine;
                     parseDefine(tokenListDefine.cfront());
@@ -1073,12 +1073,12 @@ namespace simplecpp {
 
         /** macro name */
         const TokenString &name() const {
-            return nameToken->str;
+            return nameTokDef->str;
         }
 
         /** location for macro definition */
         const Location &defineLocation() const {
-            return nameToken->location;
+            return nameTokDef->location;
         }
 
         /** how has this macro been used so far */
@@ -1088,10 +1088,10 @@ namespace simplecpp {
 
         /** is this a function like macro */
         bool functionLike() const {
-            return nameToken->next &&
-                   nameToken->next->op == '(' &&
-                   sameline(nameToken, nameToken->next) &&
-                   nameToken->next->location.col == nameToken->location.col + nameToken->str.size();
+            return nameTokDef->next &&
+                   nameTokDef->next->op == '(' &&
+                   sameline(nameTokDef, nameTokDef->next) &&
+                   nameTokDef->next->location.col == nameTokDef->location.col + nameTokDef->str.size();
         }
 
         /** base class for errors */
@@ -1115,14 +1115,14 @@ namespace simplecpp {
         Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced) const {
             Token *tok = new Token(str,loc);
             if (replaced)
-                tok->macro = nameToken->str;
+                tok->macro = nameTokDef->str;
             return tok;
         }
 
-        bool parseDefine(const Token *nametoken) {
-            nameToken = nametoken;
+        bool parseDefine(const Token *nameTokDef) {
+            nameTokDef = nameTokDef;
             variadic = false;
-            if (!nameToken) {
+            if (!nameTokDef) {
                 valueToken = endToken = NULL;
                 args.clear();
                 return false;
@@ -1131,8 +1131,8 @@ namespace simplecpp {
             // function like macro..
             if (functionLike()) {
                 args.clear();
-                const Token *argtok = nameToken->next->next;
-                while (sameline(nametoken, argtok) && argtok->op != ')') {
+                const Token *argtok = nameTokDef->next->next;
+                while (sameline(nameTokDef, argtok) && argtok->op != ')') {
                     if (argtok->op == '.' &&
                         argtok->next && argtok->next->op == '.' &&
                         argtok->next->next && argtok->next->next->op == '.' &&
@@ -1147,19 +1147,19 @@ namespace simplecpp {
                         args.push_back(argtok->str);
                     argtok = argtok->next;
                 }
-                if (!sameline(nametoken, argtok)) {
+                if (!sameline(nameTokDef, argtok)) {
                     return false;
                 }
                 valueToken = argtok ? argtok->next : NULL;
             } else {
                 args.clear();
-                valueToken = nameToken->next;
+                valueToken = nameTokDef->next;
             }
 
-            if (!sameline(valueToken, nameToken))
+            if (!sameline(valueToken, nameTokDef))
                 valueToken = NULL;
             endToken = valueToken;
-            while (sameline(endToken, nameToken))
+            while (sameline(endToken, nameTokDef))
                 endToken = endToken->next;
             return true;
         }
@@ -1174,14 +1174,14 @@ namespace simplecpp {
             return ~0U;
         }
 
-        std::vector<const Token *> getMacroParameters(const Token *nameToken, bool calledInDefine) const {
-            if (!nameToken->next || nameToken->next->op != '(' || !functionLike())
+        std::vector<const Token *> getMacroParameters(const Token *nameTokInst, bool calledInDefine) const {
+            if (!nameTokInst->next || nameTokInst->next->op != '(' || !functionLike())
                 return std::vector<const Token *>();
 
             std::vector<const Token *> parametertokens;
-            parametertokens.push_back(nameToken->next);
+            parametertokens.push_back(nameTokInst->next);
             unsigned int par = 0U;
-            for (const Token *tok = nameToken->next->next; calledInDefine ? sameline(tok,nameToken) : (tok != NULL); tok = tok->next) {
+            for (const Token *tok = nameTokInst->next->next; calledInDefine ? sameline(tok, nameTokInst) : (tok != NULL); tok = tok->next) {
                 if (tok->op == '(')
                     ++par;
                 else if (tok->op == ')') {
@@ -1239,44 +1239,44 @@ namespace simplecpp {
             return sameline(lpar,tok) ? tok : NULL;
         }
 
-        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameToken, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
-            expandedmacros.insert(nameToken->str);
+        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
+            expandedmacros.insert(nameTokInst->str);
 
             usageList.push_back(loc);
 
-            if (nameToken->str == "__FILE__") {
+            if (nameTokInst->str == "__FILE__") {
                 output->push_back(new Token('\"'+loc.file()+'\"', loc));
-                return nameToken->next;
+                return nameTokInst->next;
             }
-            if (nameToken->str == "__LINE__") {
+            if (nameTokInst->str == "__LINE__") {
                 output->push_back(new Token(toString(loc.line), loc));
-                return nameToken->next;
+                return nameTokInst->next;
             }
-            if (nameToken->str == "__COUNTER__") {
+            if (nameTokInst->str == "__COUNTER__") {
                 output->push_back(new Token(toString(usageList.size()-1U), loc));
-                return nameToken->next;
+                return nameTokInst->next;
             }
 
-            const bool calledInDefine = (loc.fileIndex != nameToken->location.fileIndex ||
-                                         loc.line < nameToken->location.line);
+            const bool calledInDefine = (loc.fileIndex != nameTokInst->location.fileIndex ||
+                                         loc.line < nameTokInst->location.line);
 
-            std::vector<const Token*> parametertokens1(getMacroParameters(nameToken, calledInDefine));
+            std::vector<const Token*> parametertokens1(getMacroParameters(nameTokInst, calledInDefine));
 
             if (functionLike()) {
                 // No arguments => not macro expansion
-                if (nameToken->next && nameToken->next->op != '(') {
-                    output->push_back(new Token(nameToken->str, loc));
-                    return nameToken->next;
+                if (nameTokInst->next && nameTokInst->next->op != '(') {
+                    output->push_back(new Token(nameTokInst->str, loc));
+                    return nameTokInst->next;
                 }
 
                 // Parse macro-call
                 if (variadic) {
                     if (parametertokens1.size() < args.size()) {
-                        throw wrongNumberOfParameters(nameToken->location, name());
+                        throw wrongNumberOfParameters(nameTokInst->location, name());
                     }
                 } else {
                     if (parametertokens1.size() != args.size() + (args.empty() ? 2U : 1U))
-                        throw wrongNumberOfParameters(nameToken->location, name());
+                        throw wrongNumberOfParameters(nameTokInst->location, name());
                 }
             }
 
@@ -1360,14 +1360,14 @@ namespace simplecpp {
 
             if (!functionLike()) {
                 for (Token *tok = output_end_1 ? output_end_1->next : output->front(); tok; tok = tok->next) {
-                    tok->macro = nameToken->str;
+                    tok->macro = nameTokInst->str;
                 }
             }
 
             if (!parametertokens1.empty())
                 parametertokens1.swap(parametertokens2);
 
-            return functionLike() ? parametertokens2.back()->next : nameToken->next;
+            return functionLike() ? parametertokens2.back()->next : nameTokInst->next;
         }
 
         const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
@@ -1588,7 +1588,7 @@ namespace simplecpp {
         }
 
         /** name token in definition */
-        const Token *nameToken;
+        const Token *nameTokDef;
 
         /** arguments for macro */
         std::vector<TokenString> args;
@@ -2119,12 +2119,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                 }
                 if (header2.empty()) {
-                    simplecpp::Output output(files);
-                    output.type = Output::MISSING_HEADER;
-                    output.location = rawtok->location;
-                    output.msg = "Header not found: " + rawtok->next->str;
+                    simplecpp::Output out(files);
+                    out.type = Output::MISSING_HEADER;
+                    out.location = rawtok->location;
+                    out.msg = "Header not found: " + rawtok->next->str;
                     if (outputList)
-                        outputList->push_back(output);
+                        outputList->push_back(out);
                 } else if (includetokenstack.size() >= 400) {
                     simplecpp::Output out(files);
                     out.type = Output::INCLUDE_NESTED_TOO_DEEPLY;
