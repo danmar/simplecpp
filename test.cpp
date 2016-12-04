@@ -8,7 +8,8 @@ int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 
-static int assertEquals(const std::string &expected, const std::string &actual, int line) {
+static int assertEquals(const std::string &expected, const std::string &actual, int line)
+{
     if (expected != actual) {
         numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
@@ -19,7 +20,8 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line) {
+static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+{
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
 }
 
@@ -39,13 +41,15 @@ static void testcase(const std::string &name, void (*f)(), int argc, char **argv
 
 
 
-static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList *outputList=nullptr) {
+static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList *outputList=nullptr)
+{
     std::istringstream istr(sz == -1 ? std::string(code) : std::string(code,sz));
     std::vector<std::string> files;
     return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = NULL) {
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = NULL)
+{
     std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -56,11 +60,13 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
     return tokens2.stringify();
 }
 
-static std::string preprocess(const char code[]) {
+static std::string preprocess(const char code[])
+{
     return preprocess(code, simplecpp::DUI());
 }
 
-static std::string toString(const simplecpp::OutputList &outputList) {
+static std::string toString(const simplecpp::OutputList &outputList)
+{
     std::ostringstream ostr;
     for (const simplecpp::Output &output : outputList) {
         ostr << "file" << output.location.fileIndex << ',' << output.location.line << ',';
@@ -91,7 +97,8 @@ static std::string toString(const simplecpp::OutputList &outputList) {
     return ostr.str();
 }
 
-void backslash() {
+void backslash()
+{
     // <backslash><space><newline> preprocessed differently
     simplecpp::OutputList outputList;
 
@@ -107,7 +114,8 @@ void backslash() {
     ASSERT_EQUALS("file0,1,portability_backslash,Combination 'backslash space newline' is not portable.\n", toString(outputList));
 }
 
-void builtin() {
+void builtin()
+{
     ASSERT_EQUALS("\"\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__"));
     ASSERT_EQUALS("\n\n3", preprocess("\n\n__LINE__"));
     ASSERT_EQUALS("\n\n0", preprocess("\n\n__COUNTER__"));
@@ -120,7 +128,8 @@ void builtin() {
                                             "A(__COUNTER__)\n"));
 }
 
-static std::string testConstFold(const char code[]) {
+static std::string testConstFold(const char code[])
+{
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList expr(istr, files);
@@ -132,7 +141,8 @@ static std::string testConstFold(const char code[]) {
     return expr.stringify();
 }
 
-void combineOperators_floatliteral() {
+void combineOperators_floatliteral()
+{
     ASSERT_EQUALS("1.", preprocess("1."));
     ASSERT_EQUALS(".1", preprocess(".1"));
     ASSERT_EQUALS("3.1", preprocess("3.1"));
@@ -141,17 +151,20 @@ void combineOperators_floatliteral() {
     ASSERT_EQUALS("1E+7", preprocess("1E+7"));
 }
 
-void combineOperators_increment() {
+void combineOperators_increment()
+{
     ASSERT_EQUALS("; ++ x ;", preprocess(";++x;"));
     ASSERT_EQUALS("; x ++ ;", preprocess(";x++;"));
     ASSERT_EQUALS("1 + + 2", preprocess("1++2"));
 }
 
-void combineOperators_coloncolon() {
+void combineOperators_coloncolon()
+{
     ASSERT_EQUALS("x ? y : :: z", preprocess("x ? y : ::z"));
 }
 
-void comment() {
+void comment()
+{
     ASSERT_EQUALS("// abc", readfile("// abc"));
     ASSERT_EQUALS("", preprocess("// abc"));
     ASSERT_EQUALS("/*\n\n*/abc", readfile("/*\n\n*/abc"));
@@ -160,7 +173,8 @@ void comment() {
     ASSERT_EQUALS("* p = a / * b / * c ;", preprocess("*p=a/ *b/ *c;"));
 }
 
-void comment_multiline() {
+void comment_multiline()
+{
     const char code[] = "#define ABC {// \\\n"
                         "}\n"
                         "void f() ABC\n";
@@ -168,7 +182,8 @@ void comment_multiline() {
 }
 
 
-static void constFold() {
+static void constFold()
+{
     ASSERT_EQUALS("7", testConstFold("1+2*3"));
     ASSERT_EQUALS("15", testConstFold("1+2*(3+4)"));
     ASSERT_EQUALS("123", testConstFold("+123"));
@@ -181,7 +196,8 @@ static void constFold() {
     ASSERT_EQUALS("exception", testConstFold("?2:3"));
 }
 
-void define1() {
+void define1()
+{
     const char code[] = "#define A 1+2\n"
                         "a=A+3;";
     ASSERT_EQUALS("# define A 1 + 2\n"
@@ -191,7 +207,8 @@ void define1() {
                   preprocess(code));
 }
 
-void define2() {
+void define2()
+{
     const char code[] = "#define ADD(A,B) A+B\n"
                         "ADD(1+2,3);";
     ASSERT_EQUALS("# define ADD ( A , B ) A + B\n"
@@ -201,7 +218,8 @@ void define2() {
                   preprocess(code));
 }
 
-void define3() {
+void define3()
+{
     const char code[] = "#define A   123\n"
                         "#define B   A\n"
                         "A B";
@@ -213,7 +231,8 @@ void define3() {
                   preprocess(code));
 }
 
-void define4() {
+void define4()
+{
     const char code[] = "#define A      123\n"
                         "#define B(C)   A\n"
                         "A B(1)";
@@ -225,37 +244,43 @@ void define4() {
                   preprocess(code));
 }
 
-void define5() {
+void define5()
+{
     const char code[] = "#define add(x,y) x+y\n"
                         "add(add(1,2),3)";
     ASSERT_EQUALS("\n1 + 2 + 3", preprocess(code));
 }
 
-void define6() {
+void define6()
+{
     const char code[] = "#define A() 1\n"
                         "A()";
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
-void define7() {
+void define7()
+{
     const char code[] = "#define A(X) X+1\n"
                         "A(1 /*23*/)";
     ASSERT_EQUALS("\n1 + 1", preprocess(code));
 }
 
-void define8() { // 6.10.3.10
+void define8()   // 6.10.3.10
+{
     const char code[] = "#define A(X) \n"
                         "int A[10];";
     ASSERT_EQUALS("\nint A [ 10 ] ;", preprocess(code));
 }
 
-void define9() {
+void define9()
+{
     const char code[] = "#define AB ab.AB\n"
                         "AB.CD\n";
     ASSERT_EQUALS("\nab . AB . CD", preprocess(code));
 }
 
-void define_invalid_1() {
+void define_invalid_1()
+{
     std::istringstream istr("#define  A(\nB\n");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -265,7 +290,8 @@ void define_invalid_1() {
     ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
 }
 
-void define_invalid_2() {
+void define_invalid_2()
+{
     std::istringstream istr("#define\nhas#");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -275,35 +301,40 @@ void define_invalid_2() {
     ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
 }
 
-void define_define_1() {
+void define_define_1()
+{
     const char code[] = "#define A(x) (x+1)\n"
                         "#define B    A(\n"
                         "B(i))";
     ASSERT_EQUALS("\n\n( ( i ) + 1 )", preprocess(code));
 }
 
-void define_define_2() {
+void define_define_2()
+{
     const char code[] = "#define A(m)    n=m\n"
                         "#define B(x)    A(x)\n"
                         "B(0)";
     ASSERT_EQUALS("\n\nn = 0", preprocess(code));
 }
 
-void define_define_3() {
+void define_define_3()
+{
     const char code[] = "#define ABC 123\n"
                         "#define A(B) A##B\n"
                         "A(BC)";
     ASSERT_EQUALS("\n\n123", preprocess(code));
 }
 
-void define_define_4() {
+void define_define_4()
+{
     const char code[] = "#define FOO1()\n"
                         "#define TEST(FOO) FOO FOO()\n"
                         "TEST(FOO1)";
     ASSERT_EQUALS("\n\nFOO1", preprocess(code));
 }
 
-void define_define_5() {
+void define_define_5()
+{
     const char code[] = "#define X() Y\n"
                         "#define Y() X\n"
                         "A: X()()()\n";
@@ -311,7 +342,8 @@ void define_define_5() {
     ASSERT_EQUALS("\n\nA : Y", preprocess(code)); // <- match the output from gcc/clang/vc
 }
 
-void define_define_6() {
+void define_define_6()
+{
     const char code1[] = "#define f(a) a*g\n"
                          "#define g f\n"
                          "a: f(2)(9)\n";
@@ -323,14 +355,16 @@ void define_define_6() {
     ASSERT_EQUALS("\n\na : 2 * 9 * g", preprocess(code2));
 }
 
-void define_define_7() {
+void define_define_7()
+{
     const char code[] = "#define f(x) g(x\n"
                         "#define g(x) x()\n"
                         "f(f))\n";
     ASSERT_EQUALS("\n\nf ( )", preprocess(code));
 }
 
-void define_define_8() { // line break in nested macro call
+void define_define_8()   // line break in nested macro call
+{
     const char code[] = "#define A(X,Y)  ((X)*(Y))\n"
                         "#define B(X,Y)  ((X)+(Y))\n"
                         "B(0,A(255,x+\n"
@@ -338,14 +372,16 @@ void define_define_8() { // line break in nested macro call
     ASSERT_EQUALS("\n\n( ( 0 ) + ( ( ( 255 ) * ( x + y ) ) ) )", preprocess(code));
 }
 
-void define_define_9() { // line break in nested macro call
+void define_define_9()   // line break in nested macro call
+{
     const char code[] = "#define A(X) X\n"
                         "#define B(X) X\n"
                         "A(\nB(dostuff(1,\n2)))\n";
     ASSERT_EQUALS("\n\ndostuff ( 1 , 2 )", preprocess(code));
 }
 
-void define_define_10() {
+void define_define_10()
+{
     const char code[] = "#define glue(a, b) a ## b\n"
                         "#define xglue(a, b) glue(a, b)\n"
                         "#define AB 1\n"
@@ -354,7 +390,8 @@ void define_define_10() {
     ASSERT_EQUALS("\n\n\n\n1 2", preprocess(code));
 }
 
-void define_define_11() {
+void define_define_11()
+{
     const char code[] = "#define XY(x, y)   x ## y\n"
                         "#define XY2(x, y)  XY(x, y)\n"
                         "#define PORT       XY2(P, 2)\n"
@@ -363,37 +400,43 @@ void define_define_11() {
     ASSERT_EQUALS("\n\n\n\nP2DIR ;", preprocess(code));
 }
 
-void define_define_12() {
+void define_define_12()
+{
     const char code[] = "#define XY(Z)  Z\n"
                         "#define X(ID)  X##ID(0)\n"
                         "X(Y)\n";
     ASSERT_EQUALS("\n\n0", preprocess(code));
 }
 
-void define_va_args_1() {
+void define_va_args_1()
+{
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
                         "A(1,2);";
     ASSERT_EQUALS("\ndostuff ( 1 , 2 ) ;", preprocess(code));
 }
 
-void define_va_args_2() {
+void define_va_args_2()
+{
     const char code[] = "#define A(X,...) X(#__VA_ARGS__)\n"
                         "A(f,123);";
     ASSERT_EQUALS("\nf ( \"123\" ) ;", preprocess(code));
 }
 
-void define_va_args_3() { // min number of arguments
+void define_va_args_3()   // min number of arguments
+{
     const char code[] = "#define A(x, y, z...) 1\n"
                         "A(1, 2)\n";
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
-void dollar() {
+void dollar()
+{
     ASSERT_EQUALS("$ab", readfile("$ab"));
     ASSERT_EQUALS("a$b", readfile("a$b"));
 }
 
-void error() {
+void error()
+{
     std::istringstream istr("#error    hello world! \n");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -403,7 +446,8 @@ void error() {
     ASSERT_EQUALS("file0,1,#error,#error hello world!\n", toString(outputList));
 }
 
-void garbage() {
+void garbage()
+{
     const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
 
@@ -420,7 +464,8 @@ void garbage() {
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
 }
 
-void garbage_endif() {
+void garbage_endif()
+{
     const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
 
@@ -437,7 +482,8 @@ void garbage_endif() {
     ASSERT_EQUALS("file0,1,syntax_error,#endif without #if\n", toString(outputList));
 }
 
-void hash() {
+void hash()
+{
     ASSERT_EQUALS("x = \"1\"", preprocess("x=#__LINE__"));
 
     const char code[] = "#define a(x) #x\n"
@@ -455,27 +501,31 @@ void hash() {
                              "B(123)"));
 }
 
-void hashhash1() { // #4703
+void hashhash1()   // #4703
+{
     const char code[] = "#define MACRO( A, B, C ) class A##B##C##Creator {};\n"
                         "MACRO( B\t, U , G )";
     ASSERT_EQUALS("\nclass BUGCreator { } ;", preprocess(code));
 }
 
-void hashhash2() {
+void hashhash2()
+{
     const char code[] = "#define A(x) a##x\n"
                         "#define B 0\n"
                         "A(B)";
     ASSERT_EQUALS("\n\naB", preprocess(code));
 }
 
-void hashhash3() {
+void hashhash3()
+{
     const char code[] = "#define A(B) A##B\n"
                         "#define a(B) A(B)\n"
                         "a(A(B))";
     ASSERT_EQUALS("\n\nAAB", preprocess(code));
 }
 
-void hashhash4() {  // nonstandard gcc/clang extension for empty varargs
+void hashhash4()    // nonstandard gcc/clang extension for empty varargs
+{
     const char *code;
 
     code = "#define A(x,y...)  a(x,##y)\n"
@@ -488,11 +538,13 @@ void hashhash4() {  // nonstandard gcc/clang extension for empty varargs
     ASSERT_EQUALS("\n\na ( 1 ) ;", preprocess(code));
 }
 
-void hashhash5() {
+void hashhash5()
+{
     ASSERT_EQUALS("x1", preprocess("x##__LINE__"));
 }
 
-void hashhash6() {
+void hashhash6()
+{
     const char *code;
 
     code = "#define A(X, ...) LOG(X, ##__VA_ARGS__)\n"
@@ -506,7 +558,8 @@ void hashhash6() {
     ASSERT_EQUALS("\n\n\nLOG ( 1 , ( int ) 2 )", preprocess(code));
 }
 
-void hashhash7() { // # ## #  (C standard; 6.10.3.3.p4)
+void hashhash7()   // # ## #  (C standard; 6.10.3.3.p4)
+{
     const char *code;
 
     code = "#define hash_hash # ## #\n"
@@ -515,7 +568,8 @@ void hashhash7() { // # ## #  (C standard; 6.10.3.3.p4)
 
 }
 
-void ifdef1() {
+void ifdef1()
+{
     const char code[] = "#ifdef A\n"
                         "1\n"
                         "#else\n"
@@ -524,7 +578,8 @@ void ifdef1() {
     ASSERT_EQUALS("\n\n\n2", preprocess(code));
 }
 
-void ifdef2() {
+void ifdef2()
+{
     const char code[] = "#define A\n"
                         "#ifdef A\n"
                         "1\n"
@@ -534,7 +589,8 @@ void ifdef2() {
     ASSERT_EQUALS("\n\n1", preprocess(code));
 }
 
-void ifndef() {
+void ifndef()
+{
     const char code1[] = "#define A\n"
                          "#ifndef A\n"
                          "1\n"
@@ -547,7 +603,8 @@ void ifndef() {
     ASSERT_EQUALS("\n1", preprocess(code2));
 }
 
-void ifA() {
+void ifA()
+{
     const char code[] = "#if A==1\n"
                         "X\n"
                         "#endif";
@@ -558,14 +615,16 @@ void ifA() {
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
-void ifCharLiteral() {
+void ifCharLiteral()
+{
     const char code[] = "#if ('A'==0x41)\n"
                         "123\n"
                         "#endif";
     ASSERT_EQUALS("\n123", preprocess(code));
 }
 
-void ifDefined() {
+void ifDefined()
+{
     const char code[] = "#if defined(A)\n"
                         "X\n"
                         "#endif";
@@ -575,7 +634,8 @@ void ifDefined() {
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
-void ifDefinedInvalid1() { // #50 - invalid unterminated defined
+void ifDefinedInvalid1()   // #50 - invalid unterminated defined
+{
     const char code[] = "#if defined(A";
     simplecpp::DUI dui;
     simplecpp::OutputList outputList;
@@ -587,7 +647,8 @@ void ifDefinedInvalid1() { // #50 - invalid unterminated defined
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
-void ifDefinedInvalid2() {
+void ifDefinedInvalid2()
+{
     const char code[] = "#if defined";
     simplecpp::DUI dui;
     simplecpp::OutputList outputList;
@@ -599,7 +660,8 @@ void ifDefinedInvalid2() {
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
-void ifLogical() {
+void ifLogical()
+{
     const char code[] = "#if defined(A) || defined(B)\n"
                         "X\n"
                         "#endif";
@@ -613,7 +675,8 @@ void ifLogical() {
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
-void ifSizeof() {
+void ifSizeof()
+{
     const char code[] = "#if sizeof(unsigned short)==2\n"
                         "X\n"
                         "#else\n"
@@ -622,7 +685,8 @@ void ifSizeof() {
     ASSERT_EQUALS("\nX", preprocess(code));
 }
 
-void elif() {
+void elif()
+{
     const char code1[] = "#ifndef X\n"
                          "1\n"
                          "#elif 1<2\n"
@@ -651,7 +715,8 @@ void elif() {
     ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code3));
 }
 
-void ifif() {
+void ifif()
+{
     // source code from LLVM
     const char code[] = "#if defined(__has_include)\n"
                         "#if __has_include(<sanitizer / coverage_interface.h>)\n"
@@ -660,7 +725,8 @@ void ifif() {
     ASSERT_EQUALS("", preprocess(code));
 }
 
-void ifoverflow() {
+void ifoverflow()
+{
     // source code from CLANG
     const char code[] = "#if 0x7FFFFFFFFFFFFFFF*2\n"
                         "#endif\n"
@@ -678,14 +744,16 @@ void ifoverflow() {
     (void)preprocess(code);
 }
 
-void ifdiv0() {
+void ifdiv0()
+{
     const char code[] = "#if 1000/0\n"
                         "#endif\n"
                         "123";
     ASSERT_EQUALS("", preprocess(code));
 }
 
-void ifalt() { // using "and", "or", etc
+void ifalt()   // using "and", "or", etc
+{
     const char *code;
 
     code = "#if 1 and 1\n"
@@ -703,7 +771,8 @@ void ifalt() { // using "and", "or", etc
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
-void missingHeader1() {
+void missingHeader1()
+{
     const simplecpp::DUI dui;
     std::istringstream istr("#include \"notexist.h\"\n");
     std::vector<std::string> files;
@@ -714,7 +783,8 @@ void missingHeader1() {
     ASSERT_EQUALS("file0,1,missing_header,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
-void missingHeader2() {
+void missingHeader2()
+{
     const simplecpp::DUI dui;
     std::istringstream istr("#include \"foo.h\"\n"); // this file exists
     std::vector<std::string> files;
@@ -726,7 +796,8 @@ void missingHeader2() {
     ASSERT_EQUALS("", toString(outputList));
 }
 
-void missingHeader3() {
+void missingHeader3()
+{
     const simplecpp::DUI dui;
     std::istringstream istr("#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"); // this file is not included
     std::vector<std::string> files;
@@ -753,7 +824,8 @@ void nestedInclude()
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
 }
 
-void multiline1() {
+void multiline1()
+{
     const char code[] = "#define A \\\n"
                         "1\n"
                         "A";
@@ -766,7 +838,8 @@ void multiline1() {
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
-void multiline2() {
+void multiline2()
+{
     const char code[] = "#define A /*\\\n"
                         "*/1\n"
                         "A";
@@ -782,7 +855,8 @@ void multiline2() {
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
-void multiline3() { // #28 - macro with multiline comment
+void multiline3()   // #28 - macro with multiline comment
+{
     const char code[] = "#define A /*\\\n"
                         "           */ 1\n"
                         "A";
@@ -798,7 +872,8 @@ void multiline3() { // #28 - macro with multiline comment
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
-void multiline4() { // #28 - macro with multiline comment
+void multiline4()   // #28 - macro with multiline comment
+{
     const char code[] = "#define A \\\n"
                         "          /*\\\n"
                         "           */ 1\n"
@@ -815,7 +890,8 @@ void multiline4() { // #28 - macro with multiline comment
     ASSERT_EQUALS("\n\n\n1", tokens2.stringify());
 }
 
-void multiline5() { // column
+void multiline5()   // column
+{
     const char code[] = "#define A\\\n"
                         "(";
     const simplecpp::DUI dui;
@@ -826,17 +902,20 @@ void multiline5() { // column
     ASSERT_EQUALS(11, rawtokens.back()->location.col);
 }
 
-void include1() {
+void include1()
+{
     const char code[] = "#include \"A.h\"\n";
     ASSERT_EQUALS("# include \"A.h\"", readfile(code));
 }
 
-void include2() {
+void include2()
+{
     const char code[] = "#include <A.h>\n";
     ASSERT_EQUALS("# include <A.h>", readfile(code));
 }
 
-void include3() { // #16 - crash when expanding macro from header
+void include3()   // #16 - crash when expanding macro from header
+{
     const char code_c[] = "#include \"A.h\"\n"
                           "glue(1,2,3,4)\n" ;
     const char code_h[] = "#define glue(a,b,c,d) a##b##c##d\n";
@@ -864,7 +943,8 @@ void include3() { // #16 - crash when expanding macro from header
 }
 
 
-void include4() { // #27 - -include
+void include4()   // #27 - -include
+{
     const char code_c[] = "X\n" ;
     const char code_h[] = "#define X 123\n";
 
@@ -892,7 +972,8 @@ void include4() { // #27 - -include
     ASSERT_EQUALS("123", out.stringify());
 }
 
-void include5() {  // #3 - handle #include MACRO
+void include5()    // #3 - handle #include MACRO
+{
     const char code_c[] = "#define A \"3.h\"\n#include A\n";
     const char code_h[] = "123\n";
 
@@ -913,7 +994,8 @@ void include5() {  // #3 - handle #include MACRO
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
 }
 
-void include6() { // #57 - incomplete macro  #include MACRO(,)
+void include6()   // #57 - incomplete macro  #include MACRO(,)
+{
     const char code[] = "#define MACRO(X,Y) X##Y\n#include MACRO(,)\n";
 
     std::vector<std::string> files;
@@ -928,13 +1010,15 @@ void include6() { // #57 - incomplete macro  #include MACRO(,)
     simplecpp::preprocess(out, rawtokens, files, filedata, dui);
 }
 
-void readfile_string() {
+void readfile_string()
+{
     const char code[] = "A = \"abc\'def\"";
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
     ASSERT_EQUALS("( \"\\\\\\\\\" )", readfile("(\"\\\\\\\\\")"));
 }
 
-void readfile_rawstring() {
+void readfile_rawstring()
+{
     ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"(abc\\\\def)\""));
     ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
     ASSERT_EQUALS("A = \"\"", readfile("A = R\"()\""));
@@ -942,7 +1026,8 @@ void readfile_rawstring() {
     ASSERT_EQUALS("A = \"\\\"\"", readfile("A = R\"(\")\""));
 }
 
-void stringify1() {
+void stringify1()
+{
     const char code_c[] = "#include \"A.h\"\n"
                           "#include \"A.h\"\n";
     const char code_h[] = "1\n2";
@@ -969,7 +1054,8 @@ void stringify1() {
     ASSERT_EQUALS("\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.h\"\n1\n2", out.stringify());
 }
 
-void tokenMacro1() {
+void tokenMacro1()
+{
     const char code[] = "#define A 123\n"
                         "A";
     const simplecpp::DUI dui;
@@ -981,7 +1067,8 @@ void tokenMacro1() {
     ASSERT_EQUALS("A", tokenList.cback()->macro);
 }
 
-void tokenMacro2() {
+void tokenMacro2()
+{
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "ADD(1,2)";
     const simplecpp::DUI dui;
@@ -1001,7 +1088,8 @@ void tokenMacro2() {
     ASSERT_EQUALS("", tok->macro);
 }
 
-void tokenMacro3() {
+void tokenMacro3()
+{
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "#define FRED  1\n"
                         "ADD(FRED,2)";
@@ -1022,7 +1110,8 @@ void tokenMacro3() {
     ASSERT_EQUALS("", tok->macro);
 }
 
-void tokenMacro4() {
+void tokenMacro4()
+{
     const char code[] = "#define A B\n"
                         "#define B 1\n"
                         "A";
@@ -1037,7 +1126,8 @@ void tokenMacro4() {
     ASSERT_EQUALS("A", tok->macro);
 }
 
-void undef() {
+void undef()
+{
     std::istringstream istr("#define A\n"
                             "#undef A\n"
                             "#ifdef A\n"
@@ -1051,7 +1141,8 @@ void undef() {
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
-void userdef() {
+void userdef()
+{
     std::istringstream istr("#ifdef A\n123\n#endif\n");
     simplecpp::DUI dui;
     dui.defines.push_back("A=1");
@@ -1063,17 +1154,20 @@ void userdef() {
     ASSERT_EQUALS("\n123", tokens2.stringify());
 }
 
-void utf8() {
+void utf8()
+{
     ASSERT_EQUALS("123", readfile("\xEF\xBB\xBF 123"));
 }
 
-void unicode() {
+void unicode()
+{
     ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
     ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
     ASSERT_EQUALS("\n//1", readfile("\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00",16));
 }
 
-void warning() {
+void warning()
+{
     std::istringstream istr("#warning MSG\n1");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -1085,10 +1179,11 @@ void warning() {
 }
 
 namespace simplecpp {
-std::string simplifyPath(std::string);
+    std::string simplifyPath(std::string);
 }
 
-void simplifyPath() {
+void simplifyPath()
+{
     ASSERT_EQUALS("1.c", simplecpp::simplifyPath("./1.c"));
     ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/../1.c"));
     ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/c/../../1.c"));
@@ -1096,7 +1191,8 @@ void simplifyPath() {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);

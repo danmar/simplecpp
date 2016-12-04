@@ -5,7 +5,8 @@
 #include <iostream>
 #include <cstring>
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     const char *filename = NULL;
 
     // Settings..
