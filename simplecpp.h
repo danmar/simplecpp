@@ -76,8 +76,9 @@ namespace simplecpp {
             return fileIndex == other.fileIndex && line == other.line;
         }
 
-        std::string file() const {
-            return fileIndex < files.size() ? files[fileIndex] : std::string("");
+        const std::string& file() const {
+            static const std::string temp;
+            return fileIndex < files.size() ? files[fileIndex] : temp;
         }
 
         const std::vector<std::string> &files;

@@ -2025,12 +2025,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
 
             if (ifstates.size() <= 1U && (rawtok->str == ELIF || rawtok->str == ELSE || rawtok->str == ENDIF)) {
-                simplecpp::Output err(files);
-                err.type = Output::SYNTAX_ERROR;
-                err.location = rawtok->location;
-                err.msg = "#" + rawtok->str + " without #if";
-                if (outputList)
+                if (outputList) {
+                    simplecpp::Output err(files);
+                    err.type = Output::SYNTAX_ERROR;
+                    err.location = rawtok->location;
+                    err.msg = "#" + rawtok->str + " without #if";
                     outputList->push_back(err);
+                }
                 output.clear();
                 return;
             }
@@ -2067,12 +2068,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             it->second = macro;
                     }
                 } catch (const std::runtime_error &) {
-                    simplecpp::Output err(files);
-                    err.type = Output::SYNTAX_ERROR;
-                    err.location = rawtok->location;
-                    err.msg = "Failed to parse #define";
-                    if (outputList)
+                    if (outputList) {
+                        simplecpp::Output err(files);
+                        err.type = Output::SYNTAX_ERROR;
+                        err.location = rawtok->location;
+                        err.msg = "Failed to parse #define";
                         outputList->push_back(err);
+                    }
                     output.clear();
                     return;
                 }
@@ -2094,12 +2096,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 }
 
                 if (inc2.empty() || inc2.cfront()->str.size() <= 2U) {
-                    simplecpp::Output err(files);
-                    err.type = Output::SYNTAX_ERROR;
-                    err.location = rawtok->location;
-                    err.msg = "No header in #include";
-                    if (outputList)
+                    if (outputList) {
+                        simplecpp::Output err(files);
+                        err.type = Output::SYNTAX_ERROR;
+                        err.location = rawtok->location;
+                        err.msg = "No header in #include";
                         outputList->push_back(err);
+                    }
                     output.clear();
                     return;
                 }
@@ -2119,19 +2122,21 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                 }
                 if (header2.empty()) {
-                    simplecpp::Output out(files);
-                    out.type = Output::MISSING_HEADER;
-                    out.location = rawtok->location;
-                    out.msg = "Header not found: " + rawtok->next->str;
-                    if (outputList)
+                    if (outputList) {
+                        simplecpp::Output out(files);
+                        out.type = Output::MISSING_HEADER;
+                        out.location = rawtok->location;
+                        out.msg = "Header not found: " + rawtok->next->str;
                         outputList->push_back(out);
+                    }
                 } else if (includetokenstack.size() >= 400) {
-                    simplecpp::Output out(files);
-                    out.type = Output::INCLUDE_NESTED_TOO_DEEPLY;
-                    out.location = rawtok->location;
-                    out.msg = "#include nested too deeply";
-                    if (outputList)
+                    if (outputList) {
+                        simplecpp::Output out(files);
+                        out.type = Output::INCLUDE_NESTED_TOO_DEEPLY;
+                        out.location = rawtok->location;
+                        out.msg = "#include nested too deeply";
                         outputList->push_back(out);
+                    }
                 } else if (pragmaOnce.find(header2) == pragmaOnce.end()) {
                     includetokenstack.push(gotoNextLine(rawtok));
                     const TokenList *includetokens = filedata.find(header2)->second;
@@ -2140,12 +2145,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 }
             } else if (rawtok->str == IF || rawtok->str == IFDEF || rawtok->str == IFNDEF || rawtok->str == ELIF) {
                 if (!sameline(rawtok,rawtok->next)) {
-                    simplecpp::Output out(files);
-                    out.type = Output::SYNTAX_ERROR;
-                    out.location = rawtok->location;
-                    out.msg = "Syntax error in #" + rawtok->str;
-                    if (outputList)
+                    if (outputList) {
+                        simplecpp::Output out(files);
+                        out.type = Output::SYNTAX_ERROR;
+                        out.location = rawtok->location;
+                        out.msg = "Syntax error in #" + rawtok->str;
                         outputList->push_back(out);
+                    }
                     output.clear();
                     return;
                 }
@@ -2179,12 +2185,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             if (par)
                                 tok = tok ? tok->next : NULL;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
-                                Output out(rawtok->location.files);
-                                out.type = Output::SYNTAX_ERROR;
-                                out.location = rawtok->location;
-                                out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
-                                if (outputList)
+                                if (outputList) {
+                                    Output out(rawtok->location.files);
+                                    out.type = Output::SYNTAX_ERROR;
+                                    out.location = rawtok->location;
+                                    out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
                                     outputList->push_back(out);
+                                }
                                 output.clear();
                                 return;
                             }
@@ -2200,12 +2207,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     try {
                         conditionIsTrue = (evaluate(expr, sizeOfType) != 0);
                     } catch (const std::exception &) {
-                        Output out(rawtok->location.files);
-                        out.type = Output::SYNTAX_ERROR;
-                        out.location = rawtok->location;
-                        out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
-                        if (outputList)
+                        if (outputList) {
+                            Output out(rawtok->location.files);
+                            out.type = Output::SYNTAX_ERROR;
+                            out.location = rawtok->location;
+                            out.msg = "failed to evaluate " + std::string(rawtok->str == IF ? "#if" : "#elif") + " condition";
                             outputList->push_back(out);
+                        }
                         output.clear();
                         return;
                     }
