@@ -1119,8 +1119,8 @@ namespace simplecpp {
             return tok;
         }
 
-        bool parseDefine(const Token *nameTokDef) {
-            nameTokDef = nameTokDef;
+        bool parseDefine(const Token *nametoken) {
+            nameTokDef = nametoken;
             variadic = false;
             if (!nameTokDef) {
                 valueToken = endToken = NULL;
@@ -1132,7 +1132,7 @@ namespace simplecpp {
             if (functionLike()) {
                 args.clear();
                 const Token *argtok = nameTokDef->next->next;
-                while (sameline(nameTokDef, argtok) && argtok->op != ')') {
+                while (sameline(nametoken, argtok) && argtok->op != ')') {
                     if (argtok->op == '.' &&
                         argtok->next && argtok->next->op == '.' &&
                         argtok->next->next && argtok->next->next->op == '.' &&
@@ -1147,7 +1147,7 @@ namespace simplecpp {
                         args.push_back(argtok->str);
                     argtok = argtok->next;
                 }
-                if (!sameline(nameTokDef, argtok)) {
+                if (!sameline(nametoken, argtok)) {
                     return false;
                 }
                 valueToken = argtok ? argtok->next : NULL;
