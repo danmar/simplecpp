@@ -36,9 +36,8 @@
 #include <string>
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#define NOMINMAX
 #include <windows.h>
-#undef min
-#undef max
 #undef ERROR
 #undef TRUE
 #define SIMPLECPP_WINDOWS
@@ -1932,12 +1931,13 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
         try {
             *tok1 = it->second.expand(&value, tok, macros, files);
         } catch (simplecpp::Macro::Error &err) {
-            simplecpp::Output out(files);
-            out.type = simplecpp::Output::SYNTAX_ERROR;
-            out.location = err.location;
-            out.msg = "failed to expand \'" + tok->str + "\', " + err.what;
-            if (outputList)
+            if (outputList) {
+                simplecpp::Output out(files);
+                out.type = simplecpp::Output::SYNTAX_ERROR;
+                out.location = err.location;
+                out.msg = "failed to expand \'" + tok->str + "\', " + err.what;
                 outputList->push_back(out);
+            }
             return false;
         }
         output.takeTokens(value);
