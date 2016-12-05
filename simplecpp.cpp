@@ -651,9 +651,9 @@ void simplecpp::TokenList::combineOperators()
     }
 }
 
+static const std::string NOT("not");
 void simplecpp::TokenList::constFoldUnaryNotPosNeg(simplecpp::Token *tok)
 {
-    const std::string NOT("not");
     for (; tok && tok->op != ')'; tok = tok->next) {
         // "not" might be !
         if (isAlternativeUnaryOp(tok, NOT))
@@ -736,10 +736,9 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok)
     }
 }
 
+static const std::string NOTEQ("not_eq");
 void simplecpp::TokenList::constFoldComparison(Token *tok)
 {
-    const std::string NOTEQ("not_eq");
-
     for (; tok && tok->op != ')'; tok = tok->next) {
         if (isAlternativeBinaryOp(tok,NOTEQ))
             tok->setstr("!=");
@@ -774,19 +773,22 @@ void simplecpp::TokenList::constFoldComparison(Token *tok)
     }
 }
 
+static const std::string BITAND("bitand");
+static const std::string BITOR("bitor");
+static const std::string XOR("xor");
 void simplecpp::TokenList::constFoldBitwise(Token *tok)
 {
     Token * const tok1 = tok;
     for (const char *op = "&^|"; *op; op++) {
-        std::string altop;
+        const std::string* altop;
         if (*op == '&')
-            altop = "bitand";
+            altop = &BITAND;
         else if (*op == '|')
-            altop = "bitor";
+            altop = &BITOR;
         else
-            altop = "xor";
+            altop = &XOR;
         for (tok = tok1; tok && tok->op != ')'; tok = tok->next) {
-            if (tok->op != *op && !isAlternativeBinaryOp(tok, altop))
+            if (tok->op != *op && !isAlternativeBinaryOp(tok, *altop))
                 continue;
             if (!tok->previous || !tok->previous->number)
                 continue;
@@ -807,11 +809,10 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
     }
 }
 
+static const std::string AND("and");
+static const std::string OR("or");
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
 {
-    const std::string AND("and");
-    const std::string OR("or");
-
     for (; tok && tok->op != ')'; tok = tok->next) {
         if (tok->name) {
             if (isAlternativeBinaryOp(tok,AND))
@@ -1617,7 +1618,7 @@ namespace simplecpp {
 namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 
-    static bool realFileName(const std::vector<TCHAR> &buf, std::ostream &ostr)
+    static bool realFileName(const std::vector<CHAR> &buf, std::ostream &ostr)
     {
         // Detect root directory, see simplecpp:realFileName returns the wrong root path #45
         if ((buf.size()==2 || (buf.size()>2 && buf[2]=='\0'))
@@ -1626,19 +1627,18 @@ namespace simplecpp {
             ostr << (char)buf[1];
             return true;
         }
-        WIN32_FIND_DATA FindFileData;
-        HANDLE hFind = FindFirstFile(&buf[0], &FindFileData);
+        WIN32_FIND_DATAA FindFileData;
+        HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
         if (hFind == INVALID_HANDLE_VALUE)
             return false;
-        for (const TCHAR *c = FindFileData.cFileName; *c; c++)
-            ostr << (char)*c;
+        ostr << FindFileData.cFileName;
         FindClose(hFind);
         return true;
     }
 
     std::string realFilename(const std::string &f)
     {
-        std::vector<TCHAR> buf(f.size()+1U, 0);
+        std::vector<CHAR> buf(f.size()+1U, 0);
         for (unsigned int i = 0; i < f.size(); ++i)
             buf[i] = f[i];
         std::ostringstream ostr;
@@ -1832,8 +1832,9 @@ namespace {
                 if (filedata.find(s) != filedata.end())
                     return s;
             } else {
-                if (filedata.find(simplecpp::simplifyPath(header)) != filedata.end())
-                    return simplecpp::simplifyPath(header);
+                std::string s = simplecpp::simplifyPath(header);
+                if (filedata.find(s) != filedata.end())
+                    return s;
             }
         }
 
