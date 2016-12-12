@@ -73,7 +73,7 @@ namespace {
     long long stringToLL(const std::string &s)
     {
         long long ret;
-        bool hex = (s.compare(0, 2, "0x") == 0);
+        const bool hex = (s.length()>2 && s.compare(0, 2, "0x") == 0);
         std::istringstream istr(hex ? s.substr(2) : s);
         if (hex)
             istr >> std::hex;
@@ -84,7 +84,7 @@ namespace {
     unsigned long long stringToULL(const std::string &s)
     {
         unsigned long long ret;
-        bool hex = (s.compare(0, 2, "0x") == 0);
+        const bool hex = (s.length()>2 && s.compare(0, 2, "0x") == 0);
         std::istringstream istr(hex ? s.substr(2) : s);
         if (hex)
             istr >> std::hex;
