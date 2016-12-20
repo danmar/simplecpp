@@ -504,11 +504,11 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             if (ch == '\"' && cback() && cback()->op == 'R') {
                 std::string delim;
                 ch = readChar(istr,bom);
-                while (istr.good() && ch != '(' && ch != '\"' && ch != '\n') {
+                while (istr.good() && ch != '(' && ch != '\n') {
                     delim += ch;
                     ch = readChar(istr,bom);
                 }
-                if (!istr.good() || ch == '\"' || ch == '\n')
+                if (!istr.good() || ch == '\n')
                     // TODO report
                     return;
                 currentToken = '\"';

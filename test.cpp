@@ -1024,6 +1024,7 @@ void readfile_rawstring()
     ASSERT_EQUALS("A = \"\"", readfile("A = R\"()\""));
     ASSERT_EQUALS("A = \"\\\\\"", readfile("A = R\"(\\)\""));
     ASSERT_EQUALS("A = \"\\\"\"", readfile("A = R\"(\")\""));
+    ASSERT_EQUALS("A = \"abc\"", readfile("A = R\"\"\"(abc)\"\"\""));
 }
 
 void stringify1()
