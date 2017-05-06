@@ -14,7 +14,7 @@ test:	testrunner	simplecpp
 	g++ -fsyntax-only simplecpp.cpp && ./testrunner && python run-tests.py
 
 simplecpp:	main.o simplecpp.o
-	$(CXX) $(CXXFLAGS) main.cpp simplecpp.o -o simplecpp
+	$(CXX) $(LDFLAGS) main.o simplecpp.o -o simplecpp
 
 clean:
 	rm -f testrunner simplecpp *.o
