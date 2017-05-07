@@ -349,7 +349,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
     return 0;
 }
 
-bool isNameChar(unsigned char ch)
+static bool isNameChar(unsigned char ch)
 {
     return std::isalnum(ch) || ch == '_' || ch == '$';
 }
