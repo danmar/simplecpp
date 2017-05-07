@@ -11,7 +11,7 @@ testrunner:	test.o	simplecpp.o
 	$(CXX) $(LDFLAGS) simplecpp.o test.o -o testrunner
 	
 test:	testrunner	simplecpp
-	g++ -fsyntax-only simplecpp.cpp && ./testrunner && python run-tests.py
+	g++ -std=c++0x -fsyntax-only simplecpp.cpp && ./testrunner && python run-tests.py
 
 simplecpp:	main.o simplecpp.o
 	$(CXX) $(LDFLAGS) main.o simplecpp.o -o simplecpp
