@@ -349,7 +349,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
     return 0;
 }
 
-bool isNameChar(unsigned char ch)
+static bool isNameChar(unsigned char ch)
 {
     return std::isalnum(ch) || ch == '_' || ch == '$';
 }
@@ -1737,16 +1737,10 @@ namespace {
         }
     }
 
+    const char * const altopData[] = {"and","or","bitand","bitor","not","not_eq","xor"};
+    const std::set<std::string> altop(&altopData[0], &altopData[7]);
     void simplifyName(simplecpp::TokenList &expr)
     {
-        std::set<std::string> altop;
-        altop.insert("and");
-        altop.insert("or");
-        altop.insert("bitand");
-        altop.insert("bitor");
-        altop.insert("not");
-        altop.insert("not_eq");
-        altop.insert("xor");
         for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
             if (tok->name) {
                 if (altop.find(tok->str) != altop.end()) {
