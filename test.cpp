@@ -144,7 +144,9 @@ static std::string testConstFold(const char code[])
 void combineOperators_floatliteral()
 {
     ASSERT_EQUALS("1.", preprocess("1."));
+    ASSERT_EQUALS("1.f", preprocess("1.f"));
     ASSERT_EQUALS(".1", preprocess(".1"));
+    ASSERT_EQUALS(".1f", preprocess(".1f"));
     ASSERT_EQUALS("3.1", preprocess("3.1"));
     ASSERT_EQUALS("1E7", preprocess("1E7"));
     ASSERT_EQUALS("1E-7", preprocess("1E-7"));
