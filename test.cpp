@@ -435,6 +435,11 @@ void dollar()
     ASSERT_EQUALS("a$b", readfile("a$b"));
 }
 
+void dotDotDot()
+{
+    ASSERT_EQUALS("1 . . . 2", readfile("1 ... 2"));
+}
+
 void error()
 {
     std::istringstream istr("#error    hello world! \n");
@@ -1235,6 +1240,8 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_args_3);
 
     TEST_CASE(dollar);
+
+    TEST_CASE(dotDotDot); // ...
 
     TEST_CASE(error);
 

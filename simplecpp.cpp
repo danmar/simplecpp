@@ -589,6 +589,10 @@ void simplecpp::TokenList::combineOperators()
 {
     for (Token *tok = front(); tok; tok = tok->next) {
         if (tok->op == '.') {
+            if (tok->previous && tok->previous->op == '.')
+                continue;
+            if (tok->next && tok->next->op == '.')
+                continue;
             // float literals..
             if (tok->previous && tok->previous->number) {
                 tok->setstr(tok->previous->str + '.');
