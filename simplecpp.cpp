@@ -609,7 +609,7 @@ void simplecpp::TokenList::combineOperators()
         }
         // match: [0-9.]+E [+-] [0-9]+
         const char lastChar = tok->str[tok->str.size() - 1];
-        if (tok->number && (lastChar == 'E' || lastChar == 'e') && tok->next && tok->next->isOneOf("+-") && tok->next->next && tok->next->next->number) {
+        if (tok->number && tok->str.compare(0,2,"0x",0,2) != 0 && (lastChar == 'E' || lastChar == 'e') && tok->next && tok->next->isOneOf("+-") && tok->next->next && tok->next->next->number) {
             tok->setstr(tok->str + tok->next->op + tok->next->next->str);
             deleteToken(tok->next);
             deleteToken(tok->next);
