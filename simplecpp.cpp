@@ -401,7 +401,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         unsigned char ch = readChar(istr,bom);
         if (!istr.good())
             break;
-        if (ch < '\n' && !std::isspace(ch))
+        if (ch < ' ' && ch != '\t' && ch != '\n' && ch != '\r')
             ch = ' ';
 
         if (ch == '\n') {
