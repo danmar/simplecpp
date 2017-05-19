@@ -1018,6 +1018,14 @@ void include6()   // #57 - incomplete macro  #include MACRO(,)
     simplecpp::preprocess(out, rawtokens, files, filedata, dui);
 }
 
+void readfile_nullbyte()
+{
+    const char code[] = "ab\0cd";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("ab cd", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty()); // should warning be written?
+}
+
 void readfile_string()
 {
     const char code[] = "A = \"abc\'def\"";
@@ -1294,6 +1302,7 @@ int main(int argc, char **argv)
     TEST_CASE(multiline4);
     TEST_CASE(multiline5); // column
 
+    TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);
 
