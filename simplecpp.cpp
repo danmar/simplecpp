@@ -592,11 +592,10 @@ void simplecpp::TokenList::constFold()
 }
 
 static bool isFloatSuffix(const simplecpp::Token *tok) {
-    if (!tok || tok->str.size() > 2)
+    if (!tok || tok->str.size() != 1U)
         return false;
-    std::string s = tok->str;
-    std::transform(s.begin(), s.end(), s.begin(), static_cast<int (*)(int)>(std::tolower));
-    return s == "lf" || s == "f";
+    const char c = std::tolower(tok->str[0]);
+    return c == 'f' || c == 'l';
 }
 
 void simplecpp::TokenList::combineOperators()
