@@ -112,7 +112,6 @@ static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
 
-
 static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
 {
     return (tok->name &&
@@ -1661,6 +1660,10 @@ namespace simplecpp {
         std::ostringstream ostr;
         std::string::size_type sep = 0;
         while ((sep = f.find_first_of("\\/", sep + 1U)) != std::string::npos) {
+            if (sep >= 2 && f.compare(sep-2,2,"..",0,2) == 0) {
+                ostr << "../";
+                continue;
+            }
             buf[sep] = 0;
             if (!realFileName(buf,ostr))
                 return f;
