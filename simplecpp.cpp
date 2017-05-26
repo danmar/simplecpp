@@ -43,91 +43,91 @@
 #define SIMPLECPP_WINDOWS
 #endif
 
-static bool isHex(const std::string &s) {
+static bool isHex(const std::string &s)
+{
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
 }
 
-namespace {
-    const simplecpp::TokenString DEFINE("define");
-    const simplecpp::TokenString UNDEF("undef");
 
-    const simplecpp::TokenString INCLUDE("include");
+static const simplecpp::TokenString DEFINE("define");
+static const simplecpp::TokenString UNDEF("undef");
 
-    const simplecpp::TokenString ERROR("error");
-    const simplecpp::TokenString WARNING("warning");
+static const simplecpp::TokenString INCLUDE("include");
 
-    const simplecpp::TokenString IF("if");
-    const simplecpp::TokenString IFDEF("ifdef");
-    const simplecpp::TokenString IFNDEF("ifndef");
-    const simplecpp::TokenString DEFINED("defined");
-    const simplecpp::TokenString ELSE("else");
-    const simplecpp::TokenString ELIF("elif");
-    const simplecpp::TokenString ENDIF("endif");
+static const simplecpp::TokenString ERROR("error");
+static const simplecpp::TokenString WARNING("warning");
 
-    const simplecpp::TokenString PRAGMA("pragma");
-    const simplecpp::TokenString ONCE("once");
+static const simplecpp::TokenString IF("if");
+static const simplecpp::TokenString IFDEF("ifdef");
+static const simplecpp::TokenString IFNDEF("ifndef");
+static const simplecpp::TokenString DEFINED("defined");
+static const simplecpp::TokenString ELSE("else");
+static const simplecpp::TokenString ELIF("elif");
+static const simplecpp::TokenString ENDIF("endif");
 
-    template<class T> std::string toString(T t)
-    {
-        std::ostringstream ostr;
-        ostr << t;
-        return ostr.str();
-    }
+static const simplecpp::TokenString PRAGMA("pragma");
+static const simplecpp::TokenString ONCE("once");
 
-    long long stringToLL(const std::string &s)
-    {
-        long long ret;
-        const bool hex = isHex(s);
-        std::istringstream istr(hex ? s.substr(2) : s);
-        if (hex)
-            istr >> std::hex;
-        istr >> ret;
-        return ret;
-    }
+template<class T> static std::string toString(T t)
+{
+    std::ostringstream ostr;
+    ostr << t;
+    return ostr.str();
+}
 
-    unsigned long long stringToULL(const std::string &s)
-    {
-        unsigned long long ret;
-        const bool hex = isHex(s);
-        std::istringstream istr(hex ? s.substr(2) : s);
-        if (hex)
-            istr >> std::hex;
-        istr >> ret;
-        return ret;
-    }
+static long long stringToLL(const std::string &s)
+{
+    long long ret;
+    const bool hex = isHex(s);
+    std::istringstream istr(hex ? s.substr(2) : s);
+    if (hex)
+        istr >> std::hex;
+    istr >> ret;
+    return ret;
+}
 
-    bool startsWith(const std::string &str, const std::string &s)
-    {
-        return (str.size() >= s.size() && str.compare(0, s.size(), s) == 0);
-    }
+static unsigned long long stringToULL(const std::string &s)
+{
+    unsigned long long ret;
+    const bool hex = isHex(s);
+    std::istringstream istr(hex ? s.substr(2) : s);
+    if (hex)
+        istr >> std::hex;
+    istr >> ret;
+    return ret;
+}
 
-    bool endsWith(const std::string &s, const std::string &e)
-    {
-        return (s.size() >= e.size() && s.compare(s.size() - e.size(), e.size(), e) == 0);
-    }
+static bool startsWith(const std::string &str, const std::string &s)
+{
+    return (str.size() >= s.size() && str.compare(0, s.size(), s) == 0);
+}
 
-    bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
-    {
-        return tok1 && tok2 && tok1->location.sameline(tok2->location);
-    }
+static bool endsWith(const std::string &s, const std::string &e)
+{
+    return (s.size() >= e.size() && s.compare(s.size() - e.size(), e.size(), e) == 0);
+}
+
+static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
+{
+    return tok1 && tok2 && tok1->location.sameline(tok2->location);
+}
 
 
-    static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
-    {
-        return (tok->name &&
-                tok->str == alt &&
-                tok->previous &&
-                tok->next &&
-                (tok->previous->number || tok->previous->name || tok->previous->op == ')') &&
-                (tok->next->number || tok->next->name || tok->next->op == '('));
-    }
+static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
+{
+    return (tok->name &&
+            tok->str == alt &&
+            tok->previous &&
+            tok->next &&
+            (tok->previous->number || tok->previous->name || tok->previous->op == ')') &&
+            (tok->next->number || tok->next->name || tok->next->op == '('));
+}
 
-    static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt)
-    {
-        return ((tok->name && tok->str == alt) &&
-                (!tok->previous || tok->previous->op == '(') &&
-                (tok->next && (tok->next->name || tok->next->number)));
-    }
+static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt)
+{
+    return ((tok->name && tok->str == alt) &&
+            (!tok->previous || tok->previous->op == '(') &&
+            (tok->next && (tok->next->name || tok->next->number)));
 }
 
 void simplecpp::Location::adjust(const std::string &str)
@@ -353,7 +353,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
     return 0;
 }
 
-bool isNameChar(unsigned char ch)
+static bool isNameChar(unsigned char ch)
 {
     return std::isalnum(ch) || ch == '_' || ch == '$';
 }
@@ -591,7 +591,8 @@ void simplecpp::TokenList::constFold()
     }
 }
 
-static bool isFloatSuffix(const simplecpp::Token *tok) {
+static bool isFloatSuffix(const simplecpp::Token *tok)
+{
     if (!tok || tok->str.size() != 1U)
         return false;
     const char c = std::tolower(tok->str[0]);
