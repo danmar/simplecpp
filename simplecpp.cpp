@@ -19,21 +19,16 @@
 #include "simplecpp.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdlib>
-#include <limits>
-#include <list>
-#include <map>
-#include <set>
-#include <stdexcept>
-#include <vector>
 #include <cstring>
-#include <cstdlib> // strtoll, etc
-#include <sstream>
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <sstream>
 #include <stack>
-#include <string>
+#include <stdexcept>
+#include <utility>
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #define NOMINMAX
