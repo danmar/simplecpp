@@ -528,6 +528,18 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             if (currentToken.size() < 2U)
                 // TODO report
                 return;
+
+            std::string s = currentToken;
+            std::string::size_type pos;
+            while ((pos = s.find_first_of("\r\n")) != std::string::npos) {
+                s.erase(pos,1);
+            }
+
+            push_back(new Token(s, location)); // push string without newlines
+
+            location.adjust(currentToken);
+
+            continue;
         }
 
         else {
@@ -899,8 +911,12 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
     while (ch != end && ch != '\r' && ch != '\n' && istr.good()) {
         ch = (unsigned char)istr.get();
         ret += ch;
-        if (ch == '\\')
-            ret += (unsigned char)istr.get();
+        if (ch == '\\') {
+            const char next = (unsigned char)istr.get();
+            if (next == '\r' || next == '\n')
+                ret.erase(ret.size()-1U);
+            ret += next;
+        }
     }
 
     if (!istr.good() || ch != end) {
