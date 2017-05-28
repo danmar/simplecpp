@@ -907,14 +907,23 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
     std::string ret;
     ret += start;
 
+    bool backslash = false;
     char ch = 0;
     while (ch != end && ch != '\r' && ch != '\n' && istr.good()) {
         ch = (unsigned char)istr.get();
+        if (backslash && ch == '\n') {
+            ch = 0;
+            backslash = false;
+            continue;
+        }
+        backslash = false;
         ret += ch;
         if (ch == '\\') {
             const char next = (unsigned char)istr.get();
-            if (next == '\r' || next == '\n')
+            if (next == '\r' || next == '\n') {
                 ret.erase(ret.size()-1U);
+                backslash = (next == '\r');
+            }
             ret += next;
         }
     }

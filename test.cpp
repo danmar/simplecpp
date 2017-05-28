@@ -1032,6 +1032,7 @@ void readfile_string()
     ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
     ASSERT_EQUALS("( \"\\\\\\\\\" )", readfile("(\"\\\\\\\\\")"));
     ASSERT_EQUALS("x = \"a  b\"\n;", readfile("x=\"a\\\n  b\";"));
+    ASSERT_EQUALS("x = \"a  b\"\n;", readfile("x=\"a\\\r\n  b\";"));
 }
 
 void readfile_rawstring()
