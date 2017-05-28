@@ -1471,6 +1471,25 @@ namespace simplecpp {
                 return tok2->next;
             }
 
+            else if (tok->str == DEFINED) {
+                const Token *tok2 = tok->next;
+                const Token *tok3 = tok2 ? tok2->next : NULL;
+                const Token *tok4 = tok3 ? tok3->next : NULL;
+                const Token *defToken = NULL;
+                const Token *lastToken = NULL;
+                if (sameline(tok, tok4) && tok2->op == '(' && tok3->name && tok4->op == ')') {
+                    defToken = tok3;
+                    lastToken = tok4;
+                } else if (sameline(tok,tok2) && tok2->name) {
+                    defToken = lastToken = tok2;
+                }
+                if (defToken) {
+                    const bool def = (macros.find(defToken->str) != macros.end());
+                    output->push_back(newMacroToken(def ? "1" : "0", loc, true));
+                    return lastToken->next;
+                }
+            }
+
             output->push_back(newMacroToken(tok->str, loc, true));
             return tok->next;
         }

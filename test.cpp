@@ -642,6 +642,41 @@ void ifDefined()
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
+void ifDefinedNoPar()
+{
+    const char code[] = "#if defined A\n"
+                        "X\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    ASSERT_EQUALS("", preprocess(code, dui));
+    dui.defines.push_back("A=1");
+    ASSERT_EQUALS("\nX", preprocess(code, dui));
+}
+
+void ifDefinedNested()
+{
+    const char code[] = "#define FOODEF defined(FOO)\n"
+                        "#if FOODEF\n"
+                        "X\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    ASSERT_EQUALS("", preprocess(code, dui));
+    dui.defines.push_back("FOO=1");
+    ASSERT_EQUALS("\n\nX", preprocess(code, dui));
+}
+
+void ifDefinedNestedNoPar()
+{
+    const char code[] = "#define FOODEF defined FOO\n"
+                        "#if FOODEF\n"
+                        "X\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    ASSERT_EQUALS("", preprocess(code, dui));
+    dui.defines.push_back("FOO=1");
+    ASSERT_EQUALS("\n\nX", preprocess(code, dui));
+}
+
 void ifDefinedInvalid1()   // #50 - invalid unterminated defined
 {
     const char code[] = "#if defined(A";
@@ -1276,6 +1311,9 @@ int main(int argc, char **argv)
     TEST_CASE(ifA);
     TEST_CASE(ifCharLiteral);
     TEST_CASE(ifDefined);
+    TEST_CASE(ifDefinedNoPar);
+    TEST_CASE(ifDefinedNested);
+    TEST_CASE(ifDefinedNestedNoPar);
     TEST_CASE(ifDefinedInvalid1);
     TEST_CASE(ifDefinedInvalid2);
     TEST_CASE(ifLogical);
