@@ -1727,14 +1727,13 @@ namespace simplecpp {
         // replace backslash separators
         std::replace(path.begin(), path.end(), '\\', '/');
 
-        // "./" at the start
-        if (path.size() > 3 && path.compare(0,2,"./") == 0 && path[2] != '/')
-            path.erase(0,2);
-
-        // remove "/./"
+        // remove "./"
         pos = 0;
-        while ((pos = path.find("/./",pos)) != std::string::npos) {
-            path.erase(pos,2);
+        while ((pos = path.find("./",pos)) != std::string::npos) {
+            if (pos == 0 || path[pos - 1U] == '/')
+                path.erase(pos,2);
+            else
+                pos += 2;
         }
 
         // remove "xyz/../"
