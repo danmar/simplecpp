@@ -1239,9 +1239,22 @@ namespace simplecpp {
 void simplifyPath()
 {
     ASSERT_EQUALS("1.c", simplecpp::simplifyPath("./1.c"));
+    ASSERT_EQUALS("1.c", simplecpp::simplifyPath("././1.c"));
+    ASSERT_EQUALS("/1.c", simplecpp::simplifyPath("/./1.c"));
+    ASSERT_EQUALS("/1.c", simplecpp::simplifyPath("/././1.c"));
+    ASSERT_EQUALS("trailing_dot./1.c", simplecpp::simplifyPath("trailing_dot./1.c"));
+
+    ASSERT_EQUALS("1.c", simplecpp::simplifyPath("a/../1.c"));
+    ASSERT_EQUALS("1.c", simplecpp::simplifyPath("a/b/../../1.c"));
+    ASSERT_EQUALS("a/1.c", simplecpp::simplifyPath("a/b/../1.c"));
     ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/../1.c"));
     ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/c/../../1.c"));
     ASSERT_EQUALS("/a/1.c", simplecpp::simplifyPath("/a/b/c/../.././1.c"));
+
+    ASSERT_EQUALS("../1.c", simplecpp::simplifyPath("../1.c"));
+    ASSERT_EQUALS("../1.c", simplecpp::simplifyPath("../a/../1.c"));
+    ASSERT_EQUALS("/../1.c", simplecpp::simplifyPath("/../1.c"));
+    ASSERT_EQUALS("/../1.c", simplecpp::simplifyPath("/../a/../1.c"));
 }
 
 
