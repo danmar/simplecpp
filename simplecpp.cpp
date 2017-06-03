@@ -1741,9 +1741,10 @@ namespace simplecpp {
         pos = 1U;
         while ((pos = path.find("/../", pos)) != std::string::npos) {
             const std::string::size_type pos1 = path.rfind('/', pos - 1U);
-            if (pos1 == std::string::npos)
-                pos++;
-            else {
+            if (pos1 == std::string::npos) {
+                path.erase(0,pos+4);
+                pos = 0;
+            } else {
                 path.erase(pos1,pos-pos1+3);
                 pos = std::min((std::string::size_type)1, pos1);
             }
