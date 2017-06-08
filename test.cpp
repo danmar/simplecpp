@@ -1,18 +1,27 @@
+#include "simplecpp.h"
 
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include "simplecpp.h"
 
-int numberOfFailedAssertions = 0;
+static int numberOfSuccessfulAssertions = 0;
+static int numberOfFailedAssertions = 0;
 
-#define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
+#if defined ( WIN32 )
+#define __func__ __FUNCTION__
+#endif
 
-static int assertEquals(const std::string &expected, const std::string &actual, int line)
+#define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __func__, __FILE__, __LINE__))
+#define TODO_ASSERT_EQUALS(wanted, current, actual) (todoAssertEquals((wanted), (current), (actual), __func__, __FILE__, __LINE__))
+
+static int assertEquals(const std::string &expected, const std::string &actual, const std::string & function, const std::string & , int line)
 {
-    if (expected != actual) {
+    if (expected == actual) {
+        numberOfSuccessfulAssertions++;
+    } else {
         numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "function " << function << std::endl;
         std::cerr << "line " << line << std::endl;
         std::cerr << "expected:" << expected << std::endl;
         std::cerr << "actual:" << actual << std::endl;
@@ -20,9 +29,29 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+static int succeeded_todos_counter;
+static int todos_counter;
+static int todoAssertEquals(const std::string &wanted, const std::string &expected, const std::string &actual, const std::string & function, const std::string &file, int line)
 {
-    return assertEquals(std::to_string(expected), std::to_string(actual), line);
+    if (wanted == actual) {
+        std::cerr << "++++++ assertion succeeded unexpectedly ++++++" << std::endl;
+        std::cerr << "function " << function << std::endl;
+        std::cerr << "line " << line << std::endl;
+        std::cerr << "wanted " << wanted << std::endl;
+        std::cerr << "expected " << expected << std::endl;
+        std::cerr << "actual " << actual << std::endl;
+
+        ++succeeded_todos_counter;
+        return 1;
+    } else {
+        ++todos_counter;
+        return assertEquals(expected, actual, function, file, line);
+    }
+}
+
+static int assertEquals(const unsigned int &expected, const unsigned int &actual, const std::string & function, const std::string &file, int line)
+{
+    return assertEquals(std::to_string(expected), std::to_string(actual), function, file, line);
 }
 
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
@@ -1257,6 +1286,65 @@ void simplifyPath()
     ASSERT_EQUALS("/../1.c", simplecpp::simplifyPath("/../a/../1.c"));
 }
 
+// tests transferred from cppcheck
+// https://github.com/danmar/cppcheck/blob/d3e79b71b5ec6e641ca3e516cfced623b27988af/test/testpath.cpp#L43 ff.
+void simplifyPath_cppcheck()
+{
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath(".//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath(".///index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/index.h"));
+    ASSERT_EQUALS("/path/", simplecpp::simplifyPath("/path/"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/."));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/./"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/./index.h"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/.//"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/.//index.h"));
+    ASSERT_EQUALS("../index.h", simplecpp::simplifyPath("../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path/../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path/../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path//../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path//../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path//../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path/..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path/..//index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path//..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path//..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path//..//index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other/../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other///././../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other/././..///index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other///././..///index.h"));
+    ASSERT_EQUALS("../path/index.h", simplecpp::simplifyPath("../path/other/../index.h"));
+    ASSERT_EQUALS("a/index.h", simplecpp::simplifyPath("a/../a/index.h"));
+    ASSERT_EQUALS("a/..", simplecpp::simplifyPath("a/.."));
+    ASSERT_EQUALS("a/..", simplecpp::simplifyPath("./a/.."));
+    ASSERT_EQUALS("../../src/test.cpp", simplecpp::simplifyPath("../../src/test.cpp"));
+    ASSERT_EQUALS("../../../src/test.cpp", simplecpp::simplifyPath("../../../src/test.cpp"));
+    ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".//src/test.cpp"));
+    ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".///src/test.cpp"));
+    ASSERT_EQUALS("test.cpp", simplecpp::simplifyPath("./././././test.cpp"));
+    TODO_ASSERT_EQUALS("src", "src/abc/..", simplecpp::simplifyPath("src/abc/.."));
+    ASSERT_EQUALS("src", simplecpp::simplifyPath("src/abc/../"));
+
+    // Handling of UNC paths on Windows
+    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
+    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("///src/test.cpp"));
+}
+
+void simplifyPath_New()
+{
+    ASSERT_EQUALS("", simplecpp::simplifyPath(""));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/"));
+    ASSERT_EQUALS("//", simplecpp::simplifyPath("//"));
+    ASSERT_EQUALS("//", simplecpp::simplifyPath("///"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
+}
+
 
 int main(int argc, char **argv)
 {
@@ -1378,6 +1466,15 @@ int main(int argc, char **argv)
 
     // utility functions.
     TEST_CASE(simplifyPath);
+    TEST_CASE(simplifyPath_cppcheck);
+    TEST_CASE(simplifyPath_New);
+
+    // Write summary
+    std::cout << std::endl << std::endl;
+    std::cout << "Testing Complete " << std::endl;
+    std::cout << "Number of tests: " << numberOfSuccessfulAssertions + numberOfFailedAssertions << std::endl;
+    std::cout << "Number of todos: " << todos_counter << std::endl;
+    std::cout << "Tests failed: " << numberOfFailedAssertions << std::endl;
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
