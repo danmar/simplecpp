@@ -1,4 +1,4 @@
- /*
+/*
  * simplecpp - A simple and high-fidelity C/C++ preprocessor library
  * Copyright (C) 2016 Daniel Marjamäki.
  *
@@ -1755,161 +1755,159 @@ namespace simplecpp {
     }
 }
 
-namespace {
-    /** Evaluate sizeof(type) */
-    void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
-    {
-        for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
-            if (tok->str != "sizeof")
-                continue;
-            simplecpp::Token *tok1 = tok->next;
-            if (!tok1) {
-                throw std::runtime_error("missed sizeof argument");
-            }
-            simplecpp::Token *tok2 = tok1->next;
-            if (!tok2) {
-                throw std::runtime_error("missed sizeof argument");
-            }
-            if (tok1->op == '(') {
-                tok1 = tok1->next;
-                while (tok2->op != ')')
-                    tok2 = tok2->next;
-            }
-
-            std::string type;
-            for (simplecpp::Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
-                if ((typeToken->str == "unsigned" || typeToken->str == "signed") && typeToken->next->name)
-                    continue;
-                if (typeToken->str == "*" && type.find('*') != std::string::npos)
-                    continue;
-                if (!type.empty())
-                    type += ' ';
-                type += typeToken->str;
-            }
-
-            const std::map<std::string, std::size_t>::const_iterator it = sizeOfType.find(type);
-            if (it != sizeOfType.end())
-                tok->setstr(toString(it->second));
-            else
-                continue;
-
-            tok2 = tok2->next;
-            while (tok->next != tok2)
-                expr.deleteToken(tok->next);
+/** Evaluate sizeof(type) */
+static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
+{
+    for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
+        if (tok->str != "sizeof")
+            continue;
+        simplecpp::Token *tok1 = tok->next;
+        if (!tok1) {
+            throw std::runtime_error("missed sizeof argument");
         }
-    }
+        simplecpp::Token *tok2 = tok1->next;
+        if (!tok2) {
+            throw std::runtime_error("missed sizeof argument");
+        }
+        if (tok1->op == '(') {
+            tok1 = tok1->next;
+            while (tok2->op != ')')
+                tok2 = tok2->next;
+        }
 
-    const char * const altopData[] = {"and","or","bitand","bitor","not","not_eq","xor"};
-    const std::set<std::string> altop(&altopData[0], &altopData[7]);
-    void simplifyName(simplecpp::TokenList &expr)
-    {
-        for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
-            if (tok->name) {
-                if (altop.find(tok->str) != altop.end()) {
-                    bool alt;
-                    if (tok->str == "not") {
-                        alt = isAlternativeUnaryOp(tok,tok->str);
-                    } else {
-                        alt = isAlternativeBinaryOp(tok,tok->str);
-                    }
-                    if (alt)
-                        continue;
+        std::string type;
+        for (simplecpp::Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
+            if ((typeToken->str == "unsigned" || typeToken->str == "signed") && typeToken->next->name)
+                continue;
+            if (typeToken->str == "*" && type.find('*') != std::string::npos)
+                continue;
+            if (!type.empty())
+                type += ' ';
+            type += typeToken->str;
+        }
+
+        const std::map<std::string, std::size_t>::const_iterator it = sizeOfType.find(type);
+        if (it != sizeOfType.end())
+            tok->setstr(toString(it->second));
+        else
+            continue;
+
+        tok2 = tok2->next;
+        while (tok->next != tok2)
+            expr.deleteToken(tok->next);
+    }
+}
+
+static const char * const altopData[] = {"and","or","bitand","bitor","not","not_eq","xor"};
+static const std::set<std::string> altop(&altopData[0], &altopData[7]);
+static void simplifyName(simplecpp::TokenList &expr)
+{
+    for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
+        if (tok->name) {
+            if (altop.find(tok->str) != altop.end()) {
+                bool alt;
+                if (tok->str == "not") {
+                    alt = isAlternativeUnaryOp(tok,tok->str);
+                } else {
+                    alt = isAlternativeBinaryOp(tok,tok->str);
                 }
-                tok->setstr("0");
+                if (alt)
+                    continue;
             }
+            tok->setstr("0");
         }
     }
+}
 
-    void simplifyNumbers(simplecpp::TokenList &expr)
-    {
-        for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
-            if (tok->str.size() == 1U)
-                continue;
-            if (tok->str.compare(0,2,"0x") == 0)
-                tok->setstr(toString(stringToULL(tok->str)));
-            else if (tok->str[0] == '\'')
-                tok->setstr(toString(tok->str[1] & 0xffU));
-        }
+static void simplifyNumbers(simplecpp::TokenList &expr)
+{
+    for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
+        if (tok->str.size() == 1U)
+            continue;
+        if (tok->str.compare(0,2,"0x") == 0)
+            tok->setstr(toString(stringToULL(tok->str)));
+        else if (tok->str[0] == '\'')
+            tok->setstr(toString(tok->str[1] & 0xffU));
     }
+}
 
-    long long evaluate(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
-    {
-        simplifySizeof(expr, sizeOfType);
-        simplifyName(expr);
-        simplifyNumbers(expr);
-        expr.constFold();
-        // TODO: handle invalid expressions
-        return expr.cfront() && expr.cfront() == expr.cback() && expr.cfront()->number ? stringToLL(expr.cfront()->str) : 0LL;
-    }
+static long long evaluate(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
+{
+    simplifySizeof(expr, sizeOfType);
+    simplifyName(expr);
+    simplifyNumbers(expr);
+    expr.constFold();
+    // TODO: handle invalid expressions
+    return expr.cfront() && expr.cfront() == expr.cback() && expr.cfront()->number ? stringToLL(expr.cfront()->str) : 0LL;
+}
 
-    const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
-    {
-        const unsigned int line = tok->location.line;
-        const unsigned int file = tok->location.fileIndex;
-        while (tok && tok->location.line == line && tok->location.fileIndex == file)
-            tok = tok->next;
-        return tok;
-    }
+static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
+{
+    const unsigned int line = tok->location.line;
+    const unsigned int file = tok->location.fileIndex;
+    while (tok && tok->location.line == line && tok->location.fileIndex == file)
+        tok = tok->next;
+    return tok;
+}
 
-    std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
-    {
-        if (!systemheader) {
-            if (sourcefile.find_first_of("\\/") != std::string::npos) {
-                const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
-                f.open(s.c_str());
-                if (f.is_open())
-                    return simplecpp::simplifyPath(s);
-            } else {
-                f.open(header.c_str());
-                if (f.is_open())
-                    return simplecpp::simplifyPath(header);
-            }
-        }
-
-        for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-            std::string s = *it;
-            if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
-                s += '/';
-            s += header;
+static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
+{
+    if (!systemheader) {
+        if (sourcefile.find_first_of("\\/") != std::string::npos) {
+            const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
             f.open(s.c_str());
             if (f.is_open())
                 return simplecpp::simplifyPath(s);
+        } else {
+            f.open(header.c_str());
+            if (f.is_open())
+                return simplecpp::simplifyPath(header);
         }
-
-        return "";
     }
 
-    std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
-    {
-        if (!systemheader) {
-            if (sourcefile.find_first_of("\\/") != std::string::npos) {
-                const std::string s(simplecpp::simplifyPath(sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header));
-                if (filedata.find(s) != filedata.end())
-                    return s;
-            } else {
-                std::string s = simplecpp::simplifyPath(header);
-                if (filedata.find(s) != filedata.end())
-                    return s;
-            }
-        }
+    for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
+        std::string s = *it;
+        if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
+            s += '/';
+        s += header;
+        f.open(s.c_str());
+        if (f.is_open())
+            return simplecpp::simplifyPath(s);
+    }
 
-        for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-            std::string s = *it;
-            if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
-                s += '/';
-            s += header;
-            s = simplecpp::simplifyPath(s);
+    return "";
+}
+
+static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
+{
+    if (!systemheader) {
+        if (sourcefile.find_first_of("\\/") != std::string::npos) {
+            const std::string s(simplecpp::simplifyPath(sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header));
+            if (filedata.find(s) != filedata.end())
+                return s;
+        } else {
+            std::string s = simplecpp::simplifyPath(header);
             if (filedata.find(s) != filedata.end())
                 return s;
         }
-
-        return "";
     }
 
-    bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
-    {
-        return !getFileName(filedata, sourcefile, header, dui, systemheader).empty();
+    for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
+        std::string s = *it;
+        if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
+            s += '/';
+        s += header;
+        s = simplecpp::simplifyPath(s);
+        if (filedata.find(s) != filedata.end())
+            return s;
     }
+
+    return "";
+}
+
+static bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
+{
+    return !getFileName(filedata, sourcefile, header, dui, systemheader).empty();
 }
 
 std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
