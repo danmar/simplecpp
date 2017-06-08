@@ -1724,10 +1724,30 @@ namespace simplecpp {
      */
     std::string simplifyPath(std::string path)
     {
+        const bool isUnc = path.compare(0,2,"//") == 0;
+
+        // Remove ./, .//, ./// etc. at the beginning
+        while (path.compare(0,2,"./") == 0) { // remove "./././"
+            const size_t toErase = path.find_first_not_of('/', 2);
+            path = path.erase(0, toErase);
+        }
         std::string::size_type pos;
 
         // replace backslash separators
         std::replace(path.begin(), path.end(), '\\', '/');
+
+        // replace double slash
+        // First filter out all double slashes
+        for (std::string::iterator it=path.begin(); it!=path.end(); ++it) {
+            if (*it=='/') {
+                std::string::iterator next=it+1;
+                while (next!=path.end() && *next=='/') {
+                    next=path.erase(next);
+                }
+
+            }
+
+        }
 
         // remove "./"
         pos = 0;
@@ -1751,6 +1771,10 @@ namespace simplecpp {
             }
         }
 
+        if (isUnc) {
+            // Restore the leading double slash
+            path.insert(path.begin(), '/');
+        }
         return realFilename(path);
     }
 }
