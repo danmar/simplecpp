@@ -1,4 +1,4 @@
-/*
+ /*
  * simplecpp - A simple and high-fidelity C/C++ preprocessor library
  * Copyright (C) 2016 Daniel Marjamäki.
  *
@@ -16,6 +16,9 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#define NOMINMAX
+#endif
 #include "simplecpp.h"
 
 #include <algorithm>
@@ -36,7 +39,6 @@
 #include <string>
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#define NOMINMAX
 #include <windows.h>
 #undef ERROR
 #undef TRUE
