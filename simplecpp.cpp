@@ -1,4 +1,4 @@
-/*
+ /*
  * simplecpp - A simple and high-fidelity C/C++ preprocessor library
  * Copyright (C) 2016 Daniel Marjamäki.
  *
@@ -16,6 +16,9 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#define NOMINMAX
+#endif
 #include "simplecpp.h"
 
 #include <algorithm>
@@ -31,7 +34,6 @@
 #include <utility>
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#define NOMINMAX
 #include <windows.h>
 #undef ERROR
 #undef TRUE
@@ -1797,16 +1799,10 @@ namespace {
         }
     }
 
+    const char * const altopData[] = {"and","or","bitand","bitor","not","not_eq","xor"};
+    const std::set<std::string> altop(&altopData[0], &altopData[7]);
     void simplifyName(simplecpp::TokenList &expr)
     {
-        std::set<std::string> altop;
-        altop.insert("and");
-        altop.insert("or");
-        altop.insert("bitand");
-        altop.insert("bitor");
-        altop.insert("not");
-        altop.insert("not_eq");
-        altop.insert("xor");
         for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
             if (tok->name) {
                 if (altop.find(tok->str) != altop.end()) {
