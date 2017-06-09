@@ -1807,7 +1807,7 @@ namespace simplecpp {
         // replace backslash separators
         std::replace(path.begin(), path.end(), '\\', '/');
         // detect: DOS/Windows path including drive letter
-        const bool isAbsolute=path.front()=='/' || DOSDriveLetterPathAbsolute(path);
+        const bool isAbsolute=path[0]=='/' || DOSDriveLetterPathAbsolute(path);
         // Trailing slash indicates a directory is specified
         const bool hasTrailingSlash=path[path.length()-1]=='/';
 
