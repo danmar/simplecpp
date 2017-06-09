@@ -1716,66 +1716,123 @@ namespace simplecpp {
         return ostr.str();
     }
 #else
-#define realFilename(f)  f
+    // Boring implementation, but could help in platform-independent tests:
+    std::string realFilename(const std::string &f)
+    {
+        return f;
+    }
 #endif
 
-    /**
-     * perform path simplifications for . and ..
-     */
+    static bool DOSDriveLetterPath(const std::string& path)
+    {
+        if (path.length()<2)
+            return false;
+        return (std::isalpha(path[0]) && path[1]==':');
+    }
+    static bool DOSDriveLetterPathAbsolute(const std::string& path)
+    {
+        if (path.length()<3)
+            return false;
+        return (DOSDriveLetterPath(path) && path[2]=='/');
+    }
+
+    enum PathComponentType { DOT, UPDIR, NAME };
+    static PathComponentType DeterminePathComponentType(const std::string& str)
+    {
+        if (str==".")
+            return DOT;
+        else if (str=="..")
+            return UPDIR;
+        else
+            return NAME;
+    }
+    typedef std::vector<std::string> PathPartsT; // vector is not really a must-have...
+
+    /// split path string into components - neglecting the path separators!
+    static PathPartsT SplitPath(const std::string& path)
+    {
+        PathPartsT pathParts;
+        std::string subPath;
+        for (std::string::const_iterator it=path.begin(); it!=path.end(); ++it) {
+            if (*it=='/') {
+                if (!subPath.empty()) {
+                    pathParts.push_back(subPath);
+                    subPath.clear();
+                }
+            } else
+                subPath+=*it;
+        }
+        if (!subPath.empty())
+            pathParts.push_back(subPath);
+
+        return pathParts;
+    }
+
+    static void NormalizePath(PathPartsT& pathParts)
+    {
+        PathPartsT::iterator current=pathParts.begin();
+        while (current!=pathParts.end()) {
+            switch (DeterminePathComponentType(*current)) {
+            case DOT:
+                current=pathParts.erase(current);
+                break;
+            case UPDIR:
+                if (current==pathParts.begin()) {
+                    ++current;
+                } else {
+                    switch (DeterminePathComponentType(*(current-1))) {
+                    case UPDIR:
+                        ++current;
+                        break;
+                    case DOT:
+                    case NAME:
+                        current=pathParts.erase(current-1, current+1);
+                        break;
+                    }
+                }
+                break;
+            case NAME:
+                ++current;
+                break;
+            }
+        }
+    }
+
     std::string simplifyPath(std::string path)
     {
-        const bool isUnc = path.compare(0,2,"//") == 0;
-
-        // Remove ./, .//, ./// etc. at the beginning
-        while (path.compare(0,2,"./") == 0) { // remove "./././"
-            const size_t toErase = path.find_first_not_of('/', 2);
-            path = path.erase(0, toErase);
-        }
-        std::string::size_type pos;
-
+        if (path.empty())
+            return "";
+        // detect UNC path on DOS/Windows
+        const bool isUnc = (0==path.compare(0,2,"\\\\")) || (0==path.compare(0,2,"//"));
         // replace backslash separators
         std::replace(path.begin(), path.end(), '\\', '/');
+        // detect: DOS/Windows path including drive letter
+        const bool isAbsolute=path.front()=='/' || DOSDriveLetterPathAbsolute(path);
+        // Trailing slash indicates a directory is specified
+        const bool hasTrailingSlash=path[path.length()-1]=='/';
 
-        // replace double slash
-        // First filter out all double slashes
-        for (std::string::iterator it=path.begin(); it!=path.end(); ++it) {
-            if (*it=='/') {
-                std::string::iterator next=it+1;
-                while (next!=path.end() && *next=='/') {
-                    next=path.erase(next);
-                }
+        // split in path components
+        PathPartsT pathParts=SplitPath(path);
+        NormalizePath(pathParts);
 
-            }
-
-        }
-
-        // remove "./"
-        pos = 0;
-        while ((pos = path.find("./",pos)) != std::string::npos) {
-            if (pos == 0 || path[pos - 1U] == '/')
-                path.erase(pos,2);
-            else
-                pos += 2;
-        }
-
-        // remove "xyz/../"
-        pos = 1U;
-        while ((pos = path.find("/../", pos)) != std::string::npos) {
-            const std::string::size_type pos1 = path.rfind('/', pos - 1U);
-            if (pos1 == std::string::npos) {
-                path.erase(0,pos+4);
-                pos = 0;
-            } else {
-                path.erase(pos1,pos-pos1+3);
-                pos = std::min((std::string::size_type)1, pos1);
-            }
-        }
-
+        // Build up the result string
+        std::string result;
+        result.reserve(path.size()); // educated guess
         if (isUnc) {
             // Restore the leading double slash
-            path.insert(path.begin(), '/');
+            result = "//";
+        } else if (isAbsolute) {
+            result = "/";
         }
-        return realFilename(path);
+        for (PathPartsT::const_iterator it=pathParts.begin(); it!=pathParts.end(); ++it) {
+            result += *it;
+            if ((it+1)!=pathParts.end() || hasTrailingSlash)
+                result += "/";
+        }
+        if (result.empty())
+            result=".";
+
+        return result;
     }
 }
 

@@ -1321,15 +1321,15 @@ void simplifyPath_cppcheck()
     ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other///././..///index.h"));
     ASSERT_EQUALS("../path/index.h", simplecpp::simplifyPath("../path/other/../index.h"));
     ASSERT_EQUALS("a/index.h", simplecpp::simplifyPath("a/../a/index.h"));
-    ASSERT_EQUALS("a/..", simplecpp::simplifyPath("a/.."));
-    ASSERT_EQUALS("a/..", simplecpp::simplifyPath("./a/.."));
+    ASSERT_EQUALS(".", simplecpp::simplifyPath("a/.."));
+    ASSERT_EQUALS(".", simplecpp::simplifyPath("./a/.."));
     ASSERT_EQUALS("../../src/test.cpp", simplecpp::simplifyPath("../../src/test.cpp"));
     ASSERT_EQUALS("../../../src/test.cpp", simplecpp::simplifyPath("../../../src/test.cpp"));
     ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".//src/test.cpp"));
     ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".///src/test.cpp"));
     ASSERT_EQUALS("test.cpp", simplecpp::simplifyPath("./././././test.cpp"));
-    TODO_ASSERT_EQUALS("src", "src/abc/..", simplecpp::simplifyPath("src/abc/.."));
-    ASSERT_EQUALS("src", simplecpp::simplifyPath("src/abc/../"));
+    ASSERT_EQUALS("src", simplecpp::simplifyPath("src/abc/.."));
+    ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/../"));
 
     // Handling of UNC paths on Windows
     ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
