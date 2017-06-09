@@ -136,7 +136,7 @@ void simplecpp::Location::adjust(const std::string &str)
     for (std::size_t i = 0U; i < str.size(); ++i) {
         col++;
         if (str[i] == '\n' || str[i] == '\r') {
-            col = 0;
+            col = 1;
             line++;
             if (str[i] == '\r' && (i+1)<str.size() && str[i+1]=='\n')
                 ++i;
@@ -522,7 +522,11 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     return;
                 currentToken.erase(currentToken.size() - endOfRawString.size(), endOfRawString.size() - 1U);
                 back()->setstr(escapeString(currentToken));
-                location.col += currentToken.size() + 2U + 2 * delim.size();
+                location.adjust(currentToken);
+                if (currentToken.find_first_of("\r\n") == std::string::npos)
+                    location.col += 2 + 2 * delim.size();
+                else
+                    location.col += 1 + delim.size();
                 continue;
             }
 
