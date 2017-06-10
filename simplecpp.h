@@ -294,6 +294,13 @@ namespace simplecpp {
      * Deallocate data
      */
     SIMPLECPP_LIB void cleanup(std::map<std::string, TokenList*> &filedata);
+
+    /**
+     * Simplify path: "." and ".." are resolved, path separator is "/"
+     * @param path Path to be normalized.
+     * \return normalized path
+     * */
+    SIMPLECPP_LIB std::string simplifyPath(const std::string path);
 }
 
 #endif
