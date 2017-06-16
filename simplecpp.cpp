@@ -1719,8 +1719,19 @@ namespace simplecpp {
             return f;
         return ostr.str();
     }
+
+    bool isAbsolutePath(const std::string &path) {
+        if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+            return true;
+        return path.length() > 1U && (path[0] == '/' || path[0] == '/');
+    }
+
 #else
 #define realFilename(f)  f
+
+    bool isAbsolutePath(const std::string &path) {
+        return path.length() > 1U && path[0] == '/';
+    }
 #endif
 
     /**
@@ -1856,6 +1867,11 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
+    if (simplecpp::isAbsolutePath(header)) {
+        f.open(header.c_str());
+        return f.is_open() ? simplecpp::simplifyPath(header) : "";
+    }
+
     if (!systemheader) {
         if (sourcefile.find_first_of("\\/") != std::string::npos) {
             const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
@@ -1884,6 +1900,10 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
 {
+    if (simplecpp::isAbsolutePath(header)) {
+        return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
+    }
+
     if (!systemheader) {
         if (sourcefile.find_first_of("\\/") != std::string::npos) {
             const std::string s(simplecpp::simplifyPath(sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header));
