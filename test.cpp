@@ -1256,6 +1256,71 @@ void simplifyPath()
     ASSERT_EQUALS("../1.c", simplecpp::simplifyPath("../a/../1.c"));
     ASSERT_EQUALS("/../1.c", simplecpp::simplifyPath("/../1.c"));
     ASSERT_EQUALS("/../1.c", simplecpp::simplifyPath("/../a/../1.c"));
+
+    ASSERT_EQUALS("a/..b/1.c", simplecpp::simplifyPath("a/..b/1.c"));
+    ASSERT_EQUALS("../../1.c", simplecpp::simplifyPath("../../1.c"));
+    ASSERT_EQUALS("../../../1.c", simplecpp::simplifyPath("../../../1.c"));
+    ASSERT_EQUALS("../../../1.c", simplecpp::simplifyPath("../../../a/../1.c"));
+    ASSERT_EQUALS("../../1.c", simplecpp::simplifyPath("a/../../../1.c"));
+}
+
+// tests transferred from cppcheck
+// https://github.com/danmar/cppcheck/blob/d3e79b71b5ec6e641ca3e516cfced623b27988af/test/testpath.cpp#L43
+void simplifyPath_cppcheck()
+{
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath(".//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath(".///index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/index.h"));
+    ASSERT_EQUALS("/path/", simplecpp::simplifyPath("/path/"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/."));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/./"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/./index.h"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/.//"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/.//index.h"));
+    ASSERT_EQUALS("../index.h", simplecpp::simplifyPath("../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path/../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path/../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path//../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path//../index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path//../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path/..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path/..//index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path//..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("./path//..//index.h"));
+    ASSERT_EQUALS("index.h", simplecpp::simplifyPath("path//..//index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other/../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other///././../index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other/././..///index.h"));
+    ASSERT_EQUALS("/index.h", simplecpp::simplifyPath("/path/../other///././..///index.h"));
+    ASSERT_EQUALS("../path/index.h", simplecpp::simplifyPath("../path/other/../index.h"));
+    ASSERT_EQUALS("a/index.h", simplecpp::simplifyPath("a/../a/index.h"));
+    ASSERT_EQUALS(".", simplecpp::simplifyPath("a/.."));
+    ASSERT_EQUALS(".", simplecpp::simplifyPath("./a/.."));
+    ASSERT_EQUALS("../../src/test.cpp", simplecpp::simplifyPath("../../src/test.cpp"));
+    ASSERT_EQUALS("../../../src/test.cpp", simplecpp::simplifyPath("../../../src/test.cpp"));
+    ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".//src/test.cpp"));
+    ASSERT_EQUALS("src/test.cpp", simplecpp::simplifyPath(".///src/test.cpp"));
+    ASSERT_EQUALS("test.cpp", simplecpp::simplifyPath("./././././test.cpp"));
+    ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/.."));
+    ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/../"));
+
+    // Handling of UNC paths on Windows
+    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
+    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("///src/test.cpp"));
+}
+
+void simplifyPath_New()
+{
+    ASSERT_EQUALS("", simplecpp::simplifyPath(""));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("/"));
+    ASSERT_EQUALS("//", simplecpp::simplifyPath("//"));
+    ASSERT_EQUALS("//", simplecpp::simplifyPath("///"));
+    ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
 }
 
 
@@ -1379,6 +1444,8 @@ int main(int argc, char **argv)
 
     // utility functions.
     TEST_CASE(simplifyPath);
+    TEST_CASE(simplifyPath_cppcheck);
+    TEST_CASE(simplifyPath_New);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }

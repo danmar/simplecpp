@@ -1746,6 +1746,14 @@ namespace simplecpp {
         // replace backslash separators
         std::replace(path.begin(), path.end(), '\\', '/');
 
+        const bool unc(path.compare(0,2,"//") == 0);
+
+        // replace "//" with "/"
+        pos = 0;
+        while ((pos = path.find("//",pos)) != std::string::npos) {
+            path.erase(pos,1);
+        }
+
         // remove "./"
         pos = 0;
         while ((pos = path.find("./",pos)) != std::string::npos) {
@@ -1755,18 +1763,40 @@ namespace simplecpp {
                 pos += 2;
         }
 
-        // remove "xyz/../"
-        pos = 1U;
-        while ((pos = path.find("/../", pos)) != std::string::npos) {
-            const std::string::size_type pos1 = path.rfind('/', pos - 1U);
-            if (pos1 == std::string::npos) {
-                path.erase(0,pos+4);
-                pos = 0;
+        // remove trailing dot if path ends with "/."
+        if (endsWith(path,"/."))
+            path.erase(path.size()-1);
+
+        // simplify ".."
+        pos = 1; // don't simplify ".." if path starts with that
+        while ((pos = path.find("/..", pos)) != std::string::npos) {
+            // not end of path, then string must be "/../"
+            if (pos + 3 < path.size() && path[pos + 3] != '/') {
+                ++pos;
+                continue;
+            }
+            // get previous subpath
+            const std::string::size_type pos1 = path.rfind('/', pos - 1U) + 1U;
+            const std::string previousSubPath = path.substr(pos1, pos-pos1);
+            if (previousSubPath == "..") {
+                // don't simplify
+                ++pos;
             } else {
-                path.erase(pos1,pos-pos1+3);
-                pos = std::min((std::string::size_type)1, pos1);
+                // remove previous subpath and ".."
+                path.erase(pos1,pos-pos1+4);
+                if (path.empty())
+                    path = ".";
+                // update pos
+                pos = (pos1 == 0) ? 1 : (pos1 - 1);
             }
         }
+
+        // Remove trailing '/'?
+        //if (path.size() > 1 && endsWith(path, "/"))
+        //    path.erase(path.size()-1);
+
+        if (unc)
+            path = '/' + path;
 
         return realFilename(path);
     }
