@@ -1720,7 +1720,8 @@ namespace simplecpp {
         return ostr.str();
     }
 
-    bool isAbsolutePath(const std::string &path) {
+    bool isAbsolutePath(const std::string &path)
+    {
         if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
             return true;
         return path.length() > 1U && (path[0] == '/' || path[0] == '/');
@@ -1729,7 +1730,8 @@ namespace simplecpp {
 #else
 #define realFilename(f)  f
 
-    bool isAbsolutePath(const std::string &path) {
+    bool isAbsolutePath(const std::string &path)
+    {
         return path.length() > 1U && path[0] == '/';
     }
 #endif
