@@ -1679,7 +1679,7 @@ namespace simplecpp {
 namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 
-    static bool realFileName(const std::vector<CHAR> &buf, std::ostream &ostr)
+    bool realFileName(const std::vector<CHAR> &buf, std::ostream &ostr)
     {
         // Detect root directory, see simplecpp:realFileName returns the wrong root path #45
         if ((buf.size()==2 || (buf.size()>2 && buf[2]=='\0'))
@@ -1697,6 +1697,19 @@ namespace simplecpp {
         return true;
     }
 
+    const char *dotsPath(const std::string &f, const std::string::size_type sep)
+    {
+        if (sep >= 1 && f[sep-1]=='.') {
+            unsigned int dots = 1;
+            if (sep >= 2 && f[sep-2] == '.')
+                dots = 2;
+            const unsigned char c = (sep > dots) ? f[sep-dots-1] : '/';
+            if (c=='/' || c=='\\')
+                return ((dots==1) ? "." : "..");
+        }
+        return NULL;
+    }
+
     std::string realFilename(const std::string &f)
     {
         std::vector<CHAR> buf(f.size()+1U, 0);
@@ -1705,16 +1718,26 @@ namespace simplecpp {
         std::ostringstream ostr;
         std::string::size_type sep = 0;
         while ((sep = f.find_first_of("\\/", sep + 1U)) != std::string::npos) {
-            if (sep >= 2 && f.compare(sep-2,2,"..",0,2) == 0) {
-                ostr << "../";
+            // do not convert ".." or "."
+            const char *s = dotsPath(f,sep);
+            if (s) {
+                ostr << s << '/';
                 continue;
-            }
+			}
             buf[sep] = 0;
             if (!realFileName(buf,ostr))
                 return f;
             ostr << '/';
             buf[sep] = '/';
         }
+
+        if (endsWith(f,".")) {
+            const char *s = dotsPath(f,f.size());
+            if (s) {
+                return ostr.str() + s;
+            }
+        }
+
         if (!realFileName(buf, ostr))
             return f;
         return ostr.str();
