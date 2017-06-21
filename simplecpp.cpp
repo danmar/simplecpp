@@ -1679,68 +1679,90 @@ namespace simplecpp {
 namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 
-    bool realFileName(const std::vector<CHAR> &buf, std::ostream &ostr)
+    bool realFileName(const std::string &f, std::string *result)
     {
-        // Detect root directory, see simplecpp:realFileName returns the wrong root path #45
-        if ((buf.size()==2 || (buf.size()>2 && buf[2]=='\0'))
-            && std::isalpha(buf[0]) && buf[1]==':') {
-            ostr << (char)buf[0];
-            ostr << (char)buf[1];
+        // If path is a drive letter, uppercase it
+        if (f.size() == 2 && std::isalpha((unsigned char)f[0]) && f[1] == ':') {
+            *result = (char)std::toupper((unsigned char)f[0]) + std::string(":");
             return true;
         }
+
+        // are there alpha characters in last subpath?
+        bool alpha = false;
+        for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
+            unsigned char c = f[f.size() - pos];
+            if (c=='/' || c=='\\')
+                break;
+            if (std::isalpha(c)) {
+                alpha = true;
+                break;
+            }
+        }
+
+        // do not convert this path if there are no alpha characters (either pointless or cause wrong results for . and ..)
+        if (!alpha)
+            return false;
+
+        // Convert char path to CHAR path
+        std::vector<CHAR> buf(f.size()+1U, 0);
+        for (unsigned int i = 0; i < f.size(); ++i)
+            buf[i] = f[i];
+
+        // Lookup filename or foldername on file system
         WIN32_FIND_DATAA FindFileData;
         HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
         if (hFind == INVALID_HANDLE_VALUE)
             return false;
-        ostr << FindFileData.cFileName;
+        *result = FindFileData.cFileName;
         FindClose(hFind);
         return true;
     }
 
-    const char *dotsPath(const std::string &f, const std::string::size_type sep)
-    {
-        if (sep >= 1 && f[sep-1]=='.') {
-            unsigned int dots = 1;
-            if (sep >= 2 && f[sep-2] == '.')
-                dots = 2;
-            const unsigned char c = (sep > dots) ? f[sep-dots-1] : '/';
-            if (c=='/' || c=='\\')
-                return ((dots==1) ? "." : "..");
-        }
-        return NULL;
-    }
-
+    /** Change case in given path to match filesystem */
     std::string realFilename(const std::string &f)
     {
-        std::vector<CHAR> buf(f.size()+1U, 0);
-        for (unsigned int i = 0; i < f.size(); ++i)
-            buf[i] = f[i];
-        std::ostringstream ostr;
-        std::string::size_type sep = 0;
-        while ((sep = f.find_first_of("\\/", sep + 1U)) != std::string::npos) {
-            // do not convert ".." or "."
-            const char *s = dotsPath(f,sep);
-            if (s) {
-                ostr << s << '/';
-                continue;
-			}
-            buf[sep] = 0;
-            if (!realFileName(buf,ostr))
-                return f;
-            ostr << '/';
-            buf[sep] = '/';
-        }
+        std::string ret;
+        ret.reserve(f.size()); // this will be the final size
 
-        if (endsWith(f,".")) {
-            const char *s = dotsPath(f,f.size());
-            if (s) {
-                return ostr.str() + s;
+        // Current subpath
+        std::string subpath;
+
+        for (std::string::size_type pos = 0; pos < f.size(); ++pos) {
+            unsigned char c = f[pos];
+
+            // Separator.. add subpath and separator
+            if (c == '/' || c == '\\') {
+                // if subpath is empty just add separator
+                if (subpath.empty()) {
+                    ret += c;
+                    continue;
+                }
+
+                // Append real filename (proper case)
+                std::string f2;
+                if (realFileName(f.substr(0,pos),&f2))
+                    ret += f2;
+                else
+                    ret += subpath;
+
+                subpath.clear();
+
+                // Append separator
+                ret += c;
+            } else {
+                subpath += c;
             }
         }
 
-        if (!realFileName(buf, ostr))
-            return f;
-        return ostr.str();
+        if (!subpath.empty()) {
+            std::string f2;
+            if (realFileName(f,&f2))
+                ret += f2;
+            else
+                ret += subpath;
+        }
+
+        return ret;
     }
 
     bool isAbsolutePath(const std::string &path)
