@@ -1675,112 +1675,109 @@ namespace simplecpp {
     };
 }
 
-
-namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
-
-    bool realFileName(const std::string &f, std::string *result)
-    {
-        // If path is a drive letter, uppercase it
-        if (f.size() == 2 && std::isalpha((unsigned char)f[0]) && f[1] == ':') {
-            *result = (char)std::toupper((unsigned char)f[0]) + std::string(":");
-            return true;
-        }
-
-        // are there alpha characters in last subpath?
-        bool alpha = false;
-        for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
-            unsigned char c = f[f.size() - pos];
-            if (c=='/' || c=='\\')
-                break;
-            if (std::isalpha(c)) {
-                alpha = true;
-                break;
-            }
-        }
-
-        // do not convert this path if there are no alpha characters (either pointless or cause wrong results for . and ..)
-        if (!alpha)
-            return false;
-
-        // Convert char path to CHAR path
-        std::vector<CHAR> buf(f.size()+1U, 0);
-        for (unsigned int i = 0; i < f.size(); ++i)
-            buf[i] = f[i];
-
-        // Lookup filename or foldername on file system
-        WIN32_FIND_DATAA FindFileData;
-        HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
-        if (hFind == INVALID_HANDLE_VALUE)
-            return false;
-        *result = FindFileData.cFileName;
-        FindClose(hFind);
+static bool realFileName(const std::string &f, std::string *result)
+{
+    // If path is a drive letter, uppercase it
+    if (f.size() == 2 && std::isalpha((unsigned char)f[0]) && f[1] == ':') {
+        *result = (char)std::toupper((unsigned char)f[0]) + std::string(":");
         return true;
     }
 
-    /** Change case in given path to match filesystem */
-    std::string realFilename(const std::string &f)
-    {
-        std::string ret;
-        ret.reserve(f.size()); // this will be the final size
-
-        // Current subpath
-        std::string subpath;
-
-        for (std::string::size_type pos = 0; pos < f.size(); ++pos) {
-            unsigned char c = f[pos];
-
-            // Separator.. add subpath and separator
-            if (c == '/' || c == '\\') {
-                // if subpath is empty just add separator
-                if (subpath.empty()) {
-                    ret += c;
-                    continue;
-                }
-
-                // Append real filename (proper case)
-                std::string f2;
-                if (realFileName(f.substr(0,pos),&f2))
-                    ret += f2;
-                else
-                    ret += subpath;
-
-                subpath.clear();
-
-                // Append separator
-                ret += c;
-            } else {
-                subpath += c;
-            }
+    // are there alpha characters in last subpath?
+    bool alpha = false;
+    for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
+        unsigned char c = f[f.size() - pos];
+        if (c=='/' || c=='\\')
+            break;
+        if (std::isalpha(c)) {
+            alpha = true;
+            break;
         }
+    }
 
-        if (!subpath.empty()) {
+    // do not convert this path if there are no alpha characters (either pointless or cause wrong results for . and ..)
+    if (!alpha)
+        return false;
+
+    // Convert char path to CHAR path
+    std::vector<CHAR> buf(f.size()+1U, 0);
+    for (unsigned int i = 0; i < f.size(); ++i)
+        buf[i] = f[i];
+
+    // Lookup filename or foldername on file system
+    WIN32_FIND_DATAA FindFileData;
+    HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
+    if (hFind == INVALID_HANDLE_VALUE)
+        return false;
+    *result = FindFileData.cFileName;
+    FindClose(hFind);
+    return true;
+}
+
+/** Change case in given path to match filesystem */
+static std::string realFilename(const std::string &f)
+{
+    std::string ret;
+    ret.reserve(f.size()); // this will be the final size
+
+    // Current subpath
+    std::string subpath;
+
+    for (std::string::size_type pos = 0; pos < f.size(); ++pos) {
+        unsigned char c = f[pos];
+
+        // Separator.. add subpath and separator
+        if (c == '/' || c == '\\') {
+            // if subpath is empty just add separator
+            if (subpath.empty()) {
+                ret += c;
+                continue;
+            }
+
+            // Append real filename (proper case)
             std::string f2;
-            if (realFileName(f,&f2))
+            if (realFileName(f.substr(0,pos),&f2))
                 ret += f2;
             else
                 ret += subpath;
+
+            subpath.clear();
+
+            // Append separator
+            ret += c;
+        } else {
+            subpath += c;
         }
-
-        return ret;
     }
 
-    bool isAbsolutePath(const std::string &path)
-    {
-        if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
-            return true;
-        return path.length() > 1U && (path[0] == '/' || path[0] == '/');
+    if (!subpath.empty()) {
+        std::string f2;
+        if (realFileName(f,&f2))
+            ret += f2;
+        else
+            ret += subpath;
     }
 
+    return ret;
+}
+
+static bool isAbsolutePath(const std::string &path)
+{
+    if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+        return true;
+    return path.length() > 1U && (path[0] == '/' || path[0] == '/');
+}
 #else
 #define realFilename(f)  f
 
-    bool isAbsolutePath(const std::string &path)
-    {
-        return path.length() > 1U && path[0] == '/';
-    }
+static bool isAbsolutePath(const std::string &path)
+{
+    return path.length() > 1U && path[0] == '/';
+}
 #endif
 
+namespace simplecpp {
     /**
      * perform path simplifications for . and ..
      */
