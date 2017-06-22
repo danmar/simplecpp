@@ -1941,7 +1941,7 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
-    if (simplecpp::isAbsolutePath(header)) {
+    if (isAbsolutePath(header)) {
         f.open(header.c_str());
         return f.is_open() ? simplecpp::simplifyPath(header) : "";
     }
@@ -1974,7 +1974,7 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
 {
-    if (simplecpp::isAbsolutePath(header)) {
+    if (isAbsolutePath(header)) {
         return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
     }
 
