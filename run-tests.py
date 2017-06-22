@@ -31,11 +31,19 @@ for f in sorted(glob.glob(os.path.expanduser('testsuite/gcc-preprocessor-tests/*
 # skipping tests..
 skip = ['assembler-with-cpp.c',
         'builtin_line.c',
+        'c99-6_10_3_3_p4.c',
+        'clang_headers.c', # missing include <limits.h>
         'comment_save.c', # _Pragma
         'has_attribute.c',
+        'has_attribute.cpp',
         'header_lookup1.c', # missing include <stddef.h>
         'line-directive-output.c',
+        'macro_paste_hashhash.c',
         'microsoft-ext.c',
+        'normalize-3.c', # gcc has different output \uAC00 vs \U0000AC00 on cygwin/linux
+        'pr63831-1.c', # __has_attribute => works differently on cygwin/linux
+        'pr63831-2.c', # __has_attribute => works differently on cygwin/linux
+        'pr65238-1.c', # __has_attribute => works differently on cygwin/linux
         '_Pragma-location.c',
         '_Pragma-dependency.c',
         '_Pragma-dependency2.c',
@@ -43,8 +51,7 @@ skip = ['assembler-with-cpp.c',
         'pragma-pushpop-macro.c', # pragma push/pop
         'x86_target_features.c',
         'warn-disabled-macro-expansion.c',
-        'c99-6_10_3_3_p4.c',
-        'macro_paste_hashhash.c'
+        'ucnid-2011-1.c' # \u00A8 generates different output on cygwin/linux
        ]
 
 todo = [
