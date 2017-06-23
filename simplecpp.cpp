@@ -1678,12 +1678,6 @@ namespace simplecpp {
 #ifdef SIMPLECPP_WINDOWS
 static bool realFileName(const std::string &f, std::string *result)
 {
-    // If path is a drive letter, uppercase it
-    if (f.size() == 2 && std::isalpha((unsigned char)f[0]) && f[1] == ':') {
-        *result = (char)std::toupper((unsigned char)f[0]) + std::string(":");
-        return true;
-    }
-
     // are there alpha characters in last subpath?
     bool alpha = false;
     for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
