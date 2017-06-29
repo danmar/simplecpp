@@ -1760,7 +1760,7 @@ static bool isAbsolutePath(const std::string &path)
 {
     if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
         return true;
-    return path.length() > 1U && (path[0] == '/' || path[0] == '/');
+    return path.length() > 1U && path[0] == '/';
 }
 #else
 #define realFilename(f)  f
