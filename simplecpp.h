@@ -179,7 +179,7 @@ namespace simplecpp {
         bool empty() const {
             return !frontToken;
         }
-        void push_back(Token *token);
+        void push_back(Token *tok);
 
         void dump() const;
         std::string stringify() const;
@@ -246,7 +246,7 @@ namespace simplecpp {
         void constFoldComparison(Token *tok);
         void constFoldBitwise(Token *tok);
         void constFoldLogicalOp(Token *tok);
-        void constFoldQuestionOp(Token **tok);
+        void constFoldQuestionOp(Token **tok1);
 
         std::string readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList);
 
