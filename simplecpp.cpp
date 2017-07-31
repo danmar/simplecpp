@@ -1023,25 +1023,25 @@ namespace simplecpp {
 
         /**
          * Expand macro. This will recursively expand inner macros.
-         * @param output   destination tokenlist
-         * @param rawtok   macro token
-         * @param macros   list of macros
-         * @param files    the files
+         * @param output     destination tokenlist
+         * @param rawtok     macro token
+         * @param macros     list of macros
+         * @param inputFiles the input files
          * @return token after macro
          * @throw Can throw wrongNumberOfParameters or invalidHashHash
          */
         const Token * expand(TokenList * const output,
                              const Token * rawtok,
                              const std::map<TokenString,Macro> &macros,
-                             std::vector<std::string> &files) const {
+                             std::vector<std::string> &inputFiles) const {
             std::set<TokenString> expandedmacros;
 
-            TokenList output2(files);
+            TokenList output2(inputFiles);
 
             if (functionLike() && rawtok->next && rawtok->next->op == '(') {
                 // Copy macro call to a new tokenlist with no linebreaks
                 const Token * const rawtok1 = rawtok;
-                TokenList rawtokens2(files);
+                TokenList rawtokens2(inputFiles);
                 rawtokens2.push_back(new Token(rawtok->str, rawtok1->location));
                 rawtok = rawtok->next;
                 rawtokens2.push_back(new Token(rawtok->str, rawtok1->location));
@@ -1084,7 +1084,7 @@ namespace simplecpp {
                 const std::map<TokenString,Macro>::const_iterator macro = macros.find(macro2tok->str);
                 if (macro == macros.end() || !macro->second.functionLike())
                     break;
-                TokenList rawtokens2(files);
+                TokenList rawtokens2(inputFiles);
                 const Location loc(macro2tok->location);
                 while (macro2tok) {
                     Token *next = macro2tok->next;
