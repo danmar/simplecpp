@@ -57,11 +57,11 @@ int main(int argc, char **argv)
     std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(rawtokens, files, dui, &outputList);
     for (std::pair<std::string, simplecpp::TokenList *> i : included)
         i.second->removeComments();
-    simplecpp::TokenList output(files);
-    simplecpp::preprocess(output, rawtokens, files, included, dui, &outputList);
+    simplecpp::TokenList outputTokens(files);
+    simplecpp::preprocess(outputTokens, rawtokens, files, included, dui, &outputList);
 
     // Output
-    std::cout << output.stringify() << std::endl;
+    std::cout << outputTokens.stringify() << std::endl;
     for (const simplecpp::Output &output : outputList) {
         std::cerr << output.location.file() << ':' << output.location.line << ": ";
         switch (output.type) {
