@@ -1,6 +1,6 @@
 all:	testrunner simplecpp
 
-CXXFLAGS = -Wall -Wextra -pedantic -g -std=c++0x
+CXXFLAGS = -Wall -Wextra  -Wabi -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -pedantic -g -std=c++0x
 LDFLAGS = -g
 
 %.o: %.cpp
