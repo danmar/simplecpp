@@ -1323,6 +1323,10 @@ void simplifyPath_New()
     ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
 }
 
+void segfaults()
+{
+    preprocess("#if 3 > sizeof(int");
+}
 
 int main(int argc, char **argv)
 {
@@ -1446,6 +1450,8 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath);
     TEST_CASE(simplifyPath_cppcheck);
     TEST_CASE(simplifyPath_New);
+
+    TEST_CASE(segfaults);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
