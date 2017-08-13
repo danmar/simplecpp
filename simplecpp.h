@@ -77,14 +77,15 @@ namespace simplecpp {
         }
 
         const std::string& file() const {
-            static const std::string temp;
-            return fileIndex < files.size() ? files[fileIndex] : temp;
+            return fileIndex < files.size() ? files[fileIndex] : emptyFileName;
         }
 
         const std::vector<std::string> &files;
         unsigned int fileIndex;
         unsigned int line;
         unsigned int col;
+    private:
+        const std::string emptyFileName;
     };
 
     /**
