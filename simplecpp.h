@@ -173,7 +173,7 @@ namespace simplecpp {
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = 0);
         TokenList(const TokenList &other);
         ~TokenList();
-        void operator=(const TokenList &other);
+        TokenList &operator=(const TokenList &other);
 
         void clear();
         bool empty() const {

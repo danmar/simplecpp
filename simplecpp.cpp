@@ -202,14 +202,15 @@ simplecpp::TokenList::~TokenList()
     clear();
 }
 
-void simplecpp::TokenList::operator=(const TokenList &other)
+simplecpp::TokenList &simplecpp::TokenList::operator=(const TokenList &other)
 {
-    if (this == &other)
-        return;
-    clear();
-    for (const Token *tok = other.cfront(); tok; tok = tok->next)
-        push_back(new Token(*tok));
-    sizeOfType = other.sizeOfType;
+    if (this != &other) {
+        clear();
+        for (const Token *tok = other.cfront(); tok; tok = tok->next)
+            push_back(new Token(*tok));
+        sizeOfType = other.sizeOfType;
+    }
+    return *this;
 }
 
 void simplecpp::TokenList::clear()
