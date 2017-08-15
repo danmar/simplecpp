@@ -1233,10 +1233,6 @@ void warning()
     ASSERT_EQUALS("file0,1,#warning,#warning MSG\n", toString(outputList));
 }
 
-namespace simplecpp {
-    std::string simplifyPath(std::string);
-}
-
 void simplifyPath()
 {
     ASSERT_EQUALS("1.c", simplecpp::simplifyPath("./1.c"));
@@ -1323,6 +1319,23 @@ void simplifyPath_New()
     ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
 }
 
+void preprocessSizeOf()
+{
+    simplecpp::OutputList outputList;
+
+    preprocess("#if 3 > sizeof", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
+
+    outputList.clear();
+
+    preprocess("#if 3 > sizeof A", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
+
+    outputList.clear();
+
+    preprocess("#if 3 > sizeof(int", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, invalid sizeof expression\n", toString(outputList));
+}
 
 int main(int argc, char **argv)
 {
@@ -1446,6 +1459,8 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath);
     TEST_CASE(simplifyPath_cppcheck);
     TEST_CASE(simplifyPath_New);
+
+    TEST_CASE(preprocessSizeOf);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
