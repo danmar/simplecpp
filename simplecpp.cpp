@@ -1846,18 +1846,18 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
             continue;
         simplecpp::Token *tok1 = tok->next;
         if (!tok1) {
-            throw std::runtime_error("missed sizeof argument");
+            throw tok;
         }
         simplecpp::Token *tok2 = tok1->next;
         if (!tok2) {
-            throw std::runtime_error("missed sizeof argument");
+            throw tok;
         }
         if (tok1->op == '(') {
             tok1 = tok1->next;
             while (tok2->op != ')') {
                 tok2 = tok2->next;
                 if (!tok2) {
-                    throw std::runtime_error("incorrect sizeof syntax");
+                    throw tok;
                 }
             }
         }
@@ -2356,6 +2356,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                     try {
                         conditionIsTrue = (evaluate(expr, sizeOfType) != 0);
+                    } catch (const simplecpp::Token * const errTok) {
+                        Output out(errTok->location.files);
+                        out.type = Output::SYNTAX_ERROR;
+                        out.location = rawtok->location;
+                        out.msg = "failed to evaluate " + errTok->str + " expression";
+                        outputList->push_back(out);
                     } catch (const std::exception &) {
                         if (outputList) {
                             Output out(rawtok->location.files);

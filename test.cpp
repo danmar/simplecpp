@@ -1323,9 +1323,35 @@ void simplifyPath_New()
     ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
 }
 
-void segfaults()
+void preprocessSizeOf()
 {
-    preprocess("#if 3 > sizeof(int");
+    {
+        std::istringstream istr("#if 3 > sizeof");
+        std::vector<std::string> files;
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::OutputList outputList;
+        simplecpp::TokenList tokens2(files);
+        simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+        ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate sizeof expression\n", toString(outputList));
+    }
+    {
+        std::istringstream istr("#if 3 > sizeof A");
+        std::vector<std::string> files;
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::OutputList outputList;
+        simplecpp::TokenList tokens2(files);
+        simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+        ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate sizeof expression\n", toString(outputList));
+    }
+    {
+        std::istringstream istr("#if 3 > sizeof(int");
+        std::vector<std::string> files;
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::OutputList outputList;
+        simplecpp::TokenList tokens2(files);
+        simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+        ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate sizeof expression\n", toString(outputList));
+    }
 }
 
 int main(int argc, char **argv)
@@ -1451,7 +1477,7 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath_cppcheck);
     TEST_CASE(simplifyPath_New);
 
-    TEST_CASE(segfaults);
+    TEST_CASE(preprocessSizeOf);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
