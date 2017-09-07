@@ -1081,6 +1081,11 @@ void readfile_rawstring()
     ASSERT_EQUALS("A = \"a\nb\nc\";", readfile("A = R\"foo(a\nb\nc)foo\";"));
 }
 
+void readfile_cpp14_number()
+{
+    ASSERT_EQUALS("A = 12345 ;", readfile("A = 12\'345;"));
+}
+
 void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -1437,6 +1442,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);
+    TEST_CASE(readfile_cpp14_number);
 
     TEST_CASE(stringify1);
 

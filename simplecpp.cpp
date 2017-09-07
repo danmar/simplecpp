@@ -449,9 +449,12 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         // number or name
         if (isNameChar(ch)) {
+            const bool num = std::isdigit(ch);
             while (istr.good() && isNameChar(ch)) {
                 currentToken += ch;
                 ch = readChar(istr,bom);
+                if (num && ch=='\'' && isNameChar(peekChar(istr,bom)))
+                    ch = readChar(istr,bom);
             }
 
             ungetChar(istr,bom);
