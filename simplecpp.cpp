@@ -1287,8 +1287,8 @@ namespace simplecpp {
                 } else {
                     if (!expandArg(tokens, tok, tok->location, macros, expandedmacros, parametertokens)) {
                         bool expanded = false;
-                        if (macros.find(tok->str) != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
-                            const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+                        const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+                        if (it != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {                            
                             const Macro &m = it->second;
                             if (!m.functionLike()) {
                                 m.expand(tokens, tok, macros, files);
