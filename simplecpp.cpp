@@ -589,6 +589,7 @@ void simplecpp::TokenList::constFold()
         constFoldUnaryNotPosNeg(tok);
         constFoldMulDivRem(tok);
         constFoldAddSub(tok);
+        constFoldShift(tok);
         constFoldComparison(tok);
         constFoldBitwise(tok);
         constFoldLogicalOp(tok);
@@ -759,6 +760,29 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok)
             result = stringToLL(tok->previous->str) + stringToLL(tok->next->str);
         else if (tok->op == '-')
             result = stringToLL(tok->previous->str) - stringToLL(tok->next->str);
+        else
+            continue;
+
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
+    }
+}
+
+void simplecpp::TokenList::constFoldShift(Token *tok)
+{
+    for (; tok && tok->op != ')'; tok = tok->next) {
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
+            continue;
+
+        long long result;
+        if (tok->str == "<<")
+            result = stringToLL(tok->previous->str) << stringToLL(tok->next->str);
+        else if (tok->str == ">>")
+            result = stringToLL(tok->previous->str) >> stringToLL(tok->next->str);
         else
             continue;
 
