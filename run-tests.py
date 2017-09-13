@@ -69,7 +69,6 @@ todo = [
          # todo, high priority
          'c99-6_10_3_4_p5.c',
          'c99-6_10_3_4_p6.c',
-         'cxx_compl.cpp',  # if A compl B
          'cxx_oper_keyword_ms_compat.cpp',
          'expr_usual_conversions.c', # condition is true: 4U - 30 >= 0
          'stdint.c',
