@@ -401,6 +401,20 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         if (ch < ' ' && ch != '\t' && ch != '\n' && ch != '\r')
             ch = ' ';
 
+        if (ch >= 0x80) {
+            if (outputList) {
+                simplecpp::Output err(files);
+                err.type = simplecpp::Output::UNHANDLED_CHAR_ERROR;
+                err.location = location;
+                std::ostringstream s;
+                s << (int)ch;
+                err.msg = "The code contains unhandled character(s) (character code=" + s.str() + "). Neither unicode nor extended ascii is supported.";
+                outputList->push_back(err);
+            }
+            clear();
+            return;
+        }
+
         if (ch == '\n') {
             if (cback() && cback()->op == '\\') {
                 if (location.col > cback()->location.col + 1U)
@@ -1220,6 +1234,7 @@ namespace simplecpp {
                 }
                 if (!sameline(nametoken, argtok)) {
                     endToken = argtok ? argtok->previous : argtok;
+                    valueToken = NULL;
                     return false;
                 }
                 valueToken = argtok ? argtok->next : NULL;
@@ -1286,8 +1301,8 @@ namespace simplecpp {
                 } else {
                     if (!expandArg(tokens, tok, tok->location, macros, expandedmacros, parametertokens)) {
                         bool expanded = false;
-                        if (macros.find(tok->str) != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
-                            const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+                        const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str);
+                        if (it != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
                             const Macro &m = it->second;
                             if (!m.functionLike()) {
                                 m.expand(tokens, tok, macros, files);

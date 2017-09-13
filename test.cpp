@@ -90,6 +90,8 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::PORTABILITY_BACKSLASH:
             ostr << "portability_backslash,";
             break;
+        case simplecpp::Output::Type::UNHANDLED_CHAR_ERROR:
+            ostr << "unhandled_char_error,";
         }
 
         ostr << output.msg << '\n';
@@ -1086,6 +1088,17 @@ static void readfile_cpp14_number()
     ASSERT_EQUALS("A = 12345 ;", readfile("A = 12\'345;"));
 }
 
+static void readfile_unhandled_chars()
+{
+    simplecpp::OutputList outputList;
+    readfile("// 你好世界", -1, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+    readfile("s=\"你好世界\"", -1, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+    readfile("int 你好世界=0;", -1, &outputList);
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=228). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
 static void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -1443,6 +1456,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_string);
     TEST_CASE(readfile_rawstring);
     TEST_CASE(readfile_cpp14_number);
+    TEST_CASE(readfile_unhandled_chars);
 
     TEST_CASE(stringify1);
 
