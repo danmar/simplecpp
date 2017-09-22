@@ -338,7 +338,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
 
     // Skip UTF-8 BOM 0xefbbbf
     if (ch1 == 0xef) {
-        istr.get();
+        (void)istr.get();
         if (istr.get() == 0xbb && istr.peek() == 0xbf) {
             (void)istr.get();
         } else {
