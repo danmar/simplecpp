@@ -1746,20 +1746,15 @@ static bool realFileName(const std::string &f, std::string *result)
     if (!alpha)
         return false;
 
-    // Convert char path to CHAR path
-    std::vector<CHAR> buf(f.size()+1U, 0);
-    for (unsigned int i = 0; i < f.size(); ++i)
-        buf[i] = f[i];
-
     // Lookup filename or foldername on file system
     WIN32_FIND_DATAA FindFileData;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
 	// only fetch once
 	static BOOL bIsWindows7OrGreater = IsWindows7OrGreater();
 	if (bIsWindows7OrGreater)
-		hFind = FindFirstFileExA(&buf[0], FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+		hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 	else
-		hFind = FindFirstFileA(&buf[0], &FindFileData);
+		hFind = FindFirstFileA(f.c_str(), &FindFileData);
 
     if (INVALID_HANDLE_VALUE == hFind)
         return false;
