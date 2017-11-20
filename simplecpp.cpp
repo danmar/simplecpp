@@ -35,6 +35,7 @@
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #include <windows.h>
+#include <VersionHelpers.h>
 #undef ERROR
 #undef TRUE
 #define SIMPLECPP_WINDOWS
@@ -1752,8 +1753,15 @@ static bool realFileName(const std::string &f, std::string *result)
 
     // Lookup filename or foldername on file system
     WIN32_FIND_DATAA FindFileData;
-    HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
-    if (hFind == INVALID_HANDLE_VALUE)
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	// only fetch once
+	static BOOL bIsWindows7OrGreater = IsWindows7OrGreater();
+	if (bIsWindows7OrGreater)
+		hFind = FindFirstFileExA(&buf[0], FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+	else
+		hFind = FindFirstFileA(&buf[0], &FindFileData);
+
+    if (INVALID_HANDLE_VALUE == hFind)
         return false;
     *result = FindFileData.cFileName;
     FindClose(hFind);
