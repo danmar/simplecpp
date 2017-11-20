@@ -2031,6 +2031,9 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
 {
+	if (filedata.empty()) {
+		return "";
+	}
     if (isAbsolutePath(header)) {
         return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
     }
