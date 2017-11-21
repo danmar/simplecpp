@@ -1831,6 +1831,9 @@ namespace simplecpp {
      */
     std::string simplifyPath(std::string path)
     {
+        if (path.empty())
+            return path;
+
         std::string::size_type pos;
 
         // replace backslash separators
