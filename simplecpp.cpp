@@ -17,6 +17,7 @@
  */
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#define SIMPLECPP_WINDOWS
 #define NOMINMAX
 #endif
 #include "simplecpp.h"
@@ -33,11 +34,10 @@
 #include <stdexcept>
 #include <utility>
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
 #undef ERROR
 #undef TRUE
-#define SIMPLECPP_WINDOWS
 #endif
 
 static bool isHex(const std::string &s)
