@@ -1745,15 +1745,11 @@ static bool realFileName(const std::string &f, std::string *result)
     if (!alpha)
         return false;
 
-    // Convert char path to CHAR path
-    std::vector<CHAR> buf(f.size()+1U, 0);
-    for (unsigned int i = 0; i < f.size(); ++i)
-        buf[i] = f[i];
-
     // Lookup filename or foldername on file system
     WIN32_FIND_DATAA FindFileData;
-    HANDLE hFind = FindFirstFileA(&buf[0], &FindFileData);
-    if (hFind == INVALID_HANDLE_VALUE)
+	HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+
+    if (INVALID_HANDLE_VALUE == hFind)
         return false;
     *result = FindFileData.cFileName;
     FindClose(hFind);
@@ -1828,6 +1824,9 @@ namespace simplecpp {
      */
     std::string simplifyPath(std::string path)
     {
+        if (path.empty())
+            return path;
+
         std::string::size_type pos;
 
         // replace backslash separators
@@ -2023,6 +2022,9 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
 {
+	if (filedata.empty()) {
+		return "";
+	}
     if (isAbsolutePath(header)) {
         return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
     }
