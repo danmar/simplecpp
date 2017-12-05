@@ -1747,9 +1747,7 @@ static bool realFileName(const std::string &f, std::string *result)
 
     // Lookup filename or foldername on file system
     WIN32_FIND_DATAA FindFileData;
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-	// only fetch once
-	hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+	HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 
     if (INVALID_HANDLE_VALUE == hFind)
         return false;
