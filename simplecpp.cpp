@@ -570,10 +570,12 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             currentToken += ch;
         }
 
-        if (currentToken == "<" && lastLine() == "# include") {
-            currentToken = readUntil(istr, location, '<', '>', outputList);
-            if (currentToken.size() < 2U)
-                return;
+        if (currentToken == "<") {
+            if ((lastLine() == "# include") || (lastLine() == (std::string("# define ") + lastTokenInLine()))) {
+                currentToken = readUntil(istr, location, '<', '>', outputList);
+                if (currentToken.size() < 2U)
+                    return;
+            }
         }
 
         push_back(new Token(currentToken, location));
@@ -1011,6 +1013,20 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
                : std::isdigit(static_cast<unsigned char>(tok->str[0])) ? std::string("%num%") : tok->str) + ret;
         if (++count > maxsize)
             return "";
+    }
+    return ret;
+}
+
+std::string simplecpp::TokenList::lastTokenInLine() const
+{
+    std::string ret;
+    int count = 0;
+    for (const Token *tok = cback(); sameline(tok,cback()); tok = tok->previous) {
+        if (!tok->comment) {
+            ret = (tok->str[0] == '\"' ? std::string("%str%")
+                   : std::isdigit(static_cast<unsigned char>(tok->str[0])) ? std::string("%num%") : tok->str) + ret;
+            break;
+        }
     }
     return ret;
 }
