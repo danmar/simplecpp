@@ -1020,7 +1020,6 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
 std::string simplecpp::TokenList::lastTokenInLine() const
 {
     std::string ret;
-    int count = 0;
     for (const Token *tok = cback(); sameline(tok,cback()); tok = tok->previous) {
         if (!tok->comment) {
             ret = (tok->str[0] == '\"' ? std::string("%str%")
