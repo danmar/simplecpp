@@ -715,8 +715,8 @@ void simplecpp::TokenList::constFoldUnaryNotPosNeg(simplecpp::Token *tok)
             tok->setstr(tok->next->str == "0" ? "1" : "0");
             deleteToken(tok->next);
         } else if (tok->op == '~' && tok->next && tok->next->number) {
-           tok->setstr(toString(~stringToLL(tok->next->str)));
-           deleteToken(tok->next);
+            tok->setstr(toString(~stringToLL(tok->next->str)));
+            deleteToken(tok->next);
         } else {
             if (tok->previous && (tok->previous->number || tok->previous->name))
                 continue;
@@ -1747,7 +1747,7 @@ static bool realFileName(const std::string &f, std::string *result)
 
     // Lookup filename or foldername on file system
     WIN32_FIND_DATAA FindFileData;
-	HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+    HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 
     if (INVALID_HANDLE_VALUE == hFind)
         return false;
@@ -2022,9 +2022,9 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
 {
-	if (filedata.empty()) {
-		return "";
-	}
+    if (filedata.empty()) {
+        return "";
+    }
     if (isAbsolutePath(header)) {
         return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
     }

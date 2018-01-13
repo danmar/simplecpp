@@ -85,7 +85,7 @@ int main(int argc, char **argv)
             break;
         case simplecpp::Output::UNHANDLED_CHAR_ERROR:
             std::cerr << "unhandled char error: ";
-			break;
+            break;
         }
         std::cerr << output.msg << std::endl;
     }
