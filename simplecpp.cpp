@@ -1669,7 +1669,12 @@ namespace simplecpp {
 
             if (varargs && tokensB.empty() && tok->previous->str == ",")
                 output->deleteToken(A);
-            else {
+            else if (strAB != "," && macros.find(strAB) == macros.end()) {
+                A->setstr(strAB);
+                for (Token *b = tokensB.front(); b; b = b->next)
+                    b->location = loc;
+                output->takeTokens(tokensB);
+            } else {
                 output->deleteToken(A);
                 TokenList tokens(files);
                 tokens.push_back(new Token(strAB, tok->location));

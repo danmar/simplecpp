@@ -575,7 +575,13 @@ static void hashhash7()   // # ## #  (C standard; 6.10.3.3.p4)
     code = "#define hash_hash # ## #\n"
            "x hash_hash y";
     ASSERT_EQUALS("\nx ## y", preprocess(code));
+}
 
+static void hashhash8()
+{
+    const char code[] = "#define a(xy)    x##y = xy\n"
+                        "a(123);";
+    ASSERT_EQUALS("\nxy = 123 ;", preprocess(code));
 }
 
 static void ifdef1()
@@ -1414,6 +1420,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash5);
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
+    TEST_CASE(hashhash8);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
