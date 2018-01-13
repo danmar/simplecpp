@@ -1087,6 +1087,10 @@ static void readfile_rawstring()
     ASSERT_EQUALS("A = \"\\\"\"", readfile("A = R\"(\")\""));
     ASSERT_EQUALS("A = \"abc\"", readfile("A = R\"\"\"(abc)\"\"\""));
     ASSERT_EQUALS("A = \"a\nb\nc\";", readfile("A = R\"foo(a\nb\nc)foo\";"));
+    ASSERT_EQUALS("A = L \"abc\"", readfile("A = LR\"(abc)\""));
+    ASSERT_EQUALS("A = u \"abc\"", readfile("A = uR\"(abc)\""));
+    ASSERT_EQUALS("A = U \"abc\"", readfile("A = UR\"(abc)\""));
+    ASSERT_EQUALS("A = u8 \"abc\"", readfile("A = u8R\"(abc)\""));
 }
 
 static void readfile_cpp14_number()
