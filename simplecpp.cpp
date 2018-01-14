@@ -380,6 +380,11 @@ static void portabilityBackslash(simplecpp::OutputList *outputList, const std::v
     outputList->push_back(err);
 }
 
+static bool isRawStringId(const std::string &str)
+{
+    return str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
+}
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -521,13 +526,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         // string / char literal
         else if (ch == '\"' || ch == '\'') {
             // C++11 raw string literal
-            std::set<std::string> rawString;
-            rawString.insert("R");
-            rawString.insert("uR");
-            rawString.insert("UR");
-            rawString.insert("LR");
-            rawString.insert("u8R");
-            if (ch == '\"' && cback() && rawString.find(cback()->str) != rawString.end()) {
+            if (ch == '\"' && cback() && cback()->name && isRawStringId(cback()->str)) {
                 std::string delim;
                 ch = readChar(istr,bom);
                 while (istr.good() && ch != '(' && ch != '\n') {
