@@ -2116,8 +2116,8 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
         const std::string &sourcefile = rawtok->location.file();
 
-        const Token *htok = rawtok->nextSkipComments();
-        if (!sameline(rawtok, htok))
+        const Token * const htok = rawtok->nextSkipComments();
+        if (!htok || !sameline(rawtok, htok))
             continue;
 
         bool systemheader = (htok->str[0] == '<');
