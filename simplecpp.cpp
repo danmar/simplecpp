@@ -2313,6 +2313,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     inc2.takeTokens(inc1);
                 }
 
+                if (!inc2.empty() && inc2.cfront()->op == '<' && inc2.cback()->op == '>') {
+                    TokenString hdr;
+                    // TODO: Sometimes spaces must be added in the string
+                    // Somehow preprocessToken etc must be told that the location should be source location not destination location
+                    for (const Token *tok = inc2.cfront(); tok; tok = tok->next) {
+                        hdr += tok->str;
+                    }
+                    inc2.clear();
+                    inc2.push_back(new Token(hdr, inc1.cfront()->location));
+                }
+
                 if (inc2.empty() || inc2.cfront()->str.size() <= 2U) {
                     if (outputList) {
                         simplecpp::Output err(files);
