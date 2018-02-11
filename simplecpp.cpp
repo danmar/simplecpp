@@ -466,6 +466,16 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         TokenString currentToken;
 
+        if (cback() && cback()->previous && cback()->previous->op == '#' && (lastLine() == "# error" || lastLine() == "# warning")) {
+            while (istr.good() && ch != '\r' && ch != '\n') {
+                currentToken += ch;
+                ch = readChar(istr, bom);
+            }
+            istr.unget();
+            push_back(new Token(currentToken, location));
+            continue;
+        }
+
         // number or name
         if (isNameChar(ch)) {
             const bool num = std::isdigit(ch);

@@ -445,15 +445,26 @@ static void dotDotDot()
     ASSERT_EQUALS("1 . . . 2", readfile("1 ... 2"));
 }
 
-static void error()
+static void error1()
 {
-    std::istringstream istr("#error    hello world! \n");
+    std::istringstream istr("#error    hello world!\n");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,#error,#error hello world!\n", toString(outputList));
+}
+
+static void error2()
+{
+    std::istringstream istr("#error   it's an error\n");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,#error,#error it's an error\n", toString(outputList));
 }
 
 static void garbage()
@@ -1435,7 +1446,8 @@ int main(int argc, char **argv)
 
     TEST_CASE(dotDotDot); // ...
 
-    TEST_CASE(error);
+    TEST_CASE(error1);
+    TEST_CASE(error2);
 
     TEST_CASE(garbage);
     TEST_CASE(garbage_endif);
