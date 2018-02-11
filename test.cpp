@@ -413,6 +413,14 @@ static void define_define_12()
     ASSERT_EQUALS("\n\n0", preprocess(code));
 }
 
+static void define_define_13() // issue #49 - empty macro
+{
+    const char code[] = "#define f()\n"
+                        "#define t(a) a\n"
+                        "(t(f))\n";
+    ASSERT_EQUALS("\n\n( f )", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -1438,6 +1446,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_10);
     TEST_CASE(define_define_11);
     TEST_CASE(define_define_12); // expand result of ##
+    TEST_CASE(define_define_13);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);

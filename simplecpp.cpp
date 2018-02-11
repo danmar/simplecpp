@@ -1500,6 +1500,11 @@ namespace simplecpp {
                         return tok->next;
                     }
 
+                    if (!sameline(tok, tok->next)) {
+                        output->takeTokens(temp);
+                        return tok->next;
+                    }
+
                     const std::map<TokenString, Macro>::const_iterator it = macros.find(temp.cback()->str);
                     if (it == macros.end() || expandedmacros.find(temp.cback()->str) != expandedmacros.end()) {
                         output->takeTokens(temp);
