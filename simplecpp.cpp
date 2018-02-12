@@ -466,7 +466,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
         TokenString currentToken;
 
-        if (cback() && cback()->previous && cback()->previous->op == '#' && (lastLine() == "# error" || lastLine() == "# warning")) {
+        if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#' && (lastLine() == "# error" || lastLine() == "# warning")) {
             while (istr.good() && ch != '\r' && ch != '\n') {
                 currentToken += ch;
                 ch = readChar(istr, bom);

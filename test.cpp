@@ -1166,6 +1166,14 @@ static void readfile_unhandled_chars()
     ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=228). Neither unicode nor extended ascii is supported.\n", toString(outputList));
 }
 
+static void readfile_error()
+{
+    ASSERT_EQUALS("# if ! A\n"
+                  "# error\n"
+                  "# endif\n"
+                  "X",readfile("#if !A\n#error\n#endif\nX\n"));
+}
+
 static void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -1529,6 +1537,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_rawstring);
     TEST_CASE(readfile_cpp14_number);
     TEST_CASE(readfile_unhandled_chars);
+    TEST_CASE(readfile_error);
 
     TEST_CASE(stringify1);
 
