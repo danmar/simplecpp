@@ -972,6 +972,20 @@ static void multiline5()   // column
     ASSERT_EQUALS(11, rawtokens.back()->location.col);
 }
 
+static void multiline6()   // multiline string in macro
+{
+    const char code[] = "#define string  (\"\\\n"
+                        "x\")\n"
+                        "string\n";
+    const simplecpp::DUI dui;
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files);
+    ASSERT_EQUALS("# define string ( \"x\" )\n"
+                  "\n"
+                  "string", rawtokens.stringify());
+}
+
 static void include1()
 {
     const char code[] = "#include \"A.h\"\n";
@@ -1508,6 +1522,7 @@ int main(int argc, char **argv)
     TEST_CASE(multiline3);
     TEST_CASE(multiline4);
     TEST_CASE(multiline5); // column
+    TEST_CASE(multiline6); // multiline string in macro
 
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_string);

@@ -575,14 +575,20 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
             std::string s = currentToken;
             std::string::size_type pos;
+            int newlines = 0;
             while ((pos = s.find_first_of("\r\n")) != std::string::npos) {
                 s.erase(pos,1);
+                newlines++;
             }
 
             push_back(new Token(s, location)); // push string without newlines
 
-            location.adjust(currentToken);
-
+            if (newlines > 0 && lastLine().compare(0,9,"# define ") == 0) {
+                multiline += newlines;
+                location.adjust(s);
+            } else {
+                location.adjust(currentToken);
+            }
             continue;
         }
 
