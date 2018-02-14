@@ -1338,7 +1338,7 @@ namespace simplecpp {
                         if (it != macros.end() && expandedmacros.find(tok->str) == expandedmacros.end()) {
                             const Macro &m = it->second;
                             if (!m.functionLike()) {
-                                m.expand(tokens, tok, macros, files);
+                                m.expand(tokens, tok->location, tok, macros, expandedmacros);
                                 expanded = true;
                             }
                         }

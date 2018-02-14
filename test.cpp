@@ -421,6 +421,15 @@ static void define_define_13() // issue #49 - empty macro
     ASSERT_EQUALS("\n\n( f )", preprocess(code));
 }
 
+static void define_define_14() // issue #58 - endless recursion
+{
+    const char code[] = "#define z f(w\n"
+                        "#define f()\n"
+                        "#define w f(z\n"
+                        "w\n";
+    ASSERT_EQUALS("\n\n\nf ( f ( w", preprocess(code)); // Don't crash
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -1469,6 +1478,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_11);
     TEST_CASE(define_define_12); // expand result of ##
     TEST_CASE(define_define_13);
+    TEST_CASE(define_define_14);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
