@@ -2343,6 +2343,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                     inc2.clear();
                     inc2.push_back(new Token(hdr, inc1.cfront()->location));
+                    inc2.front()->op = '<';
                 }
 
                 if (inc2.empty() || inc2.cfront()->str.size() <= 2U) {
@@ -2376,7 +2377,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         simplecpp::Output out(files);
                         out.type = Output::MISSING_HEADER;
                         out.location = rawtok->location;
-                        out.msg = "Header not found: " + rawtok->next->str;
+                        out.msg = "Header not found: " + inctok->str;
                         outputList->push_back(out);
                     }
                 } else if (includetokenstack.size() >= 400) {

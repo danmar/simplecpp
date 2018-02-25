@@ -1122,9 +1122,25 @@ static void include7()    // #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
+    dui.includePaths.push_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
+}
+
+static void include8()    // #include MACRO(X)
+{
+    const char code[] = "#define INCLUDE_LOCATION ../somewhere\n"
+                        "#define INCLUDE_FILE(F)  <INCLUDE_LOCATION/F.h>\n"
+                        "#include INCLUDE_FILE(header)\n";
+
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,3,missing_header,Header not found: <../somewhere/header.h>\n", toString(outputList));
 }
 
 static void readfile_nullbyte()
@@ -1534,6 +1550,7 @@ int main(int argc, char **argv)
     TEST_CASE(include5); // #include MACRO
     TEST_CASE(include6); // invalid code: #include MACRO(,)
     TEST_CASE(include7); // #include MACRO
+    TEST_CASE(include8); // #include MACRO(X)
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
