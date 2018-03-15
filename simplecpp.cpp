@@ -1676,8 +1676,13 @@ namespace simplecpp {
                 throw invalidHashHash(tok->location, name());
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
                 throw invalidHashHash(tok->location, name());
+            if (!A->name && !A->number && A->op != ',' && !A->str.empty())
+                throw invalidHashHash(tok->location, name());
 
             Token *B = tok->next->next;
+            if (!B->name && !B->number && B->op && B->op != '#')
+                throw invalidHashHash(tok->location, name());
+
             std::string strAB;
 
             const bool varargs = variadic && args.size() >= 1U && B->str == args[args.size()-1U];

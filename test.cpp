@@ -612,6 +612,26 @@ static void hashhash8()
     ASSERT_EQUALS("\nxy = 123 ;", preprocess(code));
 }
 
+static void hashhash_invalid_1() {
+    std::istringstream istr("#define  f(a)  (##x)\nf(1)");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
+}
+
+static void hashhash_invalid_2() {
+    std::istringstream istr("#define  f(a)  (x##)\nf(1)");
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
+}
+
 static void ifdef1()
 {
     const char code[] = "#ifdef A\n"
@@ -1518,6 +1538,8 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
     TEST_CASE(hashhash8);
+    TEST_CASE(hashhash_invalid_1);
+    TEST_CASE(hashhash_invalid_2);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
