@@ -168,6 +168,13 @@ static void combineOperators_coloncolon()
     ASSERT_EQUALS("x ? y : :: z", preprocess("x ? y : ::z"));
 }
 
+static void combineOperators_andequal()
+{
+    ASSERT_EQUALS("x &= 2 ;", preprocess("x &= 2;"));
+    ASSERT_EQUALS("void f ( x & = 2 ) ;", preprocess("void f(x &= 2);"));
+    ASSERT_EQUALS("f ( x &= 2 ) ;", preprocess("f(x &= 2);"));
+}
+
 static void comment()
 {
     ASSERT_EQUALS("// abc", readfile("// abc"));
@@ -612,7 +619,8 @@ static void hashhash8()
     ASSERT_EQUALS("\nxy = 123 ;", preprocess(code));
 }
 
-static void hashhash_invalid_1() {
+static void hashhash_invalid_1()
+{
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -622,7 +630,8 @@ static void hashhash_invalid_1() {
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
 }
 
-static void hashhash_invalid_2() {
+static void hashhash_invalid_2()
+{
     std::istringstream istr("#define  f(a)  (x##)\nf(1)");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -1484,6 +1493,7 @@ int main(int argc, char **argv)
     TEST_CASE(combineOperators_floatliteral);
     TEST_CASE(combineOperators_increment);
     TEST_CASE(combineOperators_coloncolon);
+    TEST_CASE(combineOperators_andequal);
 
     TEST_CASE(comment);
     TEST_CASE(comment_multiline);
