@@ -2313,10 +2313,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         }
 
         if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok)) {
+            if (!sameline(rawtok, rawtok->next)) {
+                rawtok = rawtok->next;
+                continue;
+            }
             rawtok = rawtok->next;
-            if (!rawtok || !rawtok->name) {
-                if (rawtok)
-                    rawtok = gotoNextLine(rawtok);
+            if (!rawtok->name) {
+                rawtok = gotoNextLine(rawtok);
                 continue;
             }
 

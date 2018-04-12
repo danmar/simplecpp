@@ -1024,6 +1024,30 @@ static void multiline6()   // multiline string in macro
                   "string", rawtokens.stringify());
 }
 
+static void nullDirective1()
+{
+    const char code[] = "#\n"
+                        "#if 1\n"
+                        "#define a 1\n"
+                        "#endif\n"
+                        "x = a;\n";
+
+    const simplecpp::DUI dui;
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, dui));
+}
+
+static void nullDirective2()
+{
+    const char code[] = "# // comment\n"
+                        "#if 1\n"
+                        "#define a 1\n"
+                        "#endif\n"
+                        "x = a;\n";
+
+    const simplecpp::DUI dui;
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, dui));
+}
+
 static void include1()
 {
     const char code[] = "#include \"A.h\"\n";
@@ -1574,6 +1598,9 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
     TEST_CASE(nestedInclude);
+
+    TEST_CASE(nullDirective1);
+    TEST_CASE(nullDirective2);
 
     TEST_CASE(include1);
     TEST_CASE(include2);
