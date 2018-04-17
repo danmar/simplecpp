@@ -458,6 +458,21 @@ static void define_va_args_3()   // min number of arguments
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
+static void define_ifdef()
+{
+    const char code[] = "#define A(X) X\n"
+                        "A(1\n"
+                        "#ifdef CFG\n"
+                        "#endif\n"
+                        ")\n";
+
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+    preprocess(code, dui, &outputList);
+    ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
+
+}
+
 static void dollar()
 {
     ASSERT_EQUALS("$ab", readfile("$ab"));
@@ -1552,6 +1567,9 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
+
+    // UB: #ifdef as macro parameter
+    TEST_CASE(define_ifdef);
 
     TEST_CASE(dollar);
 
