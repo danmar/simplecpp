@@ -1319,13 +1319,13 @@ static void tokenMacro2()
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
     const simplecpp::Token *tok = tokenList.cfront();
-    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("", tok->macro);
     tok = tok->next;
-    ASSERT_EQUALS("+", tok->str);
+    ASSERT_EQUALS("+", tok->str());
     ASSERT_EQUALS("ADD", tok->macro);
     tok = tok->next;
-    ASSERT_EQUALS("2", tok->str);
+    ASSERT_EQUALS("2", tok->str());
     ASSERT_EQUALS("", tok->macro);
 }
 
@@ -1341,13 +1341,13 @@ static void tokenMacro3()
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
     const simplecpp::Token *tok = tokenList.cfront();
-    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("FRED", tok->macro);
     tok = tok->next;
-    ASSERT_EQUALS("+", tok->str);
+    ASSERT_EQUALS("+", tok->str());
     ASSERT_EQUALS("ADD", tok->macro);
     tok = tok->next;
-    ASSERT_EQUALS("2", tok->str);
+    ASSERT_EQUALS("2", tok->str());
     ASSERT_EQUALS("", tok->macro);
 }
 
@@ -1363,7 +1363,7 @@ static void tokenMacro4()
     simplecpp::TokenList tokenList(files);
     simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
     const simplecpp::Token *tok = tokenList.cfront();
-    ASSERT_EQUALS("1", tok->str);
+    ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("A", tok->macro);
 }
 
