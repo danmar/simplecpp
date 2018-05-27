@@ -1523,6 +1523,23 @@ static void preprocessSizeOf()
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, invalid sizeof expression\n", toString(outputList));
 }
 
+static void testExceptions()
+{
+    using namespace simplecpp;
+    bool exceptionCaught(false);
+    try {
+        std::vector<std::string> files;
+        files.push_back("abc");
+        files.push_back("def");
+        Output output(files);
+        throw output;
+    } catch (const simplecpp::Output& o) {
+        ASSERT_EQUALS("abc", o.location.file());
+        exceptionCaught=true;
+    }
+    ASSERT_EQUALS(true, exceptionCaught);
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -1666,6 +1683,8 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath_New);
 
     TEST_CASE(preprocessSizeOf);
+
+    TEST_CASE(testExceptions);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
