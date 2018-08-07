@@ -113,7 +113,9 @@ namespace simplecpp {
             op = (string.size() == 1U) ? string[0] : '\0';
         }
 
-        const TokenString& str() const { return string; }
+        const TokenString& str() const {
+            return string;
+        }
         void setstr(const std::string &s) {
             string = s;
             flags();
