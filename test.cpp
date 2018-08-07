@@ -1039,6 +1039,20 @@ static void multiline6()   // multiline string in macro
                   "string", rawtokens.stringify());
 }
 
+static void multiline7()   // multiline string in macro
+{
+    const char code[] = "#define A(X) aaa { f(\"\\\n"
+                        "a\"); }\n"
+                        "A(1)";
+    const simplecpp::DUI dui;
+    std::istringstream istr(code);
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens(istr,files);
+    ASSERT_EQUALS("# define A ( X ) aaa { f ( \"a\" ) ; }\n"
+                  "\n"
+                  "A ( 1 )", rawtokens.stringify());
+}
+
 static void nullDirective1()
 {
     const char code[] = "#\n"
@@ -1635,6 +1649,7 @@ int main(int argc, char **argv)
     TEST_CASE(multiline4);
     TEST_CASE(multiline5); // column
     TEST_CASE(multiline6); // multiline string in macro
+    TEST_CASE(multiline7); // multiline string in macro
 
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_string);
