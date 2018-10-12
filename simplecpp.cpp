@@ -446,11 +446,11 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     location.line = 1U;
                 } else if (lastline == "# line %num%") {
                     loc.push(location);
-                    location.line = std::atol(cback()->str().c_str());
+                    location.line = std::atoi(cback()->str().c_str());
                 } else if (lastline == "# line %num% %str%") {
                     loc.push(location);
                     location.fileIndex = fileIndex(cback()->str().substr(1U, cback()->str().size() - 2U));
-                    location.line = std::atol(cback()->previous->str().c_str());
+                    location.line = std::atoi(cback()->previous->str().c_str());
                 }
                 // #endfile
                 else if (lastline == "# endfile" && !loc.empty()) {
