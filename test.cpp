@@ -894,6 +894,15 @@ static void ifalt()   // using "and", "or", etc
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
+static void location1()
+{
+    const char *code;
+
+    code =  "# 1 \"main.c\"\n\n\n"
+            "x";
+    ASSERT_EQUALS("\n#line 3 \"main.c\"\nx", preprocess(code));
+}
+
 static void missingHeader1()
 {
     const simplecpp::DUI dui;
@@ -1625,6 +1634,8 @@ int main(int argc, char **argv)
     TEST_CASE(ifoverflow);
     TEST_CASE(ifdiv0);
     TEST_CASE(ifalt); // using "and", "or", etc
+
+    TEST_CASE(location1);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
