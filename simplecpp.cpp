@@ -1136,7 +1136,7 @@ namespace simplecpp {
             std::istringstream istr(def);
             tokenListDefine.readfile(istr);
             if (!parseDefine(tokenListDefine.cfront()))
-                throw std::runtime_error("bad macro syntax");
+                throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
         Macro(const Macro &macro) : nameTokDef(NULL), files(macro.files), tokenListDefine(macro.files), valueDefinedInCode_(macro.valueDefinedInCode_) {
