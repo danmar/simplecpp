@@ -1695,8 +1695,12 @@ namespace simplecpp {
             TokenList tokens(files);
             if (expandArg(&tokens, tok, parametertokens)) {
                 std::string s;
-                for (const Token *tok2 = tokens.cfront(); tok2; tok2 = tok2->next)
+                for (const Token *tok2 = tokens.cfront(); tok2; tok2 = tok2->next) {
+                    if (!s.empty()) {
+                        s += ' ';
+                    }
                     s += tok2->str();
+                }
                 return s;
             }
             return tok->str();

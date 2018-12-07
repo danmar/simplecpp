@@ -634,6 +634,13 @@ static void hashhash8()
     ASSERT_EQUALS("\nxy = 123 ;", preprocess(code));
 }
 
+static void hashhash9() // GitHub issue #124
+{
+    const char code[] = "#define CONCAT(tok) tok##suffix\n"
+                        "CONCAT(const Test);";
+    ASSERT_EQUALS("\nconst Testsuffix ;", preprocess(code));
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -1625,6 +1632,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
     TEST_CASE(hashhash8);
+    TEST_CASE(hashhash9);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 
