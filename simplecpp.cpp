@@ -473,12 +473,15 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         TokenString currentToken;
 
         if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#' && (lastLine() == "# error" || lastLine() == "# warning")) {
-            while (istr.good() && ch != '\r' && ch != '\n') {
+            char prev = ' ';
+            while (istr.good() && (prev == '\\' || (ch != '\r' && ch != '\n'))) {
                 currentToken += ch;
+                prev = ch;
                 ch = readChar(istr, bom);
             }
             istr.unget();
             push_back(new Token(currentToken, location));
+            location.adjust(currentToken);
             continue;
         }
 

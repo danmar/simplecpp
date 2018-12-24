@@ -506,6 +506,16 @@ static void error2()
     ASSERT_EQUALS("file0,1,#error,#error it's an error\n", toString(outputList));
 }
 
+static void error3()
+{
+    std::istringstream istr("#error \"bla bla\\\n"
+                            " bla bla.\"\n");
+    std::vector<std::string> files;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList rawtokens(istr, files, "test.c", &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 static void garbage()
 {
     const simplecpp::DUI dui;
@@ -1612,6 +1622,7 @@ int main(int argc, char **argv)
 
     TEST_CASE(error1);
     TEST_CASE(error2);
+    TEST_CASE(error3);
 
     TEST_CASE(garbage);
     TEST_CASE(garbage_endif);
