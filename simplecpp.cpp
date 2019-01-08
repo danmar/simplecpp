@@ -1839,8 +1839,37 @@ namespace simplecpp {
 }
 
 #ifdef SIMPLECPP_WINDOWS
+
+class RealFileNameMap
+{
+public:
+    bool getRealPathFromCache(std::string const& path, std::string& returnPath)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        
+        auto it = mFileMap.find(path);
+        if (it != mFileMap.end())
+        {
+            returnPath = it->second;
+            return true;
+        }
+        return false;
+    }
+    
+    void addToCache(std::string const& path, std::string const& actualPath)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mFileMap[path] = actualPath;
+    }
+    
+    std::map<std::string, std::string> mFileMap;
+    std::mutex mMutex;
+};
+
 static bool realFileName(const std::string &f, std::string *result)
 {
+    static RealFileNameMap realFileNameMap;
+    
     // are there alpha characters in last subpath?
     bool alpha = false;
     for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
@@ -1852,19 +1881,23 @@ static bool realFileName(const std::string &f, std::string *result)
             break;
         }
     }
-
+    
     // do not convert this path if there are no alpha characters (either pointless or cause wrong results for . and ..)
     if (!alpha)
         return false;
-
+    
     // Lookup filename or foldername on file system
-    WIN32_FIND_DATAA FindFileData;
-    HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
-
-    if (INVALID_HANDLE_VALUE == hFind)
-        return false;
-    *result = FindFileData.cFileName;
-    FindClose(hFind);
+    if (!realFileNameMap.getRealPathFromCache(f, *result))
+    {
+        WIN32_FIND_DATAA FindFileData;
+        HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+        
+        if (INVALID_HANDLE_VALUE == hFind)
+            return false;
+        *result = FindFileData.cFileName;
+        realFileNameMap.addToCache(f, *result);
+        FindClose(hFind);
+    }
     return true;
 }
 
