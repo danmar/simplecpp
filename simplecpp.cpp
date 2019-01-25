@@ -1880,7 +1880,7 @@ public:
         CloseHandle(m_mutex);
     }
 
-    bool getRealPathFromCache(std::string const& path, std::string* returnPath)
+    bool getRealPathFromCache(const std::string& path, std::string* returnPath)
     {
         ScopedLock lock(m_mutex);
 
