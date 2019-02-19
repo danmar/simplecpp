@@ -1843,67 +1843,91 @@ namespace simplecpp {
 class ScopedLock
 {
 public:
-    explicit ScopedLock(HANDLE mutex)
-        : m_mutex(mutex)
+    explicit ScopedLock(CRITICAL_SECTION& criticalSection)
+        : m_criticalSection(criticalSection)
     {
-        if (WaitForSingleObject(m_mutex, INFINITE) == WAIT_FAILED)
-            throw std::runtime_error("cannot lock the mutex");
+        EnterCriticalSection(&m_criticalSection);
     }
 
     ~ScopedLock()
     {
-        ReleaseMutex(m_mutex);
+        LeaveCriticalSection(&m_criticalSection);
     }
 
 private:
     ScopedLock& operator=(const ScopedLock&);
     ScopedLock(const ScopedLock&);
 
-    HANDLE m_mutex;
+    CRITICAL_SECTION& m_criticalSection;
 };
 
-class RealFileNameMap
+template <typename TKey, typename TValue> class ThreadSafeCache
 {
 public:
-    RealFileNameMap()
+    typedef std::map<TKey, TValue> TMap;
+    
+    ThreadSafeCache()
     {
-        m_mutex = CreateMutex(NULL, FALSE, NULL);
-
-        if (!m_mutex)
-        {
-            throw std::runtime_error("cannot create the mutex handle");
-        }
+        InitializeCriticalSection(&m_criticalSection);
     }
 
-    ~RealFileNameMap()
+    ~ThreadSafeCache()
     {
-        CloseHandle(m_mutex);
+        DeleteCriticalSection(&m_criticalSection);
     }
 
-    bool getRealPathFromCache(const std::string& path, std::string* returnPath)
+    bool getValue(const TKey& key, TValue* returnValue)
     {
-        ScopedLock lock(m_mutex);
+        ScopedLock lock(m_criticalSection);
 
-        std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
-        if (it != m_fileMap.end())
+        typename TMap::iterator it = m_map.find(key);
+        if (it != m_map.end())
         {
-            *returnPath = it->second;
+            *returnValue = it->second;
             return true;
         }
         return false;
     }
 
-    void addToCache(const std::string& path, const std::string& actualPath)
+    void addToCache(const TKey& key, const TValue& value)
     {
-        ScopedLock lock(m_mutex);
-        m_fileMap[path] = actualPath;
+        ScopedLock lock(m_criticalSection);
+        m_map[key] = value;
+    }
+    
+private:
+    TMap m_map;
+    CRITICAL_SECTION m_criticalSection;
+};
+#else
+
+// currently no caching support for non-Windows platforms
+template <typename TKey, typename TValue> class ThreadSafeCache
+{
+public:
+    ThreadSafeCache()
+    {
     }
 
-    std::map<std::string, std::string> m_fileMap;
-    HANDLE m_mutex;
+    ~ThreadSafeCache()
+    {
+    }
+
+    bool getValue(const TKey& key, TValue* returnValue)
+    {
+        return false;
+    }
+
+    void addToCache(const TKey& key, const TValue& value)
+    {
+    }
 };
 
-static RealFileNameMap realFileNameMap;
+#endif
+
+#ifdef SIMPLECPP_WINDOWS
+
+static ThreadSafeCache<std::string, std::string> realFileNameMap;
 
 static bool realFileName(const std::string &f, std::string *result)
 {
@@ -1924,7 +1948,7 @@ static bool realFileName(const std::string &f, std::string *result)
         return false;
 
     // Lookup filename or foldername on file system
-    if (!realFileNameMap.getRealPathFromCache(f, result))
+    if (!realFileNameMap.getValue(f, result))
     {
         WIN32_FIND_DATAA FindFileData;
         HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
@@ -1938,11 +1962,15 @@ static bool realFileName(const std::string &f, std::string *result)
     return true;
 }
 
+static ThreadSafeCache<std::string, std::string> realPathMap;
+
 /** Change case in given path to match filesystem */
 static std::string realFilename(const std::string &f)
 {
     std::string ret;
     ret.reserve(f.size()); // this will be the final size
+    if (realPathMap.getValue(f, &ret))
+      return ret;
 
     // Current subpath
     std::string subpath;
@@ -1982,6 +2010,7 @@ static std::string realFilename(const std::string &f)
             ret += subpath;
     }
 
+    realPathMap.addToCache(f, ret);
     return ret;
 }
 
@@ -2001,6 +2030,9 @@ static bool isAbsolutePath(const std::string &path)
 #endif
 
 namespace simplecpp {
+
+    static ThreadSafeCache<std::string, std::string> simplifyMap;
+
     /**
      * perform path simplifications for . and ..
      */
@@ -2008,6 +2040,10 @@ namespace simplecpp {
     {
         if (path.empty())
             return path;
+
+        std::string cachedPath;
+        if (simplifyMap.getValue(path, &cachedPath))
+          return cachedPath;
 
         std::string::size_type pos;
 
@@ -2065,8 +2101,10 @@ namespace simplecpp {
 
         if (unc)
             path = '/' + path;
-
-        return path.find_first_of("*?") == std::string::npos ? realFilename(path) : path;
+        
+        std::string result = path.find_first_of("*?") == std::string::npos ? realFilename(path) : path;
+        simplifyMap.addToCache(path, result);
+        return result;
     }
 }
 
@@ -2169,23 +2207,42 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
     return tok;
 }
 
+static ThreadSafeCache<std::string, bool> fileExistsCache;
+
+static std::string _openHeader(std::ifstream &f, const std::string &simplePath)
+{
+    bool fileExists;
+    bool cached = fileExistsCache.getValue(simplePath, &fileExists);
+    if (cached && !fileExists)
+      return "";
+
+    f.open(simplePath.c_str());
+    if (!cached)
+      fileExistsCache.addToCache(simplePath, f.is_open());
+
+    return f.is_open() ? simplePath : "";
+}
+
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
     if (isAbsolutePath(header)) {
-        f.open(header.c_str());
-        return f.is_open() ? simplecpp::simplifyPath(header) : "";
+        std::string simplePath = simplecpp::simplifyPath(header);
+        return _openHeader(f, simplePath);
     }
 
     if (!systemheader) {
         if (sourcefile.find_first_of("\\/") != std::string::npos) {
             const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
-            f.open(s.c_str());
-            if (f.is_open())
-                return simplecpp::simplifyPath(s);
+            std::string simplePath = simplecpp::simplifyPath(s);
+            std::string result = _openHeader(f, simplePath);
+            if (!result.empty())
+              return result;
         } else {
-            f.open(header.c_str());
-            if (f.is_open())
-                return simplecpp::simplifyPath(header);
+
+            std::string simplePath = simplecpp::simplifyPath(header);
+            std::string result = _openHeader(f, simplePath);
+            if (!result.empty())
+              return result;
         }
     }
 
@@ -2194,9 +2251,12 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
         if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
             s += '/';
         s += header;
-        f.open(s.c_str());
-        if (f.is_open())
-            return simplecpp::simplifyPath(s);
+
+        std::string simplePath = simplecpp::simplifyPath(s);
+
+        std::string result = _openHeader(f, simplePath);
+        if (!result.empty())
+          return result;
     }
 
     return "";
