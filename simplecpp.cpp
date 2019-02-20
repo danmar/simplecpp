@@ -1843,23 +1843,22 @@ namespace simplecpp {
 class ScopedLock
 {
 public:
-    explicit ScopedLock(HANDLE mutex)
-        : m_mutex(mutex)
+    explicit ScopedLock(CRITICAL_SECTION& criticalSection)
+        : m_criticalSection(criticalSection)
     {
-        if (WaitForSingleObject(m_mutex, INFINITE) == WAIT_FAILED)
-            throw std::runtime_error("cannot lock the mutex");
+        EnterCriticalSection(&m_criticalSection);
     }
 
     ~ScopedLock()
     {
-        ReleaseMutex(m_mutex);
+        LeaveCriticalSection(&m_criticalSection);
     }
 
 private:
     ScopedLock& operator=(const ScopedLock&);
     ScopedLock(const ScopedLock&);
 
-    HANDLE m_mutex;
+    CRITICAL_SECTION& m_criticalSection;
 };
 
 class RealFileNameMap
@@ -1867,22 +1866,17 @@ class RealFileNameMap
 public:
     RealFileNameMap()
     {
-        m_mutex = CreateMutex(NULL, FALSE, NULL);
-
-        if (!m_mutex)
-        {
-            throw std::runtime_error("cannot create the mutex handle");
-        }
+        InitializeCriticalSection(&m_criticalSection);
     }
 
     ~RealFileNameMap()
     {
-        CloseHandle(m_mutex);
+        DeleteCriticalSection(&m_criticalSection);
     }
 
     bool getRealPathFromCache(const std::string& path, std::string* returnPath)
     {
-        ScopedLock lock(m_mutex);
+        ScopedLock lock(m_criticalSection);
 
         std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
         if (it != m_fileMap.end())
@@ -1895,12 +1889,13 @@ public:
 
     void addToCache(const std::string& path, const std::string& actualPath)
     {
-        ScopedLock lock(m_mutex);
+        ScopedLock lock(m_criticalSection);
         m_fileMap[path] = actualPath;
     }
-
+    
+private:
     std::map<std::string, std::string> m_fileMap;
-    HANDLE m_mutex;
+    CRITICAL_SECTION m_criticalSection;
 };
 
 static RealFileNameMap realFileNameMap;
