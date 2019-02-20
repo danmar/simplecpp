@@ -1744,11 +1744,17 @@ namespace simplecpp {
                 throw invalidHashHash(tok->location, name());
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
                 throw invalidHashHash(tok->location, name());
-            if (!A->name && !A->number && A->op != ',' && !A->str().empty())
+
+            bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
+            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual)
                 throw invalidHashHash(tok->location, name());
 
             Token *B = tok->next->next;
-            if (!B->name && !B->number && B->op && B->op != '#')
+            if (!B->name && !B->number && B->op && !B->isOneOf("#="))
+                throw invalidHashHash(tok->location, name());
+
+            if ((canBeConcatenatedWithEqual && B->op != '=') ||
+                (!canBeConcatenatedWithEqual && B->op == '='))
                 throw invalidHashHash(tok->location, name());
 
             std::string strAB;
