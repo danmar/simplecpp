@@ -1938,6 +1938,8 @@ static std::string realFilename(const std::string &f)
 {
     std::string ret;
     ret.reserve(f.size()); // this will be the final size
+    if (realFileNameMap.getRealPathFromCache(f, &ret))
+      return ret;
 
     // Current subpath
     std::string subpath;
@@ -1977,6 +1979,7 @@ static std::string realFilename(const std::string &f)
             ret += subpath;
     }
 
+    realFileNameMap.addToCache(f, ret);
     return ret;
 }
 
