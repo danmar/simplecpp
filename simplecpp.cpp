@@ -329,13 +329,14 @@ static void ungetChar(std::istream &istr, unsigned int bom)
 
 static unsigned short getAndSkipBOM(std::istream &istr)
 {
-    const unsigned char ch1 = istr.peek();
+    const int ch1 = istr.peek();
 
     // The UTF-16 BOM is 0xfffe or 0xfeff.
     if (ch1 >= 0xfe) {
         unsigned short bom = ((unsigned char)istr.get() << 8);
         if (istr.peek() >= 0xfe)
             return bom | (unsigned char)istr.get();
+        istr.unget();
         return 0;
     }
 
