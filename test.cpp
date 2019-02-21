@@ -644,6 +644,54 @@ static void hashhash8()
     ASSERT_EQUALS("\nxy = 123 ;", preprocess(code));
 }
 
+static void hashhash9()
+{
+    const char * code = "#define ADD_OPERATOR(OP) void operator OP ## = (void) { x = x OP 1; }\n"
+                        "ADD_OPERATOR(+);\n"
+                        "ADD_OPERATOR(-);\n"
+                        "ADD_OPERATOR(*);\n"
+                        "ADD_OPERATOR(/);\n"
+                        "ADD_OPERATOR(%);\n"
+                        "ADD_OPERATOR(&);\n"
+                        "ADD_OPERATOR(|);\n"
+                        "ADD_OPERATOR(^);\n"
+                        "ADD_OPERATOR(<<);\n"
+                        "ADD_OPERATOR(>>);\n";
+    const char expected[] = "\n"
+                            "void operator += ( void ) { x = x + 1 ; } ;\n"
+                            "void operator -= ( void ) { x = x - 1 ; } ;\n"
+                            "void operator *= ( void ) { x = x * 1 ; } ;\n"
+                            "void operator /= ( void ) { x = x / 1 ; } ;\n"
+                            "void operator %= ( void ) { x = x % 1 ; } ;\n"
+                            "void operator &= ( void ) { x = x & 1 ; } ;\n"
+                            "void operator |= ( void ) { x = x | 1 ; } ;\n"
+                            "void operator ^= ( void ) { x = x ^ 1 ; } ;\n"
+                            "void operator <<= ( void ) { x = x << 1 ; } ;\n"
+                            "void operator >>= ( void ) { x = x >> 1 ; } ;";
+    ASSERT_EQUALS(expected, preprocess(code));
+
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    code = "#define A +##x\n"
+           "A";
+    outputList.clear();
+    preprocess(code, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+
+    code = "#define A 2##=\n"
+           "A";
+    outputList.clear();
+    preprocess(code, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+
+    code = "#define A <<##x\n"
+           "A";
+    outputList.clear();
+    preprocess(code, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -1636,6 +1684,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
     TEST_CASE(hashhash8);
+    TEST_CASE(hashhash9);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 
