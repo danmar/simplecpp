@@ -1847,17 +1847,14 @@ namespace simplecpp {
 
 #ifdef SIMPLECPP_WINDOWS
 
-class ScopedLock
-{
+class ScopedLock {
 public:
     explicit ScopedLock(CRITICAL_SECTION& criticalSection)
-        : m_criticalSection(criticalSection)
-    {
+        : m_criticalSection(criticalSection) {
         EnterCriticalSection(&m_criticalSection);
     }
 
-    ~ScopedLock()
-    {
+    ~ScopedLock() {
         LeaveCriticalSection(&m_criticalSection);
     }
 
@@ -1868,38 +1865,32 @@ private:
     CRITICAL_SECTION& m_criticalSection;
 };
 
-class RealFileNameMap
-{
+class RealFileNameMap {
 public:
-    RealFileNameMap()
-    {
+    RealFileNameMap() {
         InitializeCriticalSection(&m_criticalSection);
     }
 
-    ~RealFileNameMap()
-    {
+    ~RealFileNameMap() {
         DeleteCriticalSection(&m_criticalSection);
     }
 
-    bool getRealPathFromCache(const std::string& path, std::string* returnPath)
-    {
+    bool getRealPathFromCache(const std::string& path, std::string* returnPath) {
         ScopedLock lock(m_criticalSection);
 
         std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
-        if (it != m_fileMap.end())
-        {
+        if (it != m_fileMap.end()) {
             *returnPath = it->second;
             return true;
         }
         return false;
     }
 
-    void addToCache(const std::string& path, const std::string& actualPath)
-    {
+    void addToCache(const std::string& path, const std::string& actualPath) {
         ScopedLock lock(m_criticalSection);
         m_fileMap[path] = actualPath;
     }
-    
+
 private:
     std::map<std::string, std::string> m_fileMap;
     CRITICAL_SECTION m_criticalSection;
@@ -1926,8 +1917,7 @@ static bool realFileName(const std::string &f, std::string *result)
         return false;
 
     // Lookup filename or foldername on file system
-    if (!realFileNameMap.getRealPathFromCache(f, result))
-    {
+    if (!realFileNameMap.getRealPathFromCache(f, result)) {
         WIN32_FIND_DATAA FindFileData;
         HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 
@@ -1946,7 +1936,7 @@ static std::string realFilename(const std::string &f)
     std::string ret;
     ret.reserve(f.size()); // this will be the final size
     if (realFileNameMap.getRealPathFromCache(f, &ret))
-      return ret;
+        return ret;
 
     // Current subpath
     std::string subpath;
