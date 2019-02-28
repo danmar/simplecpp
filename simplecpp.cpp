@@ -2205,8 +2205,7 @@ static std::string _openHeader(std::ifstream &f, const std::string &path)
     f.open(simplePath.c_str());
     if (f.is_open())
         return simplePath;
-    else
-    {
+    else {
         nonExistingFilesCache.add(simplePath);
         return "";
     }
@@ -2243,7 +2242,7 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
         std::string simplePath = _openHeader(f, s);
         if (!simplePath.empty())
-          return simplePath;
+            return simplePath;
     }
 
     return "";
