@@ -2164,23 +2164,74 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
     return tok;
 }
 
+#ifdef SIMPLECPP_WINDOWS
+
+class NonExistingFilesCache {
+public:
+    NonExistingFilesCache() {
+        InitializeCriticalSection(&m_criticalSection);
+    }
+
+    ~NonExistingFilesCache() {
+        DeleteCriticalSection(&m_criticalSection);
+    }
+
+    bool contains(const std::string& path) {
+        ScopedLock lock(m_criticalSection);
+        return (m_pathSet.find(path) != m_pathSet.end());
+    }
+
+    void add(const std::string& path) {
+        ScopedLock lock(m_criticalSection);
+        m_pathSet.insert(path);
+    }
+
+private:
+    std::set<std::string> m_pathSet;
+    CRITICAL_SECTION m_criticalSection;
+};
+
+static NonExistingFilesCache nonExistingFilesCache;
+
+#endif
+
+static std::string _openHeader(std::ifstream &f, const std::string &path)
+{
+#ifdef SIMPLECPP_WINDOWS
+    std::string simplePath = simplecpp::simplifyPath(path);
+    if (nonExistingFilesCache.contains(simplePath))
+        return "";  // file is known not to exist, skip expensive file open call
+
+    f.open(simplePath.c_str());
+    if (f.is_open())
+        return simplePath;
+    else
+    {
+        nonExistingFilesCache.add(simplePath);
+        return "";
+    }
+#else
+    f.open(path.c_str());
+    return f.is_open() ? simplecpp::simplifyPath(path) : "";
+#endif
+}
+
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
     if (isAbsolutePath(header)) {
-        f.open(header.c_str());
-        return f.is_open() ? simplecpp::simplifyPath(header) : "";
+        return _openHeader(f, header);
     }
 
     if (!systemheader) {
         if (sourcefile.find_first_of("\\/") != std::string::npos) {
             const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
-            f.open(s.c_str());
-            if (f.is_open())
-                return simplecpp::simplifyPath(s);
+            std::string simplePath = _openHeader(f, s);
+            if (!simplePath.empty())
+                return simplePath;
         } else {
-            f.open(header.c_str());
-            if (f.is_open())
-                return simplecpp::simplifyPath(header);
+            std::string simplePath = _openHeader(f, header);
+            if (!simplePath.empty())
+                return simplePath;
         }
     }
 
@@ -2189,9 +2240,10 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
         if (!s.empty() && s[s.size()-1U]!='/' && s[s.size()-1U]!='\\')
             s += '/';
         s += header;
-        f.open(s.c_str());
-        if (f.is_open())
-            return simplecpp::simplifyPath(s);
+
+        std::string simplePath = _openHeader(f, s);
+        if (!simplePath.empty())
+          return simplePath;
     }
 
     return "";
