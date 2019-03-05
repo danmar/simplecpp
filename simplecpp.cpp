@@ -1994,9 +1994,12 @@ static std::string realFilename(const std::string &f)
                 continue;
             }
 
+            bool isDriveSpecification = 
+                (pos == 2 && subpath.size() == 2 && std::isalpha(subpath[0]) && subpath[1] == ':');
+
             // Append real filename (proper case)
             std::string f2;
-            if (realFileName(f.substr(0,pos),&f2))
+            if (!isDriveSpecification && realFileName(f.substr(0, pos), &f2))
                 ret += f2;
             else
                 ret += subpath;
