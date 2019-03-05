@@ -1845,6 +1845,39 @@ namespace simplecpp {
     };
 }
 
+namespace simplecpp {
+
+    std::string convertCygwinToWindowsPath(const std::string &cygwinPath)
+    {
+        std::string windowsPath;
+
+        std::string::size_type pos = 0;
+        if (cygwinPath.size() >= 11 && startsWith(cygwinPath, "/cygdrive/")) {
+            unsigned char driveLetter = cygwinPath[10];
+            if (std::isalpha(driveLetter)) {
+                if (cygwinPath.size() == 11) {
+                    windowsPath = toupper(driveLetter);
+                    windowsPath += ":\\";   // volume root directory
+                    pos = 11;
+                } else if (cygwinPath[11] == '/') {
+                    windowsPath = toupper(driveLetter);
+                    windowsPath += ":";
+                    pos = 11;
+                }
+            }
+        }
+
+        for (; pos < cygwinPath.size(); ++pos) {
+            unsigned char c = cygwinPath[pos];
+            if (c == '/')
+                c = '\\';
+            windowsPath += c;
+        }
+
+        return windowsPath;
+    }
+}
+
 #ifdef SIMPLECPP_WINDOWS
 
 class ScopedLock {
@@ -1875,7 +1908,7 @@ public:
         DeleteCriticalSection(&m_criticalSection);
     }
 
-    bool getRealPathFromCache(const std::string& path, std::string* returnPath) {
+    bool getCacheEntry(const std::string& path, std::string* returnPath) {
         ScopedLock lock(m_criticalSection);
 
         std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
@@ -1902,9 +1935,9 @@ static bool realFileName(const std::string &f, std::string *result)
 {
     // are there alpha characters in last subpath?
     bool alpha = false;
-    for (std::string::size_type pos = 1; pos < f.size(); ++pos) {
+    for (std::string::size_type pos = 1; pos <= f.size(); ++pos) {
         unsigned char c = f[f.size() - pos];
-        if (c=='/' || c=='\\')
+        if (c == '/' || c == '\\')
             break;
         if (std::isalpha(c)) {
             alpha = true;
@@ -1917,9 +1950,16 @@ static bool realFileName(const std::string &f, std::string *result)
         return false;
 
     // Lookup filename or foldername on file system
-    if (!realFileNameMap.getRealPathFromCache(f, result)) {
+    if (!realFileNameMap.getCacheEntry(f, result)) {
+
         WIN32_FIND_DATAA FindFileData;
+
+#ifdef __CYGWIN__
+        std::string fConverted = simplecpp::convertCygwinToWindowsPath(f);
+        HANDLE hFind = FindFirstFileExA(fConverted.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+#else
         HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+#endif
 
         if (INVALID_HANDLE_VALUE == hFind)
             return false;
@@ -1930,12 +1970,14 @@ static bool realFileName(const std::string &f, std::string *result)
     return true;
 }
 
+static RealFileNameMap realFilePathMap;
+
 /** Change case in given path to match filesystem */
 static std::string realFilename(const std::string &f)
 {
     std::string ret;
     ret.reserve(f.size()); // this will be the final size
-    if (realFileNameMap.getRealPathFromCache(f, &ret))
+    if (realFilePathMap.getCacheEntry(f, &ret))
         return ret;
 
     // Current subpath
@@ -1976,7 +2018,7 @@ static std::string realFilename(const std::string &f)
             ret += subpath;
     }
 
-    realFileNameMap.addToCache(f, ret);
+    realFilePathMap.addToCache(f, ret);
     return ret;
 }
 

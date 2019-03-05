@@ -1598,6 +1598,24 @@ static void simplifyPath_New()
     ASSERT_EQUALS("/", simplecpp::simplifyPath("\\"));
 }
 
+static void convertCygwinPath()
+{
+    // absolute paths
+    ASSERT_EQUALS("X:\\", simplecpp::convertCygwinToWindowsPath("/cygdrive/x"));     // initial backslash
+    ASSERT_EQUALS("X:\\", simplecpp::convertCygwinToWindowsPath("/cygdrive/x/"));
+    ASSERT_EQUALS("X:\\dir", simplecpp::convertCygwinToWindowsPath("/cygdrive/x/dir"));
+    ASSERT_EQUALS("X:\\dir\\file", simplecpp::convertCygwinToWindowsPath("/cygdrive/x/dir/file"));
+
+    // relative paths
+    ASSERT_EQUALS("file", simplecpp::convertCygwinToWindowsPath("file"));
+    ASSERT_EQUALS("dir\\file", simplecpp::convertCygwinToWindowsPath("dir/file"));
+    ASSERT_EQUALS("..\\dir\\file", simplecpp::convertCygwinToWindowsPath("../dir/file"));
+
+    // incorrect Cygwin paths
+    ASSERT_EQUALS("\\cygdrive", simplecpp::convertCygwinToWindowsPath("/cygdrive"));
+    ASSERT_EQUALS("\\cygdrive\\", simplecpp::convertCygwinToWindowsPath("/cygdrive/"));
+}
+
 static void preprocessSizeOf()
 {
     simplecpp::OutputList outputList;
@@ -1763,6 +1781,8 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath);
     TEST_CASE(simplifyPath_cppcheck);
     TEST_CASE(simplifyPath_New);
+
+    TEST_CASE(convertCygwinPath);
 
     TEST_CASE(preprocessSizeOf);
 
