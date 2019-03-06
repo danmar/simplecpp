@@ -312,6 +312,9 @@ namespace simplecpp {
 
     /** Simplify path */
     SIMPLECPP_LIB std::string simplifyPath(std::string path);
+
+    /** Convert Cygwin path to Windows path */
+    SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
 }
 
 #endif
