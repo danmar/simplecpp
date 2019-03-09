@@ -1383,6 +1383,18 @@ static void readfile_char()
     ASSERT_EQUALS("A = u8 'c'", readfile("A = u8 'c'"));
 }
 
+static void readfile_char_error()
+{
+    simplecpp::OutputList outputList;
+
+    readfile("A = L's", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\'). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = 's\n'", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\'). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
+}
+
 static void readfile_string()
 {
     ASSERT_EQUALS("\"\"", readfile("\"\""));
@@ -1411,6 +1423,43 @@ static void readfile_string()
     ASSERT_EQUALS("A = u\"abc\"", readfile("A = uR\"(abc)\""));
     ASSERT_EQUALS("A = U\"abc\"", readfile("A = UR\"(abc)\""));
     ASSERT_EQUALS("A = u8\"abc\"", readfile("A = u8R\"(abc)\""));
+}
+
+static void readfile_string_error()
+{
+    simplecpp::OutputList outputList;
+
+    readfile("A = \"abs", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = u8\"abs\n\"", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = R\"as\n(abc)as\"", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Invalid newline in raw string delimiter.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = u8R\"as\n(abc)as\"", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Invalid newline in raw string delimiter.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = R\"as(abc)a\"", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Raw string missing terminating delimiter.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("A = LR\"as(abc)a\"", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,Raw string missing terminating delimiter.\n", toString(outputList));
+    outputList.clear();
+
+    readfile("#define A \"abs", -1, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
+    outputList.clear();
+
+    // Don't warn for a multiline define
+    readfile("#define A \"abs\\\n\"", -1, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
 }
 
 static void readfile_cpp14_number()
@@ -1824,7 +1873,9 @@ int main(int argc, char **argv)
 
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_char);
+    TEST_CASE(readfile_char_error);
     TEST_CASE(readfile_string);
+    TEST_CASE(readfile_string_error);
     TEST_CASE(readfile_cpp14_number);
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);

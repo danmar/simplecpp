@@ -569,15 +569,29 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     delim += ch;
                     ch = readChar(istr,bom);
                 }
-                if (!istr.good() || ch == '\n')
-                    // TODO report
+                if (!istr.good() || ch == '\n') {
+                    if (outputList) {
+                        Output err(files);
+                        err.type = Output::SYNTAX_ERROR;
+                        err.location = location;
+                        err.msg = "Invalid newline in raw string delimiter.";
+                        outputList->push_back(err);
+                    }
                     return;
+                }
                 const std::string endOfRawString(')' + delim + currentToken);
                 while (istr.good() && !(endsWith(currentToken, endOfRawString) && currentToken.size() > 1))
                     currentToken += readChar(istr,bom);
-                if (!endsWith(currentToken, endOfRawString))
-                    // TODO report
+                if (!endsWith(currentToken, endOfRawString)) {
+                    if (outputList) {
+                        Output err(files);
+                        err.type = Output::SYNTAX_ERROR;
+                        err.location = location;
+                        err.msg = "Raw string missing terminating delimiter.";
+                        outputList->push_back(err);
+                    }
                     return;
+                }
                 currentToken.erase(currentToken.size() - endOfRawString.size(), endOfRawString.size() - 1U);
                 currentToken = escapeString(currentToken);
                 currentToken.insert(0, prefix);
@@ -593,7 +607,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
             currentToken = readUntil(istr,location,ch,ch,outputList,bom);
             if (currentToken.size() < 2U)
-                // TODO report
+                // Error is reported by readUntil()
                 return;
 
             std::string s = currentToken;
