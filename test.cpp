@@ -1162,6 +1162,22 @@ static void multiline7()   // multiline string in macro
                   "A ( 1 )", rawtokens.stringify());
 }
 
+static void multiline8()   // multiline prefix string in macro
+{
+    const char code[] = "#define A L\"a\\\n"
+                        " b\"\n"
+                        "A;";
+    ASSERT_EQUALS("\n\nL\"a b\" ;", preprocess(code));
+}
+
+static void multiline9()   // multiline prefix string in macro
+{
+    const char code[] = "#define A u8\"a\\\n"
+                        " b\"\n"
+                        "A;";
+    ASSERT_EQUALS("\n\nu8\"a b\" ;", preprocess(code));
+}
+
 static void nullDirective1()
 {
     const char code[] = "#\n"
@@ -1803,6 +1819,8 @@ int main(int argc, char **argv)
     TEST_CASE(multiline5); // column
     TEST_CASE(multiline6); // multiline string in macro
     TEST_CASE(multiline7); // multiline string in macro
+    TEST_CASE(multiline8); // multiline prefix string in macro
+    TEST_CASE(multiline9); // multiline prefix string in macro
 
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_char);
