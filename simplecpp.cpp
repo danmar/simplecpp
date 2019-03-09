@@ -480,7 +480,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 prev = ch;
                 ch = readChar(istr, bom);
             }
-            istr.unget();
+            ungetChar(istr, bom);
             push_back(new Token(currentToken, location));
             location.adjust(currentToken);
             continue;
@@ -512,7 +512,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 ++multiline;
                 currentToken.erase(currentToken.size() - 1U);
             } else {
-                istr.unget();
+                ungetChar(istr, bom);
             }
         }
 
@@ -578,7 +578,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 continue;
             }
 
-            currentToken = readUntil(istr,location,ch,ch,outputList);
+            currentToken = readUntil(istr,location,ch,ch,outputList,bom);
             if (currentToken.size() < 2U)
                 // TODO report
                 return;
@@ -607,7 +607,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         }
 
         if (currentToken == "<" && lastLine() == "# include") {
-            currentToken = readUntil(istr, location, '<', '>', outputList);
+            currentToken = readUntil(istr, location, '<', '>', outputList, bom);
             if (currentToken.size() < 2U)
                 return;
         }
@@ -1045,7 +1045,7 @@ void simplecpp::TokenList::removeComments()
     }
 }
 
-std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList)
+std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList, unsigned int bom)
 {
     std::string ret;
     ret += start;
@@ -1053,7 +1053,7 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
     bool backslash = false;
     char ch = 0;
     while (ch != end && ch != '\r' && ch != '\n' && istr.good()) {
-        ch = (unsigned char)istr.get();
+        ch = readChar(istr, bom);
         if (backslash && ch == '\n') {
             ch = 0;
             backslash = false;
@@ -1062,7 +1062,7 @@ std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &
         backslash = false;
         ret += ch;
         if (ch == '\\') {
-            const char next = (unsigned char)istr.get();
+            const char next = readChar(istr, bom);
             if (next == '\r' || next == '\n') {
                 ret.erase(ret.size()-1U);
                 backslash = (next == '\r');

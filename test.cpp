@@ -534,6 +534,30 @@ static void error3()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void error4()
+{
+    // "#error x\n1"
+    std::istringstream istr(std::string("\xFE\xFF\x00\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x31", 22));
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,#error,#error x\n", toString(outputList));
+}
+
+static void error5()
+{
+    // "#error x\n1"
+    std::istringstream istr(std::string("\xFF\xFE\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x78\x00\x31\x00", 22));
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,#error,#error x\n", toString(outputList));
+}
+
 static void garbage()
 {
     const simplecpp::DUI dui;
@@ -1515,6 +1539,10 @@ static void unicode()
 {
     ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
     ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
+    ASSERT_EQUALS("//\n1", readfile("\xFE\xFF\x00\x2f\x00\x2f\x00\x0a\x00\x31", 10));
+    ASSERT_EQUALS("//\n1", readfile("\xFF\xFE\x2f\x00\x2f\x00\x0a\x00\x31\x00", 10));
+    ASSERT_EQUALS("\"a\"", readfile("\xFE\xFF\x00\x22\x00\x61\x00\x22", 8));
+    ASSERT_EQUALS("\"a\"", readfile("\xFF\xFE\x22\x00\x61\x00\x22\x00", 8));
     ASSERT_EQUALS("\n//1", readfile("\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00",16));
 }
 
@@ -1691,6 +1719,8 @@ int main(int argc, char **argv)
     TEST_CASE(error1);
     TEST_CASE(error2);
     TEST_CASE(error3);
+    TEST_CASE(error4);
+    TEST_CASE(error5);
 
     TEST_CASE(garbage);
     TEST_CASE(garbage_endif);
