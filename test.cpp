@@ -1354,17 +1354,36 @@ static void readfile_nullbyte()
     ASSERT_EQUALS(true, outputList.empty()); // should warning be written?
 }
 
+static void readfile_char()
+{
+    ASSERT_EQUALS("'c'", readfile("'c'"));
+    ASSERT_EQUALS("L'c'", readfile("L'c'"));
+    ASSERT_EQUALS("L 'c'", readfile("L 'c'"));
+    ASSERT_EQUALS("A = 'c'", readfile("A = 'c'"));
+    ASSERT_EQUALS("A = L'c'", readfile("A = L'c'"));
+    ASSERT_EQUALS("A = u'c'", readfile("A = u'c'"));
+    ASSERT_EQUALS("A = U'c'", readfile("A = U'c'"));
+    ASSERT_EQUALS("A = u8'c'", readfile("A = u8'c'"));
+    ASSERT_EQUALS("A = u8 'c'", readfile("A = u8 'c'"));
+}
+
 static void readfile_string()
 {
-    const char code[] = "A = \"abc\'def\"";
-    ASSERT_EQUALS("A = \"abc\'def\"", readfile(code));
+    ASSERT_EQUALS("\"\"", readfile("\"\""));
+    ASSERT_EQUALS("\"a\"", readfile("\"a\""));
+    ASSERT_EQUALS("u\"a\"", readfile("u\"a\""));
+    ASSERT_EQUALS("u \"a\"", readfile("u \"a\""));
+    ASSERT_EQUALS("A = \"\"", readfile("A = \"\""));
+    ASSERT_EQUALS("A = \"abc\'def\"", readfile("A = \"abc\'def\""));
     ASSERT_EQUALS("( \"\\\\\\\\\" )", readfile("(\"\\\\\\\\\")"));
     ASSERT_EQUALS("x = \"a  b\"\n;", readfile("x=\"a\\\n  b\";"));
     ASSERT_EQUALS("x = \"a  b\"\n;", readfile("x=\"a\\\r\n  b\";"));
-}
 
-static void readfile_rawstring()
-{
+    ASSERT_EQUALS("A = u8\"a\"", readfile("A = u8\"a\""));
+    ASSERT_EQUALS("A = u\"a\"", readfile("A = u\"a\""));
+    ASSERT_EQUALS("A = U\"a\"", readfile("A = U\"a\""));
+    ASSERT_EQUALS("A = L\"a\"", readfile("A = L\"a\""));
+    ASSERT_EQUALS("A = L \"a\"", readfile("A = L \"a\""));
     ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"(abc\\\\def)\""));
     ASSERT_EQUALS("A = \"abc\\\\\\\\def\"", readfile("A = R\"x(abc\\\\def)x\""));
     ASSERT_EQUALS("A = \"\"", readfile("A = R\"()\""));
@@ -1372,10 +1391,10 @@ static void readfile_rawstring()
     ASSERT_EQUALS("A = \"\\\"\"", readfile("A = R\"(\")\""));
     ASSERT_EQUALS("A = \"abc\"", readfile("A = R\"\"\"(abc)\"\"\""));
     ASSERT_EQUALS("A = \"a\nb\nc\";", readfile("A = R\"foo(a\nb\nc)foo\";"));
-    ASSERT_EQUALS("A = L \"abc\"", readfile("A = LR\"(abc)\""));
-    ASSERT_EQUALS("A = u \"abc\"", readfile("A = uR\"(abc)\""));
-    ASSERT_EQUALS("A = U \"abc\"", readfile("A = UR\"(abc)\""));
-    ASSERT_EQUALS("A = u8 \"abc\"", readfile("A = u8R\"(abc)\""));
+    ASSERT_EQUALS("A = L\"abc\"", readfile("A = LR\"(abc)\""));
+    ASSERT_EQUALS("A = u\"abc\"", readfile("A = uR\"(abc)\""));
+    ASSERT_EQUALS("A = U\"abc\"", readfile("A = UR\"(abc)\""));
+    ASSERT_EQUALS("A = u8\"abc\"", readfile("A = u8R\"(abc)\""));
 }
 
 static void readfile_cpp14_number()
@@ -1786,8 +1805,8 @@ int main(int argc, char **argv)
     TEST_CASE(multiline7); // multiline string in macro
 
     TEST_CASE(readfile_nullbyte);
+    TEST_CASE(readfile_char);
     TEST_CASE(readfile_string);
-    TEST_CASE(readfile_rawstring);
     TEST_CASE(readfile_cpp14_number);
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);
