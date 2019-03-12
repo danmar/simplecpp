@@ -1381,6 +1381,13 @@ static void readfile_char()
     ASSERT_EQUALS("A = U'c'", readfile("A = U'c'"));
     ASSERT_EQUALS("A = u8'c'", readfile("A = u8'c'"));
     ASSERT_EQUALS("A = u8 'c'", readfile("A = u8 'c'"));
+
+    // The character \'
+    ASSERT_EQUALS("'\\''", readfile("'\\\''"));
+    ASSERT_EQUALS("L'\\''", readfile("L'\\\''"));
+    ASSERT_EQUALS("u'\\''", readfile("u'\\\''"));
+    ASSERT_EQUALS("U'\\''", readfile("U'\\\''"));
+    ASSERT_EQUALS("u8'\\''", readfile("u8'\\\''"));
 }
 
 static void readfile_char_error()
@@ -1423,6 +1430,18 @@ static void readfile_string()
     ASSERT_EQUALS("A = u\"abc\"", readfile("A = uR\"(abc)\""));
     ASSERT_EQUALS("A = U\"abc\"", readfile("A = UR\"(abc)\""));
     ASSERT_EQUALS("A = u8\"abc\"", readfile("A = u8R\"(abc)\""));
+
+    // Strings containing \"
+    ASSERT_EQUALS("\"\\\"\"", readfile("\"\\\"\""));
+    ASSERT_EQUALS("L\"\\\"\"", readfile("L\"\\\"\""));
+    ASSERT_EQUALS("u\"\\\"\"", readfile("u\"\\\"\""));
+    ASSERT_EQUALS("U\"\\\"\"", readfile("U\"\\\"\""));
+    ASSERT_EQUALS("u8\"\\\"\"", readfile("u8\"\\\"\""));
+    ASSERT_EQUALS("\"\\\"a\\\"\"", readfile("\"\\\"a\\\"\""));
+    ASSERT_EQUALS("L\"a\\\"\\\"\"", readfile("L\"a\\\"\\\"\""));
+    ASSERT_EQUALS("u\"a\\\"\\\"\"", readfile("u\"a\\\"\\\"\""));
+    ASSERT_EQUALS("U\"a\\\"\\\"\"", readfile("U\"a\\\"\\\"\""));
+    ASSERT_EQUALS("u8\"a\\\"\\\"\"", readfile("u8\"a\\\"\\\"\""));
 }
 
 static void readfile_string_error()
