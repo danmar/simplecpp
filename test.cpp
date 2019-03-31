@@ -1449,6 +1449,10 @@ static void readfile_string()
     ASSERT_EQUALS("u\"a\\\"\\\"\"", readfile("u\"a\\\"\\\"\""));
     ASSERT_EQUALS("U\"a\\\"\\\"\"", readfile("U\"a\\\"\\\"\""));
     ASSERT_EQUALS("u8\"a\\\"\\\"\"", readfile("u8\"a\\\"\\\"\""));
+
+    // Do not concatenate when prefix is not directly adjacent to "
+    ASSERT_EQUALS("u8 \"a b\"", readfile("u8 \"a b\""));
+    ASSERT_EQUALS("u8\n\"a b\"", readfile("u8\n  \"a b\""));
 }
 
 static void readfile_string_error()
