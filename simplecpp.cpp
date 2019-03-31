@@ -548,7 +548,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
         else if (ch == '\"' || ch == '\'') {
             std::string prefix;
             if (cback() && cback()->name && isStringLiteralPrefix(cback()->str()) &&
-                ((cback()->location.col + cback()->str().size()) == location.col)) {
+                ((cback()->location.col + cback()->str().size()) == location.col) &&
+                (cback()->location.line == location.line)) {
                 prefix = cback()->str();
             }
             // C++11 raw string literal
