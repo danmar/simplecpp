@@ -309,6 +309,13 @@ static void define9()
     ASSERT_EQUALS("\nab . AB . CD", preprocess(code));
 }
 
+static void define10()   // don't combine prefix with space in macro
+{
+    const char code[] = "#define A u8 \"a b\"\n"
+                        "A;";
+    ASSERT_EQUALS("\nu8 \"a b\" ;", preprocess(code));
+}
+
 static void define_invalid_1()
 {
     std::istringstream istr("#define  A(\nB\n");
@@ -1792,6 +1799,7 @@ int main(int argc, char **argv)
     TEST_CASE(define7);
     TEST_CASE(define8);
     TEST_CASE(define9);
+    TEST_CASE(define10);
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
