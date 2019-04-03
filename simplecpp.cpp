@@ -131,7 +131,7 @@ const std::string simplecpp::Location::emptyFileName;
 
 void simplecpp::Location::adjust(const std::string &str)
 {
-    if (str.find_first_of("\r\n") == std::string::npos) {
+    if (!strpbrk(str.c_str(), "\r\n")) {
         col += str.size();
         return;
     }
