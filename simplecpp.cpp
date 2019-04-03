@@ -524,7 +524,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
-                if (currentToken.size() >= 4U && endsWith(currentToken, "*/"))
+                static const std::string commentEnd("*/");
+                if (currentToken.size() >= 4U && endsWith(currentToken, commentEnd))
                     break;
                 ch = readChar(istr,bom);
             }
