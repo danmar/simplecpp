@@ -453,6 +453,8 @@ void simplecpp::TokenList::lineDirective(unsigned int fileIndex, unsigned int li
     }
 }
 
+static const std::string COMMENT_END("*/");
+
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -593,7 +595,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
-                if (currentToken.size() >= 4U && endsWith(currentToken, "*/"))
+                if (currentToken.size() >= 4U && endsWith(currentToken, COMMENT_END))
                     break;
                 ch = readChar(istr,bom);
             }
