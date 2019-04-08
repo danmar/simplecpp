@@ -390,6 +390,7 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
+static const std::string COMMENT_END("*/");
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -524,8 +525,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
-                static const std::string commentEnd("*/");
-                if (currentToken.size() >= 4U && endsWith(currentToken, commentEnd))
+                if (currentToken.size() >= 4U && endsWith(currentToken, COMMENT_END))
                     break;
                 ch = readChar(istr,bom);
             }
