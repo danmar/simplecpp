@@ -446,16 +446,23 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     location.fileIndex = fileIndex(cback()->str().substr(1U, cback()->str().size() - 2U));
                     location.line = 1U;
                 } else if (lastline == "# line %num%") {
-                    loc.push(location);
+                    const Location loc1 = location;
                     location.line = std::atol(cback()->str().c_str());
+                    if (location.line < loc1.line)
+                        location.line = loc1.line;
                 } else if (lastline == "# line %num% %str%") {
-                    loc.push(location);
+                    const Location loc1 = location;
                     location.fileIndex = fileIndex(cback()->str().substr(1U, cback()->str().size() - 2U));
                     location.line = std::atol(cback()->previous->str().c_str());
+                    if (loc1.fileIndex == location.fileIndex && location.line < loc1.line)
+                        location.line = loc1.line;
                 } else if (lastline == "# %num% %str%") {
+                    const Location loc1 = location;
                     loc.push(location);
                     location.fileIndex = fileIndex(cback()->str().substr(1U, cback()->str().size() - 2U));
                     location.line = std::atol(cback()->previous->str().c_str());
+                    if (loc1.fileIndex == location.fileIndex && location.line < loc1.line)
+                        location.line = loc1.line;
                 }
                 // #endfile
                 else if (lastline == "# endfile" && !loc.empty()) {
@@ -2017,7 +2024,7 @@ static std::string realFilename(const std::string &f)
                 continue;
             }
 
-            bool isDriveSpecification = 
+            bool isDriveSpecification =
                 (pos == 2 && subpath.size() == 2 && std::isalpha(subpath[0]) && subpath[1] == ':');
 
             // Append real filename (proper case)
