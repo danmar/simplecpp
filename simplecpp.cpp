@@ -200,6 +200,13 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(NULL), back
     *this = other;
 }
 
+#if __cplusplus >= 201103L
+simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(NULL), backToken(NULL), files(other.files)
+{
+    *this = std::move(other);
+}
+#endif
+
 simplecpp::TokenList::~TokenList()
 {
     clear();
@@ -215,6 +222,21 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(const TokenList &other)
     }
     return *this;
 }
+
+#if __cplusplus >= 201103L
+simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
+{
+    if (this != &other) {
+        clear();
+        backToken = other.backToken;
+        other.backToken = NULL;
+        frontToken = other.frontToken;
+        other.frontToken = NULL;
+        sizeOfType = std::move(other.sizeOfType);
+    }
+    return *this;
+}
+#endif
 
 void simplecpp::TokenList::clear()
 {
