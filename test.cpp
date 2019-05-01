@@ -1010,6 +1010,29 @@ static void location1()
     ASSERT_EQUALS("\n#line 3 \"main.c\"\nx", preprocess(code));
 }
 
+static void location2()
+{
+    const char *code;
+
+    code = "{ {\n"
+           "#line 40 \"abc.y\"\n"
+           "{\n"
+           "}\n"
+           "#line 42 \"abc.y\"\n"
+           "{\n"
+           "}\n"
+           "} }";
+
+    ASSERT_EQUALS("{ {\n"
+                  "#line 40 \"abc.y\"\n"
+                  "{\n"
+                  "}\n"
+                  "\n"
+                  "{\n"
+                  "}\n"
+                  "} }", preprocess(code));
+}
+
 static void missingHeader1()
 {
     const simplecpp::DUI dui;
@@ -1873,6 +1896,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifalt); // using "and", "or", etc
 
     TEST_CASE(location1);
+    TEST_CASE(location2);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
