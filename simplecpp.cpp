@@ -1126,7 +1126,7 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
         if (!ret.empty())
             ret.insert(0, 1, ' ');
         ret.insert(0, tok->str()[0] == '\"' ? std::string("%str%")
-               : tok->number ? std::string("%num%") : tok->str());
+                   : tok->number ? std::string("%num%") : tok->str());
         if (++count > maxsize)
             return "";
     }
@@ -2290,23 +2290,21 @@ static std::string _openHeader(std::ifstream &f, const std::string &path)
 #endif
 }
 
-static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
+static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header)
 {
     if (isAbsolutePath(header)) {
         return _openHeader(f, header);
     }
 
-    if (!systemheader) {
-        if (sourcefile.find_first_of("\\/") != std::string::npos) {
-            const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
-            std::string simplePath = _openHeader(f, s);
-            if (!simplePath.empty())
-                return simplePath;
-        } else {
-            std::string simplePath = _openHeader(f, header);
-            if (!simplePath.empty())
-                return simplePath;
-        }
+    if (sourcefile.find_first_of("\\/") != std::string::npos) {
+        const std::string s = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
+        const std::string simplePath = _openHeader(f, s);
+        if (!simplePath.empty())
+            return simplePath;
+    } else {
+        const std::string simplePath = _openHeader(f, header);
+        if (!simplePath.empty())
+            return simplePath;
     }
 
     for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
@@ -2415,7 +2413,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             continue;
 
         std::ifstream f;
-        const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
+        const std::string header2 = openHeader(f,dui,sourcefile,header);
         if (!f.is_open())
             continue;
 
@@ -2636,7 +2634,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 if (header2.empty()) {
                     // try to load file..
                     std::ifstream f;
-                    header2 = openHeader(f, dui, rawtok->location.file(), header, systemheader);
+                    header2 = openHeader(f, dui, rawtok->location.file(), header);
                     if (f.is_open()) {
                         TokenList *tokens = new TokenList(f, files, header2, outputList);
                         filedata[header2] = tokens;
