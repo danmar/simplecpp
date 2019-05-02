@@ -131,7 +131,7 @@ const std::string simplecpp::Location::emptyFileName;
 
 void simplecpp::Location::adjust(const std::string &str)
 {
-    if (str.find_first_of("\r\n") == std::string::npos) {
+    if (!strpbrk(str.c_str(), "\r\n")) {
         col += str.size();
         return;
     }
@@ -412,6 +412,7 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
+static const std::string COMMENT_END("*/");
 void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
@@ -553,7 +554,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
             ch = readChar(istr,bom);
             while (istr.good()) {
                 currentToken += ch;
-                if (currentToken.size() >= 4U && endsWith(currentToken, "*/"))
+                if (currentToken.size() >= 4U && endsWith(currentToken, COMMENT_END))
                     break;
                 ch = readChar(istr,bom);
             }
