@@ -1027,10 +1027,19 @@ static void location2()
                   "#line 40 \"abc.y\"\n"
                   "{\n"
                   "}\n"
-                  "\n"
                   "{\n"
                   "}\n"
                   "} }", preprocess(code));
+}
+
+static void location3()
+{
+    const char *code;
+    code = "#line 1 \"x\" \n"
+           "a\n"
+           "#line 1 \"x\" \n"
+           "b\n";
+    ASSERT_EQUALS("\n#line 1 \"x\"\na b", preprocess(code));
 }
 
 static void missingHeader1()
@@ -1897,6 +1906,7 @@ int main(int argc, char **argv)
 
     TEST_CASE(location1);
     TEST_CASE(location2);
+    TEST_CASE(location3);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);

@@ -265,6 +265,7 @@ namespace simplecpp {
         void constFoldQuestionOp(Token **tok1);
 
         std::string readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList, unsigned int bom);
+        void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
         std::string lastLine(int maxsize=100000) const;
 
