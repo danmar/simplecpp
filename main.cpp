@@ -32,7 +32,7 @@ int main(int argc, char **argv)
                 if (std::strncmp(arg, "-include=",9)==0)
                     dui.includes.push_back(arg+9);
                 break;
-            };
+            }
         } else {
             filename = arg;
         }

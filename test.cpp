@@ -1060,7 +1060,7 @@ static void missingHeader2()
     std::istringstream istr("#include \"foo.h\"\n"); // this file exists
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    filedata["foo.h"] = 0;
+    filedata["foo.h"] = NULL;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
