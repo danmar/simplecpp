@@ -4,7 +4,7 @@
 #include <vector>
 #include "simplecpp.h"
 
-int numberOfFailedAssertions = 0;
+static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 
