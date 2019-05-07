@@ -1152,7 +1152,7 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
         if (!ret.empty())
             ret.insert(0, 1, ' ');
         ret.insert(0, tok->str()[0] == '\"' ? std::string("%str%")
-               : tok->number ? std::string("%num%") : tok->str());
+                   : tok->number ? std::string("%num%") : tok->str());
         if (++count > maxsize)
             return "";
     }
