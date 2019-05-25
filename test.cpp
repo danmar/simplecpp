@@ -741,6 +741,31 @@ static void hashhash9()
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 }
 
+static void hashhash10() //Paste string constant, integer, real to user defined literal
+{
+    const char *code = "#define A(x) x##_y\n"
+                        "A(\"A\");\n"
+                        "A('A');\n"
+                        "A(1.0);\n"
+                        "A(1);";
+
+    const char expected[] = "\n\"A\"_y ;\n"
+                            "'A'_y ;\n"
+                            "1.0_y ;\n"
+                            "1_y ;";
+
+    ASSERT_EQUALS(expected, preprocess(code));
+
+    const simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    code = "#define A(x) x##123\n"
+           "A(\"A\");";
+    outputList.clear();
+    preprocess(code, dui, &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -1882,6 +1907,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
     TEST_CASE(hashhash8);
     TEST_CASE(hashhash9);
+    TEST_CASE(hashhash10);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 

@@ -1803,7 +1803,9 @@ namespace simplecpp {
                 throw invalidHashHash(tok->location, name());
 
             bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual)
+            bool isStringConstant = A->str().length() >= 2U && *A->str().begin() == '"' && *A->str().rbegin() == '"';
+            bool isCharConstant = A->str().length() == 3U && *A->str().begin() == '\'' && *A->str().rbegin() == '\'';
+            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !isStringConstant && !isCharConstant)
                 throw invalidHashHash(tok->location, name());
 
             Token *B = tok->next->next;
@@ -1812,6 +1814,9 @@ namespace simplecpp {
 
             if ((canBeConcatenatedWithEqual && B->op != '=') ||
                 (!canBeConcatenatedWithEqual && B->op == '='))
+                throw invalidHashHash(tok->location, name());
+
+            if ((isStringConstant || isCharConstant) && !B->name)
                 throw invalidHashHash(tok->location, name());
 
             std::string strAB;
