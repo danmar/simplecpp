@@ -2484,26 +2484,26 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage)
 {
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
-    sizeOfType.insert(std::pair<std::string, std::size_t>("char", sizeof(char)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("short", sizeof(short)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("short int", sizeOfType["short"]));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("int", sizeof(int)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long", sizeof(long)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long int", sizeOfType["long"]));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long long", sizeof(long long)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("float", sizeof(float)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("double", sizeof(double)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long double", sizeof(long double)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("char *", sizeof(char *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("short *", sizeof(short *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("short int *", sizeOfType["short *"]));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("int *", sizeof(int *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long *", sizeof(long *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long int *", sizeOfType["long *"]));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long long *", sizeof(long long *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("float *", sizeof(float *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("double *", sizeof(double *)));
-    sizeOfType.insert(std::pair<std::string, std::size_t>("long double *", sizeof(long double *)));
+    sizeOfType.insert(std::make_pair("char", sizeof(char)));
+    sizeOfType.insert(std::make_pair("short", sizeof(short)));
+    sizeOfType.insert(std::make_pair("short int", sizeOfType["short"]));
+    sizeOfType.insert(std::make_pair("int", sizeof(int)));
+    sizeOfType.insert(std::make_pair("long", sizeof(long)));
+    sizeOfType.insert(std::make_pair("long int", sizeOfType["long"]));
+    sizeOfType.insert(std::make_pair("long long", sizeof(long long)));
+    sizeOfType.insert(std::make_pair("float", sizeof(float)));
+    sizeOfType.insert(std::make_pair("double", sizeof(double)));
+    sizeOfType.insert(std::make_pair("long double", sizeof(long double)));
+    sizeOfType.insert(std::make_pair("char *", sizeof(char *)));
+    sizeOfType.insert(std::make_pair("short *", sizeof(short *)));
+    sizeOfType.insert(std::make_pair("short int *", sizeOfType["short *"]));
+    sizeOfType.insert(std::make_pair("int *", sizeof(int *)));
+    sizeOfType.insert(std::make_pair("long *", sizeof(long *)));
+    sizeOfType.insert(std::make_pair("long int *", sizeOfType["long *"]));
+    sizeOfType.insert(std::make_pair("long long *", sizeof(long long *)));
+    sizeOfType.insert(std::make_pair("float *", sizeof(float *)));
+    sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
+    sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
 
     std::map<TokenString, Macro> macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
