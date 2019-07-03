@@ -2750,6 +2750,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             output.clear();
                             return;
                         }
+                        if (!tmp)
+                            break;
+                        tok = tmp->previous;
                     }
                     try {
                         conditionIsTrue = (evaluate(expr, sizeOfType) != 0);

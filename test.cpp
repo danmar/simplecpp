@@ -1001,6 +1001,15 @@ static void ifalt()   // using "and", "or", etc
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
+static void ifexpr()
+{
+    const char *code = "#define MACRO()  (1)\n"
+                       "#if ~MACRO() & 8\n"
+                       "1\n"
+                       "#endif";
+    ASSERT_EQUALS("\n\n1", preprocess(code));
+}
+
 static void location1()
 {
     const char *code;
@@ -1903,6 +1912,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifoverflow);
     TEST_CASE(ifdiv0);
     TEST_CASE(ifalt); // using "and", "or", etc
+    TEST_CASE(ifexpr);
 
     TEST_CASE(location1);
     TEST_CASE(location2);
