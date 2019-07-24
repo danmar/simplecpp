@@ -204,6 +204,8 @@ static void constFold()
     ASSERT_EQUALS("29", testConstFold("13 ^ 16"));
     ASSERT_EQUALS("25", testConstFold("24 | 1"));
     ASSERT_EQUALS("2", testConstFold("1?2:3"));
+    ASSERT_EQUALS("24", testConstFold("010+020"));
+    ASSERT_EQUALS("1", testConstFold("010==8"));
     ASSERT_EQUALS("exception", testConstFold("!1 ? 2 :"));
     ASSERT_EQUALS("exception", testConstFold("?2:3"));
 }

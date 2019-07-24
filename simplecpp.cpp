@@ -47,7 +47,7 @@ static bool isHex(const std::string &s)
 
 static bool isOct(const std::string &s)
 {
-    return s.size()>1 && (s.compare(0,1,"0")==0);
+    return s.size()>1 && (s[0]=='0') && (s[1] >= '0') && (s[1] < '8');
 }
 
 
