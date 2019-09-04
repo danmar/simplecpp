@@ -175,6 +175,12 @@ static void combineOperators_andequal()
     ASSERT_EQUALS("f ( x &= 2 ) ;", preprocess("f(x &= 2);"));
 }
 
+static void combineOperators_ellipsis()
+{
+    ASSERT_EQUALS("void f ( int , ... ) ;", preprocess("void f(int, ...);"));
+    ASSERT_EQUALS("void f ( ) { switch ( x ) { case 1 ... 4 : } }", preprocess("void f() { switch(x) { case 1 ... 4: } }"));
+}
+
 static void comment()
 {
     ASSERT_EQUALS("// abc", readfile("// abc"));
@@ -504,11 +510,6 @@ static void dollar()
 {
     ASSERT_EQUALS("$ab", readfile("$ab"));
     ASSERT_EQUALS("a$b", readfile("a$b"));
-}
-
-static void dotDotDot()
-{
-    ASSERT_EQUALS("1 . . . 2", readfile("1 ... 2"));
 }
 
 static void error1()
@@ -1829,6 +1830,7 @@ int main(int argc, char **argv)
     TEST_CASE(combineOperators_increment);
     TEST_CASE(combineOperators_coloncolon);
     TEST_CASE(combineOperators_andequal);
+    TEST_CASE(combineOperators_ellipsis);
 
     TEST_CASE(comment);
     TEST_CASE(comment_multiline);
@@ -1871,8 +1873,6 @@ int main(int argc, char **argv)
     TEST_CASE(define_ifdef);
 
     TEST_CASE(dollar);
-
-    TEST_CASE(dotDotDot); // ...
 
     TEST_CASE(error1);
     TEST_CASE(error2);
