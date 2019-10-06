@@ -1229,6 +1229,13 @@ static void multiline9()   // multiline prefix string in macro
     ASSERT_EQUALS("\n\nu8\"a b\" ;", preprocess(code));
 }
 
+static void multiline10() // multiline string literal
+{
+    const char code[] = "const char *ptr = \"\\\\\n"
+                        "\\n\";";
+    ASSERT_EQUALS("const char * ptr = \"\\\\n\"\n;", preprocess(code));
+}
+
 static void nullDirective1()
 {
     const char code[] = "#\n"
@@ -1947,6 +1954,7 @@ int main(int argc, char **argv)
     TEST_CASE(multiline7); // multiline string in macro
     TEST_CASE(multiline8); // multiline prefix string in macro
     TEST_CASE(multiline9); // multiline prefix string in macro
+    TEST_CASE(multiline10);
 
     TEST_CASE(readfile_nullbyte);
     TEST_CASE(readfile_char);
