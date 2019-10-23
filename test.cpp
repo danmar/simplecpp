@@ -154,6 +154,11 @@ static void combineOperators_floatliteral()
     ASSERT_EQUALS("1E-7", preprocess("1E-7"));
     ASSERT_EQUALS("1E+7", preprocess("1E+7"));
     ASSERT_EQUALS("0x1E + 7", preprocess("0x1E+7"));
+    ASSERT_EQUALS("0x1.2p3", preprocess("0x1.2p3"));
+    ASSERT_EQUALS("0x1p+3", preprocess("0x1p+3"));
+    ASSERT_EQUALS("0x1p+3f", preprocess("0x1p+3f"));
+    ASSERT_EQUALS("0x1p+3L", preprocess("0x1p+3L"));
+    ASSERT_EQUALS("1p + 3", preprocess("1p+3"));
 }
 
 static void combineOperators_increment()
