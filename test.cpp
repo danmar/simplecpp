@@ -153,8 +153,15 @@ static void combineOperators_floatliteral()
     ASSERT_EQUALS("1E7", preprocess("1E7"));
     ASSERT_EQUALS("1E-7", preprocess("1E-7"));
     ASSERT_EQUALS("1E+7", preprocess("1E+7"));
+    ASSERT_EQUALS("1.e+7", preprocess("1.e+7"));
     ASSERT_EQUALS("0x1E + 7", preprocess("0x1E+7"));
+    ASSERT_EQUALS("0x1ffp10", preprocess("0x1ffp10"));
+    ASSERT_EQUALS("0x0p-1", preprocess("0x0p-1"));
+    ASSERT_EQUALS("0x1.p0", preprocess("0x1.p0"));
+    ASSERT_EQUALS("0xf.p-1", preprocess("0xf.p-1"));
     ASSERT_EQUALS("0x1.2p3", preprocess("0x1.2p3"));
+    ASSERT_EQUALS("0x1.ap3", preprocess("0x1.ap3"));
+    ASSERT_EQUALS("0x1.2ap3", preprocess("0x1.2ap3"));
     ASSERT_EQUALS("0x1p+3", preprocess("0x1p+3"));
     ASSERT_EQUALS("0x1p+3f", preprocess("0x1p+3f"));
     ASSERT_EQUALS("0x1p+3L", preprocess("0x1p+3L"));
