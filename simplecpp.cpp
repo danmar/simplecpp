@@ -2429,7 +2429,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!fin.is_open()) {
             if (outputList) {
                 simplecpp::Output err(fileNumbers);
-                err.type = simplecpp::Output::MISSING_HEADER;
+                err.type = simplecpp::Output::ERROR;
                 err.location = Location(fileNumbers);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included for all files.";
                 outputList->push_back(err);
