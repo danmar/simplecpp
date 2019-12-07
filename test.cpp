@@ -92,6 +92,9 @@ static std::string toString(const simplecpp::OutputList &outputList)
             break;
         case simplecpp::Output::Type::UNHANDLED_CHAR_ERROR:
             ostr << "unhandled_char_error,";
+            break;
+        case simplecpp::Output::Type::EXPLICIT_INCLUDE_NOT_FOUND:
+            ostr << "explicit_include_not_found,";
         }
 
         ostr << output.msg << '\n';
