@@ -2429,7 +2429,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!fin.is_open()) {
             if (outputList) {
                 simplecpp::Output err(fileNumbers);
-                err.type = simplecpp::Output::ERROR;
+                err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
                 err.location = Location(fileNumbers);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
                 outputList->push_back(err);

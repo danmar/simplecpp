@@ -86,6 +86,9 @@ int main(int argc, char **argv)
         case simplecpp::Output::UNHANDLED_CHAR_ERROR:
             std::cerr << "unhandled char error: ";
             break;
+        case simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND:
+            std::cerr << "explicit include not found: ";
+            break;
         }
         std::cerr << output.msg << std::endl;
     }
