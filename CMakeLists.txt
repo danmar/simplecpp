@@ -33,3 +33,6 @@ endif()
 
 add_executable(testrunner simplecpp.cpp test.cpp)
 set_property(TARGET testrunner PROPERTY CXX_STANDARD 11)
+
+enable_testing()
+add_test(NAME testrunner COMMAND testrunner)
