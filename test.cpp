@@ -1069,6 +1069,14 @@ static void location3()
     ASSERT_EQUALS("\n#line 1 \"x\"\na b", preprocess(code));
 }
 
+static void location4()
+{
+    const char *code;
+    code = "#line 1 \"abc\\\\def.g\" \n"
+           "a\n";
+    ASSERT_EQUALS("\n#line 1 \"abc\\def.g\"\na", preprocess(code));
+}
+
 static void missingHeader1()
 {
     const simplecpp::DUI dui;
@@ -1941,6 +1949,7 @@ int main(int argc, char **argv)
     TEST_CASE(location1);
     TEST_CASE(location2);
     TEST_CASE(location3);
+    TEST_CASE(location4);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
