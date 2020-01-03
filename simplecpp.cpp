@@ -1020,15 +1020,15 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
 {
     Token * const tok1 = tok;
     for (const char *op = "&^|"; *op; op++) {
-        const std::string* alTop;
+        const std::string* alternativeOp;
         if (*op == '&')
-            alTop = &BITAND;
+            alternativeOp = &BITAND;
         else if (*op == '|')
-            alTop = &BITOR;
+            alternativeOp = &BITOR;
         else
-            alTop = &XOR;
+            alternativeOp = &XOR;
         for (tok = tok1; tok && tok->op != ')'; tok = tok->next) {
-            if (tok->op != *op && !isAlternativeBinaryOp(tok, *alTop))
+            if (tok->op != *op && !isAlternativeBinaryOp(tok, *alternativeOp))
                 continue;
             if (!tok->previous || !tok->previous->number)
                 continue;
