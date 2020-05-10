@@ -1,0 +1,20 @@
+name: CI Unixish
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false # not worthwhile...
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make simplecpp
+      run: make
+    - name: make test
+      run: make test
