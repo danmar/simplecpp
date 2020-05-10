@@ -29,6 +29,9 @@ jobs:
         
       - name: Run cmake
         run: |
-          cmake -G "Visual Studio 16" .
+          cmake -G "Visual Studio 16" . -A x64
           dir
+      - name: Build
+        run: |
+           msbuild -m PCRE.sln /p:Configuration=Release /p:Platform=x64
         
