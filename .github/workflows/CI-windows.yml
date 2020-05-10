@@ -33,5 +33,5 @@ jobs:
           dir
       - name: Build
         run: |
-           msbuild -m PCRE.sln /p:Configuration=Release /p:Platform=x64
+           msbuild -m simplecpp.sln /p:Configuration=Release /p:Platform=x64
         
