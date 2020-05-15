@@ -31,7 +31,12 @@ jobs:
         run: |
           cmake -G "Visual Studio 16" . -A x64
           dir
+      
       - name: Build
         run: |
            msbuild -m simplecpp.sln /p:Configuration=Release /p:Platform=x64
+           
+      - name: Test
+        run: |
+          .\Release\testrunner.exe
         
