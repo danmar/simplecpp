@@ -1619,6 +1619,12 @@ namespace simplecpp {
                     continue;
                 }
 
+                if (numberOfHash == 2 && tok->location.col + 1 < tok->next->location.col) {
+                    output->push_back(new Token(*tok));
+                    tok = tok->next;
+                    continue;
+                }
+
                 tok = tok->next;
                 if (tok == endToken) {
                     output->push_back(new Token(*tok->previous));
