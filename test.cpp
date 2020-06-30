@@ -766,6 +766,13 @@ static void hashhash10()
     ASSERT_EQUALS("# #", preprocess(code));
 }
 
+static void hashhash11()
+{
+    const char code[] = "#define x # # #\n"
+                        "x";
+    ASSERT_EQUALS("# # #", preprocess(code));
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -1930,7 +1937,8 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
     TEST_CASE(hashhash8);
     TEST_CASE(hashhash9);
-    TEST_CASE(hashhash10);
+    TEST_CASE(hashhash10); // #108 : #define x # #
+    TEST_CASE(hashhash11); // #60: #define x # # #
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 

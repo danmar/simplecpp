@@ -1612,14 +1612,14 @@ namespace simplecpp {
                     hashToken = hashToken->next;
                     ++numberOfHash;
                 }
-                if (numberOfHash == 4) {
+                if (numberOfHash == 4 && tok->next->location.col + 1 == tok->next->next->location.col) {
                     // # ## #  => ##
                     output->push_back(newMacroToken("##", loc, isReplaced(expandedmacros)));
                     tok = hashToken;
                     continue;
                 }
 
-                if (numberOfHash == 2 && tok->location.col + 1 < tok->next->location.col) {
+                if (numberOfHash >= 2 && tok->location.col + 1 < tok->next->location.col) {
                     output->push_back(new Token(*tok));
                     tok = tok->next;
                     continue;
