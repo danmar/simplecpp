@@ -485,6 +485,24 @@ static void define_define_14() // issue #58 - endless recursion
     ASSERT_EQUALS("\n\n\nf ( f ( w", preprocess(code)); // Don't crash
 }
 
+static void define_define_15() // issue #72 without __VA_ARGS__
+{
+    const char code[] = "#define a          f\n"
+                        "#define foo(x,y)   a(x,y)\n"
+                        "#define f(x, y)    x y\n"
+                        "foo(1,2)";
+    ASSERT_EQUALS("\n\n\n1 2", preprocess(code));
+}
+
+static void define_define_16() // issue #72 with __VA_ARGS__
+{
+    const char code[] = "#define ab(a, b)  a##b\n"
+                        "#define foo(...) ab(f, 2) (__VA_ARGS__)\n"
+                        "#define f2(x, y) x y\n"
+                        "foo(1,2)";
+    ASSERT_EQUALS("\n\n\n1 2", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -1909,6 +1927,8 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_12); // expand result of ##
     TEST_CASE(define_define_13);
     TEST_CASE(define_define_14);
+    TEST_CASE(define_define_15);
+    TEST_CASE(define_define_16);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);

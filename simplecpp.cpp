@@ -1652,6 +1652,41 @@ namespace simplecpp {
             return functionLike() ? parametertokens2.back()->next : nameTokInst->next;
         }
 
+        const Token *recursiveExpandToken(TokenList *output, TokenList &temp, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+            if (!(temp.cback() && temp.cback()->name && tok->next && tok->next->op == '(')) {
+                output->takeTokens(temp);
+                return tok->next;
+            }
+
+            if (!sameline(tok, tok->next)) {
+                output->takeTokens(temp);
+                return tok->next;
+            }
+
+            const std::map<TokenString, Macro>::const_iterator it = macros.find(temp.cback()->str());
+            if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end()) {
+                output->takeTokens(temp);
+                return tok->next;
+            }
+
+            const Macro &calledMacro = it->second;
+            if (!calledMacro.functionLike()) {
+                output->takeTokens(temp);
+                return tok->next;
+            }
+
+            TokenList temp2(files);
+            temp2.push_back(new Token(temp.cback()->str(), tok->location));
+
+            const Token *tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
+            if (!tok2)
+                return tok->next;
+            output->takeTokens(temp);
+            output->deleteToken(output->back());
+            calledMacro.expand(output, loc, temp2.cfront(), macros, expandedmacros);
+            return tok2->next;
+        }
+
         const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const std::map<TokenString,Macro> &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             // Not name..
             if (!tok->name) {
@@ -1662,50 +1697,22 @@ namespace simplecpp {
             // Macro parameter..
             {
                 TokenList temp(files);
-                if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
-                    if (!(temp.cback() && temp.cback()->name && tok->next && tok->next->op == '(')) {
-                        output->takeTokens(temp);
-                        return tok->next;
-                    }
-
-                    if (!sameline(tok, tok->next)) {
-                        output->takeTokens(temp);
-                        return tok->next;
-                    }
-
-                    const std::map<TokenString, Macro>::const_iterator it = macros.find(temp.cback()->str());
-                    if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end()) {
-                        output->takeTokens(temp);
-                        return tok->next;
-                    }
-
-                    const Macro &calledMacro = it->second;
-                    if (!calledMacro.functionLike()) {
-                        output->takeTokens(temp);
-                        return tok->next;
-                    }
-
-                    TokenList temp2(files);
-                    temp2.push_back(new Token(temp.cback()->str(), tok->location));
-
-                    const Token *tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
-                    if (!tok2)
-                        return tok->next;
-
-                    output->takeTokens(temp);
-                    output->deleteToken(output->back());
-                    calledMacro.expand(output, loc, temp2.cfront(), macros, expandedmacros);
-
-                    return tok2->next;
-                }
+                if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens))
+                    return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros, parametertokens);
             }
 
             // Macro..
             const std::map<TokenString, Macro>::const_iterator it = macros.find(tok->str());
             if (it != macros.end() && expandedmacros.find(tok->str()) == expandedmacros.end()) {
+                std::set<std::string> expandedmacros2(expandedmacros);
+                expandedmacros2.insert(tok->str());
+
                 const Macro &calledMacro = it->second;
-                if (!calledMacro.functionLike())
-                    return calledMacro.expand(output, loc, tok, macros, expandedmacros);
+                if (!calledMacro.functionLike()) {
+                    TokenList temp(files);
+                    calledMacro.expand(&temp, loc, tok, macros, expandedmacros);
+                    return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros2, parametertokens);
+                }
                 if (!sameline(tok, tok->next) || tok->next->op != '(') {
                     output->push_back(newMacroToken(tok->str(), loc, true));
                     return tok->next;
@@ -1717,8 +1724,9 @@ namespace simplecpp {
                     output->push_back(newMacroToken(tok->str(), loc, true));
                     return tok->next;
                 }
-                calledMacro.expand(output, loc, tokens.cfront(), macros, expandedmacros);
-                return tok2->next;
+                TokenList temp(files);
+                calledMacro.expand(&temp, loc, tokens.cfront(), macros, expandedmacros);
+                return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros2, parametertokens);
             }
 
             else if (tok->str() == DEFINED) {
