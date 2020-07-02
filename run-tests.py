@@ -5,7 +5,7 @@ import subprocess
 
 def cleanup(out):
   ret = ''
-  for s in out.split('\n'):
+  for s in out.decode('utf-8').split('\n'):
     if len(s) > 1 and s[0] == '#':
       continue
     s = "".join(s.split())
