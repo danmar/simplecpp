@@ -1473,7 +1473,7 @@ namespace simplecpp {
 
         const Token *appendTokens(TokenList *tokens,
                                   const Location &rawloc,
-                                  const Token *lpar,
+                                  const Token * const lpar,
                                   const std::map<TokenString,Macro> &macros,
                                   const std::set<TokenString> &expandedmacros,
                                   const std::vector<const Token*> &parametertokens) const {
@@ -1512,6 +1512,8 @@ namespace simplecpp {
                     tok = tok->next;
                 }
             }
+            for (Token *tok2 = tokens->front(); tok2; tok2 = tok2->next)
+                tok2->location = lpar->location;
             return sameline(lpar,tok) ? tok : NULL;
         }
 
