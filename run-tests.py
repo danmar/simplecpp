@@ -59,7 +59,6 @@ todo = [
          'macro_backslash.c',
          'macro_fn_comma_swallow.c',
          'macro_fn_comma_swallow2.c',
-         'macro_fn_lparen_scan.c',
          'macro_expand.c',
          'macro_fn_disable_expand.c',
          'macro_paste_commaext.c',
