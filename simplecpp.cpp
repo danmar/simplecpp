@@ -2187,14 +2187,19 @@ namespace simplecpp {
                 continue;
             }
             // get previous subpath
-            const std::string::size_type pos1 = path.rfind('/', pos - 1U) + 1U;
-            const std::string previousSubPath = path.substr(pos1, pos-pos1);
+            std::string::size_type pos1 = path.rfind('/', pos - 1U);
+            if (pos1 == std::string::npos) {
+                pos1 = 0;
+            } else {
+                pos1 += 1U;
+            }
+            const std::string previousSubPath = path.substr(pos1, pos - pos1);
             if (previousSubPath == "..") {
                 // don't simplify
                 ++pos;
             } else {
                 // remove previous subpath and ".."
-                path.erase(pos1,pos-pos1+4);
+                path.erase(pos1, pos - pos1 + 4);
                 if (path.empty())
                     path = ".";
                 // update pos
