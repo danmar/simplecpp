@@ -13,6 +13,11 @@ Simplecpp has better fidelity than normal C/C++ preprocessors.
 
 This information is normally lost during preprocessing but it can be necessary for proper static analysis.
 
+## Status
+![CI-windows](https://github.com/danmar/simplecpp/workflows/CI-windows/badge.svg)
+![CI Unixish](https://github.com/danmar/simplecpp/workflows/CI%20Unixish/badge.svg)
+
+
 ## Compiling
 
 Compiling standalone simplecpp preprocessor:
