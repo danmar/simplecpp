@@ -22,10 +22,10 @@ jobs:
           sudo apt-get install valgrind
           
     - name: make simplecpp
-      run: make
+      run: make -j$(nproc)
 
     - name: make test
-      run: make test
+      run: make -j$(nproc) test
 
     - name: Run valgrind
       if: matrix.os == 'ubuntu-latest'
