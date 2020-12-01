@@ -14,7 +14,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install missing software on ubunte
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          sudo apt-get update
+          sudo apt-get install valgrind
+          
     - name: make simplecpp
       run: make
+
     - name: make test
       run: make test
+
+    - name: Install missing software on ubunte
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          valgrind ./testrunner
+    
