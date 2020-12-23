@@ -31,5 +31,5 @@ jobs:
     - name: Run valgrind
       if: matrix.os == 'ubuntu-20.04'
       run: |
-          valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all ./testrunner
+          valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
     
