@@ -7,6 +7,7 @@ jobs:
 
     strategy:
       matrix:
+        compiler: [clang, gcc]
         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, macos-11.0]
       fail-fast: false
 
@@ -22,10 +23,10 @@ jobs:
           sudo apt-get install valgrind
           
     - name: make simplecpp
-      run: make -j$(nproc)
+      run: make -j$(nproc) CXX=${{ matrix.os }}
 
     - name: make test
-      run: make -j$(nproc) test
+      run: make -j$(nproc) test CXX=${{ matrix.os }}
 
     - name: Run valgrind
       if: matrix.os == 'ubuntu-20.04'
