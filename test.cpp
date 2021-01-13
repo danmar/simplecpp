@@ -804,6 +804,43 @@ static void hashhash11()
     ASSERT_EQUALS("# # #", preprocess(code));
 }
 
+static void hashhash12()
+{
+    {
+        const char code[] = "#define MAX_FOO 1\n"
+                            "#define MAX_FOO_AA 2\n"
+                            "\n"
+                            "#define M(UpperCaseName, b)                "
+                            "  do {                                     "
+                            "    int MaxValue = MAX_##UpperCaseName;    "
+                            "    if (b) {                               "
+                            "      MaxValue = MAX_##UpperCaseName##_AA; "
+                            "    }                                      "
+                            "  } while (0)"
+                            "\n"
+                            "static void f(bool b) { M(FOO, b); }\n";
+
+        ASSERT_EQUALS("\n\n\n\nstatic void f ( bool b ) { do { int MaxValue = 1 ; if ( b ) { MaxValue = 2 ; } } while ( 0 ) ; }", preprocess(code));
+    }
+
+    {
+        const char code[] = "#define MAX_FOO (1 * 1)\n"
+                            "#define MAX_FOO_AA (2 * 1)\n"
+                            "\n"
+                            "#define M(UpperCaseName, b)                "
+                            "  do {                                     "
+                            "    int MaxValue = MAX_##UpperCaseName;    "
+                            "    if (b) {                               "
+                            "      MaxValue = MAX_##UpperCaseName##_AA; "
+                            "    }                                      "
+                            "  } while (0)"
+                            "\n"
+                            "static void f(bool b) { M(FOO, b); }\n";
+
+        ASSERT_EQUALS("\n\n\n\nstatic void f ( bool b ) { do { int MaxValue = ( 1 * 1 ) ; if ( b ) { MaxValue = ( 2 * 1 ) ; } } while ( 0 ) ; }", preprocess(code));
+    }
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -1973,6 +2010,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash9);
     TEST_CASE(hashhash10); // #108 : #define x # #
     TEST_CASE(hashhash11); // #60: #define x # # #
+    TEST_CASE(hashhash12);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 
