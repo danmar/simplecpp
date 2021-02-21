@@ -990,6 +990,25 @@ static void ifDefinedInvalid2()
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
+static void ifDefinedHashHash()
+{
+    const char code[] = "#define ENABLE(FEATURE)  defined ENABLE_##FEATURE\n"
+                        "#define ENABLE_FOO 1\n"
+                        "#if ENABLE(FOO)\n"
+                        "#error FOO is enabled\n" // <-- expected result
+                        "#else\n"
+                        "#error FOO is not enabled\n"
+                        "#endif\n";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    simplecpp::TokenList tokens2(files);
+    std::istringstream istr(code);
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    ASSERT_EQUALS("file0,4,#error,#error FOO is enabled\n", toString(outputList));
+}
+
 static void ifLogical()
 {
     const char code[] = "#if defined(A) || defined(B)\n"
@@ -2025,6 +2044,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifDefinedNestedNoPar);
     TEST_CASE(ifDefinedInvalid1);
     TEST_CASE(ifDefinedInvalid2);
+    TEST_CASE(ifDefinedHashHash);
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);

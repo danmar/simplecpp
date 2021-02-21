@@ -1744,7 +1744,18 @@ namespace simplecpp {
                     defToken = lastToken = tok2;
                 }
                 if (defToken) {
-                    const bool def = (macros.find(defToken->str()) != macros.end());
+                    std::string macroName = defToken->str();
+                    if (defToken->next && defToken->next->op == '#' && defToken->next->next && defToken->next->next->op == '#' && defToken->next->next->next && defToken->next->next->next->name && sameline(defToken,defToken->next->next->next)) {
+                        TokenList temp(files);
+                        if (expandArg(&temp, defToken, parametertokens))
+                            macroName = temp.cback()->str();
+                        if (expandArg(&temp, defToken->next->next->next, parametertokens))
+                            macroName += temp.cback()->str();
+                        else
+                            macroName += defToken->next->next->next->str();
+                        lastToken = defToken->next->next->next;
+                    }
+                    const bool def = (macros.find(macroName) != macros.end());
                     output->push_back(newMacroToken(def ? "1" : "0", loc, true));
                     return lastToken->next;
                 }
