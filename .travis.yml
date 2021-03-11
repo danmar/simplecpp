@@ -1,9 +1,0 @@
-
-language: cpp
-
-compiler: gcc
-
-script:
-  - make test
-# it should be possible to import simplecpp.cpp into software that is compiled with old compilers
-  - g++ -fsyntax-only -std=c++98 simplecpp.cpp

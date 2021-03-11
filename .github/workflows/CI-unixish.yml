@@ -28,6 +28,9 @@ jobs:
     - name: make test
       run: make -j$(nproc) test CXX=${{ matrix.compiler }}
 
+    - name: ensure that simplecpp.cpp uses c++03
+      run: CXX=${{ matrix.compiler }} ; $CXX -fsyntax-only -std=c++98 simplecpp.cpp
+
     - name: Run valgrind
       if: matrix.os == 'ubuntu-20.04'
       run: |
