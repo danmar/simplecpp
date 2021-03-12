@@ -2627,7 +2627,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
               Location loc = rawtok->location;
               --loc.line;
               loc.col = 1;
-              linemarker += std::to_string(loc.line);
+              linemarker += toString(loc.line);
               linemarker += " \"";
               linemarker += loc.file ();
               linemarker += "\" 2";
