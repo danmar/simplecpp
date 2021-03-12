@@ -2626,7 +2626,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
               std::string linemarker = "# ";
               Location loc = rawtok->location;
               --loc.line;
-              loc.col = 0;
+              loc.col = 1;
               linemarker += std::to_string(loc.line);
               linemarker += " \"";
               linemarker += loc.file ();
@@ -2781,7 +2781,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     linemarker += "\" 1";
                     if (systemheader)
                       linemarker += " 3";
-                    output.push_back (new Token (linemarker, rawtok->location));
+                    Token* marktok = new Token (linemarker, rawtok->location);
+                    marktok->location.col = 1;
+                    output.push_back (marktok);
 
                     includetokenstack.push(gotoNextLine(rawtok));
                     const TokenList *includetokens = filedata.find(header2)->second;
