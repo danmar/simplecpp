@@ -2624,11 +2624,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
               // Add linemarker
               // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
               std::string linemarker = "# ";
-              linemarker += std::to_string(rawtok->location.line);
+              Location loc = rawtok->location;
+              --loc.line;
+              loc.col = 0;
+              linemarker += std::to_string(loc.line);
               linemarker += " \"";
-              linemarker += rawtok->location.file ();
+              linemarker += loc.file ();
               linemarker += "\" 2";
-              output.push_back (new Token (linemarker, rawtok->location));
+              output.push_back (new Token (linemarker, loc));
             }
             continue;
         }
