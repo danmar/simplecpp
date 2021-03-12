@@ -2620,6 +2620,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         if (rawtok == NULL) {
             rawtok = includetokenstack.top();
             includetokenstack.pop();
+            if (rawtok != rawtokens.cfront ()) {
+              // Add linemarker
+              // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
+              std::string linemarker = "# ";
+              linemarker += std::to_string(rawtok->location.line);
+              linemarker += " \"";
+              linemarker += rawtok->location.file ();
+              linemarker += "\" 2";
+              output.push_back (new Token (linemarker, rawtok->location));
+            }
             continue;
         }
 
@@ -2760,6 +2770,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         outputList->push_back(out);
                     }
                 } else if (pragmaOnce.find(header2) == pragmaOnce.end()) {
+                    
+                    // Add linemarker
+                    // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
+                    std::string linemarker = "# 1 \"";
+                    linemarker += header2;
+                    linemarker += "\" 1";
+                    if (systemheader)
+                      linemarker += " 3";
+                    output.push_back (new Token (linemarker, rawtok->location));
+
                     includetokenstack.push(gotoNextLine(rawtok));
                     const TokenList *includetokens = filedata.find(header2)->second;
                     rawtok = includetokens ? includetokens->cfront() : NULL;
