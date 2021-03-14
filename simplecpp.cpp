@@ -2620,7 +2620,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         if (rawtok == NULL) {
             rawtok = includetokenstack.top();
             includetokenstack.pop();
-            if (rawtok != rawtokens.cfront ()) {
+            if (rawtok && rawtok != rawtokens.cfront ()) {
               // Add linemarker
               // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
               Location loc = rawtok->location;
