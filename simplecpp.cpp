@@ -2623,15 +2623,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             if (rawtok != rawtokens.cfront ()) {
               // Add linemarker
               // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
-              std::string linemarker = "# ";
               Location loc = rawtok->location;
               --loc.line;
               loc.col = 1;
-              linemarker += toString(loc.line);
-              linemarker += " \"";
-              linemarker += loc.file ();
-              linemarker += "\" 2";
-              output.push_back (new Token (linemarker, loc));
+              output.push_back(new Token("#", loc));
+              loc.col += 2;
+              output.push_back(new Token (toString (loc.line), loc));
+              loc.col += (unsigned int)output.back()->str().length() + 1;
+              output.push_back(new Token("\"" + loc.file() + "\"", loc));
+              loc.col += (unsigned int)output.back()->str().length() + 1;
+              output.push_back(new Token("2", loc));
             }
             continue;
         }
@@ -2776,15 +2777,21 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     
                     // Add linemarker
                     // https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
-                    std::string linemarker = "# 1 \"";
-                    linemarker += header2;
-                    linemarker += "\" 1";
-                    if (systemheader)
-                      linemarker += " 3";
-                    Token* marktok = new Token (linemarker, rawtok->location);
-                    marktok->location.col = 1;
-                    output.push_back (marktok);
+                    Location loc = rawtok->location;
+                    loc.col = 1;
+                    output.push_back(new Token("#", loc));
+                    loc.col += 2;
+                    output.push_back(new Token("1", loc));
+                    loc.col += 2;
+                    output.push_back(new Token("\"" + header2 + "\"", loc));
+                    loc.col += (unsigned int)output.back()->str().length() + 1;
+                    output.push_back(new Token("1", loc));
+                    if (systemheader) {
+                      loc.col += 2;
+                      output.push_back(new Token("3", loc));
+                    }
 
+                    // Switch to the included file
                     includetokenstack.push(gotoNextLine(rawtok));
                     const TokenList *includetokens = filedata.find(header2)->second;
                     rawtok = includetokens ? includetokens->cfront() : NULL;
