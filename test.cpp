@@ -1433,7 +1433,7 @@ static void include3()   // #16 - crash when expanding macro from header
     simplecpp::TokenList out(files);
     simplecpp::preprocess(out, rawtokens_c, files, filedata, simplecpp::DUI());
 
-    ASSERT_EQUALS("# 1 \"A.h\" 1 # 1 \"A.c\" 2\n1234", out.stringify());
+    ASSERT_EQUALS("# 1 \"A.h\" 1 # 2 \"A.c\" 2\n1234", out.stringify());
 }
 
 
@@ -1463,7 +1463,7 @@ static void include4()   // #27 - -include
     dui.includes.push_back("27.h");
     simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
 
-    ASSERT_EQUALS("\n#line 0 \"27.h\"\n# 0 \"27.h\" 2\n#line 1 \"27.c\"\n123", out.stringify());
+    ASSERT_EQUALS("\n#line 0 \"27.h\"\n# 1 \"27.h\" 2\n#line 1 \"27.c\"\n123", out.stringify());
 }
 
 static void include5()    // #3 - handle #include MACRO
@@ -1716,7 +1716,7 @@ static void stringify1()
     simplecpp::TokenList out(files);
     simplecpp::preprocess(out, rawtokens_c, files, filedata, simplecpp::DUI());
 
-    ASSERT_EQUALS("# 1 \"A.h\" 1\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.c\"\n# 1 \"A.c\" 2\n# 1 \"A.h\" 1\n#line 1 \"A.h\"\n1\n2", out.stringify());
+    ASSERT_EQUALS("# 1 \"A.h\" 1\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.c\"\n# 2 \"A.c\" 2\n# 1 \"A.h\" 1\n#line 1 \"A.h\"\n1\n2", out.stringify());
 }
 
 static void tokenMacro1()
