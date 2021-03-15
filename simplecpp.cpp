@@ -2628,7 +2628,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
               loc.col = 1;
               output.push_back(new Token("#", loc));
               loc.col += 2;
-              output.push_back(new Token (toString (loc.line), loc));
+              output.push_back(new Token (toString (loc.line + 1), loc));
               loc.col += (unsigned int)output.back()->str().length() + 1;
               output.push_back(new Token("\"" + loc.file() + "\"", loc));
               loc.col += (unsigned int)output.back()->str().length() + 1;
