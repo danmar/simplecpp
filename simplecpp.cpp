@@ -1287,7 +1287,10 @@ namespace simplecpp {
                     rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
                     rawtok = rawtok->next;
                 }
-                if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
+                bool first = true;
+                if (valueToken && valueToken->str() == rawtok1->str())
+                    first = false;
+                if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros, first))
                     rawtok = rawtok1->next;
             } else {
                 rawtok = expand(&output2, rawtok->location, rawtok, macros, expandedmacros);
@@ -1517,8 +1520,10 @@ namespace simplecpp {
             return sameline(lpar,tok) ? tok : NULL;
         }
 
-        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros) const {
-            expandedmacros.insert(nameTokInst->str());
+        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const std::map<TokenString,Macro> &macros, std::set<TokenString> expandedmacros, bool first=false) const {
+
+            if (!first)
+                expandedmacros.insert(nameTokInst->str());
 
             usageList.push_back(loc);
 
