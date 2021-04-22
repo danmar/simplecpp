@@ -2309,8 +2309,66 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
             continue;
         if (tok->str().compare(0,2,"0x") == 0)
             tok->setstr(toString(stringToULL(tok->str())));
-        else if (tok->str()[0] == '\'')
-            tok->setstr(toString(tok->str()[1] & 0xffU));
+        else if (tok->str()[0] == '\'') {
+            // this is a character literal
+            if(tok->str()[1] == '\\') {
+                // this is an escape sequences
+                switch(tok->str()[2]) {
+                    case '\'':
+                    case '"':
+                    case '?':
+                    case '\\':
+                        tok->setstr(toString<int>(tok->str()[2]));
+                        break;
+                    case 'a':
+                        tok->setstr(toString<int>('\a'));
+                        break;
+                    case 'b':
+                        tok->setstr(toString<int>('\b'));
+                        break;
+                    case 'f':
+                        tok->setstr(toString<int>('\f'));
+                        break;
+                    case 'n':
+                        tok->setstr(toString<int>('\n'));
+                        break;
+                    case 'r':
+                        tok->setstr(toString<int>('\r'));
+                        break;
+                    case 't':
+                        tok->setstr(toString<int>('\t'));
+                        break;
+                    case 'v':
+                        tok->setstr(toString<int>('\v'));
+                        break;
+                    case 'x': {
+                        // copy of token with '\x replaced by 0x
+                        std::string value = tok->str().substr(1);
+                        value[0] = '0';
+                        tok->setstr(toString(stringToULL(value) & 0xffU));
+                        break;
+                    }
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7': {
+                        // copy of token with '\ replaced by 0
+                        // and truncated to three additional places as required by standard
+                        std::string value = tok->str().substr(1, 4);
+                        value[0] = '0';
+                        tok->setstr(toString(stringToULL(value) & 0xffU));
+                        break;
+                    }
+                    default:
+                        throw std::runtime_error("unsupported escape sequence");
+                }
+            } else
+                tok->setstr(toString(tok->str()[1] & 0xffU));
+        }
     }
 }
 
