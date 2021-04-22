@@ -87,7 +87,8 @@ static long long stringToLL(const std::string &s)
         istr >> std::hex;
     else if (oct)
         istr >> std::oct;
-    istr >> ret;
+    if(!(istr >> ret))
+        throw std::runtime_error("invalid number");
     return ret;
 }
 
@@ -101,7 +102,8 @@ static unsigned long long stringToULL(const std::string &s)
         istr >> std::hex;
     else if (oct)
         istr >> std::oct;
-    istr >> ret;
+    if(!(istr >> ret))
+        throw std::runtime_error("invalid number");
     return ret;
 }
 
