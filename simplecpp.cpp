@@ -70,6 +70,8 @@ static const simplecpp::TokenString ENDIF("endif");
 static const simplecpp::TokenString PRAGMA("pragma");
 static const simplecpp::TokenString ONCE("once");
 
+static const simplecpp::TokenString HAS_INCLUDE("__has_include");
+
 template<class T> static std::string toString(T t)
 {
     std::ostringstream ostr;
@@ -2515,7 +2517,6 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             continue;
 
         bool systemheader = (htok->str()[0] == '<');
-
         const std::string header(realFilename(htok->str().substr(1U, htok->str().size() - 2U)));
         if (hasFile(ret, sourcefile, header, dui, systemheader))
             continue;
@@ -2585,6 +2586,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
     sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
 
+    bool hasInclude = false;
     std::map<TokenString, Macro> macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
@@ -2597,6 +2599,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
         const Macro macro(lhs, rhs, files);
         macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
+        if (lhs == "__cplusplus" && stringToLL(rhs) >= 201703)
+            hasInclude = true;
     }
 
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", files)));
@@ -2787,9 +2791,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 if (ifstates.top() == ALWAYS_FALSE || (ifstates.top() == ELSE_IS_TRUE && rawtok->str() != ELIF))
                     conditionIsTrue = false;
                 else if (rawtok->str() == IFDEF)
-                    conditionIsTrue = (macros.find(rawtok->next->str()) != macros.end());
+                    conditionIsTrue = (macros.find(rawtok->next->str()) != macros.end() || (hasInclude && rawtok->next->str() == HAS_INCLUDE));
                 else if (rawtok->str() == IFNDEF)
-                    conditionIsTrue = (macros.find(rawtok->next->str()) == macros.end());
+                    conditionIsTrue = (macros.find(rawtok->next->str()) == macros.end() && !(hasInclude && rawtok->next->str() == HAS_INCLUDE));
                 else { /*if (rawtok->str() == IF || rawtok->str() == ELIF)*/
                     TokenList expr(files);
                     for (const Token *tok = rawtok->next; tok && tok->location.sameline(rawtok->location); tok = tok->next) {
@@ -2806,8 +2810,39 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             if (tok) {
                                 if (macros.find(tok->str()) != macros.end())
                                     expr.push_back(new Token("1", tok->location));
+                                else if (hasInclude && tok->str() == HAS_INCLUDE)
+                                    expr.push_back(new Token("1", tok->location));
                                 else
                                     expr.push_back(new Token("0", tok->location));
+                            }
+                            if (par)
+                                tok = tok ? tok->next : NULL;
+                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
+                                if (outputList) {
+                                    Output out(rawtok->location.files);
+                                    out.type = Output::SYNTAX_ERROR;
+                                    out.location = rawtok->location;
+                                    out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
+                                    outputList->push_back(out);
+                                }
+                                output.clear();
+                                return;
+                            }
+                            continue;
+                        }
+
+                        if (hasInclude && tok->str() == HAS_INCLUDE) {
+                            tok = tok->next;
+                            const bool par = (tok && tok->op == '(');
+                            if (par)
+                                tok = tok->next;
+                            if (tok) {
+                                const std::string &sourcefile = rawtok->location.file();
+                                const bool systemheader = (tok->str()[0] == '<');
+                                const std::string header(realFilename(tok->str().substr(1U, tok->str().size() - 2U)));
+                                std::ifstream f;
+                                const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
+                                expr.push_back(new Token(header2.empty() ? "0" : "1", tok->location));
                             }
                             if (par)
                                 tok = tok ? tok->next : NULL;

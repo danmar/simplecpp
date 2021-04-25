@@ -871,6 +871,36 @@ static void hashhash_invalid_2()
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
 }
 
+static void has_include_1()
+{
+    const char code[] = "#ifdef __has_include\n"
+                        "  #ifdef __has_include(\"simplecpp.h\")\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.defines.push_back("__cplusplus=201703L");
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+static void has_include_2()
+{
+    const char code[] = "#if defined( __has_include)\n"
+                        "  #ifdef __has_include(\"simplecpp.h\")\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.defines.push_back("__cplusplus=201703L");
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
 static void ifdef1()
 {
     const char code[] = "#ifdef A\n"
@@ -2041,6 +2071,10 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash12);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
+
+    // c++17 __has_include
+    TEST_CASE(has_include_1);
+    TEST_CASE(has_include_2);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
