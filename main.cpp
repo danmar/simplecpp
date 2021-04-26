@@ -15,7 +15,7 @@ int main(int argc, char **argv)
         const char *arg = argv[i];
         if (*arg == '-') {
             char c = arg[1];
-            if (c != 'D' && c != 'U' && c != 'I' && c != 'i')
+            if (c != 'D' && c != 'U' && c != 'I' && c != 'i' && c != 's')
                 continue;  // Ignored
             const char *value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
@@ -31,6 +31,10 @@ int main(int argc, char **argv)
             case 'i':
                 if (std::strncmp(arg, "-include=",9)==0)
                     dui.includes.push_back(arg+9);
+                break;
+            case 's':
+                if (std::strncmp(arg, "-std=",5)==0)
+                    dui.std = arg + 5;
                 break;
             }
         } else {

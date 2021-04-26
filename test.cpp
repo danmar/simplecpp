@@ -881,7 +881,7 @@ static void has_include_1()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.defines.push_back("__cplusplus=201703L");
+    dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -896,7 +896,7 @@ static void has_include_2()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.defines.push_back("__cplusplus=201703L");
+    dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }

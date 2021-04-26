@@ -2586,7 +2586,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
     sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
 
-    bool hasInclude = false;
+    const bool hasInclude = (dui.std.size() == 5 && dui.std.compare(0,3,"c++") == 0 && dui.std >= "c++17");
     std::map<TokenString, Macro> macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
@@ -2599,13 +2599,20 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
         const Macro macro(lhs, rhs, files);
         macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
-        if (lhs == "__cplusplus" && stringToLL(rhs) >= 201703)
-            hasInclude = true;
     }
 
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", files)));
     macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", files)));
     macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", files)));
+
+    if (dui.std == "c++11")
+        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201103L", files)));
+    else if (dui.std == "c++14")
+        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201402L", files)));
+    else if (dui.std == "c++17")
+        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201703L", files)));
+    else if (dui.std == "c++20")
+        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "202002L", files)));
 
     // TRUE => code in current #if block should be kept
     // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.
