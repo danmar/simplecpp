@@ -2386,8 +2386,11 @@ static long long characterLiteralToLL(const std::string& str)
 
         unsigned long long value;
         
-        if(str[pos++] == '\\') {
-            switch(char escape = str[pos++]) {
+        if(str[pos] == '\\') {
+            pos++;
+            char escape = str[pos++];
+
+            switch(escape) {
                 case '\'':
                 case '"':
                 case '?':
@@ -2443,8 +2446,12 @@ static long long characterLiteralToLL(const std::string& str)
                 default:
                           throw std::runtime_error("invalid escape sequence");
             }
-        } else
-            value = static_cast<unsigned char>(str[pos-1]);
+        } else {
+            value = static_cast<unsigned char>(str[pos++]);
+
+            if(!narrow && value > 0x7f)
+                throw std::runtime_error("non-ASCII source characters supported only in narrow character literals");
+        }
 
         if(((narrow || utf8) && value > std::numeric_limits<unsigned char>::max()) || (utf16 && value >> 16) || value >> 32)
             throw std::runtime_error("numeric escape sequence too large");
@@ -2454,7 +2461,7 @@ static long long characterLiteralToLL(const std::string& str)
         nbytes++;
     }
 
-    if(!str[pos++])
+    if(str[pos++] != '\'')
         throw std::runtime_error("unexpected end of character literal");
     
     if(str[pos])
