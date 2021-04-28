@@ -2362,16 +2362,16 @@ static long long characterLiteralToLL(const std::string& str)
     
     std::size_t pos;
 
-    if(str[0] == '\'') {
+    if(str.size() >= 1 && str[0] == '\'') {
         narrow = true;
         pos = 1;
-    } else if(str[0] == 'u' && str[1] == '\'') {
+    } else if(str.size() >= 2 && str[0] == 'u' && str[1] == '\'') {
         utf16 = true;
         pos = 2;
-    } else if(str[0] == 'u' && str[1] == '8' && str[2] == '\'') {
+    } else if(str.size() >= 3 && str[0] == 'u' && str[1] == '8' && str[2] == '\'') {
         utf8 = true;
         pos = 3;
-    } else if((str[0] == 'L' || str[0] == 'U') && str[1] == '\'') {
+    } else if(str.size() >= 2 && (str[0] == 'L' || str[0] == 'U') && str[1] == '\'') {
         pos = 2;
     } else
         throw std::runtime_error("expected a character literal");
@@ -2381,6 +2381,9 @@ static long long characterLiteralToLL(const std::string& str)
     std::size_t nbytes = 0;
 
     while(pos + 1 < str.size()) {
+        if(str[pos] == '\'' || str[pos] == '\n')
+            throw std::runtime_error("raw single quotes and newlines not allowed in character literals");
+
         if(nbytes >= 1 && !narrow)
             throw std::runtime_error("multiple characters only supported in narrow character literals");
 
@@ -2389,6 +2392,9 @@ static long long characterLiteralToLL(const std::string& str)
         if(str[pos] == '\\') {
             pos++;
             char escape = str[pos++];
+            
+            if(pos >= str.size())
+                throw std::runtime_error("unexpected end of character literal");
 
             switch(escape) {
                 case '\'':
@@ -2461,12 +2467,9 @@ static long long characterLiteralToLL(const std::string& str)
         nbytes++;
     }
 
-    if(str[pos++] != '\'')
-        throw std::runtime_error("unexpected end of character literal");
+    if(pos + 1 != str.size() || str[pos] != '\'')
+        throw std::runtime_error("missing closing quote in character literal");
     
-    if(str[pos])
-        throw std::runtime_error("expected end of character literal");
-
     if(!nbytes)
         throw std::runtime_error("empty character literal");
     
