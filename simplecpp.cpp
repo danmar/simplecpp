@@ -2331,12 +2331,12 @@ static unsigned long long stringToULLbounded(
 /* Converts character literal (including prefix, but not ud-suffix)
  * to long long value.
  *
- * Assumes ASCII(-only) encoded tok.
+ * Assumes ASCII-compatible single-byte encoded str.
  * 
  * For target assumes
  * - CHAR_BIT == 8
- * - UTF-8 execution character set or single-byte character set matching host encoding
- * - UTF-32 execution wide-character set
+ * - UTF-8 execution character set encoding or encoding matching str
+ * - UTF-32 execution wide-character set encoding
  * - requirements for __STDC_UTF_16__, __STDC_UTF_32__ and __STDC_ISO_10646__ satisfied
  * - char16_t is 16bit wide
  * - char32_t is 32bit wide
