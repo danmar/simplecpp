@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 #include "simplecpp.h"
