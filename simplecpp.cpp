@@ -2335,7 +2335,7 @@ static unsigned long long stringToULLbounded(
  * 
  * For target assumes
  * - CHAR_BIT == 8
- * - UTF-8 execution character set
+ * - UTF-8 execution character set or single-byte character set matching host encoding
  * - UTF-32 execution wide-character set
  * - requirements for __STDC_UTF_16__, __STDC_UTF_32__ and __STDC_ISO_10646__ satisfied
  * - char16_t is 16bit wide
@@ -2351,8 +2351,9 @@ static unsigned long long stringToULLbounded(
  * Implements multi-character narrow literals according to GCC's behavior,
  * except multi code unit universal character names are not supported.
  * Multi-character wide literals are not supported.
+ * Limited support of universal character names for non-UTF-8 execution character set encodings.
  */
-static long long characterLiteralToLL(const std::string& tok)
+static long long characterLiteralToLL(const std::string& str)
 {
     // default is wide/utf32
     bool narrow = false;
@@ -2361,16 +2362,16 @@ static long long characterLiteralToLL(const std::string& tok)
     
     std::size_t pos;
 
-    if(tok[0] == '\'') {
+    if(str[0] == '\'') {
         narrow = true;
         pos = 1;
-    } else if(tok[0] == 'u' && tok[1] == '\'') {
+    } else if(str[0] == 'u' && str[1] == '\'') {
         utf16 = true;
         pos = 2;
-    } else if(tok[0] == 'u' && tok[1] == '8' && tok[2] == '\'') {
+    } else if(str[0] == 'u' && str[1] == '8' && str[2] == '\'') {
         utf8 = true;
         pos = 3;
-    } else if((tok[0] == 'L' || tok[0] == 'U') && tok[1] == '\'') {
+    } else if((str[0] == 'L' || str[0] == 'U') && str[1] == '\'') {
         pos = 2;
     } else
         throw std::runtime_error("expected a character literal");
@@ -2379,15 +2380,14 @@ static long long characterLiteralToLL(const std::string& tok)
 
     std::size_t nbytes = 0;
 
-    // multi-character literals are limited to the width of int
-    while(tok[pos] && tok[pos] != '\'') {
+    while(pos + 1 < str.size()) {
         if(nbytes >= 1 && !narrow)
             throw std::runtime_error("multiple characters only supported in narrow character literals");
 
         unsigned long long value;
         
-        if(tok[pos++] == '\\') {
-            switch(char escape = tok[pos++]) {
+        if(str[pos++] == '\\') {
+            switch(char escape = str[pos++]) {
                 case '\'':
                 case '"':
                 case '?':
@@ -2415,19 +2415,19 @@ static long long characterLiteralToLL(const std::string& tok)
                 case '6':
                 case '7':
                           // octal escape sequences consist of 1 to 3 digits
-                          value = stringToULLbounded(tok, --pos, 8, 1, 3);
+                          value = stringToULLbounded(str, --pos, 8, 1, 3);
                           break;
 
                 case 'x':
                           // hexadecimal escape sequences consist of at least 1 digit
-                          value = stringToULLbounded(tok, pos, 16);
+                          value = stringToULLbounded(str, pos, 16);
                           break;
 
                 case 'u':
                 case 'U': {
                               // universal character names have exactly 4 or 8 digits
                               std::size_t ndigits = (escape == 'u' ? 4 : 8);
-                              value = stringToULLbounded(tok, pos, 16, ndigits, ndigits);
+                              value = stringToULLbounded(str, pos, 16, ndigits, ndigits);
 
                               // UTF-8 encodes code points above 0x7f in multiple code units
                               // code points above 0x10ffff are not allowed
@@ -2443,12 +2443,8 @@ static long long characterLiteralToLL(const std::string& tok)
                 default:
                           throw std::runtime_error("ivalid escape sequence");
             }
-        } else {
-            value = static_cast<unsigned char>(tok[pos-1]);
-
-            if(value > 0x7f)
-                throw std::runtime_error("unexpected byte in token");
-        }
+        } else
+            value = static_cast<unsigned char>(str[pos-1]);
 
         if(((narrow || utf8) && value > std::numeric_limits<unsigned char>::max()) || (utf16 && value >> 16) || value >> 32)
             throw std::runtime_error("numeric escape sequence too large");
@@ -2458,10 +2454,10 @@ static long long characterLiteralToLL(const std::string& tok)
         nbytes++;
     }
 
-    if(!tok[pos++])
+    if(!str[pos++])
         throw std::runtime_error("unexpected end of character literal");
     
-    if(tok[pos])
+    if(str[pos])
         throw std::runtime_error("expected end of character literal");
 
     if(!nbytes)
