@@ -2441,7 +2441,7 @@ static long long characterLiteralToLL(const std::string& str)
                           }
 
                 default:
-                          throw std::runtime_error("ivalid escape sequence");
+                          throw std::runtime_error("invalid escape sequence");
             }
         } else
             value = static_cast<unsigned char>(str[pos-1]);

@@ -921,127 +921,87 @@ static void ifA()
 
 static void ifCharLiteral()
 {
-    const char code[] = "#if ('A'==0x41)\n"
+    const char code1[] = "#if ('A'==0x41)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralSingleQuote()
-{
-    const char code[] = "#if ('\\''==0x27)\n"
+    ASSERT_EQUALS("\n123", preprocess(code1));
+    
+    const char code2[] = "#if ('\\''==0x27)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralEsc()
-{
-    const char code[] = "#if ('\\e'==0x1b)\n"
+    ASSERT_EQUALS("\n123", preprocess(code2));
+    
+    const char code3[] = "#if ('\\e'==0x1b)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralOct1()
-{
-    const char code[] = "#if ('\\3'==3)\n"
+    ASSERT_EQUALS("\n123", preprocess(code3));
+    
+    const char code4[] = "#if ('\\3'==3)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralOct2()
-{
-    const char code[] = "#if ('\\010'==8)\n"
+    ASSERT_EQUALS("\n123", preprocess(code4));
+    
+    const char code5[] = "#if ('\\010'==8)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralHex()
-{
-    const char code[] = "#if ('\\x41'==0x41)\n"
+    ASSERT_EQUALS("\n123", preprocess(code5));
+    
+    const char code6[] = "#if ('\\x41'==0x41)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralSign()
-{
-    const char code[] = "#if ('\\xff'==-1)\n"
+    ASSERT_EQUALS("\n123", preprocess(code6));
+    
+    const char code7a[] = "#if ('\\xff'==-1)\n"
                         "123\n"
                         "#endif";
-    const char code2[] = "#if ('\\xff'==255)\n"
+    const char code7b[] = "#if ('\\xff'==255)\n"
                         "123\n"
                         "#endif";
     if(std::numeric_limits<char>::is_signed)
-        ASSERT_EQUALS("\n123", preprocess(code));
+        ASSERT_EQUALS("\n123", preprocess(code7a));
     else
-        ASSERT_EQUALS("\n123", preprocess(code2));
-}
-
-static void ifCharLiteralUName1()
-{
-    const char code[] = "#if ('\\u0044'=='\\x44')\n"
+        ASSERT_EQUALS("\n123", preprocess(code7b));
+    
+    const char code8[] = "#if ('\\u0044'=='\\x44')\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralUName2()
-{
-    const char code[] = "#if ('\\U00000044'=='\\x44')\n"
+    ASSERT_EQUALS("\n123", preprocess(code8));
+    
+    const char code9[] = "#if ('\\U00000044'=='\\x44')\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralWide1()
-{
-    const char code[] = "#if (L'\\xff'==255)\n"
+    ASSERT_EQUALS("\n123", preprocess(code9));
+    
+    const char code10[] = "#if (L'\\xff'==255)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralWide2()
-{
-    const char code[] = "#if (L'\\U00100000'==0x100000)\n"
+    ASSERT_EQUALS("\n123", preprocess(code10));
+    
+    const char code11[] = "#if (L'\\U00100000'==0x100000)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-static void ifCharLiteralUTF16()
-{
-    const char code[] = "#if (u'\\u1234'==0x1234)\n"
+    ASSERT_EQUALS("\n123", preprocess(code11));
+    
+    const char code12[] = "#if (u'\\u1234'==0x1234)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-static void ifCharLiteralUTF8()
-{
-    const char code[] = "#if (u8'\\u0011'==0x11)\n"
+    ASSERT_EQUALS("\n123", preprocess(code12));
+    
+    const char code13[] = "#if (u8'\\u0011'==0x11)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralMulti1()
-{
-    const char code[] = "#if ('\\a\\b'==0x0708)\n"
+    ASSERT_EQUALS("\n123", preprocess(code13));
+    
+    const char code14[] = "#if ('\\a\\b'==0x0708)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code));
-}
-
-static void ifCharLiteralMulti2()
-{
-    const char code[] = "#if ('\\xff\\xff\\xff\\xff'==-1)\n"
+    ASSERT_EQUALS("\n123", preprocess(code14));
+    
+    const char code15[] = "#if ('\\xff\\xff\\xff\\xff'==-1)\n"
                         "123\n"
                         "#endif";
     if(sizeof(int) == 4)
-        ASSERT_EQUALS("\n123", preprocess(code));
+        ASSERT_EQUALS("\n123", preprocess(code15));
 }
 
 static void ifDefined()
@@ -2165,20 +2125,6 @@ int main(int argc, char **argv)
     TEST_CASE(ifndef);
     TEST_CASE(ifA);
     TEST_CASE(ifCharLiteral);
-    TEST_CASE(ifCharLiteralSingleQuote);
-    TEST_CASE(ifCharLiteralEsc);
-    TEST_CASE(ifCharLiteralOct1);
-    TEST_CASE(ifCharLiteralOct2);
-    TEST_CASE(ifCharLiteralHex);
-    TEST_CASE(ifCharLiteralSign);
-    TEST_CASE(ifCharLiteralUName1);
-    TEST_CASE(ifCharLiteralUName2);
-    TEST_CASE(ifCharLiteralWide1);
-    TEST_CASE(ifCharLiteralWide2);
-    TEST_CASE(ifCharLiteralMulti1);
-    TEST_CASE(ifCharLiteralMulti2);
-    TEST_CASE(ifCharLiteralUTF16);
-    TEST_CASE(ifCharLiteralUTF8);
     TEST_CASE(ifDefined);
     TEST_CASE(ifDefinedNoPar);
     TEST_CASE(ifDefinedNested);
