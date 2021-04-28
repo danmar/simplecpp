@@ -2334,7 +2334,6 @@ static unsigned long long stringToULLbounded(
  * Assumes ASCII-compatible single-byte encoded str.
  * 
  * For target assumes
- * - CHAR_BIT == 8
  * - UTF-8 execution character set encoding or encoding matching str
  * - UTF-32 execution wide-character set encoding
  * - requirements for __STDC_UTF_16__, __STDC_UTF_32__ and __STDC_ISO_10646__ satisfied
@@ -2342,11 +2341,14 @@ static unsigned long long stringToULLbounded(
  * - char32_t is 32bit wide
  * - wchar_t is 32bit wide and unsigned
  * - matching char signedness to host
- * - matching width and representation of int to host
+ * - matching sizeof(int) to host
  *
  * For host assumes
- * - two's complement
  * - ASCII-compatible execution character set
+ *
+ * For host and target assumes
+ * - CHAR_BIT == 8
+ * - two's complement
  *
  * Implements multi-character narrow literals according to GCC's behavior,
  * except multi code unit universal character names are not supported.
