@@ -2328,6 +2328,8 @@ static unsigned long long stringToULLbounded(
     return value;
 }
 
+namespace simplecpp {
+
 /* Converts character literal (including prefix, but not ud-suffix)
  * to long long value.
  *
@@ -2355,7 +2357,7 @@ static unsigned long long stringToULLbounded(
  * Multi-character wide literals are not supported.
  * Limited support of universal character names for non-UTF-8 execution character set encodings.
  */
-static long long characterLiteralToLL(const std::string& str)
+long long characterLiteralToLL(const std::string& str)
 {
     // default is wide/utf32
     bool narrow = false;
@@ -2488,6 +2490,8 @@ static long long characterLiteralToLL(const std::string& str)
     return multivalue;
 }
 
+}
+
 static void simplifyNumbers(simplecpp::TokenList &expr)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -2496,7 +2500,7 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
         if (tok->str().compare(0,2,"0x") == 0)
             tok->setstr(toString(stringToULL(tok->str())));
         else if (!tok->number && tok->str().find('\'') != tok->str().npos)
-            tok->setstr(toString(characterLiteralToLL(tok->str())));
+            tok->setstr(toString(simplecpp::characterLiteralToLL(tok->str())));
     }
 }
 

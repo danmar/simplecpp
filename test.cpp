@@ -147,6 +147,65 @@ static std::string testConstFold(const char code[])
     return expr.stringify();
 }
 
+static void characterLiteral() {
+    ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("'A'"));
+    
+    ASSERT_EQUALS('\'', simplecpp::characterLiteralToLL("'\\''"));
+    ASSERT_EQUALS('\"', simplecpp::characterLiteralToLL("'\\\"'"));
+    ASSERT_EQUALS('\?', simplecpp::characterLiteralToLL("'\\?'"));
+    ASSERT_EQUALS('\\', simplecpp::characterLiteralToLL("'\\\\'"));
+    ASSERT_EQUALS('\a', simplecpp::characterLiteralToLL("'\\a'"));
+    ASSERT_EQUALS('\b', simplecpp::characterLiteralToLL("'\\b'"));
+    ASSERT_EQUALS('\f', simplecpp::characterLiteralToLL("'\\f'"));
+    ASSERT_EQUALS('\n', simplecpp::characterLiteralToLL("'\\n'"));
+    ASSERT_EQUALS('\r', simplecpp::characterLiteralToLL("'\\r'"));
+    ASSERT_EQUALS('\t', simplecpp::characterLiteralToLL("'\\t'"));
+    ASSERT_EQUALS('\v', simplecpp::characterLiteralToLL("'\\v'"));
+    
+    ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\e'"));
+    
+    ASSERT_EQUALS('\0',   simplecpp::characterLiteralToLL("'\\0'"));
+    ASSERT_EQUALS('\1',   simplecpp::characterLiteralToLL("'\\1'"));
+    ASSERT_EQUALS('\10',  simplecpp::characterLiteralToLL("'\\10'"));
+    ASSERT_EQUALS('\010', simplecpp::characterLiteralToLL("'\\010'"));
+    ASSERT_EQUALS('\377', simplecpp::characterLiteralToLL("'\\377'"));
+
+    ASSERT_EQUALS('\x0',  simplecpp::characterLiteralToLL("'\\x0'"));
+    ASSERT_EQUALS('\x10', simplecpp::characterLiteralToLL("'\\x10'"));
+    ASSERT_EQUALS('\xff', simplecpp::characterLiteralToLL("'\\xff'"));
+    
+    ASSERT_EQUALS('\u0012',     simplecpp::characterLiteralToLL("'\\u0012'"));
+    ASSERT_EQUALS('\U00000012', simplecpp::characterLiteralToLL("'\\U00000012'"));
+
+    ASSERT_EQUALS(((unsigned int)(unsigned char)'b'    << 8) | (unsigned char)'c',    simplecpp::characterLiteralToLL("'bc'"));
+    ASSERT_EQUALS(((unsigned int)(unsigned char)'\x23' << 8) | (unsigned char)'\x45', simplecpp::characterLiteralToLL("'\\x23\\x45'"));
+    ASSERT_EQUALS(((unsigned int)(unsigned char)'\11'  << 8) | (unsigned char)'\222', simplecpp::characterLiteralToLL("'\\11\\222'"));
+    ASSERT_EQUALS(((unsigned int)(unsigned char)'\a'   << 8) | (unsigned char)'\b',   simplecpp::characterLiteralToLL("'\\a\\b'"));
+    if(sizeof(int) <= 4)
+        ASSERT_EQUALS(-1, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
+    else
+        ASSERT_EQUALS(0xffffffff, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
+
+    ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("u8'A'"));
+    ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("u'A'"));
+    ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("L'A'"));
+    ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("U'A'"));
+    
+    ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("u8'\\xff'"));
+    ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("u'\\xff'"));
+    ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("L'\\xff'"));
+    ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("U'\\xff'"));
+    
+    ASSERT_EQUALS(0xfedc,     simplecpp::characterLiteralToLL("u'\\xfedc'"));
+    ASSERT_EQUALS(0xfedcba98, simplecpp::characterLiteralToLL("L'\\xfedcba98'"));
+    ASSERT_EQUALS(0xfedcba98, simplecpp::characterLiteralToLL("U'\\xfedcba98'"));
+    
+    ASSERT_EQUALS(0x12,       simplecpp::characterLiteralToLL("u8'\\u0012'"));
+    ASSERT_EQUALS(0x1234,     simplecpp::characterLiteralToLL("u'\\u1234'"));
+    ASSERT_EQUALS(0x00012345, simplecpp::characterLiteralToLL("L'\\U00012345'"));
+    ASSERT_EQUALS(0x00012345, simplecpp::characterLiteralToLL("U'\\U00012345'"));
+}
+
 static void combineOperators_floatliteral()
 {
     ASSERT_EQUALS("1.", preprocess("1."));
@@ -921,87 +980,10 @@ static void ifA()
 
 static void ifCharLiteral()
 {
-    const char code1[] = "#if ('A'==0x41)\n"
+    const char code[] = "#if ('A'==0x41)\n"
                         "123\n"
                         "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code1));
-    
-    const char code2[] = "#if ('\\''==0x27)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code2));
-    
-    const char code3[] = "#if ('\\e'==0x1b)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code3));
-    
-    const char code4[] = "#if ('\\3'==3)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code4));
-    
-    const char code5[] = "#if ('\\010'==8)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code5));
-    
-    const char code6[] = "#if ('\\x41'==0x41)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code6));
-    
-    const char code7a[] = "#if ('\\xff'==-1)\n"
-                        "123\n"
-                        "#endif";
-    const char code7b[] = "#if ('\\xff'==255)\n"
-                        "123\n"
-                        "#endif";
-    if(std::numeric_limits<char>::is_signed)
-        ASSERT_EQUALS("\n123", preprocess(code7a));
-    else
-        ASSERT_EQUALS("\n123", preprocess(code7b));
-    
-    const char code8[] = "#if ('\\u0044'=='\\x44')\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code8));
-    
-    const char code9[] = "#if ('\\U00000044'=='\\x44')\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code9));
-    
-    const char code10[] = "#if (L'\\xff'==255)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code10));
-    
-    const char code11[] = "#if (L'\\U00100000'==0x100000)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code11));
-    
-    const char code12[] = "#if (u'\\u1234'==0x1234)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code12));
-    
-    const char code13[] = "#if (u8'\\u0011'==0x11)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code13));
-    
-    const char code14[] = "#if ('\\a\\b'==0x0708)\n"
-                        "123\n"
-                        "#endif";
-    ASSERT_EQUALS("\n123", preprocess(code14));
-    
-    const char code15[] = "#if ('\\xff\\xff\\xff\\xff'==-1)\n"
-                        "123\n"
-                        "#endif";
-    if(sizeof(int) == 4)
-        ASSERT_EQUALS("\n123", preprocess(code15));
+    ASSERT_EQUALS("\n123", preprocess(code));
 }
 
 static void ifDefined()
@@ -2042,6 +2024,8 @@ int main(int argc, char **argv)
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);
+
+    TEST_CASE(characterLiteral);
 
     TEST_CASE(combineOperators_floatliteral);
     TEST_CASE(combineOperators_increment);

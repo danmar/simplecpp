@@ -298,6 +298,8 @@ namespace simplecpp {
         std::list<std::string> includePaths;
         std::list<std::string> includes;
     };
+    
+    SIMPLECPP_LIB long long characterLiteralToLL(const std::string& str);
 
     SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = NULL);
 
