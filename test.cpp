@@ -147,9 +147,10 @@ static std::string testConstFold(const char code[])
     return expr.stringify();
 }
 
-static void characterLiteral() {
+static void characterLiteral()
+{
     ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("'A'"));
-    
+
     ASSERT_EQUALS('\'', simplecpp::characterLiteralToLL("'\\''"));
     ASSERT_EQUALS('\"', simplecpp::characterLiteralToLL("'\\\"'"));
     ASSERT_EQUALS('\?', simplecpp::characterLiteralToLL("'\\?'"));
@@ -161,9 +162,9 @@ static void characterLiteral() {
     ASSERT_EQUALS('\r', simplecpp::characterLiteralToLL("'\\r'"));
     ASSERT_EQUALS('\t', simplecpp::characterLiteralToLL("'\\t'"));
     ASSERT_EQUALS('\v', simplecpp::characterLiteralToLL("'\\v'"));
-    
+
     ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\e'"));
-    
+
     ASSERT_EQUALS('\0',   simplecpp::characterLiteralToLL("'\\0'"));
     ASSERT_EQUALS('\1',   simplecpp::characterLiteralToLL("'\\1'"));
     ASSERT_EQUALS('\10',  simplecpp::characterLiteralToLL("'\\10'"));
@@ -173,7 +174,7 @@ static void characterLiteral() {
     ASSERT_EQUALS('\x0',  simplecpp::characterLiteralToLL("'\\x0'"));
     ASSERT_EQUALS('\x10', simplecpp::characterLiteralToLL("'\\x10'"));
     ASSERT_EQUALS('\xff', simplecpp::characterLiteralToLL("'\\xff'"));
-    
+
     ASSERT_EQUALS('\u0012',     simplecpp::characterLiteralToLL("'\\u0012'"));
     ASSERT_EQUALS('\U00000012', simplecpp::characterLiteralToLL("'\\U00000012'"));
 
@@ -181,7 +182,7 @@ static void characterLiteral() {
     ASSERT_EQUALS(((unsigned int)(unsigned char)'\x23' << 8) | (unsigned char)'\x45', simplecpp::characterLiteralToLL("'\\x23\\x45'"));
     ASSERT_EQUALS(((unsigned int)(unsigned char)'\11'  << 8) | (unsigned char)'\222', simplecpp::characterLiteralToLL("'\\11\\222'"));
     ASSERT_EQUALS(((unsigned int)(unsigned char)'\a'   << 8) | (unsigned char)'\b',   simplecpp::characterLiteralToLL("'\\a\\b'"));
-    if(sizeof(int) <= 4)
+    if (sizeof(int) <= 4)
         ASSERT_EQUALS(-1, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
     else
         ASSERT_EQUALS(0xffffffff, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
@@ -190,16 +191,16 @@ static void characterLiteral() {
     ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("u'A'"));
     ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("L'A'"));
     ASSERT_EQUALS('A', simplecpp::characterLiteralToLL("U'A'"));
-    
+
     ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("u8'\\xff'"));
     ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("u'\\xff'"));
     ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("L'\\xff'"));
     ASSERT_EQUALS(0xff, simplecpp::characterLiteralToLL("U'\\xff'"));
-    
+
     ASSERT_EQUALS(0xfedc,     simplecpp::characterLiteralToLL("u'\\xfedc'"));
     ASSERT_EQUALS(0xfedcba98, simplecpp::characterLiteralToLL("L'\\xfedcba98'"));
     ASSERT_EQUALS(0xfedcba98, simplecpp::characterLiteralToLL("U'\\xfedcba98'"));
-    
+
     ASSERT_EQUALS(0x12,       simplecpp::characterLiteralToLL("u8'\\u0012'"));
     ASSERT_EQUALS(0x1234,     simplecpp::characterLiteralToLL("u'\\u1234'"));
     ASSERT_EQUALS(0x00012345, simplecpp::characterLiteralToLL("L'\\U00012345'"));
