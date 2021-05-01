@@ -8,6 +8,7 @@
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
+#define ASSERT_THROW(stmt, e) try { stmt; assertThrowFailed(__LINE__); } catch (const e&) {}
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
@@ -24,6 +25,14 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
 static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
 {
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
+}
+
+static void assertThrowFailed(int line)
+{
+    numberOfFailedAssertions++;
+    std::cerr << "------ assertion failed ---------" << std::endl;
+    std::cerr << "line " << line << std::endl;
+    std::cerr << "exception not thrown" << std::endl;
 }
 
 static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
@@ -170,6 +179,8 @@ static void characterLiteral()
     ASSERT_EQUALS('\10',  simplecpp::characterLiteralToLL("'\\10'"));
     ASSERT_EQUALS('\010', simplecpp::characterLiteralToLL("'\\010'"));
     ASSERT_EQUALS('\377', simplecpp::characterLiteralToLL("'\\377'"));
+    ASSERT_EQUALS('\134t', simplecpp::characterLiteralToLL("'\\134t'")); // cppcheck ticket #7452
+
 
     ASSERT_EQUALS('\x0',  simplecpp::characterLiteralToLL("'\\x0'"));
     ASSERT_EQUALS('\x10', simplecpp::characterLiteralToLL("'\\x10'"));
@@ -205,6 +216,16 @@ static void characterLiteral()
     ASSERT_EQUALS(0x1234,     simplecpp::characterLiteralToLL("u'\\u1234'"));
     ASSERT_EQUALS(0x00012345, simplecpp::characterLiteralToLL("L'\\U00012345'"));
     ASSERT_EQUALS(0x00012345, simplecpp::characterLiteralToLL("U'\\U00012345'"));
+
+#ifdef __GNUC__
+    // BEGIN Implementation-specific results
+    ASSERT_EQUALS((int)('AB'), simplecpp::characterLiteralToLL("'AB'"));
+    ASSERT_EQUALS((int)('ABC'), simplecpp::characterLiteralToLL("'ABC'"));
+    ASSERT_EQUALS((int)('ABCD'), simplecpp::characterLiteralToLL("'ABCD'"));
+    // END Implementation-specific results
+#endif
+
+    ASSERT_THROW(simplecpp::characterLiteralToLL("'\\9'"), std::runtime_error);
 }
 
 static void combineOperators_floatliteral()
