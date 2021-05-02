@@ -179,8 +179,6 @@ static void characterLiteral()
     ASSERT_EQUALS('\10',  simplecpp::characterLiteralToLL("'\\10'"));
     ASSERT_EQUALS('\010', simplecpp::characterLiteralToLL("'\\010'"));
     ASSERT_EQUALS('\377', simplecpp::characterLiteralToLL("'\\377'"));
-    ASSERT_EQUALS('\134t', simplecpp::characterLiteralToLL("'\\134t'")); // cppcheck ticket #7452
-
 
     ASSERT_EQUALS('\x0',  simplecpp::characterLiteralToLL("'\\x0'"));
     ASSERT_EQUALS('\x10', simplecpp::characterLiteralToLL("'\\x10'"));
@@ -222,6 +220,7 @@ static void characterLiteral()
     ASSERT_EQUALS((int)('AB'), simplecpp::characterLiteralToLL("'AB'"));
     ASSERT_EQUALS((int)('ABC'), simplecpp::characterLiteralToLL("'ABC'"));
     ASSERT_EQUALS((int)('ABCD'), simplecpp::characterLiteralToLL("'ABCD'"));
+    ASSERT_EQUALS('\134t', simplecpp::characterLiteralToLL("'\\134t'")); // cppcheck ticket #7452
     // END Implementation-specific results
 #endif
 
