@@ -2402,6 +2402,12 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                 throw std::runtime_error("unexpected end of character literal");
 
             switch (escape) {
+            // obscure GCC extensions
+            case '%':
+            case '(':
+            case '[':
+            case '{':
+            // standard escape sequences
             case '\'':
             case '"':
             case '?':
@@ -2431,8 +2437,9 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                 value = static_cast<unsigned char>('\v');
                 break;
 
-            // ESC extension
+            // GCC extension for ESC character
             case 'e':
+            case 'E':
                 value = static_cast<unsigned char>('\x1b');
                 break;
 
