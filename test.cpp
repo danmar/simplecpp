@@ -172,7 +172,15 @@ static void characterLiteral()
     ASSERT_EQUALS('\t', simplecpp::characterLiteralToLL("'\\t'"));
     ASSERT_EQUALS('\v', simplecpp::characterLiteralToLL("'\\v'"));
 
+    // GCC extension for ESC character
     ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\e'"));
+    ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\E'"));
+    
+    // more obscure GCC extensions
+    ASSERT_EQUALS('(', simplecpp::characterLiteralToLL("'\\('"));
+    ASSERT_EQUALS('[', simplecpp::characterLiteralToLL("'\\['"));
+    ASSERT_EQUALS('{', simplecpp::characterLiteralToLL("'\\{'"));
+    ASSERT_EQUALS('%', simplecpp::characterLiteralToLL("'\\%'"));
 
     ASSERT_EQUALS('\0',   simplecpp::characterLiteralToLL("'\\0'"));
     ASSERT_EQUALS('\1',   simplecpp::characterLiteralToLL("'\\1'"));
