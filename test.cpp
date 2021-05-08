@@ -263,6 +263,8 @@ static void characterLiteral()
     ASSERT_EQUALS('\x89', simplecpp::characterLiteralToLL("'\x89'"));
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x89'"), std::runtime_error);
 
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf4\x90\x80\x80'"), std::runtime_error);
+
     // following examples based on https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
     ASSERT_EQUALS(0x80, simplecpp::characterLiteralToLL("U'\xc2\x80'"));
     ASSERT_EQUALS(0x800, simplecpp::characterLiteralToLL("U'\xe0\xa0\x80'"));
@@ -296,6 +298,19 @@ static void characterLiteral()
     
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf8'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xff'"), std::runtime_error);
+    
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0\xaf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x80\xaf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\xaf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc1\xbf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x9f\xbf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\xbf\xbf'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0\x80'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x80\x80'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\x80'"), std::runtime_error);
+
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xed\xa0\x80'"), std::runtime_error);
+    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xed\xbf\xbf'"), std::runtime_error);
 }
 
 static void combineOperators_floatliteral()
