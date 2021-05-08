@@ -2504,10 +2504,10 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                     value = (value << 6) | (c & ((1 << 7) - 1));
                 }
 
-                if ((value >= 0xd800 && value <= 0xdfff) || value > 0x10ffff)
+                if (value >= 0xd800 && value <= 0xdfff)
                     throw std::runtime_error("assumed UTF-8 encoded source, but sequence is invalid");
                 
-                if (((narrow || utf8) && value > 0x7f) || (utf16 && value > 0xffff) || value > 0x10ffff)
+                if ((utf8 && value > 0x7f) || (utf16 && value > 0xffff) || value > 0x10ffff)
                     throw std::runtime_error("code point too large");
             }
         }
