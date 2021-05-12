@@ -1612,7 +1612,7 @@ namespace simplecpp {
                         TokenList new_output(files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros)));
-                        else if (new_output.empty()) // placeholder token
+                        else if (new_output.empty()) // placemarker token
                             output->push_back(newMacroToken("", loc, isReplaced(expandedmacros)));
                         else
                             for (const Token *tok2 = new_output.cfront(); tok2; tok2 = tok2->next)
