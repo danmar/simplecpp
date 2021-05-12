@@ -1016,6 +1016,13 @@ static void hashhash12()
     }
 }
 
+static void hashhash13()
+{
+    const char code[] = "#define X(x) x##U\n"
+                        "X((1<<1)-1)";
+    ASSERT_EQUALS("\n( 1 << 1 ) - 1U", preprocess(code));
+}
+
 static void hashhash_invalid_1()
 {
     std::istringstream istr("#define  f(a)  (##x)\nf(1)");
@@ -2238,6 +2245,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash10); // #108 : #define x # #
     TEST_CASE(hashhash11); // #60: #define x # # #
     TEST_CASE(hashhash12);
+    TEST_CASE(hashhash13);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
 
