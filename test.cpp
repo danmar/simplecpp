@@ -1021,6 +1021,10 @@ static void hashhash13()
     const char code[] = "#define X(x) x##U\n"
                         "X((1<<1)-1)";
     ASSERT_EQUALS("\n( 1 << 1 ) - 1U", preprocess(code));
+    
+    const char code2[] = "#define CONCAT(x, y) x##y\n"
+                        "CONCAT(&a, b)";
+    ASSERT_EQUALS("\n& ab", preprocess(code2));
 }
 
 static void hashhash_invalid_1()
