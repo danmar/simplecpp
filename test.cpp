@@ -2007,6 +2007,22 @@ static void tokenMacro4()
     ASSERT_EQUALS("A", tok->macro);
 }
 
+static void tokenMacro5()
+{
+    const char code[] = "#define SET_BPF(code) (code)\n"
+                        "#define SET_BPF_JUMP(code) SET_BPF(D | code)\n"
+                        "SET_BPF_JUMP(A | B | C);";
+    const simplecpp::DUI dui;
+    std::vector<std::string> files;
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    std::istringstream istr(code);
+    simplecpp::TokenList tokenList(files);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    const simplecpp::Token *tok = tokenList.cfront()->next;
+    ASSERT_EQUALS("D", tok->str());
+    ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
+}
+
 static void undef()
 {
     std::istringstream istr("#define A\n"
@@ -2327,6 +2343,7 @@ int main(int argc, char **argv)
     TEST_CASE(tokenMacro2);
     TEST_CASE(tokenMacro3);
     TEST_CASE(tokenMacro4);
+    TEST_CASE(tokenMacro5);
 
     TEST_CASE(undef);
 

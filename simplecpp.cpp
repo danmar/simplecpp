@@ -1504,8 +1504,11 @@ namespace simplecpp {
                                 expanded = true;
                             }
                         }
-                        if (!expanded)
+                        if (!expanded) {
                             tokens->push_back(new Token(*tok));
+                            if (tok->macro.empty() && (par > 0 || tok->str() != "("))
+                                tokens->back()->macro = name();
+                        }
                     }
 
                     if (tok->op == '(')
@@ -1812,6 +1815,7 @@ namespace simplecpp {
                     partok = it->second.expand(output, loc, partok, macros, expandedmacros);
                 else {
                     output->push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros)));
+                    output->back()->macro = partok->macro;
                     partok = partok->next;
                 }
             }
