@@ -210,18 +210,18 @@ void simplecpp::Token::printOut() const
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(NULL), backToken(NULL), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : frontToken(NULL), backToken(NULL), files(filenames)
+    : TokenList(filenames)
 {
     readfile(istr,filename,outputList);
 }
 
-simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(NULL), backToken(NULL), files(other.files)
+simplecpp::TokenList::TokenList(const TokenList &other) : TokenList(other.files)
 {
     *this = other;
 }
 
 #if __cplusplus >= 201103L
-simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(NULL), backToken(NULL), files(other.files)
+simplecpp::TokenList::TokenList(TokenList &&other) : TokenList(other.files)
 {
     *this = std::move(other);
 }
@@ -236,6 +236,7 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(const TokenList &other)
 {
     if (this != &other) {
         clear();
+        files = other.files;
         for (const Token *tok = other.cfront(); tok; tok = tok->next)
             push_back(new Token(*tok));
         sizeOfType = other.sizeOfType;
@@ -248,10 +249,11 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
 {
     if (this != &other) {
         clear();
-        backToken = other.backToken;
-        other.backToken = NULL;
         frontToken = other.frontToken;
         other.frontToken = NULL;
+        backToken = other.backToken;
+        other.backToken = NULL;
+        files = other.files;
         sizeOfType = std::move(other.sizeOfType);
     }
     return *this;
@@ -1210,7 +1212,8 @@ namespace simplecpp {
     public:
         explicit Macro(std::vector<std::string> &f) : nameTokDef(NULL), variadic(false), valueToken(NULL), endToken(NULL), files(f), tokenListDefine(f), valueDefinedInCode_(false) {}
 
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(NULL), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : Macro(f) {
+            valueDefinedInCode_ = true;
             if (sameline(tok->previous, tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1226,7 +1229,7 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax");
         }
 
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(NULL), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : Macro(f) {
             const std::string def(name + ' ' + value);
             std::istringstream istr(def);
             tokenListDefine.readfile(istr);
@@ -1234,20 +1237,22 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &macro) : nameTokDef(NULL), files(macro.files), tokenListDefine(macro.files), valueDefinedInCode_(macro.valueDefinedInCode_) {
-            *this = macro;
+        Macro(const Macro &other) : Macro(other.files) {
+            *this = other;
         }
 
-        void operator=(const Macro &macro) {
-            if (this != &macro) {
-                valueDefinedInCode_ = macro.valueDefinedInCode_;
-                if (macro.tokenListDefine.empty())
-                    parseDefine(macro.nameTokDef);
+        Macro &operator=(const Macro &other) {
+            if (this != &other) {
+                files = other.files;
+                valueDefinedInCode_ = other.valueDefinedInCode_;
+                if (other.tokenListDefine.empty())
+                    parseDefine(other.nameTokDef);
                 else {
-                    tokenListDefine = macro.tokenListDefine;
+                    tokenListDefine = other.tokenListDefine;
                     parseDefine(tokenListDefine.cfront());
                 }
             }
+            return *this;
         }
 
         bool valueDefinedInCode() const {
