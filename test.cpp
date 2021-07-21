@@ -175,7 +175,7 @@ static void characterLiteral()
     // GCC extension for ESC character
     ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\e'"));
     ASSERT_EQUALS(0x1b, simplecpp::characterLiteralToLL("'\\E'"));
-    
+
     // more obscure GCC extensions
     ASSERT_EQUALS('(', simplecpp::characterLiteralToLL("'\\('"));
     ASSERT_EQUALS('[', simplecpp::characterLiteralToLL("'\\['"));
@@ -233,7 +233,7 @@ static void characterLiteral()
 #endif
 
     ASSERT_THROW(simplecpp::characterLiteralToLL("'\\9'"), std::runtime_error);
-    
+
     // Input is manually encoded to (escaped) UTF-8 byte sequences
     // to avoid dependence on source encoding used for this file
     ASSERT_EQUALS(0xb5, simplecpp::characterLiteralToLL("U'\302\265'"));
@@ -241,25 +241,25 @@ static void characterLiteral()
     ASSERT_EQUALS(0xff0f, simplecpp::characterLiteralToLL("U'\357\274\217'"));
     ASSERT_EQUALS(0x3042, simplecpp::characterLiteralToLL("U'\343\201\202'"));
     ASSERT_EQUALS(0x13000, simplecpp::characterLiteralToLL("U'\360\223\200\200'"));
-    
+
     ASSERT_EQUALS(0xb5, simplecpp::characterLiteralToLL("L'\302\265'"));
     ASSERT_EQUALS(0x157, simplecpp::characterLiteralToLL("L'\305\227'"));
     ASSERT_EQUALS(0xff0f, simplecpp::characterLiteralToLL("L'\357\274\217'"));
     ASSERT_EQUALS(0x3042, simplecpp::characterLiteralToLL("L'\343\201\202'"));
     ASSERT_EQUALS(0x13000, simplecpp::characterLiteralToLL("L'\360\223\200\200'"));
-    
+
     ASSERT_EQUALS(0xb5, simplecpp::characterLiteralToLL("u'\302\265'"));
     ASSERT_EQUALS(0x157, simplecpp::characterLiteralToLL("u'\305\227'"));
     ASSERT_EQUALS(0xff0f, simplecpp::characterLiteralToLL("u'\357\274\217'"));
     ASSERT_EQUALS(0x3042, simplecpp::characterLiteralToLL("u'\343\201\202'"));
     ASSERT_THROW(simplecpp::characterLiteralToLL("u'\360\223\200\200'"), std::runtime_error);
-    
+
     ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\302\265'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\305\227'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\357\274\217'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\343\201\202'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\360\223\200\200'"), std::runtime_error);
-    
+
     ASSERT_EQUALS('\x89', simplecpp::characterLiteralToLL("'\x89'"));
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x89'"), std::runtime_error);
 
@@ -269,7 +269,7 @@ static void characterLiteral()
     ASSERT_EQUALS(0x80, simplecpp::characterLiteralToLL("U'\xc2\x80'"));
     ASSERT_EQUALS(0x800, simplecpp::characterLiteralToLL("U'\xe0\xa0\x80'"));
     ASSERT_EQUALS(0x10000, simplecpp::characterLiteralToLL("U'\xf0\x90\x80\x80'"));
-    
+
     ASSERT_EQUALS(0x7f, simplecpp::characterLiteralToLL("U'\x7f'"));
     ASSERT_EQUALS(0x7ff, simplecpp::characterLiteralToLL("U'\xdf\xbf'"));
     ASSERT_EQUALS(0xffff, simplecpp::characterLiteralToLL("U'\xef\xbf\xbf'"));
@@ -283,7 +283,7 @@ static void characterLiteral()
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f\x8f'"), std::runtime_error);
-    
+
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf\x8f'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf\x8f\x8f'"), std::runtime_error);
@@ -295,10 +295,10 @@ static void characterLiteral()
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x8f '"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f '"), std::runtime_error);
-    
+
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf8'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xff'"), std::runtime_error);
-    
+
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0\xaf'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x80\xaf'"), std::runtime_error);
     ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\xaf'"), std::runtime_error);
@@ -1021,9 +1021,9 @@ static void hashhash13()
     const char code[] = "#define X(x) x##U\n"
                         "X((1<<1)-1)";
     ASSERT_EQUALS("\n( 1 << 1 ) - 1U", preprocess(code));
-    
+
     const char code2[] = "#define CONCAT(x, y) x##y\n"
-                        "CONCAT(&a, b)";
+                         "CONCAT(&a, b)";
     ASSERT_EQUALS("\n& ab", preprocess(code2));
 }
 
