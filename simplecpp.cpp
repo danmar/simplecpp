@@ -2804,7 +2804,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     return true;
 }
 
-void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage)
+void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
 {
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
     sizeOfType.insert(std::make_pair("char", sizeof(char)));
@@ -3119,7 +3119,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         tok = tmp->previous;
                     }
                     try {
-                        conditionIsTrue = (evaluate(expr, sizeOfType) != 0);
+                        if (ifCond) {
+                            std::string E;
+                            for (const simplecpp::Token *tok = expr.cfront(); tok; tok = tok->next)
+                                E += (E.empty() ? "" : " ") + tok->str();
+                            const long long result = evaluate(expr, sizeOfType);
+                            conditionIsTrue = (result != 0);
+                            ifCond->push_back(IfCond(rawtok->location, E, result));
+                        } else {
+                            const long long result = evaluate(expr, sizeOfType);
+                            conditionIsTrue = (result != 0);
+                        }
                     } catch (const std::exception &e) {
                         if (outputList) {
                             Output out(rawtok->location.files);
