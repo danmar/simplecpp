@@ -501,14 +501,26 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 oldLastToken = cback();
                 const std::string lastline(lastLine());
                 if (lastline == "# file %str%") {
+                    const Token *strtok = cback();
+                    while (strtok->comment)
+                        strtok = strtok->previous;
                     loc.push(location);
-                    location.fileIndex = fileIndex(cback()->str().substr(1U, cback()->str().size() - 2U));
+                    location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
                     location.line = 1U;
                 } else if (lastline == "# line %num%") {
-                    lineDirective(location.fileIndex, std::atol(cback()->str().c_str()), &location);
+                    const Token *numtok = cback();
+                    while (numtok->comment)
+                        numtok = numtok->previous;
+                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
                 } else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
-                    lineDirective(fileIndex(replaceAll(cback()->str().substr(1U, cback()->str().size() - 2U),"\\\\","\\")),
-                                  std::atol(cback()->previous->str().c_str()), &location);
+                    const Token *strtok = cback();
+                    while (strtok->comment)
+                        strtok = strtok->previous;
+                    const Token *numtok = strtok->previous;
+                    while (numtok->comment)
+                        numtok = numtok->previous;
+                    lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
+                                  std::atol(numtok->str().c_str()), &location);
                 }
                 // #endfile
                 else if (lastline == "# endfile" && !loc.empty()) {

@@ -10,14 +10,25 @@ static int numberOfFailedAssertions = 0;
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 #define ASSERT_THROW(stmt, e) try { stmt; assertThrowFailed(__LINE__); } catch (const e&) {}
 
+static std::string pprint(const std::string &in)
+{
+    std::string ret;
+    for (int i = 0; i < (int)in.size(); ++i) {
+        if (in[i] == '\n')
+            ret += "\\n";
+        ret += in[i];
+    }
+    return ret;
+}
+
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
     if (expected != actual) {
         numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
         std::cerr << "line " << line << std::endl;
-        std::cerr << "expected:" << expected << std::endl;
-        std::cerr << "actual:" << actual << std::endl;
+        std::cerr << "expected:" << pprint(expected) << std::endl;
+        std::cerr << "actual:" << pprint(actual) << std::endl;
     }
     return (expected == actual);
 }
@@ -1394,6 +1405,16 @@ static void location4()
     ASSERT_EQUALS("\n#line 1 \"abc\\def.g\"\na", preprocess(code));
 }
 
+static void location5()
+{
+    // https://sourceforge.net/p/cppcheck/discussion/general/thread/eccf020a13/
+    const char *code;
+    code = "#line 10 \"/a/Attribute/parser/FilterParser.y\" // lalr1.cc:377\n"
+           "int x;\n";
+    ASSERT_EQUALS("\n#line 10 \"/a/Attribute/parser/FilterParser.y\"\n"
+                  "int x ;", preprocess(code));
+}
+
 static void missingHeader1()
 {
     const simplecpp::DUI dui;
@@ -2298,6 +2319,7 @@ int main(int argc, char **argv)
     TEST_CASE(location2);
     TEST_CASE(location3);
     TEST_CASE(location4);
+    TEST_CASE(location5);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
