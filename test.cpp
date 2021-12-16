@@ -702,6 +702,15 @@ static void define_define_17()
     ASSERT_EQUALS("\n\n1 ;", preprocess(code));
 }
 
+static void define_define_18()
+{
+    const char code[] = "#define FOO(v)      BAR(v, 0)\n"
+                        "#define BAR(v, x)   (v)\n"
+                        "#define var         (p->var)\n"
+                        "FOO(var);";
+    ASSERT_EQUALS("\n\n\n( ( p -> var ) ) ;", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -2255,6 +2264,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_15);
     TEST_CASE(define_define_16);
     TEST_CASE(define_define_17);
+    TEST_CASE(define_define_18);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
