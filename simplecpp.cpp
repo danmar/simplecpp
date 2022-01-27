@@ -2646,7 +2646,7 @@ static NonExistingFilesCache nonExistingFilesCache;
 
 #endif
 
-static std::string _openHeader(std::ifstream &f, const std::string &path)
+static std::string openHeader(std::ifstream &f, const std::string &path)
 {
 #ifdef SIMPLECPP_WINDOWS
     std::string simplePath = simplecpp::simplifyPath(path);
@@ -2675,7 +2675,7 @@ static std::string getRelativeFileName(const std::string &sourcefile, const std:
 
 static std::string openHeaderRelative(std::ifstream &f, const std::string &sourcefile, const std::string &header)
 {
-    return _openHeader(f, getRelativeFileName(sourcefile, header));
+    return openHeader(f, getRelativeFileName(sourcefile, header));
 }
 
 static std::string getIncludePathFileName(const std::string &includePath, const std::string &header)
@@ -2689,7 +2689,7 @@ static std::string getIncludePathFileName(const std::string &includePath, const 
 static std::string openHeaderIncludePath(std::ifstream &f, const simplecpp::DUI &dui, const std::string &header)
 {
     for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-        std::string simplePath = _openHeader(f, getIncludePathFileName(*it, header));
+        std::string simplePath = openHeader(f, getIncludePathFileName(*it, header));
         if (!simplePath.empty())
             return simplePath;
     }
@@ -2699,7 +2699,7 @@ static std::string openHeaderIncludePath(std::ifstream &f, const simplecpp::DUI 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
     if (isAbsolutePath(header))
-        return _openHeader(f, header);
+        return openHeader(f, header);
 
     std::string ret;
 

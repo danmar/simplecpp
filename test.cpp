@@ -25,7 +25,7 @@
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
-#define ASSERT_THROW(stmt, e) try { stmt; assertThrowFailed(__LINE__); } catch (const e&) {}
+#define ASSERT_THROW(stmt, e) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e&) {} } while(false)
 
 static std::string pprint(const std::string &in)
 {
