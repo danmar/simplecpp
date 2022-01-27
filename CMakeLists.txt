@@ -12,7 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-conversion)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32)
 endif()
 
 add_executable(simplecpp simplecpp.cpp main.cpp)
