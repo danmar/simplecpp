@@ -12,7 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors)
     # TODO: fix these?
-    add_compile_options(-Wno-zero-as-null-pointer-constant -Wno-padded -Wno-sign-conversion -Wno-conversion -Wno-old-style-cast)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-conversion -Wno-old-style-cast)
 endif()
 
 add_executable(simplecpp simplecpp.cpp main.cpp)
@@ -26,7 +26,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         target_compile_options(simplecpp-03-syntax PRIVATE -Wno-long-long)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(simplecpp-03-syntax PRIVATE -Wno-c++11-long-long)
+        target_compile_options(simplecpp-03-syntax PRIVATE -Wno-c++11-long-long -Wno-c++11-compat)
     endif()
     add_dependencies(simplecpp simplecpp-03-syntax)
 endif()

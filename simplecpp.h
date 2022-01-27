@@ -40,6 +40,9 @@
 #  define SIMPLECPP_LIB
 #endif
 
+#if (__cplusplus < 201103L) && !defined(__APPLE__)
+#define nullptr NULL
+#endif
 
 namespace simplecpp {
 
@@ -97,12 +100,12 @@ namespace simplecpp {
     class SIMPLECPP_LIB Token {
     public:
         Token(const TokenString &s, const Location &loc) :
-            location(loc), previous(NULL), next(NULL), string(s) {
+            location(loc), previous(nullptr), next(nullptr), string(s) {
             flags();
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), location(tok.location), previous(NULL), next(NULL), string(tok.string) {
+            macro(tok.macro), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
             flags();
         }
 
@@ -191,7 +194,7 @@ namespace simplecpp {
     class SIMPLECPP_LIB TokenList {
     public:
         explicit TokenList(std::vector<std::string> &filenames);
-        TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = NULL);
+        TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
 #if __cplusplus >= 201103L
         TokenList(TokenList &&other);
@@ -211,7 +214,7 @@ namespace simplecpp {
         void dump() const;
         std::string stringify() const;
 
-        void readfile(std::istream &istr, const std::string &filename=std::string(), OutputList *outputList = NULL);
+        void readfile(std::istream &istr, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         void constFold();
 
         void removeComments();
@@ -258,7 +261,7 @@ namespace simplecpp {
                 other.frontToken->previous = backToken;
             }
             backToken = other.backToken;
-            other.frontToken = other.backToken = NULL;
+            other.frontToken = other.backToken = nullptr;
         }
 
         /** sizeof(T) */
@@ -320,7 +323,7 @@ namespace simplecpp {
 
     SIMPLECPP_LIB long long characterLiteralToLL(const std::string& str);
 
-    SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = NULL);
+    SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = nullptr);
 
     /**
      * Preprocess
@@ -334,7 +337,7 @@ namespace simplecpp {
      * @param macroUsage output: macro usage
      * @param ifCond output: #if/#elif expressions
      */
-    SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, TokenList*> &filedata, const DUI &dui, OutputList *outputList = NULL, std::list<MacroUsage> *macroUsage = NULL, std::list<IfCond> *ifCond = NULL);
+    SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, TokenList*> &filedata, const DUI &dui, OutputList *outputList = nullptr, std::list<MacroUsage> *macroUsage = nullptr, std::list<IfCond> *ifCond = nullptr);
 
     /**
      * Deallocate data
@@ -347,5 +350,9 @@ namespace simplecpp {
     /** Convert Cygwin path to Windows path */
     SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
 }
+
+#if (__cplusplus < 201103L) && !defined(__APPLE__)
+#undef nullptr
+#endif
 
 #endif
