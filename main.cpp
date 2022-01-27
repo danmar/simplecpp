@@ -49,6 +49,7 @@ int main(int argc, char **argv)
         std::cout << "  -IPATH          Include path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;
         std::cout << "  -UNAME          Undefine NAME." << std::endl;
+        std::cout << "  -std=STD        Specify standard." << std::endl;
         std::exit(0);
     }
 
