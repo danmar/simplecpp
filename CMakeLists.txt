@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.5)
 project (simplecpp LANGUAGES CXX)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef)
+    add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef -Wold-style-cast)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -12,7 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-conversion -Wno-old-style-cast)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-conversion)
 endif()
 
 add_executable(simplecpp simplecpp.cpp main.cpp)

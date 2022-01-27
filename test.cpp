@@ -30,7 +30,7 @@ static int numberOfFailedAssertions = 0;
 static std::string pprint(const std::string &in)
 {
     std::string ret;
-    for (int i = 0; i < (int)in.size(); ++i) {
+    for (std::string::size_type i = 0; i < in.size(); ++i) {
         if (in[i] == '\n')
             ret += "\\n";
         ret += in[i];
@@ -223,10 +223,10 @@ static void characterLiteral()
     ASSERT_EQUALS('\u0012',     simplecpp::characterLiteralToLL("'\\u0012'"));
     ASSERT_EQUALS('\U00000012', simplecpp::characterLiteralToLL("'\\U00000012'"));
 
-    ASSERT_EQUALS(((unsigned int)(unsigned char)'b'    << 8) | (unsigned char)'c',    simplecpp::characterLiteralToLL("'bc'"));
-    ASSERT_EQUALS(((unsigned int)(unsigned char)'\x23' << 8) | (unsigned char)'\x45', simplecpp::characterLiteralToLL("'\\x23\\x45'"));
-    ASSERT_EQUALS(((unsigned int)(unsigned char)'\11'  << 8) | (unsigned char)'\222', simplecpp::characterLiteralToLL("'\\11\\222'"));
-    ASSERT_EQUALS(((unsigned int)(unsigned char)'\a'   << 8) | (unsigned char)'\b',   simplecpp::characterLiteralToLL("'\\a\\b'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('b'))    << 8) | static_cast<unsigned char>('c'),    simplecpp::characterLiteralToLL("'bc'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\x23')) << 8) | static_cast<unsigned char>('\x45'), simplecpp::characterLiteralToLL("'\\x23\\x45'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\11'))  << 8) | static_cast<unsigned char>('\222'), simplecpp::characterLiteralToLL("'\\11\\222'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\a'))   << 8) | static_cast<unsigned char>('\b'),   simplecpp::characterLiteralToLL("'\\a\\b'"));
     if (sizeof(int) <= 4)
         ASSERT_EQUALS(-1, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
     else
@@ -253,9 +253,9 @@ static void characterLiteral()
 
 #ifdef __GNUC__
     // BEGIN Implementation-specific results
-    ASSERT_EQUALS((int)('AB'), simplecpp::characterLiteralToLL("'AB'"));
-    ASSERT_EQUALS((int)('ABC'), simplecpp::characterLiteralToLL("'ABC'"));
-    ASSERT_EQUALS((int)('ABCD'), simplecpp::characterLiteralToLL("'ABCD'"));
+    ASSERT_EQUALS(static_cast<int>('AB'), simplecpp::characterLiteralToLL("'AB'"));
+    ASSERT_EQUALS(static_cast<int>('ABC'), simplecpp::characterLiteralToLL("'ABC'"));
+    ASSERT_EQUALS(static_cast<int>('ABCD'), simplecpp::characterLiteralToLL("'ABCD'"));
     ASSERT_EQUALS('\134t', simplecpp::characterLiteralToLL("'\\134t'")); // cppcheck ticket #7452
     // END Implementation-specific results
 #endif
