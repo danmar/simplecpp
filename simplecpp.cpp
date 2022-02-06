@@ -33,6 +33,9 @@
 #include <sstream>
 #include <stack>
 #include <stdexcept>
+#if __cplusplus >= 201103L
+#include <unordered_map>
+#endif
 #include <utility>
 
 #ifdef SIMPLECPP_WINDOWS
@@ -1225,7 +1228,11 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 
 namespace simplecpp {
 	class Macro;
+#if __cplusplus >= 201103L
+	using MacroMap = std::unordered_map<TokenString,Macro>;
+#else
 	typedef std::map<TokenString,Macro> MacroMap;
+#endif
 
     class Macro {
     public:
