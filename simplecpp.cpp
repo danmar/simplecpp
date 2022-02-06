@@ -1202,12 +1202,12 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
     for (const Token *tok = cback(); sameline(tok,cback()); tok = tok->previous) {
         if (tok->comment)
             continue;
+        if (++count > maxsize)
+            return "";
         if (!ret.empty())
             ret.insert(0, 1, ' ');
         ret.insert(0, tok->str()[0] == '\"' ? std::string("%str%")
                    : tok->number ? std::string("%num%") : tok->str());
-        if (++count > maxsize)
-            return "";
     }
     return ret;
 }
