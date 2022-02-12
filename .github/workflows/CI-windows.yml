@@ -17,7 +17,7 @@ jobs:
       matrix:
         # windows 2016 should default to VS 2017. Not supported by setup-msbuild
         os: [windows-2019]
-      fail-fast: true
+      fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
