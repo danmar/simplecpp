@@ -86,7 +86,7 @@ static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList 
     return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = NULL)
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = nullptr)
 {
     std::istringstream istr(code);
     std::vector<std::string> files;
@@ -1459,7 +1459,7 @@ static void missingHeader2()
     std::istringstream istr("#include \"foo.h\"\n"); // this file exists
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    filedata["foo.h"] = NULL;
+    filedata["foo.h"] = nullptr;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
