@@ -13,6 +13,13 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-multichar)
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32)
+
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14)
+        # not all tools support DWARF 5 yet so stick to version 4
+        add_compile_options(-gdwarf-4)
+        # work around performance regression in clang-14
+        add_compile_options(-mllvm -inline-deferral)
+    endif()
 endif()
 
 add_executable(simplecpp simplecpp.cpp main.cpp)
