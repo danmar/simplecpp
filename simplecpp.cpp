@@ -227,7 +227,7 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), b
 }
 
 #if __cplusplus >= 201103L
-simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(nullptr), backToken(nullptr), files(other.files)
+simplecpp::TokenList::TokenList(TokenList &&other) : TokenList(other)
 {
     *this = std::move(other);
 }
@@ -242,6 +242,7 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(const TokenList &other)
 {
     if (this != &other) {
         clear();
+        files = other.files;
         for (const Token *tok = other.cfront(); tok; tok = tok->next)
             push_back(new Token(*tok));
         sizeOfType = other.sizeOfType;
@@ -254,10 +255,11 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
 {
     if (this != &other) {
         clear();
-        backToken = other.backToken;
-        other.backToken = nullptr;
         frontToken = other.frontToken;
         other.frontToken = nullptr;
+        backToken = other.backToken;
+        other.backToken = nullptr;
+        files = other.files;
         sizeOfType = std::move(other.sizeOfType);
     }
     return *this;
@@ -1261,20 +1263,22 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &macro) : nameTokDef(nullptr), files(macro.files), tokenListDefine(macro.files), valueDefinedInCode_(macro.valueDefinedInCode_) {
-            *this = macro;
+        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
+            *this = other;
         }
 
-        void operator=(const Macro &macro) {
-            if (this != &macro) {
-                valueDefinedInCode_ = macro.valueDefinedInCode_;
-                if (macro.tokenListDefine.empty())
-                    parseDefine(macro.nameTokDef);
+        Macro &operator=(const Macro &other) {
+            if (this != &other) {
+                files = other.files;
+                valueDefinedInCode_ = other.valueDefinedInCode_;
+                if (other.tokenListDefine.empty())
+                    parseDefine(other.nameTokDef);
                 else {
-                    tokenListDefine = macro.tokenListDefine;
+                    tokenListDefine = other.tokenListDefine;
                     parseDefine(tokenListDefine.cfront());
                 }
             }
+            return *this;
         }
 
         bool valueDefinedInCode() const {
