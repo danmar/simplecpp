@@ -1,6 +1,6 @@
 /*
  * simplecpp - A simple and high-fidelity C/C++ preprocessor library
- * Copyright (C) 2016 Daniel Marjamäki.
+ * Copyright (C) 2016-2022 Daniel Marjamäki.
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
