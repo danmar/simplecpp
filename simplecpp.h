@@ -21,6 +21,7 @@
 
 #include <cctype>
 #include <cstddef>
+#include <cstring>
 #include <istream>
 #include <list>
 #include <map>
@@ -105,13 +106,12 @@ namespace simplecpp {
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
-            flags();
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
         }
 
         void flags() {
             name = (std::isalpha((unsigned char)string[0]) || string[0] == '_' || string[0] == '$')
-                   && (string.find('\'') == string.npos);
+                   && (std::memchr(string.c_str(), '\'', string.size()) == nullptr);
             comment = string.size() > 1U && string[0] == '/' && (string[1] == '/' || string[1] == '*');
             number = std::isdigit((unsigned char)string[0]) || (string.size() > 1U && string[0] == '-' && std::isdigit((unsigned char)string[1]));
             op = (string.size() == 1U) ? string[0] : '\0';
