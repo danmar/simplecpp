@@ -24,7 +24,7 @@
 
 int main(int argc, char **argv)
 {
-    const char *filename = NULL;
+    const char *filename = nullptr;
 
     // Settings..
     simplecpp::DUI dui;
