@@ -320,20 +320,20 @@ std::string simplecpp::TokenList::stringify() const
 
 static unsigned char readChar(std::istream &istr, unsigned int bom)
 {
-    unsigned char ch = (unsigned char)istr.get();
+    unsigned char ch = static_cast<unsigned char>(istr.get());
 
     // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
     // character is non-ASCII character then replace it with 0xff
     if (bom == 0xfeff || bom == 0xfffe) {
-        const unsigned char ch2 = (unsigned char)istr.get();
+        const unsigned char ch2 = static_cast<unsigned char>(istr.get());
         const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
-        ch = (unsigned char)((ch16 >= 0x80) ? 0xff : ch16);
+        ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
     }
 
     // Handling of newlines..
     if (ch == '\r') {
         ch = '\n';
-        if (bom == 0 && (char)istr.peek() == '\n')
+        if (bom == 0 && static_cast<char>(istr.peek()) == '\n')
             (void)istr.get();
         else if (bom == 0xfeff || bom == 0xfffe) {
             int c1 = istr.get();
@@ -351,16 +351,16 @@ static unsigned char readChar(std::istream &istr, unsigned int bom)
 
 static unsigned char peekChar(std::istream &istr, unsigned int bom)
 {
-    unsigned char ch = (unsigned char)istr.peek();
+    unsigned char ch = static_cast<unsigned char>(istr.peek());
 
     // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
     // character is non-ASCII character then replace it with 0xff
     if (bom == 0xfeff || bom == 0xfffe) {
         (void)istr.get();
-        const unsigned char ch2 = (unsigned char)istr.peek();
+        const unsigned char ch2 = static_cast<unsigned char>(istr.peek());
         istr.unget();
         const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
-        ch = (unsigned char)((ch16 >= 0x80) ? 0xff : ch16);
+        ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
     }
 
     // Handling of newlines..
@@ -383,9 +383,9 @@ static unsigned short getAndSkipBOM(std::istream &istr)
 
     // The UTF-16 BOM is 0xfffe or 0xfeff.
     if (ch1 >= 0xfe) {
-        unsigned short bom = ((unsigned char)istr.get() << 8);
+        unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
         if (istr.peek() >= 0xfe)
-            return bom | (unsigned char)istr.get();
+            return bom | static_cast<unsigned char>(istr.get());
         istr.unget();
         return 0;
     }
@@ -486,7 +486,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                 err.type = simplecpp::Output::UNHANDLED_CHAR_ERROR;
                 err.location = location;
                 std::ostringstream s;
-                s << (int)ch;
+                s << static_cast<int>(ch);
                 err.msg = "The code contains unhandled character(s) (character code=" + s.str() + "). Neither unicode nor extended ascii is supported.";
                 outputList->push_back(err);
             }
