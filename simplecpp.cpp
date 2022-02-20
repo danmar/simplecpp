@@ -2912,6 +2912,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             includetokenstack.push(f->second->cfront());
     }
 
+    std::map<std::string, std::list<Location> > maybeUsedMacros;
+
     for (const Token *rawtok = nullptr; rawtok || !includetokenstack.empty();) {
         if (rawtok == nullptr) {
             rawtok = includetokenstack.top();
@@ -3077,11 +3079,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 bool conditionIsTrue;
                 if (ifstates.top() == ALWAYS_FALSE || (ifstates.top() == ELSE_IS_TRUE && rawtok->str() != ELIF))
                     conditionIsTrue = false;
-                else if (rawtok->str() == IFDEF)
+                else if (rawtok->str() == IFDEF) {
                     conditionIsTrue = (macros.find(rawtok->next->str()) != macros.end() || (hasInclude && rawtok->next->str() == HAS_INCLUDE));
-                else if (rawtok->str() == IFNDEF)
+                    maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
+                } else if (rawtok->str() == IFNDEF) {
                     conditionIsTrue = (macros.find(rawtok->next->str()) == macros.end() && !(hasInclude && rawtok->next->str() == HAS_INCLUDE));
-                else { /*if (rawtok->str() == IF || rawtok->str() == ELIF)*/
+                    maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
+                } else { /*if (rawtok->str() == IF || rawtok->str() == ELIF)*/
                     TokenList expr(files);
                     for (const Token *tok = rawtok->next; tok && tok->location.sameline(rawtok->location); tok = tok->next) {
                         if (!tok->name) {
@@ -3094,6 +3098,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const bool par = (tok && tok->op == '(');
                             if (par)
                                 tok = tok->next;
+                            maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
                             if (tok) {
                                 if (macros.find(tok->str()) != macros.end())
                                     expr.push_back(new Token("1", tok->location));
@@ -3146,6 +3151,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             }
                             continue;
                         }
+
+                        maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
 
                         const Token *tmp = tok;
                         if (!preprocessToken(expr, &tmp, macros, files, outputList)) {
@@ -3256,7 +3263,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     if (macroUsage) {
         for (simplecpp::MacroMap::const_iterator macroIt = macros.begin(); macroIt != macros.end(); ++macroIt) {
             const Macro &macro = macroIt->second;
-            const std::list<Location> &usage = macro.usage();
+            std::list<Location> usage = macro.usage();
+            const std::list<Location>& temp = maybeUsedMacros[macro.name()];
+            usage.insert(usage.end(), temp.begin(), temp.end());
             for (std::list<Location>::const_iterator usageIt = usage.begin(); usageIt != usage.end(); ++usageIt) {
                 MacroUsage mu(usageIt->files, macro.valueDefinedInCode());
                 mu.macroName = macro.name();
