@@ -3336,14 +3336,23 @@ void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
 
 std::string simplecpp::getCppStdString(const std::string &std)
 {
-    if (std == "c++11")
+    if (std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03")
+        return "199711L";
+    if (std == "c++11" || std == "gnu++11" || std == "c++0x" || std == "gnu++0x")
         return "201103L";
-    if (std == "c++14")
+    if (std == "c++14" || std == "c++1y" || std == "gnu++14" || std == "gnu++1y")
         return "201402L";
-    if (std == "c++17")
+    if (std == "c++17" || std == "c++1z" || std == "gnu++17" || std == "gnu++1z")
         return "201703L";
-    if (std == "c++20")
+    if (std == "c++20" || std == "c++2a" || std == "gnu++20" || std == "gnu++2a") {
+        // GCC 10 returns "201703L"
         return "202002L";
+    }
+    /*
+    if (std == "c++23" || std == "c++2b" || std == "gnu++23" || std == "gnu++2b") {
+        // supported by GCC 11+
+        return "";
+    } */
     return "";
 }
 
