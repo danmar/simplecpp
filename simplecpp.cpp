@@ -2938,9 +2938,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), files)));
 
     if (!dui.std.empty()) {
-        std::string std_def = simplecpp::getCppStdString(dui.std);
+        std::string std_def = simplecpp::getCStdString(dui.std);
         if (!std_def.empty()) {
-            macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, files)));
+            macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, files)));
+        } else {
+            std_def = simplecpp::getCppStdString(dui.std);
+            if (!std_def.empty())
+                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, files)));
         }
     }
 
@@ -3332,6 +3336,25 @@ void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
     for (std::map<std::string, TokenList*>::iterator it = filedata.begin(); it != filedata.end(); ++it)
         delete it->second;
     filedata.clear();
+}
+
+std::string simplecpp::getCStdString(const std::string &std)
+{
+    if (std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89") {
+        // __STDC_VERSION__ is not set for C90 although the macro was added in the 1994 amendments
+        return "";
+    }
+    if (std == "c99" || std == "c9x" || std == "iso9899:1999" || std == "iso9899:199x" || std == "gnu99"|| std == "gnu9x")
+        return "199901L";
+    if (std == "c11" || std == "c1x" || std == "iso9899:2011" || std == "gnu11" || std == "gnu1x")
+        return "201112L";
+    if (std == "c17" || std == "c18" || std == "iso9899:2017" || std == "iso9899:2018" || std == "gnu17"|| std == "gnu18")
+        return "201710L";
+    if (std == "c2x" || std == "gnu2x") {
+        // Clang 11 returns "201710L"
+        return "202000L";
+    }
+    return "";
 }
 
 std::string simplecpp::getCppStdString(const std::string &std)

@@ -2202,6 +2202,16 @@ static void dateDefine()
     ASSERT_EQUALS('"', dt[12]);
 }
 
+static void stdcVersionDefine()
+{
+    const char code[] = "#if defined(__STDC_VERSION__)\n"
+                        "  __STDC_VERSION__\n"
+                        "#endif\n";
+    simplecpp::DUI dui;
+    dui.std = "c11";
+    ASSERT_EQUALS("\n201112L", preprocess(code, dui));
+}
+
 static void cpluscplusDefine()
 {
     const char code[] = "#if defined(__cplusplus)\n"
@@ -2396,6 +2406,7 @@ int main(int argc, char **argv)
     TEST_CASE(timeDefine);
     TEST_CASE(dateDefine);
 
+    TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
