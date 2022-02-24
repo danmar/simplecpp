@@ -1254,11 +1254,11 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 
 
 namespace simplecpp {
-	class Macro;
+    class Macro;
 #if __cplusplus >= 201103L
-	using MacroMap = std::unordered_map<TokenString,Macro>;
+    using MacroMap = std::unordered_map<TokenString,Macro>;
 #else
-	typedef std::map<TokenString,Macro> MacroMap;
+    typedef std::map<TokenString,Macro> MacroMap;
 #endif
 
     class Macro {
