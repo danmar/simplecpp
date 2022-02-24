@@ -2937,14 +2937,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), files)));
     macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), files)));
 
-    if (dui.std == "c++11")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201103L", files)));
-    else if (dui.std == "c++14")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201402L", files)));
-    else if (dui.std == "c++17")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201703L", files)));
-    else if (dui.std == "c++20")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "202002L", files)));
+    if (!dui.std.empty()) {
+        std::string std_def = simplecpp::getCppStdString(dui.std);
+        if (!std_def.empty()) {
+            macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, files)));
+        }
+    }
 
     // TRUE => code in current #if block should be kept
     // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.
@@ -3334,6 +3332,19 @@ void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
     for (std::map<std::string, TokenList*>::iterator it = filedata.begin(); it != filedata.end(); ++it)
         delete it->second;
     filedata.clear();
+}
+
+std::string simplecpp::getCppStdString(const std::string &std)
+{
+    if (std == "c++11")
+        return "201103L";
+    if (std == "c++14")
+        return "201402L";
+    if (std == "c++17")
+        return "201703L";
+    if (std == "c++20")
+        return "202002L";
+    return "";
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
