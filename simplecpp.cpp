@@ -509,6 +509,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
+                if (!isLastLinePreprocessor())
+                    continue;
                 const std::string lastline(lastLine());
                 if (lastline == "# file %str%") {
                     const Token *strtok = cback();
@@ -1221,6 +1223,22 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
             ret.insert(0, tok->str());
     }
     return ret;
+}
+
+bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+{
+    const Token* prevTok = nullptr;
+    int count = 0;
+    for (const Token *tok = cback(); ; tok = tok->previous) {
+        if (!sameline(tok, cback()))
+            break;
+        if (tok->comment)
+            continue;
+        if (++count > maxsize)
+            return false;
+        prevTok = tok;
+    }
+    return prevTok && prevTok->str()[0] == '#';
 }
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
