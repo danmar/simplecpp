@@ -216,7 +216,7 @@ namespace simplecpp {
         void dump() const;
         std::string stringify() const;
 
-        void readfile(Stream &istr, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        void readfile(Stream &stream, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         void constFold();
 
         void removeComments();
@@ -281,7 +281,7 @@ namespace simplecpp {
         void constFoldLogicalOp(Token *tok);
         void constFoldQuestionOp(Token **tok1);
 
-        std::string readUntil(Stream &istr, const Location &location, char start, char end, OutputList *outputList, unsigned int bom);
+        std::string readUntil(Stream &istr, const Location &location, char start, char end, OutputList *outputList);
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
         std::string lastLine(int maxsize=100000) const;
