@@ -304,6 +304,7 @@ protected:
         isUtf16 = (bom == 0xfeff || bom == 0xfffe);
     }
 
+private:
     unsigned short getAndSkipBOM()
     {
         const int ch1 = peek();
