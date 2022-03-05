@@ -93,8 +93,8 @@ int main(int argc, char **argv)
     // Perform preprocessing
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
-    std::ifstream f(filename);
-    simplecpp::TokenList rawtokens(f,files,filename,&outputList);
+    //std::ifstream f(filename);
+    simplecpp::TokenList rawtokens(files,filename,&outputList);
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(rawtokens, files, dui, &outputList);
     for (std::pair<std::string, simplecpp::TokenList *> i : included)

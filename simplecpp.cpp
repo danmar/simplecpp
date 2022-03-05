@@ -360,12 +360,53 @@ private:
     std::istream &istr;
 };
 
+class FileStream : public simplecpp::TokenList::Stream {
+public:
+    FileStream(const std::string &filename)
+        : file(fopen(filename.c_str(), "rb"))
+    {
+        init();
+    }
+
+    ~FileStream() {
+        fclose(file);
+        file = nullptr;
+    }
+
+    virtual int get() {
+        lastCh = fgetc(file);
+        return lastCh;
+    }
+    virtual int peek() {
+        const int ch = get();
+        unget();
+        return ch;
+    }
+    virtual void unget() {
+        ungetc(lastCh, file);
+    }
+    virtual bool good() {
+        return lastCh != EOF;
+    }
+
+private:
+    FILE *file;
+    int lastCh;
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     StdIStream stream(istr);
+    readfile(stream,filename,outputList);
+}
+
+simplecpp::TokenList::TokenList(std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
+        : frontToken(nullptr), backToken(nullptr), files(filenames)
+{
+    FileStream stream(filename);
     readfile(stream,filename,outputList);
 }
 

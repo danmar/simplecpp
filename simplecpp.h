@@ -197,6 +197,7 @@ namespace simplecpp {
 
         explicit TokenList(std::vector<std::string> &filenames);
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        TokenList(std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
 #if __cplusplus >= 201103L
         TokenList(TokenList &&other);
