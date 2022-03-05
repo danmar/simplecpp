@@ -247,7 +247,7 @@ public:
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             const unsigned char ch2 = static_cast<unsigned char>(get());
-            const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
+            const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
 
@@ -259,7 +259,7 @@ public:
             else if (isUtf16) {
                 const int c1 = get();
                 const int c2 = get();
-                const int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
+                const int ch16 = makeUtf16Char(c1, c2);
                 if (ch16 != '\n') {
                     unget();
                     unget();
@@ -280,7 +280,7 @@ public:
             (void)get();
             const unsigned char ch2 = static_cast<unsigned char>(peek());
             unget();
-            const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
+            const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
 
@@ -305,6 +305,11 @@ protected:
     }
 
 private:
+    inline int makeUtf16Char(const unsigned char ch, const unsigned char ch2) const
+    {
+        return (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
+    }
+
     unsigned short getAndSkipBOM()
     {
         const int ch1 = peek();
