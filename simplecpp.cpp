@@ -3018,8 +3018,9 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             }
             continue;
         }
+        fin.close();
 
-        TokenList *tokenlist = new TokenList(fin, filenames, filename, outputList);
+        TokenList *tokenlist = new TokenList(filenames, filename, outputList);
         if (!tokenlist->front()) {
             delete tokenlist;
             continue;
@@ -3057,8 +3058,9 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
         if (!f.is_open())
             continue;
+        f.close();
 
-        TokenList *tokens = new TokenList(f, filenames, header2, outputList);
+        TokenList *tokens = new TokenList(filenames, header2, outputList);
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());
