@@ -230,12 +230,36 @@ void simplecpp::Token::printOut() const
     std::cout << std::endl;
 }
 
+class simplecpp::TokenList::Stream {
+public:
+    Stream(std::istream &istr)
+        : istr(istr)
+    {}
+
+    int get() {
+        return istr.get();
+    }
+    int peek() {
+        return istr.peek();
+    }
+    void unget() {
+        istr.unget();
+    }
+    bool good() {
+        return istr.good();
+    }
+
+private:
+    std::istream &istr;
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
-    readfile(istr,filename,outputList);
+    simplecpp::TokenList::Stream stream(istr);
+    readfile(stream,filename,outputList);
 }
 
 simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), backToken(nullptr), files(other.files)
@@ -335,7 +359,7 @@ std::string simplecpp::TokenList::stringify() const
     return ret.str();
 }
 
-static unsigned char readChar(std::istream &istr, unsigned int bom)
+static unsigned char readChar(simplecpp::TokenList::Stream &istr, unsigned int bom)
 {
     unsigned char ch = static_cast<unsigned char>(istr.get());
 
@@ -366,7 +390,7 @@ static unsigned char readChar(std::istream &istr, unsigned int bom)
     return ch;
 }
 
-static unsigned char peekChar(std::istream &istr, unsigned int bom)
+static unsigned char peekChar(simplecpp::TokenList::Stream &istr, unsigned int bom)
 {
     unsigned char ch = static_cast<unsigned char>(istr.peek());
 
@@ -387,14 +411,14 @@ static unsigned char peekChar(std::istream &istr, unsigned int bom)
     return ch;
 }
 
-static void ungetChar(std::istream &istr, unsigned int bom)
+static void ungetChar(simplecpp::TokenList::Stream &istr, unsigned int bom)
 {
     istr.unget();
     if (bom == 0xfeff || bom == 0xfffe)
         istr.unget();
 }
 
-static unsigned short getAndSkipBOM(std::istream &istr)
+static unsigned short getAndSkipBOM(simplecpp::TokenList::Stream &istr)
 {
     const int ch1 = istr.peek();
 
@@ -476,7 +500,7 @@ void simplecpp::TokenList::lineDirective(unsigned int fileIndex, unsigned int li
 
 static const std::string COMMENT_END("*/");
 
-void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filename, OutputList *outputList)
+void simplecpp::TokenList::readfile(Stream &istr, const std::string &filename, OutputList *outputList)
 {
     std::stack<simplecpp::Location> loc;
 
@@ -1169,7 +1193,7 @@ void simplecpp::TokenList::removeComments()
     }
 }
 
-std::string simplecpp::TokenList::readUntil(std::istream &istr, const Location &location, const char start, const char end, OutputList *outputList, unsigned int bom)
+std::string simplecpp::TokenList::readUntil(Stream &istr, const Location &location, const char start, const char end, OutputList *outputList, unsigned int bom)
 {
     std::string ret;
     ret += start;
@@ -1300,7 +1324,8 @@ namespace simplecpp {
         Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             std::istringstream istr(def);
-            tokenListDefine.readfile(istr);
+            simplecpp::TokenList::Stream stream(istr);
+            tokenListDefine.readfile(stream);
             if (!parseDefine(tokenListDefine.cfront()))
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }

@@ -193,6 +193,8 @@ namespace simplecpp {
     /** List of tokens. */
     class SIMPLECPP_LIB TokenList {
     public:
+        class Stream;
+
         explicit TokenList(std::vector<std::string> &filenames);
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
@@ -214,7 +216,7 @@ namespace simplecpp {
         void dump() const;
         std::string stringify() const;
 
-        void readfile(std::istream &istr, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        void readfile(Stream &istr, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         void constFold();
 
         void removeComments();
@@ -279,7 +281,7 @@ namespace simplecpp {
         void constFoldLogicalOp(Token *tok);
         void constFoldQuestionOp(Token **tok1);
 
-        std::string readUntil(std::istream &istr, const Location &location, char start, char end, OutputList *outputList, unsigned int bom);
+        std::string readUntil(Stream &istr, const Location &location, char start, char end, OutputList *outputList, unsigned int bom);
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
         std::string lastLine(int maxsize=100000) const;
