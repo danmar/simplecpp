@@ -257,9 +257,9 @@ public:
             if (bom == 0 && static_cast<char>(peek()) == '\n')
                 (void)get();
             else if (isUtf16) {
-                int c1 = get();
-                int c2 = get();
-                int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
+                const int c1 = get();
+                const int c2 = get();
+                const int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
                 if (ch16 != '\n') {
                     unget();
                     unget();
@@ -310,7 +310,7 @@ protected:
 
         // The UTF-16 BOM is 0xfffe or 0xfeff.
         if (ch1 >= 0xfe) {
-            unsigned short bom = (static_cast<unsigned char>(get()) << 8);
+            const unsigned short bom = (static_cast<unsigned char>(get()) << 8);
             if (peek() >= 0xfe)
                 return bom | static_cast<unsigned char>(get());
             unget();
