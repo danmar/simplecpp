@@ -232,25 +232,12 @@ void simplecpp::Token::printOut() const
 
 class simplecpp::TokenList::Stream {
 public:
-    Stream(std::istream &istr)
-        : istr(istr)
-        , bom(getAndSkipBOM())
-        , isUtf16(bom == 0xfeff || bom == 0xfffe)
-    {
-    }
+    virtual ~Stream() {}
 
-    int get() {
-        return istr.get();
-    }
-    int peek() {
-        return istr.peek();
-    }
-    void unget() {
-        istr.unget();
-    }
-    bool good() {
-        return istr.good();
-    }
+    virtual int get() = 0;
+    virtual int peek() = 0;
+    virtual void unget() = 0;
+    virtual bool good() = 0;
 
     unsigned char readChar()
     {
@@ -311,7 +298,12 @@ public:
             unget();
     }
 
-private:
+protected:
+    void init() {
+        bom = getAndSkipBOM();
+        isUtf16 = (bom == 0xfeff || bom == 0xfffe);
+    }
+
     unsigned short getAndSkipBOM()
     {
         const int ch1 = peek();
@@ -339,9 +331,33 @@ private:
         return 0;
     }
 
+    unsigned short bom;
+    bool isUtf16;
+};
+
+class StdIStream : public simplecpp::TokenList::Stream {
+public:
+    StdIStream(std::istream &istr)
+        : istr(istr)
+    {
+        init();
+    }
+
+    virtual int get() {
+        return istr.get();
+    }
+    virtual int peek() {
+        return istr.peek();
+    }
+    virtual void unget() {
+        istr.unget();
+    }
+    virtual bool good() {
+        return istr.good();
+    }
+
+private:
     std::istream &istr;
-    const unsigned short bom;
-    const bool isUtf16;
 };
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
@@ -349,7 +365,7 @@ simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToke
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
-    simplecpp::TokenList::Stream stream(istr);
+    StdIStream stream(istr);
     readfile(stream,filename,outputList);
 }
 
@@ -1327,7 +1343,7 @@ namespace simplecpp {
         Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             std::istringstream istr(def);
-            simplecpp::TokenList::Stream stream(istr);
+            StdIStream stream(istr);
             tokenListDefine.readfile(stream);
             if (!parseDefine(tokenListDefine.cfront()))
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
