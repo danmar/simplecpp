@@ -234,8 +234,9 @@ class simplecpp::TokenList::Stream {
 public:
     Stream(std::istream &istr)
         : istr(istr)
+        , bom(getAndSkipBOM())
+        , isUtf16(bom == 0xfeff || bom == 0xfffe)
     {
-        bom = getAndSkipBOM();
     }
 
     int get() {
@@ -257,7 +258,7 @@ public:
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
-        if (bom == 0xfeff || bom == 0xfffe) {
+        if (isUtf16) {
             const unsigned char ch2 = static_cast<unsigned char>(get());
             const int ch16 = (bom == 0xfeff) ? (ch<<8 | ch2) : (ch2<<8 | ch);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
@@ -268,7 +269,7 @@ public:
             ch = '\n';
             if (bom == 0 && static_cast<char>(peek()) == '\n')
                 (void)get();
-            else if (bom == 0xfeff || bom == 0xfffe) {
+            else if (isUtf16) {
                 int c1 = get();
                 int c2 = get();
                 int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
@@ -288,7 +289,7 @@ public:
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
-        if (bom == 0xfeff || bom == 0xfffe) {
+        if (isUtf16) {
             (void)get();
             const unsigned char ch2 = static_cast<unsigned char>(peek());
             unget();
@@ -306,7 +307,7 @@ public:
     void ungetChar()
     {
         unget();
-        if (bom == 0xfeff || bom == 0xfffe)
+        if (isUtf16)
             unget();
     }
 
@@ -339,7 +340,8 @@ private:
     }
 
     std::istream &istr;
-    unsigned short bom;
+    const unsigned short bom;
+    const bool isUtf16;
 };
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
