@@ -3153,17 +3153,30 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const bool par = (tok && tok->op == '(');
                             if (par)
                                 tok = tok->next;
+                            bool closingAngularBracket = false;
                             if (tok) {
                                 const std::string &sourcefile = rawtok->location.file();
-                                const bool systemheader = (tok->str()[0] == '<');
-                                const std::string header(realFilename(tok->str().substr(1U, tok->str().size() - 2U)));
+                                const bool systemheader = (tok && tok->op == '<');
+                                std::string header;
+
+                                if (systemheader) {
+                                    while ((tok = tok->next) && tok->op != '>')
+                                        header += tok->str();
+                                    header = realFilename(header);
+                                    if (tok && tok->op == '>')
+                                        closingAngularBracket = true;
+                                }
+                                else {
+                                    header = realFilename(tok->str().substr(1U, tok->str().size() - 2U));
+                                    closingAngularBracket = true;
+                                }
                                 std::ifstream f;
                                 const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
                                 expr.push_back(new Token(header2.empty() ? "0" : "1", tok->location));
                             }
                             if (par)
                                 tok = tok ? tok->next : nullptr;
-                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
+                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')') || (!closingAngularBracket)) {
                                 if (outputList) {
                                     Output out(rawtok->location.files);
                                     out.type = Output::SYNTAX_ERROR;
