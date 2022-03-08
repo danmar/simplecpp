@@ -509,6 +509,8 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
+                if (!isLastLinePreprocessor())
+                    continue;
                 const std::string lastline(lastLine());
                 if (lastline == "# file %str%") {
                     const Token *strtok = cback();
@@ -1203,17 +1205,40 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
 {
     std::string ret;
     int count = 0;
-    for (const Token *tok = cback(); sameline(tok,cback()); tok = tok->previous) {
+    for (const Token *tok = cback(); ; tok = tok->previous) {
+        if (!sameline(tok, cback())) {
+            break;
+        }
         if (tok->comment)
             continue;
         if (++count > maxsize)
             return "";
         if (!ret.empty())
             ret.insert(0, 1, ' ');
-        ret.insert(0, tok->str()[0] == '\"' ? std::string("%str%")
-                   : tok->number ? std::string("%num%") : tok->str());
+        if (tok->str()[0] == '\"')
+            ret.insert(0, "%str%");
+        else if (tok->number)
+            ret.insert(0, "%num%");
+        else
+            ret.insert(0, tok->str());
     }
     return ret;
+}
+
+bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+{
+    const Token* prevTok = nullptr;
+    int count = 0;
+    for (const Token *tok = cback(); ; tok = tok->previous) {
+        if (!sameline(tok, cback()))
+            break;
+        if (tok->comment)
+            continue;
+        if (++count > maxsize)
+            return false;
+        prevTok = tok;
+    }
+    return prevTok && prevTok->str()[0] == '#';
 }
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
