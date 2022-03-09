@@ -757,9 +757,8 @@ static void define_ifdef()
                         "#endif\n"
                         ")\n";
 
-    const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
-    preprocess(code, dui, &outputList);
+    preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
 
 }
@@ -828,37 +827,35 @@ static void error5()
 
 static void garbage()
 {
-    const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    preprocess("#ifdef\n", dui, &outputList);
+    preprocess("#ifdef\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,Syntax error in #ifdef\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#define TEST2() A ##\nTEST2()\n", dui, &outputList);
+    preprocess("#define TEST2() A ##\nTEST2()\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2'.\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", dui, &outputList);
+    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
 }
 
 static void garbage_endif()
 {
-    const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    preprocess("#elif A<0\n", dui, &outputList);
+    preprocess("#elif A<0\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,#elif without #if\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#else\n", dui, &outputList);
+    preprocess("#else\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,#else without #if\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#endif\n", dui, &outputList);
+    preprocess("#endif\n", simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,#endif without #if\n", toString(outputList));
 }
 
@@ -980,25 +977,24 @@ static void hashhash9()
                             "void operator >>= ( void ) { x = x >> 1 ; } ;";
     ASSERT_EQUALS(expected, preprocess(code));
 
-    const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
 
     code = "#define A +##x\n"
            "A";
     outputList.clear();
-    preprocess(code, dui, &outputList);
+    preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A 2##=\n"
            "A";
     outputList.clear();
-    preprocess(code, dui, &outputList);
+    preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A <<##x\n"
            "A";
     outputList.clear();
-    preprocess(code, dui, &outputList);
+    preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 }
 
@@ -1220,26 +1216,24 @@ static void ifDefinedNestedNoPar()
 static void ifDefinedInvalid1()   // #50 - invalid unterminated defined
 {
     const char code[] = "#if defined(A";
-    simplecpp::DUI dui;
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
     simplecpp::TokenList tokens2(files);
     std::istringstream istr(code);
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
 static void ifDefinedInvalid2()
 {
     const char code[] = "#if defined";
-    simplecpp::DUI dui;
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
     simplecpp::TokenList tokens2(files);
     std::istringstream istr(code);
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
@@ -1252,13 +1246,12 @@ static void ifDefinedHashHash()
                         "#else\n"
                         "#error FOO is not enabled\n"
                         "#endif\n";
-    simplecpp::DUI dui;
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
     simplecpp::TokenList tokens2(files);
     std::istringstream istr(code);
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,4,#error,#error FOO is enabled\n", toString(outputList));
 }
 
@@ -1443,38 +1436,35 @@ static void location5()
 
 static void missingHeader1()
 {
-    const simplecpp::DUI dui;
     std::istringstream istr("#include \"notexist.h\"\n");
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,missing_header,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
 static void missingHeader2()
 {
-    const simplecpp::DUI dui;
     std::istringstream istr("#include \"foo.h\"\n"); // this file exists
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     filedata["foo.h"] = nullptr;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
 
 static void missingHeader3()
 {
-    const simplecpp::DUI dui;
     std::istringstream istr("#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"); // this file is not included
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
 
@@ -1486,10 +1476,9 @@ static void nestedInclude()
     std::map<std::string, simplecpp::TokenList*> filedata;
     filedata["test.h"] = &rawtokens;
 
-    const simplecpp::DUI dui;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui, &outputList);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI(), &outputList);
 
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
 }
@@ -1499,12 +1488,11 @@ static void multiline1()
     const char code[] = "#define A \\\n"
                         "1\n"
                         "A";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
@@ -1513,7 +1501,6 @@ static void multiline2()
     const char code[] = "#define A /*\\\n"
                         "*/1\n"
                         "A";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1521,7 +1508,7 @@ static void multiline2()
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
@@ -1530,7 +1517,6 @@ static void multiline3()   // #28 - macro with multiline comment
     const char code[] = "#define A /*\\\n"
                         "           */ 1\n"
                         "A";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1538,7 +1524,7 @@ static void multiline3()   // #28 - macro with multiline comment
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("\n\n1", tokens2.stringify());
 }
 
@@ -1548,7 +1534,6 @@ static void multiline4()   // #28 - macro with multiline comment
                         "          /*\\\n"
                         "           */ 1\n"
                         "A";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1556,7 +1541,7 @@ static void multiline4()   // #28 - macro with multiline comment
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, rawtokens, files, filedata, dui);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("\n\n\n1", tokens2.stringify());
 }
 
@@ -1564,7 +1549,6 @@ static void multiline5()   // column
 {
     const char code[] = "#define A\\\n"
                         "(";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1577,7 +1561,6 @@ static void multiline6()   // multiline string in macro
     const char code[] = "#define string  (\"\\\n"
                         "x\")\n"
                         "string\n";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1591,7 +1574,6 @@ static void multiline7()   // multiline string in macro
     const char code[] = "#define A(X) aaa { f(\"\\\n"
                         "a\"); }\n"
                         "A(1)";
-    const simplecpp::DUI dui;
     std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files);
@@ -1631,8 +1613,7 @@ static void nullDirective1()
                         "#endif\n"
                         "x = a;\n";
 
-    const simplecpp::DUI dui;
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, dui));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
 }
 
 static void nullDirective2()
@@ -1643,8 +1624,7 @@ static void nullDirective2()
                         "#endif\n"
                         "x = a;\n";
 
-    const simplecpp::DUI dui;
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, dui));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
 }
 
 static void nullDirective3()
@@ -1655,8 +1635,7 @@ static void nullDirective3()
                         "#endif\n"
                         "x = a;\n";
 
-    const simplecpp::DUI dui;
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, dui));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
 }
 
 static void include1()
@@ -1745,8 +1724,7 @@ static void include5()    // #3 - handle #include MACRO
     filedata["3.h"] = &rawtokens_h;
 
     simplecpp::TokenList out(files);
-    simplecpp::DUI dui;
-    simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, simplecpp::DUI());
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
 }
@@ -1763,8 +1741,7 @@ static void include6()   // #57 - incomplete macro  #include MACRO(,)
     filedata["57.c"] = &rawtokens;
 
     simplecpp::TokenList out(files);
-    simplecpp::DUI dui;
-    simplecpp::preprocess(out, rawtokens, files, filedata, dui);
+    simplecpp::preprocess(out, rawtokens, files, filedata, simplecpp::DUI());
 }
 
 
@@ -1986,12 +1963,11 @@ static void tokenMacro1()
 {
     const char code[] = "#define A 123\n"
                         "A";
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("A", tokenList.cback()->macro);
 }
 
@@ -1999,12 +1975,11 @@ static void tokenMacro2()
 {
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "ADD(1,2)";
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("", tok->macro);
@@ -2021,12 +1996,11 @@ static void tokenMacro3()
     const char code[] = "#define ADD(X,Y) X+Y\n"
                         "#define FRED  1\n"
                         "ADD(FRED,2)";
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("FRED", tok->macro);
@@ -2043,12 +2017,11 @@ static void tokenMacro4()
     const char code[] = "#define A B\n"
                         "#define B 1\n"
                         "A";
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("A", tok->macro);
@@ -2059,12 +2032,11 @@ static void tokenMacro5()
     const char code[] = "#define SET_BPF(code) (code)\n"
                         "#define SET_BPF_JUMP(code) SET_BPF(D | code)\n"
                         "SET_BPF_JUMP(A | B | C);";
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront()->next;
     ASSERT_EQUALS("D", tok->str());
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
@@ -2077,11 +2049,10 @@ static void undef()
                             "#ifdef A\n"
                             "123\n"
                             "#endif");
-    const simplecpp::DUI dui;
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, dui);
+    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("", tokenList.stringify());
 }
 
