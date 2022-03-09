@@ -549,7 +549,8 @@ static void define11() // location of expanded argument
 
 static void define_invalid_1()
 {
-    std::istringstream istr("#define  A(\nB\n");
+    const char code[] = "#define  A(\nB\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -560,7 +561,8 @@ static void define_invalid_1()
 
 static void define_invalid_2()
 {
-    std::istringstream istr("#define\nhas#");
+    const char code[] = "#define\nhas#";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -771,7 +773,8 @@ static void dollar()
 
 static void error1()
 {
-    std::istringstream istr("#error    hello world!\n");
+    const char code[] = "#error    hello world!\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -782,7 +785,8 @@ static void error1()
 
 static void error2()
 {
-    std::istringstream istr("#error   it's an error\n");
+    const char code[] = "#error   it's an error\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -793,8 +797,9 @@ static void error2()
 
 static void error3()
 {
-    std::istringstream istr("#error \"bla bla\\\n"
-                            " bla bla.\"\n");
+    const char code[] = "#error \"bla bla\\\n"
+                            " bla bla.\"\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::OutputList outputList;
     simplecpp::TokenList rawtokens(istr, files, "test.c", &outputList);
@@ -804,7 +809,8 @@ static void error3()
 static void error4()
 {
     // "#error x\n1"
-    std::istringstream istr(std::string("\xFE\xFF\x00\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x31", 22));
+    const std::string code("\xFE\xFF\x00\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x31", 22);
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -816,7 +822,8 @@ static void error4()
 static void error5()
 {
     // "#error x\n1"
-    std::istringstream istr(std::string("\xFF\xFE\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x78\x00\x31\x00", 22));
+    const std::string code("\xFF\xFE\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x78\x00\x31\x00", 22);
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1062,7 +1069,8 @@ static void hashhash13()
 
 static void hashhash_invalid_1()
 {
-    std::istringstream istr("#define  f(a)  (##x)\nf(1)");
+    const char code[] = "#define  f(a)  (##x)\nf(1)";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1073,7 +1081,8 @@ static void hashhash_invalid_1()
 
 static void hashhash_invalid_2()
 {
-    std::istringstream istr("#define  f(a)  (x##)\nf(1)");
+    const char code[] = "#define  f(a)  (x##)\nf(1)";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1436,7 +1445,8 @@ static void location5()
 
 static void missingHeader1()
 {
-    std::istringstream istr("#include \"notexist.h\"\n");
+    const char code[] = "#include \"notexist.h\"\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1447,7 +1457,8 @@ static void missingHeader1()
 
 static void missingHeader2()
 {
-    std::istringstream istr("#include \"foo.h\"\n"); // this file exists
+    const char code[] = "#include \"foo.h\"\n"; // this file exists
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     filedata["foo.h"] = nullptr;
@@ -1459,7 +1470,8 @@ static void missingHeader2()
 
 static void missingHeader3()
 {
-    std::istringstream istr("#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"); // this file is not included
+    const char code[] = "#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"; // this file is not included
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
@@ -1470,7 +1482,8 @@ static void missingHeader3()
 
 static void nestedInclude()
 {
-    std::istringstream istr("#include \"test.h\"\n");
+    const char code[] = "#include \"test.h\"\n";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::TokenList rawtokens(istr,files,"test.h");
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -2044,11 +2057,12 @@ static void tokenMacro5()
 
 static void undef()
 {
-    std::istringstream istr("#define A\n"
+    const char code[] = "#define A\n"
                             "#undef A\n"
                             "#ifdef A\n"
                             "123\n"
-                            "#endif");
+                            "#endif";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::TokenList tokenList(files);
@@ -2058,7 +2072,8 @@ static void undef()
 
 static void userdef()
 {
-    std::istringstream istr("#ifdef A\n123\n#endif\n");
+    const char code[] = "#ifdef A\n123\n#endif\n";
+    std::istringstream istr(code);
     simplecpp::DUI dui;
     dui.defines.push_back("A=1");
     std::vector<std::string> files;
@@ -2087,7 +2102,8 @@ static void unicode()
 
 static void warning()
 {
-    std::istringstream istr("#warning MSG\n1");
+    const char code[] = "#warning MSG\n1";
+    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
