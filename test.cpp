@@ -760,7 +760,7 @@ static void define_ifdef()
                         ")\n";
 
     simplecpp::OutputList outputList;
-    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
 
 }
@@ -837,15 +837,15 @@ static void garbage()
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    preprocess("#ifdef\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#ifdef\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,Syntax error in #ifdef\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#define TEST2() A ##\nTEST2()\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#define TEST2() A ##\nTEST2()\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2'.\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
 }
 
@@ -854,15 +854,15 @@ static void garbage_endif()
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    preprocess("#elif A<0\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#elif A<0\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#elif without #if\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#else\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#else\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#else without #if\n", toString(outputList));
 
     outputList.clear();
-    preprocess("#endif\n", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#endif\n", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#endif without #if\n", toString(outputList));
 }
 
@@ -989,19 +989,19 @@ static void hashhash9()
     code = "#define A +##x\n"
            "A";
     outputList.clear();
-    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A 2##=\n"
            "A";
     outputList.clear();
-    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A <<##x\n"
            "A";
     outputList.clear();
-    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 }
 
@@ -2203,17 +2203,17 @@ static void preprocessSizeOf()
 {
     simplecpp::OutputList outputList;
 
-    preprocess("#if 3 > sizeof", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
 
     outputList.clear();
 
-    preprocess("#if 3 > sizeof A", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof A", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
 
     outputList.clear();
 
-    preprocess("#if 3 > sizeof(int", simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof(int", simplecpp::DUI(), &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, invalid sizeof expression\n", toString(outputList));
 }
 
