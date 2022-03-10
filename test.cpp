@@ -103,6 +103,11 @@ static std::string preprocess(const char code[])
     return preprocess(code, simplecpp::DUI());
 }
 
+static std::string preprocess(const char code[], simplecpp::OutputList *outputList)
+{
+    return preprocess(code, simplecpp::DUI(), outputList);
+}
+
 static std::string toString(const simplecpp::OutputList &outputList)
 {
     std::ostringstream ostr;
@@ -551,7 +556,7 @@ static void define_invalid_1()
 {
     const char code[] = "#define  A(\nB\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
 }
 
@@ -559,7 +564,7 @@ static void define_invalid_2()
 {
     const char code[] = "#define\nhas#";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
 }
 
@@ -752,7 +757,7 @@ static void define_ifdef()
                         ")\n";
 
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
 
 }
@@ -767,7 +772,7 @@ static void error1()
 {
     const char code[] = "#error    hello world!\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,#error,#error hello world!\n", toString(outputList));
 }
 
@@ -775,7 +780,7 @@ static void error2()
 {
     const char code[] = "#error   it's an error\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,#error,#error it's an error\n", toString(outputList));
 }
 
@@ -821,15 +826,15 @@ static void garbage()
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#ifdef\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#ifdef\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,Syntax error in #ifdef\n", toString(outputList));
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#define TEST2() A ##\nTEST2()\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#define TEST2() A ##\nTEST2()\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2'.\n", toString(outputList));
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
 }
 
@@ -838,15 +843,15 @@ static void garbage_endif()
     simplecpp::OutputList outputList;
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#elif A<0\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#elif A<0\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#elif without #if\n", toString(outputList));
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#else\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#else\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#else without #if\n", toString(outputList));
 
     outputList.clear();
-    ASSERT_EQUALS("", preprocess("#endif\n", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#endif\n", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,#endif without #if\n", toString(outputList));
 }
 
@@ -973,19 +978,19 @@ static void hashhash9()
     code = "#define A +##x\n"
            "A";
     outputList.clear();
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A 2##=\n"
            "A";
     outputList.clear();
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 
     code = "#define A <<##x\n"
            "A";
     outputList.clear();
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
 }
 
@@ -1055,7 +1060,7 @@ static void hashhash_invalid_1()
 {
     const char code[] = "#define  f(a)  (##x)\nf(1)";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
 }
 
@@ -1063,7 +1068,7 @@ static void hashhash_invalid_2()
 {
     const char code[] = "#define  f(a)  (x##)\nf(1)";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
 }
 
@@ -1202,7 +1207,7 @@ static void ifDefinedInvalid1()   // #50 - invalid unterminated defined
 {
     const char code[] = "#if defined(A";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
@@ -1210,7 +1215,7 @@ static void ifDefinedInvalid2()
 {
     const char code[] = "#if defined";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
 }
 
@@ -1224,7 +1229,7 @@ static void ifDefinedHashHash()
                         "#error FOO is not enabled\n"
                         "#endif\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,4,#error,#error FOO is enabled\n", toString(outputList));
 }
 
@@ -1411,7 +1416,7 @@ static void missingHeader1()
 {
     const char code[] = "#include \"notexist.h\"\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,missing_header,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
@@ -1432,7 +1437,7 @@ static void missingHeader3()
 {
     const char code[] = "#ifdef UNDEFINED\n#include \"notexist.h\"\n#endif\n"; // this file is not included
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("", toString(outputList));
 }
 
@@ -1457,7 +1462,7 @@ static void multiline1()
     const char code[] = "#define A \\\n"
                         "1\n"
                         "A";
-    ASSERT_EQUALS("\n\n1", preprocess(code, simplecpp::DUI()));
+    ASSERT_EQUALS("\n\n1", preprocess(code));
 }
 
 static void multiline2()
@@ -1577,7 +1582,7 @@ static void nullDirective1()
                         "#endif\n"
                         "x = a;\n";
 
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code));
 }
 
 static void nullDirective2()
@@ -1588,7 +1593,7 @@ static void nullDirective2()
                         "#endif\n"
                         "x = a;\n";
 
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code));
 }
 
 static void nullDirective3()
@@ -1599,7 +1604,7 @@ static void nullDirective3()
                         "#endif\n"
                         "x = a;\n";
 
-    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code, simplecpp::DUI()));
+    ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code));
 }
 
 static void include1()
@@ -1739,7 +1744,7 @@ static void include8()    // #include MACRO(X)
                         "#define INCLUDE_FILE(F)  <INCLUDE_LOCATION/F.h>\n"
                         "#include INCLUDE_FILE(header)\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,3,missing_header,Header not found: <../somewhere/header.h>\n", toString(outputList));
 }
 
@@ -2008,7 +2013,7 @@ static void undef()
                             "#ifdef A\n"
                             "123\n"
                             "#endif";
-    ASSERT_EQUALS("", preprocess(code, simplecpp::DUI()));
+    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void userdef()
@@ -2039,7 +2044,7 @@ static void warning()
 {
     const char code[] = "#warning MSG\n1";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("\n1", preprocess(code, simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("\n1", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,#warning,#warning MSG\n", toString(outputList));
 }
 
@@ -2133,17 +2138,17 @@ static void preprocessSizeOf()
 {
     simplecpp::OutputList outputList;
 
-    ASSERT_EQUALS("", preprocess("#if 3 > sizeof", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
 
     outputList.clear();
 
-    ASSERT_EQUALS("", preprocess("#if 3 > sizeof A", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof A", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, missing sizeof argument\n", toString(outputList));
 
     outputList.clear();
 
-    ASSERT_EQUALS("", preprocess("#if 3 > sizeof(int", simplecpp::DUI(), &outputList));
+    ASSERT_EQUALS("", preprocess("#if 3 > sizeof(int", &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, invalid sizeof expression\n", toString(outputList));
 }
 
