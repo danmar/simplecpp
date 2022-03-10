@@ -86,6 +86,18 @@ static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList 
     return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
 }
 
+static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &files, const std::string &file)
+{
+    std::istringstream istr(code);
+    return simplecpp::TokenList(istr,files,file);
+}
+
+static simplecpp::TokenList makeTokenList(const char code[])
+{
+    std::vector<std::string> files;
+    return makeTokenList(code, files, std::string());
+}
+
 static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::istringstream istr(code);
@@ -183,15 +195,13 @@ static void builtin()
 
 static std::string testConstFold(const char code[])
 {
-    std::istringstream istr(code);
-    std::vector<std::string> files;
-    simplecpp::TokenList expr(istr, files);
     try {
+        simplecpp::TokenList expr = makeTokenList(code);
         expr.constFold();
+        return expr.stringify();
     } catch (std::exception &) {
         return "exception";
     }
-    return expr.stringify();
 }
 
 static void characterLiteral()
@@ -1523,11 +1533,9 @@ static void multiline5()   // column
 {
     const char code[] = "#define A\\\n"
                         "(";
-    std::istringstream istr(code);
-    std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    const simplecpp::TokenList rawtokens = makeTokenList(code);
     ASSERT_EQUALS("# define A (", rawtokens.stringify());
-    ASSERT_EQUALS(11, rawtokens.back()->location.col);
+    ASSERT_EQUALS(11, rawtokens.cback()->location.col);
 }
 
 static void multiline6()   // multiline string in macro
@@ -1535,9 +1543,7 @@ static void multiline6()   // multiline string in macro
     const char code[] = "#define string  (\"\\\n"
                         "x\")\n"
                         "string\n";
-    std::istringstream istr(code);
-    std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    const simplecpp::TokenList rawtokens = makeTokenList(code);
     ASSERT_EQUALS("# define string ( \"x\" )\n"
                   "\n"
                   "string", rawtokens.stringify());
@@ -1548,9 +1554,7 @@ static void multiline7()   // multiline string in macro
     const char code[] = "#define A(X) aaa { f(\"\\\n"
                         "a\"); }\n"
                         "A(1)";
-    std::istringstream istr(code);
-    std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    const simplecpp::TokenList rawtokens = makeTokenList(code);
     ASSERT_EQUALS("# define A ( X ) aaa { f ( \"a\" ) ; }\n"
                   "\n"
                   "A ( 1 )", rawtokens.stringify());
@@ -1632,11 +1636,8 @@ static void include3()   // #16 - crash when expanding macro from header
 
     std::vector<std::string> files;
 
-    std::istringstream istr_c(code_c);
-    simplecpp::TokenList rawtokens_c(istr_c, files, "A.c");
-
-    std::istringstream istr_h(code_h);
-    simplecpp::TokenList rawtokens_h(istr_h, files, "A.h");
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("A.c", files[0]);
@@ -1660,11 +1661,8 @@ static void include4()   // #27 - -include
 
     std::vector<std::string> files;
 
-    std::istringstream istr_c(code_c);
-    simplecpp::TokenList rawtokens_c(istr_c, files, "27.c");
-
-    std::istringstream istr_h(code_h);
-    simplecpp::TokenList rawtokens_h(istr_h, files, "27.h");
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "27.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "27.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("27.c", files[0]);
@@ -1688,10 +1686,13 @@ static void include5()    // #3 - handle #include MACRO
     const char code_h[] = "123\n";
 
     std::vector<std::string> files;
-    std::istringstream istr_c(code_c);
-    simplecpp::TokenList rawtokens_c(istr_c, files, "3.c");
-    std::istringstream istr_h(code_h);
-    simplecpp::TokenList rawtokens_h(istr_h, files, "3.h");
+
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("3.c", files[0]);
+    ASSERT_EQUALS("3.h", files[1]);
 
     std::map<std::string, simplecpp::TokenList *> filedata;
     filedata["3.c"] = &rawtokens_c;
@@ -1708,8 +1709,11 @@ static void include6()   // #57 - incomplete macro  #include MACRO(,)
     const char code[] = "#define MACRO(X,Y) X##Y\n#include MACRO(,)\n";
 
     std::vector<std::string> files;
-    std::istringstream istr(code);
-    simplecpp::TokenList rawtokens(istr, files, "57.c");
+
+    simplecpp::TokenList rawtokens = makeTokenList(code, files, "57.c");
+
+    ASSERT_EQUALS(1U, files.size());
+    ASSERT_EQUALS("57.c", files[0]);
 
     std::map<std::string, simplecpp::TokenList *> filedata;
     filedata["57.c"] = &rawtokens;
@@ -1726,10 +1730,13 @@ static void include7()    // #include MACRO
     const char code_h[] = "123\n";
 
     std::vector<std::string> files;
-    std::istringstream istr_c(code_c);
-    simplecpp::TokenList rawtokens_c(istr_c, files, "3.c");
-    std::istringstream istr_h(code_h);
-    simplecpp::TokenList rawtokens_h(istr_h, files, "3.h");
+
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("3.c", files[0]);
+    ASSERT_EQUALS("3.h", files[1]);
 
     std::map<std::string, simplecpp::TokenList *> filedata;
     filedata["3.c"] = &rawtokens_c;
@@ -1908,11 +1915,8 @@ static void stringify1()
 
     std::vector<std::string> files;
 
-    std::istringstream istr_c(code_c);
-    simplecpp::TokenList rawtokens_c(istr_c, files, "A.c");
-
-    std::istringstream istr_h(code_h);
-    simplecpp::TokenList rawtokens_h(istr_h, files, "A.h");
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("A.c", files[0]);
