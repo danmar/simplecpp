@@ -15,8 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
-        # windows 2016 should default to VS 2017. Not supported by setup-msbuild
-        os: [windows-2019]
+        os: [windows-2019, windows-2022]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -28,15 +27,22 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Run cmake
+        if: matrix.os == 'windows-2019'
         run: |
-          cmake -G "Visual Studio 16" . -A x64
+          cmake -G "Visual Studio 16 2019" -A x64 . || exit /b !errorlevel!
+          dir
+
+      - name: Run cmake
+        if: matrix.os == 'windows-2022'
+        run: |
+          cmake -G "Visual Studio 17 2022" -A x64 . || exit /b !errorlevel!
           dir
       
       - name: Build
         run: |
-           msbuild -m simplecpp.sln /p:Configuration=Release /p:Platform=x64
+           msbuild -m simplecpp.sln /p:Configuration=Release /p:Platform=x64 || exit /b !errorlevel!
            
       - name: Test
         run: |
-          .\Release\testrunner.exe
+          .\Release\testrunner.exe || exit /b !errorlevel!
         
