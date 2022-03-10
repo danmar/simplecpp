@@ -22,7 +22,9 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-add_executable(simplecpp simplecpp.cpp main.cpp)
+add_library(simplecpp_obj OBJECT simplecpp.cpp)
+
+add_executable(simplecpp $<TARGET_OBJECTS:simplecpp_obj> main.cpp)
 set_property(TARGET simplecpp PROPERTY CXX_STANDARD 11)
 
 # it is not possible to set a standard older than C++14 with Visual Studio
@@ -38,7 +40,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"
     add_dependencies(simplecpp simplecpp-03-syntax)
 endif()
 
-add_executable(testrunner simplecpp.cpp test.cpp)
+add_executable(testrunner $<TARGET_OBJECTS:simplecpp_obj> test.cpp)
 set_property(TARGET testrunner PROPERTY CXX_STANDARD 11)
 
 enable_testing()
