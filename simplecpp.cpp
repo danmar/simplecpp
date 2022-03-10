@@ -1989,7 +1989,7 @@ namespace simplecpp {
             } else {
                 std::string strAB;
 
-                const bool varargs = variadic && args.size() >= 1U && B->str() == args[args.size()-1U];
+                const bool varargs = variadic && !args.empty() && B->str() == args[args.size()-1U];
 
                 if (expandArg(&tokensB, B, parametertokens)) {
                     if (tokensB.empty())
@@ -2487,7 +2487,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
 
     std::size_t pos;
 
-    if (str.size() >= 1 && str[0] == '\'') {
+    if (!str.empty() && str[0] == '\'') {
         narrow = true;
         pos = 1;
     } else if (str.size() >= 2 && str[0] == 'u' && str[1] == '\'') {
