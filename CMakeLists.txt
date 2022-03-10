@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.5)
 project (simplecpp LANGUAGES CXX)
 
+option(DISABLE_CPP03_SYNTAX_CHECK "Disable the C++03 syntax check." OFF)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef -Wold-style-cast -Wno-multichar)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -27,17 +29,19 @@ add_library(simplecpp_obj OBJECT simplecpp.cpp)
 add_executable(simplecpp $<TARGET_OBJECTS:simplecpp_obj> main.cpp)
 set_property(TARGET simplecpp PROPERTY CXX_STANDARD 11)
 
-# it is not possible to set a standard older than C++14 with Visual Studio
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # we need to create a dummy library as -fsyntax-only will not produce any output files causing the build to fail
-    add_library(simplecpp-03-syntax OBJECT simplecpp.cpp)
-    target_compile_options(simplecpp-03-syntax PRIVATE -std=c++03)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        target_compile_options(simplecpp-03-syntax PRIVATE -Wno-long-long)
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(simplecpp-03-syntax PRIVATE -Wno-c++11-long-long -Wno-c++11-compat)
+if (NOT DISABLE_CPP03_SYNTAX_CHECK)
+    # it is not possible to set a standard older than C++14 with Visual Studio
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # we need to create a dummy library as -fsyntax-only will not produce any output files causing the build to fail
+        add_library(simplecpp-03-syntax OBJECT simplecpp.cpp)
+        target_compile_options(simplecpp-03-syntax PRIVATE -std=c++03)
+        if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+            target_compile_options(simplecpp-03-syntax PRIVATE -Wno-long-long)
+        elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(simplecpp-03-syntax PRIVATE -Wno-c++11-long-long -Wno-c++11-compat)
+        endif()
+        add_dependencies(simplecpp simplecpp-03-syntax)
     endif()
-    add_dependencies(simplecpp simplecpp-03-syntax)
 endif()
 
 add_executable(testrunner $<TARGET_OBJECTS:simplecpp_obj> test.cpp)
