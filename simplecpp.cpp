@@ -1842,7 +1842,7 @@ namespace simplecpp {
                 return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros2, parametertokens);
             }
 
-            else if (tok->str() == DEFINED) {
+            if (tok->str() == DEFINED) {
                 const Token *tok2 = tok->next;
                 const Token *tok3 = tok2 ? tok2->next : nullptr;
                 const Token *tok4 = tok3 ? tok3->next : nullptr;
@@ -2008,7 +2008,7 @@ namespace simplecpp {
                 if (A->previous && A->previous->str() == "\\") {
                     if (strAB[0] == 'u' && strAB.size() == 5)
                         throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
-                    else if (strAB[0] == 'U' && strAB.size() == 9)
+                    if (strAB[0] == 'U' && strAB.size() == 9)
                         throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
                 }
 
@@ -2611,7 +2611,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                 int additional_bytes;
                 if (value >= 0xf5)  // higher values would result in code points above 0x10ffff
                     throw std::runtime_error("assumed UTF-8 encoded source, but sequence is invalid");
-                else if (value >= 0xf0)
+                if (value >= 0xf0)
                     additional_bytes = 3;
                 else if (value >= 0xe0)
                     additional_bytes = 2;
