@@ -1,0 +1,35 @@
+# Syntax reference https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# Environment reference https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+name: clang-tidy
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    container:
+      image: "ubuntu:21.10"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install missing software
+        run: |
+          apt-get update
+          apt-get install -y cmake make
+          apt-get install -y clang-tidy-13
+
+      - name: Prepare CMake
+        run: |
+          mkdir cmake.output
+          cd cmake.output
+          cmake -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON ..
+          cd ..
+        env:
+          CXX: clang-13
+
+      - name: Clang-Tidy
+        run: |
+          run-clang-tidy-13 -q -j $(nproc) -p=cmake.output -extra-arg=-w
