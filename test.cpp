@@ -86,7 +86,7 @@ static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList 
     return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList = nullptr)
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::istringstream istr(code);
     std::vector<std::string> files;
@@ -100,7 +100,12 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
 
 static std::string preprocess(const char code[])
 {
-    return preprocess(code, simplecpp::DUI());
+    return preprocess(code, simplecpp::DUI(), nullptr);
+}
+
+static std::string preprocess(const char code[], const simplecpp::DUI &dui)
+{
+    return preprocess(code, dui, nullptr);
 }
 
 static std::string preprocess(const char code[], simplecpp::OutputList *outputList)
