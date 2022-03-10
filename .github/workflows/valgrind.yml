@@ -1,0 +1,34 @@
+# Syntax reference https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# Environment reference https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+name: valgrind
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    container:
+      image: "ubuntu:21.10"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install missing software
+        run: |
+          apt-get update
+          apt-get install -y make g++ clang
+          apt-get install -y valgrind
+
+      - name: make test
+        run: make -j$(nproc) test CXXFLAGS="-O2 -g -w"
+
+      - name: Run valgrind
+        run: |
+          valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
