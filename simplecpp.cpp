@@ -2840,7 +2840,7 @@ static bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedat
     return !getFileName(filedata, sourcefile, header, dui, systemheader).empty();
 }
 
-std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::map<std::string, simplecpp::TokenList*> ret;
 
@@ -2856,16 +2856,16 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         std::ifstream fin(filename.c_str());
         if (!fin.is_open()) {
             if (outputList) {
-                simplecpp::Output err(fileNumbers);
+                simplecpp::Output err(filenames);
                 err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
-                err.location = Location(fileNumbers);
+                err.location = Location(filenames);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
                 outputList->push_back(err);
             }
             continue;
         }
 
-        TokenList *tokenlist = new TokenList(fin, fileNumbers, filename, outputList);
+        TokenList *tokenlist = new TokenList(fin, filenames, filename, outputList);
         if (!tokenlist->front()) {
             delete tokenlist;
             continue;
@@ -2904,7 +2904,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!f.is_open())
             continue;
 
-        TokenList *tokens = new TokenList(f, fileNumbers, header2, outputList);
+        TokenList *tokens = new TokenList(f, filenames, header2, outputList);
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());
