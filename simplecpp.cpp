@@ -2678,7 +2678,7 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
             continue;
         if (tok->str().compare(0,2,"0x") == 0)
             tok->setstr(toString(stringToULL(tok->str())));
-        else if (!tok->number && tok->str().find('\'') != tok->str().npos)
+        else if (!tok->number && tok->str().find('\'') != std::string::npos)
             tok->setstr(toString(simplecpp::characterLiteralToLL(tok->str())));
     }
 }
