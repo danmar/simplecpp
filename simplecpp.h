@@ -48,6 +48,7 @@
 namespace simplecpp {
 
     typedef std::string TokenString;
+    class Macro;
 
     /**
      * Location in source code
@@ -106,7 +107,7 @@ namespace simplecpp {
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
         }
 
         void flags() {
@@ -152,11 +153,11 @@ namespace simplecpp {
             return tok;
         }
 
-        void setExpandedFrom(const Token *tok, const void* m) {
+        void setExpandedFrom(const Token *tok, const Macro* m) {
             mExpandedFrom = tok->mExpandedFrom;
             mExpandedFrom.insert(m);
         }
-        bool isExpandedFrom(const void* m) const {
+        bool isExpandedFrom(const Macro* m) const {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
         }
 
@@ -165,7 +166,7 @@ namespace simplecpp {
     private:
         TokenString string;
 
-        std::set<const void*> mExpandedFrom;
+        std::set<const Macro*> mExpandedFrom;
 
         // Not implemented - prevent assignment
         Token &operator=(const Token &tok);

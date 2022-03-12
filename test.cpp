@@ -63,7 +63,7 @@ static void assertThrowFailed(int line)
     std::cerr << "exception not thrown" << std::endl;
 }
 
-static void testcase(const std::string &name, void (*f)(), int argc, char **argv)
+static void testcase(const std::string &name, void (*f)(), int argc, char * const *argv)
 {
     if (argc == 1)
         f();
