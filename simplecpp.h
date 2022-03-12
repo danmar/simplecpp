@@ -106,7 +106,7 @@ namespace simplecpp {
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
         }
 
         void flags() {
