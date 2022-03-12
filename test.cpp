@@ -2174,9 +2174,9 @@ static void dateDefine()
     ASSERT_EQUALS(13, dt.size());
     // TODO: split string and check proper ranges instead
     ASSERT_EQUALS('"', dt[0]);
-    ASSERT_EQUALS(true, dt[1] >= 65 && dt[1] <= 90); // uppercase letter
-    ASSERT_EQUALS(true, dt[2] >= 97 && dt[2] <= 122); // lowercase letter
-    ASSERT_EQUALS(true, dt[3] >= 97 && dt[3] <= 122); // lowercase letter
+    ASSERT_EQUALS(true, dt[1] >= 'A' && dt[1] <= 'Z'); // uppercase letter
+    ASSERT_EQUALS(true, dt[2] >= 'a' && dt[2] <= 'z'); // lowercase letter
+    ASSERT_EQUALS(true, dt[3] >= 'a' && dt[3] <= 'z'); // lowercase letter
     ASSERT_EQUALS(' ', dt[4]);
     ASSERT_EQUALS(true, isdigit(dt[5]) != 0);
     ASSERT_EQUALS(true, isdigit(dt[6]) != 0);
