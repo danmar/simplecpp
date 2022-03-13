@@ -2161,6 +2161,47 @@ static void preprocessSizeOf()
     ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, invalid sizeof expression\n", toString(outputList));
 }
 
+static void timeDefine()
+{
+    const char code[] = "__TIME__";
+    const std::string t = preprocess(code);
+    // "19:09:53"
+    ASSERT_EQUALS(10, t.size());
+    // TODO: split string and check proper ranges instead
+    ASSERT_EQUALS('"', t[0]);
+    ASSERT_EQUALS(true, isdigit(t[1]) != 0);
+    ASSERT_EQUALS(true, isdigit(t[2]) != 0);
+    ASSERT_EQUALS(':', t[3]);
+    ASSERT_EQUALS(true, isdigit(t[4]) != 0);
+    ASSERT_EQUALS(true, isdigit(t[5]) != 0);
+    ASSERT_EQUALS(':', t[6]);
+    ASSERT_EQUALS(true, isdigit(t[7]) != 0);
+    ASSERT_EQUALS(true, isdigit(t[8]) != 0);
+    ASSERT_EQUALS('"', t[9]);
+}
+
+static void dateDefine()
+{
+    const char code[] = "__DATE__";
+    const std::string dt = preprocess(code);
+    // "\"Mar 11 2022\""
+    ASSERT_EQUALS(13, dt.size());
+    // TODO: split string and check proper ranges instead
+    ASSERT_EQUALS('"', dt[0]);
+    ASSERT_EQUALS(true, dt[1] >= 'A' && dt[1] <= 'Z'); // uppercase letter
+    ASSERT_EQUALS(true, dt[2] >= 'a' && dt[2] <= 'z'); // lowercase letter
+    ASSERT_EQUALS(true, dt[3] >= 'a' && dt[3] <= 'z'); // lowercase letter
+    ASSERT_EQUALS(' ', dt[4]);
+    ASSERT_EQUALS(true, isdigit(dt[5]) != 0);
+    ASSERT_EQUALS(true, isdigit(dt[6]) != 0);
+    ASSERT_EQUALS(' ', dt[7]);
+    ASSERT_EQUALS(true, isdigit(dt[8]) != 0);
+    ASSERT_EQUALS(true, isdigit(dt[9]) != 0);
+    ASSERT_EQUALS(true, isdigit(dt[10]) != 0);
+    ASSERT_EQUALS(true, isdigit(dt[11]) != 0);
+    ASSERT_EQUALS('"', dt[12]);
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -2341,6 +2382,9 @@ int main(int argc, char **argv)
     TEST_CASE(simplifyPath_New);
 
     TEST_CASE(preprocessSizeOf);
+
+    TEST_CASE(timeDefine);
+    TEST_CASE(dateDefine);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }

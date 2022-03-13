@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <ctime>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -2867,6 +2868,28 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     return true;
 }
 
+static void getLocaltime(struct tm &ltime) {
+    time_t t;
+    time(&t);
+#ifndef _WIN32
+    localtime_r(&t, &ltime);
+#else
+    localtime_s(&ltime, &t);
+#endif
+}
+
+static std::string getDateDefine(struct tm *timep) {
+    char buf[] = "??? ?? ????";
+    strftime(buf, sizeof(buf), "%b %d %Y", timep);
+    return std::string("\"").append(buf).append("\"");
+}
+
+static std::string getTimeDefine(struct tm *timep) {
+    char buf[] = "??:??:??";
+    strftime(buf, sizeof(buf), "%T", timep);
+    return std::string("\"").append(buf).append("\"");
+}
+
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
 {
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
@@ -2909,6 +2932,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", files)));
     macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", files)));
     macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", files)));
+    struct tm ltime = {};
+    getLocaltime(ltime);
+    macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), files)));
+    macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), files)));
 
     if (dui.std == "c++11")
         macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201103L", files)));
