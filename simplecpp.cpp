@@ -1254,11 +1254,11 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 
 
 namespace simplecpp {
-	class Macro;
+    class Macro;
 #if __cplusplus >= 201103L
-	using MacroMap = std::unordered_map<TokenString,Macro>;
+    using MacroMap = std::unordered_map<TokenString,Macro>;
 #else
-	typedef std::map<TokenString,Macro> MacroMap;
+    typedef std::map<TokenString,Macro> MacroMap;
 #endif
 
     class Macro {
@@ -2937,14 +2937,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), files)));
     macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), files)));
 
-    if (dui.std == "c++11")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201103L", files)));
-    else if (dui.std == "c++14")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201402L", files)));
-    else if (dui.std == "c++17")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201703L", files)));
-    else if (dui.std == "c++20")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "202002L", files)));
+    if (!dui.std.empty()) {
+        std::string std_def = simplecpp::getCStdString(dui.std);
+        if (!std_def.empty()) {
+            macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, files)));
+        } else {
+            std_def = simplecpp::getCppStdString(dui.std);
+            if (!std_def.empty())
+                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, files)));
+        }
+    }
 
     // TRUE => code in current #if block should be kept
     // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.
@@ -3334,6 +3336,47 @@ void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
     for (std::map<std::string, TokenList*>::iterator it = filedata.begin(); it != filedata.end(); ++it)
         delete it->second;
     filedata.clear();
+}
+
+std::string simplecpp::getCStdString(const std::string &std)
+{
+    if (std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89") {
+        // __STDC_VERSION__ is not set for C90 although the macro was added in the 1994 amendments
+        return "";
+    }
+    if (std == "c99" || std == "c9x" || std == "iso9899:1999" || std == "iso9899:199x" || std == "gnu99"|| std == "gnu9x")
+        return "199901L";
+    if (std == "c11" || std == "c1x" || std == "iso9899:2011" || std == "gnu11" || std == "gnu1x")
+        return "201112L";
+    if (std == "c17" || std == "c18" || std == "iso9899:2017" || std == "iso9899:2018" || std == "gnu17"|| std == "gnu18")
+        return "201710L";
+    if (std == "c2x" || std == "gnu2x") {
+        // Clang 11 returns "201710L"
+        return "202000L";
+    }
+    return "";
+}
+
+std::string simplecpp::getCppStdString(const std::string &std)
+{
+    if (std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03")
+        return "199711L";
+    if (std == "c++11" || std == "gnu++11" || std == "c++0x" || std == "gnu++0x")
+        return "201103L";
+    if (std == "c++14" || std == "c++1y" || std == "gnu++14" || std == "gnu++1y")
+        return "201402L";
+    if (std == "c++17" || std == "c++1z" || std == "gnu++17" || std == "gnu++1z")
+        return "201703L";
+    if (std == "c++20" || std == "c++2a" || std == "gnu++20" || std == "gnu++2a") {
+        // GCC 10 returns "201703L"
+        return "202002L";
+    }
+    /*
+    if (std == "c++23" || std == "c++2b" || std == "gnu++23" || std == "gnu++2b") {
+        // supported by GCC 11+
+        return "";
+    } */
+    return "";
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
