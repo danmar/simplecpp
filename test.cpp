@@ -1071,6 +1071,87 @@ static void hashhash13()
     ASSERT_EQUALS("\n& ab", preprocess(code2));
 }
 
+static void hashhash14()
+{
+    const char code[] =
+        "#define UL(x) x##_ul\n"
+        "\"ABC\"_ul;\n"
+        "UL(\"ABC\");";
+
+    ASSERT_EQUALS("\n\"ABC\" _ul ;\n\"ABC\" _ul ;", preprocess(code));
+}
+
+static void hashhash15()
+{
+    const char code[] =
+        "#define CONCAT(a,b) a##b\n"
+        "#define STR(x) CONCAT(x,s)\n"
+        "STR(\"ABC\");";
+
+    ASSERT_EQUALS("\n\n\"ABC\" s ;", preprocess(code));
+}
+
+static void hashhash16()
+{
+    const char code[] =
+        "#define CH(x) x##_c\n"
+        "CH('a');";
+
+    ASSERT_EQUALS("\n'a' _c ;", preprocess(code));
+}
+
+static void hashhash17()
+{
+    const char code[] =
+        "#define CONCAT(a,b) a##b\n"
+        "CONCAT(\"ABC\",);";
+
+    ASSERT_EQUALS("\n\"ABC\" ;", preprocess(code));
+}
+
+static void hashhash18()
+{
+    const char code[] =
+        "#define CONCAT(a,b) a##b\n"
+        "CONCAT(\"ABC\", 'c');";
+
+    // This works, but maybe shouldn't since the result isn't useful.
+    ASSERT_EQUALS("\n\"ABC\" 'c' ;", preprocess(code));
+}
+
+static void hashhash19()
+{
+    const char code[] =
+        "#define CONCAT(a,b) a##b\n"
+        "#define LIT _literal\n"
+        "CONCAT(\"string\", LIT);";
+
+    // TODO is this correct? clang fails because that's not really a valid thing but gcc seems to accept it
+    // see https://gist.github.com/patrickdowling/877a25294f069bf059f3b07f9b5b7039
+
+    ASSERT_EQUALS("\n\n\"string\" LIT ;", preprocess(code));
+}
+
+static void hashhash20()
+{
+    const char code[] =
+        "#define CONCAT(a,b,c) a##b##c\n"
+        "#define PASTER(a,b,c) CONCAT(a,b,c)\n"
+        "PASTER(\"123\",_i,ul);";
+
+    ASSERT_EQUALS("\n\n\"123\" _iul ;", preprocess(code));
+}
+
+static void hashhash21()
+{
+    const char code[] =
+        "#define PASTE(a,b) a##b\n"
+        "PASTE(123,_i);\n"
+        "1234_i;\n";
+
+    ASSERT_EQUALS("\n123_i ;\n1234_i ;", preprocess(code));
+}
+
 static void hashhash_invalid_1()
 {
     const char code[] = "#define  f(a)  (##x)\nf(1)";
@@ -1085,6 +1166,16 @@ static void hashhash_invalid_2()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
+}
+
+static void hashhash_invalid_3()
+{
+    const char code[] =
+        "#define BAD(x) x##12345\nBAD(\"ABC\")";
+
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD'.\n", toString(outputList));
 }
 
 static void has_include_1()
@@ -2306,8 +2397,17 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash11); // #60: #define x # # #
     TEST_CASE(hashhash12);
     TEST_CASE(hashhash13);
+    TEST_CASE(hashhash14);
+    TEST_CASE(hashhash15);
+    TEST_CASE(hashhash16);
+    TEST_CASE(hashhash17);
+    TEST_CASE(hashhash18);
+    TEST_CASE(hashhash19);
+    TEST_CASE(hashhash20);
+    TEST_CASE(hashhash21);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
+    TEST_CASE(hashhash_invalid_3);
 
     // c++17 __has_include
     TEST_CASE(has_include_1);
