@@ -1071,7 +1071,7 @@ static void hashhash13()
     ASSERT_EQUALS("\n& ab", preprocess(code2));
 }
 
-static void hashhash14()
+static void hashhash_string_literal()
 {
     const char code[] =
         "#define UL(x) x##_ul\n"
@@ -1081,7 +1081,7 @@ static void hashhash14()
     ASSERT_EQUALS("\n\"ABC\" _ul ;\n\"ABC\" _ul ;", preprocess(code));
 }
 
-static void hashhash15()
+static void hashhash_string_wrapped()
 {
     const char code[] =
         "#define CONCAT(a,b) a##b\n"
@@ -1091,16 +1091,34 @@ static void hashhash15()
     ASSERT_EQUALS("\n\n\"ABC\" s ;", preprocess(code));
 }
 
-static void hashhash16()
+static void hashhash_char_literal()
 {
     const char code[] =
-        "#define CH(x) x##_c\n"
+        "#define CH(x) x##_ch\n"
         "CH('a');";
 
-    ASSERT_EQUALS("\n'a' _c ;", preprocess(code));
+    ASSERT_EQUALS("\n'a' _ch ;", preprocess(code));
 }
 
-static void hashhash17()
+static void hashhash_multichar_literal()
+{
+    const char code[] =
+        "#define CH(x) x##_ch\n"
+        "CH('abcd');";
+
+    ASSERT_EQUALS("\n'abcd' _ch ;", preprocess(code));
+}
+
+static void hashhash_char_escaped()
+{
+    const char code[] =
+        "#define CH(x) x##_ch\n"
+        "CH('\\'');";
+
+    ASSERT_EQUALS("\n'\\'' _ch ;", preprocess(code));
+}
+
+static void hashhash_string_nothing()
 {
     const char code[] =
         "#define CONCAT(a,b) a##b\n"
@@ -1109,7 +1127,7 @@ static void hashhash17()
     ASSERT_EQUALS("\n\"ABC\" ;", preprocess(code));
 }
 
-static void hashhash18()
+static void hashhash_string_char()
 {
     const char code[] =
         "#define CONCAT(a,b) a##b\n"
@@ -1119,7 +1137,7 @@ static void hashhash18()
     ASSERT_EQUALS("\n\"ABC\" 'c' ;", preprocess(code));
 }
 
-static void hashhash19()
+static void hashhash_string_name()
 {
     const char code[] =
         "#define CONCAT(a,b) a##b\n"
@@ -1132,7 +1150,7 @@ static void hashhash19()
     ASSERT_EQUALS("\n\n\"string\" LIT ;", preprocess(code));
 }
 
-static void hashhash20()
+static void hashhashhash_int_literal()
 {
     const char code[] =
         "#define CONCAT(a,b,c) a##b##c\n"
@@ -1142,7 +1160,7 @@ static void hashhash20()
     ASSERT_EQUALS("\n\n\"123\" _iul ;", preprocess(code));
 }
 
-static void hashhash21()
+static void hashhash_int_literal()
 {
     const char code[] =
         "#define PASTE(a,b) a##b\n"
@@ -2397,14 +2415,16 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash11); // #60: #define x # # #
     TEST_CASE(hashhash12);
     TEST_CASE(hashhash13);
-    TEST_CASE(hashhash14);
-    TEST_CASE(hashhash15);
-    TEST_CASE(hashhash16);
-    TEST_CASE(hashhash17);
-    TEST_CASE(hashhash18);
-    TEST_CASE(hashhash19);
-    TEST_CASE(hashhash20);
-    TEST_CASE(hashhash21);
+    TEST_CASE(hashhash_string_literal);
+    TEST_CASE(hashhash_string_wrapped);
+    TEST_CASE(hashhash_char_literal);
+    TEST_CASE(hashhash_multichar_literal);
+    TEST_CASE(hashhash_char_escaped);
+    TEST_CASE(hashhash_string_nothing);
+    TEST_CASE(hashhash_string_char);
+    TEST_CASE(hashhash_string_name);
+    TEST_CASE(hashhashhash_int_literal);
+    TEST_CASE(hashhash_int_literal);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
     TEST_CASE(hashhash_invalid_3);

@@ -58,14 +58,16 @@ static bool isOct(const std::string &s)
     return s.size()>1 && (s[0]=='0') && (s[1] >= '0') && (s[1] < '8');
 }
 
-static bool isStringConstant(const std::string &s)
+static bool isStringLiteral(const std::string &s)
 {
     return s.size() > 1 && (s[0]=='\"') && (*s.rbegin()=='\"');
 }
 
-static bool isCharConstant(const std::string &s)
+static bool isCharLiteral(const std::string &s)
 {
-    return s.size() == 3 && (s[0]=='\'') && (s[2]=='\'');
+    // char literal patterns can include 'a', '\t', '\000', '\xff', 'abcd', and maybe ''
+    // This only checks for the surrounding '' but doesn't parse the content.
+    return s.size() > 1 && (s[0]=='\'') && (*s.rbegin()=='\'');
 }
 
 static const simplecpp::TokenString DEFINE("define");
@@ -1931,7 +1933,7 @@ namespace simplecpp {
                 throw invalidHashHash(tok->location, name());
 
             bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            bool canBeConcatenatedStringOrChar = isStringConstant(A->str()) || isCharConstant(A->str());
+            bool canBeConcatenatedStringOrChar = isStringLiteral(A->str()) || isCharLiteral(A->str());
             if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
                 throw invalidHashHash(tok->location, name());
 
