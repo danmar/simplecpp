@@ -38,7 +38,7 @@ skip = ['assembler-with-cpp.c',
         'has_attribute.cpp',
         'header_lookup1.c', # missing include <stddef.h>
         'line-directive-output.c',
-        'macro_paste_hashhash.c',
+        #  'macro_paste_hashhash.c',
         'microsoft-ext.c',
         'normalize-3.c', # gcc has different output \uAC00 vs \U0000AC00 on cygwin/linux
         'pr63831-1.c', # __has_attribute => works differently on cygwin/linux

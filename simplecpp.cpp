@@ -58,6 +58,17 @@ static bool isOct(const std::string &s)
     return s.size()>1 && (s[0]=='0') && (s[1] >= '0') && (s[1] < '8');
 }
 
+static bool isStringLiteral(const std::string &s)
+{
+    return s.size() > 1 && (s[0]=='\"') && (*s.rbegin()=='\"');
+}
+
+static bool isCharLiteral(const std::string &s)
+{
+    // char literal patterns can include 'a', '\t', '\000', '\xff', 'abcd', and maybe ''
+    // This only checks for the surrounding '' but doesn't parse the content.
+    return s.size() > 1 && (s[0]=='\'') && (*s.rbegin()=='\'');
+}
 
 static const simplecpp::TokenString DEFINE("define");
 static const simplecpp::TokenString UNDEF("undef");
@@ -1922,7 +1933,8 @@ namespace simplecpp {
                 throw invalidHashHash(tok->location, name());
 
             bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual)
+            bool canBeConcatenatedStringOrChar = isStringLiteral(A->str()) || isCharLiteral(A->str());
+            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
                 throw invalidHashHash(tok->location, name());
 
             Token *B = tok->next->next;
@@ -1933,55 +1945,73 @@ namespace simplecpp {
                 (!canBeConcatenatedWithEqual && B->op == '='))
                 throw invalidHashHash(tok->location, name());
 
-            std::string strAB;
-
-            const bool varargs = variadic && args.size() >= 1U && B->str() == args[args.size()-1U];
+            // Superficial check; more in-depth would in theory be possible _after_ expandArg
+            if (canBeConcatenatedStringOrChar && (B->number || !B->name))
+                throw invalidHashHash(tok->location, name());
 
             TokenList tokensB(files);
-            if (expandArg(&tokensB, B, parametertokens)) {
-                if (tokensB.empty())
-                    strAB = A->str();
-                else if (varargs && A->op == ',') {
-                    strAB = ",";
-                } else {
-                    strAB = A->str() + tokensB.cfront()->str();
-                    tokensB.deleteToken(tokensB.front());
-                }
-            } else {
-                strAB = A->str() + B->str();
-            }
-
             const Token *nextTok = B->next;
-            if (varargs && tokensB.empty() && tok->previous->str() == ",")
-                output->deleteToken(A);
-            else if (strAB != "," && macros.find(strAB) == macros.end()) {
-                A->setstr(strAB);
-                for (Token *b = tokensB.front(); b; b = b->next)
-                    b->location = loc;
-                output->takeTokens(tokensB);
-            } else if (nextTok->op == '#' && nextTok->next->op == '#') {
-                TokenList output2(files);
-                output2.push_back(new Token(strAB, tok->location));
-                nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
-                output->deleteToken(A);
-                output->takeTokens(output2);
-            } else {
-                output->deleteToken(A);
-                TokenList tokens(files);
-                tokens.push_back(new Token(strAB, tok->location));
-                // for function like macros, push the (...)
-                if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
-                    const MacroMap::const_iterator it = macros.find(strAB);
-                    if (it != macros.end() && expandedmacros.find(strAB) == expandedmacros.end() && it->second.functionLike()) {
-                        const Token *tok2 = appendTokens(&tokens, loc, B->next, macros, expandedmacros, parametertokens);
-                        if (tok2)
-                            nextTok = tok2->next;
-                    }
+
+            if (canBeConcatenatedStringOrChar) {
+                // It seems clearer to handle this case separately even though the code is similar-ish, but we don't want to merge here.
+                // TODO The question is whether the ## or varargs may still apply, and how to provoke?
+                if (expandArg(&tokensB, B, parametertokens)) {
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                } else {
+                    tokensB.push_back(new Token(*B));
+                    tokensB.back()->location = loc;
                 }
-                expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
-                for (Token *b = tokensB.front(); b; b = b->next)
-                    b->location = loc;
                 output->takeTokens(tokensB);
+            } else {
+                std::string strAB;
+
+                const bool varargs = variadic && args.size() >= 1U && B->str() == args[args.size()-1U];
+
+                if (expandArg(&tokensB, B, parametertokens)) {
+                    if (tokensB.empty())
+                        strAB = A->str();
+                    else if (varargs && A->op == ',') {
+                        strAB = ",";
+                    } else {
+                        strAB = A->str() + tokensB.cfront()->str();
+                        tokensB.deleteToken(tokensB.front());
+                    }
+                } else {
+                    strAB = A->str() + B->str();
+                }
+
+                if (varargs && tokensB.empty() && tok->previous->str() == ",")
+                    output->deleteToken(A);
+                else if (strAB != "," && macros.find(strAB) == macros.end()) {
+                    A->setstr(strAB);
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                    output->takeTokens(tokensB);
+                } else if (nextTok->op == '#' && nextTok->next->op == '#') {
+                    TokenList output2(files);
+                    output2.push_back(new Token(strAB, tok->location));
+                    nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
+                    output->deleteToken(A);
+                    output->takeTokens(output2);
+                } else {
+                    output->deleteToken(A);
+                    TokenList tokens(files);
+                    tokens.push_back(new Token(strAB, tok->location));
+                    // for function like macros, push the (...)
+                    if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
+                        const MacroMap::const_iterator it = macros.find(strAB);
+                        if (it != macros.end() && expandedmacros.find(strAB) == expandedmacros.end() && it->second.functionLike()) {
+                            const Token *tok2 = appendTokens(&tokens, loc, B->next, macros, expandedmacros, parametertokens);
+                            if (tok2)
+                                nextTok = tok2->next;
+                        }
+                    }
+                    expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                    output->takeTokens(tokensB);
+                }
             }
 
             return nextTok;
