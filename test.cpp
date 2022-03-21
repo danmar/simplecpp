@@ -846,11 +846,11 @@ static void garbage()
 
     outputList.clear();
     ASSERT_EQUALS("", preprocess("#define TEST2() A ##\nTEST2()\n", &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'TEST2', Invalid ## usage when expanding 'TEST2': Unexpected newline\n", toString(outputList));
 
     outputList.clear();
     ASSERT_EQUALS("", preprocess("#define CON(a,b)  a##b##\nCON(1,2)\n", &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'CON', Invalid ## usage when expanding 'CON': Unexpected newline\n", toString(outputList));
 }
 
 static void garbage_endif()
@@ -994,19 +994,19 @@ static void hashhash9()
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '+' and 'x' yields an invalid token.\n", toString(outputList));
 
     code = "#define A 2##=\n"
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '2' and '=' yields an invalid token.\n", toString(outputList));
 
     code = "#define A <<##x\n"
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '<<' and 'x' yields an invalid token.\n", toString(outputList));
 }
 
 static void hashhash10()
@@ -1175,7 +1175,7 @@ static void hashhash_invalid_1()
     const char code[] = "#define  f(a)  (##x)\nf(1)";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f': Unexpected token '('\n", toString(outputList));
 }
 
 static void hashhash_invalid_2()
@@ -1183,17 +1183,27 @@ static void hashhash_invalid_2()
     const char code[] = "#define  f(a)  (x##)\nf(1)";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'f', Invalid ## usage when expanding 'f': Unexpected token ')'\n", toString(outputList));
 }
 
-static void hashhash_invalid_3()
+static void hashhash_invalid_string_number()
 {
     const char code[] =
         "#define BAD(x) x##12345\nBAD(\"ABC\")";
 
     simplecpp::OutputList outputList;
     preprocess(code, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD'.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Pasting '\"ABC\"' and '12345' yields an invalid token.\n", toString(outputList));
+}
+
+static void hashhash_invalid_missing_args()
+{
+    const char code[] =
+        "#define BAD(x) ##x\nBAD()";
+
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Missing first argument\n", toString(outputList));
 }
 
 static void has_include_1()
@@ -2427,7 +2437,8 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash_int_literal);
     TEST_CASE(hashhash_invalid_1);
     TEST_CASE(hashhash_invalid_2);
-    TEST_CASE(hashhash_invalid_3);
+    TEST_CASE(hashhash_invalid_string_number);
+    TEST_CASE(hashhash_invalid_missing_args);
 
     // c++17 __has_include
     TEST_CASE(has_include_1);
