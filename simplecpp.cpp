@@ -1446,8 +1446,8 @@ namespace simplecpp {
         /** base class for errors */
         struct Error {
             Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
-            Location location;
-            std::string what;
+            const Location location;
+            const std::string what;
         };
 
         /** Struct that is thrown when macro is expanded with wrong number of parameters */
@@ -1457,7 +1457,24 @@ namespace simplecpp {
 
         /** Struct that is thrown when there is invalid ## usage */
         struct invalidHashHash : public Error {
-            invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Invalid ## usage when expanding \'" + macroName + "\'.") {}
+            static inline std::string format(const std::string &macroName, const std::string &message) {
+                return "Invalid ## usage when expanding \'" + macroName + "\': " + message;
+            }
+
+            invalidHashHash(const Location &loc, const std::string &macroName, const std::string &message)
+                : Error(loc, format(macroName, message)) { }
+
+            static inline invalidHashHash unexpectedToken(const Location &loc, const std::string &macroName, const Token *tokenA) {
+                return invalidHashHash(loc, macroName, "Unexpected token '"+ tokenA->str()+"'");
+            }
+
+            static inline invalidHashHash cannotCombine(const Location &loc, const std::string &macroName, const Token *tokenA, const Token *tokenB) {
+                return invalidHashHash(loc, macroName, "Pasting '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token.");
+            }
+
+            static inline invalidHashHash unexpectedNewline(const Location &loc, const std::string &macroName) {
+                return invalidHashHash(loc, macroName, "Unexpected newline");
+            }
         };
     private:
         /** Create new token where Token::macro is set for replaced tokens */
@@ -1681,7 +1698,7 @@ namespace simplecpp {
                     // A##B => AB
                     if (sameline(tok, tok->next) && tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
                         if (!sameline(tok, tok->next->next->next))
-                            throw invalidHashHash(tok->location, name());
+                            throw invalidHashHash::unexpectedNewline(tok->location, name());
                         TokenList new_output(files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
@@ -1928,26 +1945,26 @@ namespace simplecpp {
         const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             Token *A = output->back();
             if (!A)
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash(tok->location, name(), "Missing first argument");
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::unexpectedNewline(tok->location, name());
 
             bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
             bool canBeConcatenatedStringOrChar = isStringLiteral(A->str()) || isCharLiteral(A->str());
             if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::unexpectedToken(tok->location, name(), A);
 
             Token *B = tok->next->next;
             if (!B->name && !B->number && B->op && !B->isOneOf("#="))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::unexpectedToken(tok->location, name(), B);
 
             if ((canBeConcatenatedWithEqual && B->op != '=') ||
                 (!canBeConcatenatedWithEqual && B->op == '='))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::cannotCombine(tok->location, name(), A, B);
 
             // Superficial check; more in-depth would in theory be possible _after_ expandArg
             if (canBeConcatenatedStringOrChar && (B->number || !B->name))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::cannotCombine(tok->location, name(), A, B);
 
             TokenList tokensB(files);
             const Token *nextTok = B->next;
