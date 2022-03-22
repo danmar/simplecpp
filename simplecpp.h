@@ -353,10 +353,10 @@ namespace simplecpp {
     SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
 
     /** Returns the __STDC_VERSION__ value for a given standard */
-    SIMPLECPP_LIB static std::string getCStdString(const std::string &std);
+    SIMPLECPP_LIB std::string getCStdString(const std::string &std);
 
     /** Returns the __cplusplus value for a given standard */
-    SIMPLECPP_LIB static std::string getCppStdString(const std::string &std);
+    SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
