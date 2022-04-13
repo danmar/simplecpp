@@ -78,32 +78,35 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
 
-
-static std::string readfile(const char code[], int sz=-1, simplecpp::OutputList *outputList=nullptr)
-{
-    std::istringstream istr(sz == -1 ? std::string(code) : std::string(code,sz));
-    std::vector<std::string> files;
-    return simplecpp::TokenList(istr,files,std::string(),outputList).stringify();
-}
-
-static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &files, const std::string &file)
+static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
     std::istringstream istr(code);
-    return simplecpp::TokenList(istr,files,file);
+    return simplecpp::TokenList(istr,filenames,filename,outputList);
 }
 
-static simplecpp::TokenList makeTokenList(const char code[])
+static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
+{
+    std::istringstream istr(std::string(code, size));
+    return simplecpp::TokenList(istr,filenames,filename,outputList);
+}
+
+static std::string readfile(const char code[], simplecpp::OutputList *outputList=nullptr)
 {
     std::vector<std::string> files;
-    return makeTokenList(code, files, std::string());
+    return makeTokenList(code,files,std::string(),outputList).stringify();
+}
+
+static std::string readfile(const char code[], std::size_t size, simplecpp::OutputList *outputList=nullptr)
+{
+    std::vector<std::string> files;
+    return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
 static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
-    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::TokenList tokens(istr,files);
+    simplecpp::TokenList tokens = makeTokenList(code,files);
     tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, filedata, dui, outputList);
@@ -167,15 +170,15 @@ static void backslash()
     // <backslash><space><newline> preprocessed differently
     simplecpp::OutputList outputList;
 
-    readfile("//123 \\\n456", -1, &outputList);
+    readfile("//123 \\\n456", &outputList);
     ASSERT_EQUALS("", toString(outputList));
-    readfile("//123 \\ \n456", -1, &outputList);
+    readfile("//123 \\ \n456", &outputList);
     ASSERT_EQUALS("file0,1,portability_backslash,Combination 'backslash space newline' is not portable.\n", toString(outputList));
 
     outputList.clear();
-    readfile("#define A \\\n123", -1, &outputList);
+    readfile("#define A \\\n123", &outputList);
     ASSERT_EQUALS("", toString(outputList));
-    readfile("#define A \\ \n123", -1, &outputList);
+    readfile("#define A \\ \n123", &outputList);
     ASSERT_EQUALS("file0,1,portability_backslash,Combination 'backslash space newline' is not portable.\n", toString(outputList));
 }
 
@@ -196,7 +199,8 @@ static void builtin()
 static std::string testConstFold(const char code[])
 {
     try {
-        simplecpp::TokenList expr = makeTokenList(code);
+        std::vector<std::string> files;
+        simplecpp::TokenList expr = makeTokenList(code, files);
         expr.constFold();
         return expr.stringify();
     } catch (std::exception &) {
@@ -803,36 +807,35 @@ static void error3()
 {
     const char code[] = "#error \"bla bla\\\n"
                             " bla bla.\"\n";
-    std::istringstream istr(code);
     std::vector<std::string> files;
     simplecpp::OutputList outputList;
-    simplecpp::TokenList rawtokens(istr, files, "test.c", &outputList);
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "test.c", &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
 
 static void error4()
 {
     // "#error x\n1"
-    const std::string code("\xFE\xFF\x00\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x31", 22);
-    std::istringstream istr(code);
+    const char code[] = "\xFE\xFF\x00\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x31";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    const simplecpp::TokenList rawtoken = makeTokenList(code, sizeof(code),files,"test.c");
+    simplecpp::preprocess(tokens2, rawtoken, files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,#error,#error x\n", toString(outputList));
 }
 
 static void error5()
 {
     // "#error x\n1"
-    const std::string code("\xFF\xFE\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x78\x00\x31\x00", 22);
-    std::istringstream istr(code);
+    const char code[] = "\xFF\xFE\x23\x00\x65\x00\x72\x00\x72\x00\x6f\x00\x72\x00\x20\x00\x78\x00\x0a\x00\x78\x00\x31\x00";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files,"test.c"), files, filedata, simplecpp::DUI(), &outputList);
+    const simplecpp::TokenList rawtokens = makeTokenList(code, sizeof(code),files,"test.c");
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,#error,#error x\n", toString(outputList));
 }
 
@@ -1557,13 +1560,13 @@ static void missingHeader1()
 static void missingHeader2()
 {
     const char code[] = "#include \"foo.h\"\n"; // this file exists
-    std::istringstream istr(code);
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
     filedata["foo.h"] = nullptr;
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI(), &outputList);
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
 
@@ -1578,9 +1581,8 @@ static void missingHeader3()
 static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
-    std::istringstream istr(code);
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files,"test.h");
+    simplecpp::TokenList rawtokens = makeTokenList(code,files,"test.h");
     std::map<std::string, simplecpp::TokenList*> filedata;
     filedata["test.h"] = &rawtokens;
 
@@ -1604,9 +1606,8 @@ static void multiline2()
     const char code[] = "#define A /*\\\n"
                         "*/1\n"
                         "A";
-    std::istringstream istr(code);
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    simplecpp::TokenList rawtokens = makeTokenList(code,files);
     ASSERT_EQUALS("# define A /**/ 1\n\nA", rawtokens.stringify());
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -1620,9 +1621,8 @@ static void multiline3()   // #28 - macro with multiline comment
     const char code[] = "#define A /*\\\n"
                         "           */ 1\n"
                         "A";
-    std::istringstream istr(code);
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    simplecpp::TokenList rawtokens = makeTokenList(code,files);
     ASSERT_EQUALS("# define A /*           */ 1\n\nA", rawtokens.stringify());
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -1637,9 +1637,8 @@ static void multiline4()   // #28 - macro with multiline comment
                         "          /*\\\n"
                         "           */ 1\n"
                         "A";
-    std::istringstream istr(code);
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens(istr,files);
+    simplecpp::TokenList rawtokens = makeTokenList(code,files);
     ASSERT_EQUALS("# define A /*           */ 1\n\n\nA", rawtokens.stringify());
     rawtokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> filedata;
@@ -1652,7 +1651,8 @@ static void multiline5()   // column
 {
     const char code[] = "#define A\\\n"
                         "(";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define A (", rawtokens.stringify());
     ASSERT_EQUALS(11, rawtokens.cback()->location.col);
 }
@@ -1662,7 +1662,8 @@ static void multiline6()   // multiline string in macro
     const char code[] = "#define string  (\"\\\n"
                         "x\")\n"
                         "string\n";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define string ( \"x\" )\n"
                   "\n"
                   "string", rawtokens.stringify());
@@ -1673,7 +1674,8 @@ static void multiline7()   // multiline string in macro
     const char code[] = "#define A(X) aaa { f(\"\\\n"
                         "a\"); }\n"
                         "A(1)";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define A ( X ) aaa { f ( \"a\" ) ; }\n"
                   "\n"
                   "A ( 1 )", rawtokens.stringify());
@@ -1911,11 +1913,11 @@ static void readfile_char_error()
 {
     simplecpp::OutputList outputList;
 
-    readfile("A = L's", -1, &outputList);
+    readfile("A = L's", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\'). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = 's\n'", -1, &outputList);
+    readfile("A = 's\n'", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\'). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
 }
 
@@ -1969,36 +1971,36 @@ static void readfile_string_error()
 {
     simplecpp::OutputList outputList;
 
-    readfile("A = \"abs", -1, &outputList);
+    readfile("A = \"abs", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = u8\"abs\n\"", -1, &outputList);
+    readfile("A = u8\"abs\n\"", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = R\"as\n(abc)as\"", -1, &outputList);
+    readfile("A = R\"as\n(abc)as\"", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,Invalid newline in raw string delimiter.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = u8R\"as\n(abc)as\"", -1, &outputList);
+    readfile("A = u8R\"as\n(abc)as\"", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,Invalid newline in raw string delimiter.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = R\"as(abc)a\"", -1, &outputList);
+    readfile("A = R\"as(abc)a\"", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,Raw string missing terminating delimiter.\n", toString(outputList));
     outputList.clear();
 
-    readfile("A = LR\"as(abc)a\"", -1, &outputList);
+    readfile("A = LR\"as(abc)a\"", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,Raw string missing terminating delimiter.\n", toString(outputList));
     outputList.clear();
 
-    readfile("#define A \"abs", -1, &outputList);
+    readfile("#define A \"abs", &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,No pair for character (\"). Can't process file. File is either invalid or unicode, which is currently not supported.\n", toString(outputList));
     outputList.clear();
 
     // Don't warn for a multiline define
-    readfile("#define A \"abs\\\n\"", -1, &outputList);
+    readfile("#define A \"abs\\\n\"", &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
 
@@ -2010,11 +2012,11 @@ static void readfile_cpp14_number()
 static void readfile_unhandled_chars()
 {
     simplecpp::OutputList outputList;
-    readfile("// 你好世界", -1, &outputList);
+    readfile("// 你好世界", &outputList);
     ASSERT_EQUALS("", toString(outputList));
-    readfile("s=\"你好世界\"", -1, &outputList);
+    readfile("s=\"你好世界\"", &outputList);
     ASSERT_EQUALS("", toString(outputList));
-    readfile("int 你好世界=0;", -1, &outputList);
+    readfile("int 你好世界=0;", &outputList);
     ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=228). Neither unicode nor extended ascii is supported.\n", toString(outputList));
 }
 
@@ -2057,9 +2059,9 @@ static void tokenMacro1()
                         "A";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
     ASSERT_EQUALS("A", tokenList.cback()->macro);
 }
 
@@ -2069,9 +2071,9 @@ static void tokenMacro2()
                         "ADD(1,2)";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("", tok->macro);
@@ -2090,9 +2092,9 @@ static void tokenMacro3()
                         "ADD(FRED,2)";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("FRED", tok->macro);
@@ -2111,9 +2113,9 @@ static void tokenMacro4()
                         "A";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("A", tok->macro);
@@ -2126,9 +2128,9 @@ static void tokenMacro5()
                         "SET_BPF_JUMP(A | B | C);";
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    std::istringstream istr(code);
     simplecpp::TokenList tokenList(files);
-    simplecpp::preprocess(tokenList, simplecpp::TokenList(istr,files), files, filedata, simplecpp::DUI());
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
     const simplecpp::Token *tok = tokenList.cfront()->next;
     ASSERT_EQUALS("D", tok->str());
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
@@ -2159,13 +2161,34 @@ static void utf8()
 
 static void unicode()
 {
-    ASSERT_EQUALS("12", readfile("\xFE\xFF\x00\x31\x00\x32", 6));
-    ASSERT_EQUALS("12", readfile("\xFF\xFE\x31\x00\x32\x00", 6));
-    ASSERT_EQUALS("//\n1", readfile("\xFE\xFF\x00\x2f\x00\x2f\x00\x0a\x00\x31", 10));
-    ASSERT_EQUALS("//\n1", readfile("\xFF\xFE\x2f\x00\x2f\x00\x0a\x00\x31\x00", 10));
-    ASSERT_EQUALS("\"a\"", readfile("\xFE\xFF\x00\x22\x00\x61\x00\x22", 8));
-    ASSERT_EQUALS("\"a\"", readfile("\xFF\xFE\x22\x00\x61\x00\x22\x00", 8));
-    ASSERT_EQUALS("\n//1", readfile("\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00",16));
+    {
+        const char code[] = "\xFE\xFF\x00\x31\x00\x32";
+        ASSERT_EQUALS("12", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x31\x00\x32\x00";
+        ASSERT_EQUALS("12", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE\xFF\x00\x2f\x00\x2f\x00\x0a\x00\x31";
+        ASSERT_EQUALS("//\n1", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x2f\x00\x2f\x00\x0a\x00\x31\x00";
+        ASSERT_EQUALS("//\n1", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE\xFF\x00\x22\x00\x61\x00\x22";
+        ASSERT_EQUALS("\"a\"", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x22\x00\x61\x00\x22\x00";
+        ASSERT_EQUALS("\"a\"", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00";
+        ASSERT_EQUALS("\n//1", readfile(code, sizeof(code)));
+    }
 }
 
 static void warning()
