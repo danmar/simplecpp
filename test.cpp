@@ -90,12 +90,6 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
     return simplecpp::TokenList(istr,filenames,filename,outputList);
 }
 
-static simplecpp::TokenList makeTokenList(const char code[])
-{
-    std::vector<std::string> files;
-    return makeTokenList(code, files);
-}
-
 static std::string readfile(const char code[], simplecpp::OutputList *outputList=nullptr)
 {
     std::vector<std::string> files;
@@ -205,7 +199,8 @@ static void builtin()
 static std::string testConstFold(const char code[])
 {
     try {
-        simplecpp::TokenList expr = makeTokenList(code);
+        std::vector<std::string> files;
+        simplecpp::TokenList expr = makeTokenList(code, files);
         expr.constFold();
         return expr.stringify();
     } catch (std::exception &) {
@@ -1656,7 +1651,8 @@ static void multiline5()   // column
 {
     const char code[] = "#define A\\\n"
                         "(";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define A (", rawtokens.stringify());
     ASSERT_EQUALS(11, rawtokens.cback()->location.col);
 }
@@ -1666,7 +1662,8 @@ static void multiline6()   // multiline string in macro
     const char code[] = "#define string  (\"\\\n"
                         "x\")\n"
                         "string\n";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define string ( \"x\" )\n"
                   "\n"
                   "string", rawtokens.stringify());
@@ -1677,7 +1674,8 @@ static void multiline7()   // multiline string in macro
     const char code[] = "#define A(X) aaa { f(\"\\\n"
                         "a\"); }\n"
                         "A(1)";
-    const simplecpp::TokenList rawtokens = makeTokenList(code);
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files);
     ASSERT_EQUALS("# define A ( X ) aaa { f ( \"a\" ) ; }\n"
                   "\n"
                   "A ( 1 )", rawtokens.stringify());
