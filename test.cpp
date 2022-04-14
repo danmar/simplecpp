@@ -6,6 +6,7 @@
 #include "simplecpp.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -24,6 +25,13 @@
 #define STRINGIZE(x) STRINGIZE_(x)
 
 static const std::string testSourceDir = SIMPLECPP_TEST_SOURCE_DIR;
+
+enum class Input : std::uint8_t {
+    Stringstream,
+    CharBuffer
+};
+
+static Input USE_INPUT = Input::Stringstream;
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -40,11 +48,20 @@ static std::string pprint(const std::string &in)
     return ret;
 }
 
+static const char* inputString(Input input) {
+    switch (input) {
+    case Input::Stringstream:
+        return "Stringstream";
+    case Input::CharBuffer:
+        return "CharBuffer";
+    }
+}
+
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
     if (expected != actual) {
         numberOfFailedAssertions++;
-        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "------ assertion failed (" << inputString(USE_INPUT) << ")---------" << std::endl;
         std::cerr << "line test.cpp:" << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
@@ -81,8 +98,14 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
-    return {istr,filenames,filename,outputList};
+    switch (USE_INPUT) {
+    case Input::Stringstream: {
+        std::istringstream istr(std::string(code, size));
+        return {istr,filenames,filename,outputList};
+    }
+    case Input::CharBuffer:
+        return {{code, size}, filenames, filename, outputList};
+    }
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
@@ -3518,8 +3541,10 @@ static void leak()
     }
 }
 
-int main(int argc, char **argv)
+static void runTests(int argc, char **argv, Input input)
 {
+    USE_INPUT = input;
+
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);
@@ -3786,6 +3811,11 @@ int main(int argc, char **argv)
     TEST_CASE(fuzz_crash);
 
     TEST_CASE(leak);
+}
 
+int main(int argc, char **argv)
+{
+    runTests(argc, argv, Input::Stringstream);
+    runTests(argc, argv, Input::CharBuffer);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
