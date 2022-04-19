@@ -300,6 +300,8 @@ public:
 
 protected:
     void init() {
+        // initialize since we use peek() in getAndSkipBOM()
+        isUtf16 = false;
         bom = getAndSkipBOM();
         isUtf16 = (bom == 0xfeff || bom == 0xfffe);
     }
@@ -338,6 +340,7 @@ private:
     }
 
     unsigned short bom;
+protected:
     bool isUtf16;
 };
 
@@ -389,7 +392,14 @@ public:
         return ch;
     }
     virtual void unget() {
-        ungetc(lastCh, file);
+        if (isUtf16) {
+            // TODO: use ungetc() as well
+            // UTF-16 has subsequent unget() calls
+            fseek(file, -1, SEEK_CUR);
+        }
+        else
+            ungetc(lastCh, file);
+
     }
     virtual bool good() {
         return lastCh != EOF;
