@@ -2233,6 +2233,12 @@ static void utf8()
     ASSERT_EQUALS("123", readfile("\xEF\xBB\xBF 123"));
 }
 
+static void utf8_invalid()
+{
+    ASSERT_EQUALS("", readfile("\xEF 123"));
+    ASSERT_EQUALS("", readfile("\xEF\xBB 123"));
+}
+
 static void unicode()
 {
     {
@@ -2262,6 +2268,42 @@ static void unicode()
     {
         const char code[] = "\xff\xfe\x0d\x00\x0a\x00\x2f\x00\x2f\x00\x31\x00\x0d\x00\x0a\x00";
         ASSERT_EQUALS("\n//1", readfile(code, sizeof(code)));
+    }
+}
+
+static void unicode_invalid()
+{
+    {
+        const char code[] = "\xFF";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE\xFF\x31";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x31";
+        ASSERT_EQUALS("1", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE\xFF\x31\x32";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x31\x32";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFE\xFF\x00\x31\x00\x32\x33";
+        ASSERT_EQUALS("", readfile(code, sizeof(code)));
+    }
+    {
+        const char code[] = "\xFF\xFE\x31\x00\x32\x00\x33";
+        ASSERT_EQUALS("123", readfile(code, sizeof(code)));
     }
 }
 
@@ -2687,7 +2729,9 @@ int main(int argc, char **argv)
 
     // utf/unicode
     TEST_CASE(utf8);
+    TEST_CASE(utf8_invalid);
     TEST_CASE(unicode);
+    TEST_CASE(unicode_invalid);
 
     TEST_CASE(warning);
 
