@@ -316,7 +316,8 @@ private:
 
         // The UTF-16 BOM is 0xfffe or 0xfeff.
         if (ch1 >= 0xfe) {
-            const unsigned short bom = (static_cast<unsigned char>(get()) << 8);
+            (void)get();
+            const unsigned short bom = (static_cast<unsigned char>(ch1) << 8);
             if (peek() >= 0xfe)
                 return bom | static_cast<unsigned char>(get());
             unget();
@@ -326,12 +327,15 @@ private:
         // Skip UTF-8 BOM 0xefbbbf
         if (ch1 == 0xef) {
             (void)get();
-            if (get() == 0xbb && peek() == 0xbf) {
+            if (peek() == 0xbb) {
                 (void)get();
-            } else {
-                unget();
+                if (peek() == 0xbf) {
+                    (void)get();
+                    return 0;
+                }
                 unget();
             }
+            unget();
         }
 
         return 0;
