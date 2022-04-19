@@ -148,11 +148,11 @@ static std::string readfile(const char code[], std::size_t size, simplecpp::Outp
     return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, const std::string &file = std::string())
 {
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::TokenList tokens = makeTokenList(code,files);
+    simplecpp::TokenList tokens = makeTokenList(code,files,file);
     tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, filedata, dui, outputList);
@@ -162,6 +162,11 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
 static std::string preprocess(const char code[])
 {
     return preprocess(code, simplecpp::DUI(), nullptr);
+}
+
+static std::string preprocess(const char code[], const std::string &file)
+{
+    return preprocess(code, simplecpp::DUI(), nullptr, file);
 }
 
 static std::string preprocess(const char code[], const simplecpp::DUI &dui)
@@ -230,7 +235,7 @@ static void backslash()
 
 static void builtin()
 {
-    ASSERT_EQUALS("\"\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__"));
+    ASSERT_EQUALS("\"test.c\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__", "test.c"));
     ASSERT_EQUALS("\n\n3", preprocess("\n\n__LINE__"));
     ASSERT_EQUALS("\n\n0", preprocess("\n\n__COUNTER__"));
     ASSERT_EQUALS("\n\n0 1", preprocess("\n\n__COUNTER__ __COUNTER__"));
