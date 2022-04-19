@@ -254,17 +254,15 @@ public:
         // Handling of newlines..
         if (ch == '\r') {
             ch = '\n';
-            if (bom == 0 && static_cast<char>(peek()) == '\n')
-                (void)get();
-            else if (isUtf16) {
-                const int c1 = get();
+
+            int ch2 = get();
+            if (isUtf16) {
                 const int c2 = get();
-                const int ch16 = makeUtf16Char(c1, c2);
-                if (ch16 != '\n') {
-                    unget();
-                    unget();
-                }
+                ch2 = makeUtf16Char(ch2, c2);
             }
+
+            if (ch2 != '\n')
+                ungetChar();
         }
 
         return ch;
