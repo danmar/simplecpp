@@ -385,31 +385,36 @@ public:
     }
 
     virtual int get() {
-        lastCh = fgetc(file);
+        lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
     virtual int peek() {
-        const int ch = get();
-        unget();
+        // keep lastCh intact
+        const int ch = fgetc(file);
+        unget_internal(ch);
         return ch;
     }
     virtual void unget() {
+        unget_internal(lastCh);
+    }
+    virtual bool good() {
+        return lastStatus != EOF;
+    }
+
+private:
+    void unget_internal(int ch) {
         if (isUtf16) {
             // TODO: use ungetc() as well
             // UTF-16 has subsequent unget() calls
             fseek(file, -1, SEEK_CUR);
         }
         else
-            ungetc(lastCh, file);
-
-    }
-    virtual bool good() {
-        return lastCh != EOF;
+            ungetc(ch, file);
     }
 
-private:
     FILE *file;
     int lastCh;
+    int lastStatus;
 };
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
