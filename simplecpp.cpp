@@ -1471,11 +1471,15 @@ namespace simplecpp {
             }
 
             static inline invalidHashHash cannotCombine(const Location &loc, const std::string &macroName, const Token *tokenA, const Token *tokenB) {
-                return invalidHashHash(loc, macroName, "Pasting '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token.");
+                return invalidHashHash(loc, macroName, "Combining '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token.");
             }
 
             static inline invalidHashHash unexpectedNewline(const Location &loc, const std::string &macroName) {
                 return invalidHashHash(loc, macroName, "Unexpected newline");
+            }
+
+            static inline invalidHashHash universalCharacterUB(const Location &loc, const std::string &macroName, const Token* tokenA, const std::string& strAB) {
+                return invalidHashHash(loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.");
             }
         };
     private:
@@ -1998,6 +2002,14 @@ namespace simplecpp {
                     }
                 } else {
                     strAB = A->str() + B->str();
+                }
+
+                // producing universal character is undefined behavior
+                if (A->previous && A->previous->str() == "\\") {
+                    if (strAB[0] == 'u' && strAB.size() == 5)
+                        throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
+                    else if (strAB[0] == 'U' && strAB.size() == 9)
+                        throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
                 }
 
                 if (varargs && tokensB.empty() && tok->previous->str() == ",")

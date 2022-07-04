@@ -997,19 +997,19 @@ static void hashhash9()
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '+' and 'x' yields an invalid token.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '+' and 'x' yields an invalid token.\n", toString(outputList));
 
     code = "#define A 2##=\n"
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '2' and '=' yields an invalid token.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '2' and '=' yields an invalid token.\n", toString(outputList));
 
     code = "#define A <<##x\n"
            "A";
     outputList.clear();
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Pasting '<<' and 'x' yields an invalid token.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '<<' and 'x' yields an invalid token.\n", toString(outputList));
 }
 
 static void hashhash10()
@@ -1196,7 +1196,7 @@ static void hashhash_invalid_string_number()
 
     simplecpp::OutputList outputList;
     preprocess(code, simplecpp::DUI(), &outputList);
-    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Pasting '\"ABC\"' and '12345' yields an invalid token.\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Combining '\"ABC\"' and '12345' yields an invalid token.\n", toString(outputList));
 }
 
 static void hashhash_invalid_missing_args()
@@ -1207,6 +1207,15 @@ static void hashhash_invalid_missing_args()
     simplecpp::OutputList outputList;
     preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Missing first argument\n", toString(outputList));
+}
+
+static void hashhash_universal_character()
+{
+    const char code[] =
+        "#define A(x,y) x##y\nint A(\\u01,04);";
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '\\u01' and '04' yields universal character '\\u0104'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.\n", toString(outputList));
 }
 
 static void has_include_1()
@@ -2462,6 +2471,11 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash_invalid_2);
     TEST_CASE(hashhash_invalid_string_number);
     TEST_CASE(hashhash_invalid_missing_args);
+    // C standard, 5.1.1.2, paragraph 4:
+    //    If a character sequence that matches the syntax of a universal
+    //    character name is produced by token concatenation (6.10.3.3),
+    //    the behavior is undefined."
+    TEST_CASE(hashhash_universal_character);
 
     // c++17 __has_include
     TEST_CASE(has_include_1);
