@@ -806,7 +806,7 @@ static void error2()
 static void error3()
 {
     const char code[] = "#error \"bla bla\\\n"
-                            " bla bla.\"\n";
+                        " bla bla.\"\n";
     std::vector<std::string> files;
     simplecpp::OutputList outputList;
     const simplecpp::TokenList rawtokens = makeTokenList(code, files, "test.c", &outputList);
@@ -2139,10 +2139,10 @@ static void tokenMacro5()
 static void undef()
 {
     const char code[] = "#define A\n"
-                            "#undef A\n"
-                            "#ifdef A\n"
-                            "123\n"
-                            "#endif";
+                        "#undef A\n"
+                        "#ifdef A\n"
+                        "123\n"
+                        "#endif";
     ASSERT_EQUALS("", preprocess(code));
 }
 

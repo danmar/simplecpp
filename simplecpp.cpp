@@ -2917,7 +2917,8 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     return true;
 }
 
-static void getLocaltime(struct tm &ltime) {
+static void getLocaltime(struct tm &ltime)
+{
     time_t t;
     time(&t);
 #ifndef _WIN32
@@ -2927,13 +2928,15 @@ static void getLocaltime(struct tm &ltime) {
 #endif
 }
 
-static std::string getDateDefine(struct tm *timep) {
+static std::string getDateDefine(struct tm *timep)
+{
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(struct tm *timep) {
+static std::string getTimeDefine(struct tm *timep)
+{
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%T", timep);
     return std::string("\"").append(buf).append("\"");
