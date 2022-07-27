@@ -2683,8 +2683,19 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
     }
 }
 
+static void simplifyComments(simplecpp::TokenList &expr)
+{
+    for (simplecpp::Token *tok = expr.front(); tok;) {
+        simplecpp::Token *d = tok;
+        tok = tok->next;
+        if (d->comment)
+            expr.deleteToken(d);
+    }
+}
+
 static long long evaluate(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
 {
+    simplifyComments(expr);
     simplifySizeof(expr, sizeOfType);
     simplifyName(expr);
     simplifyNumbers(expr);
