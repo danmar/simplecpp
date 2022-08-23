@@ -7,19 +7,21 @@ on: [push, pull_request]
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
-
-    container:
-      image: "ubuntu:21.10"
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Install missing software
         run: |
-          apt-get update
-          apt-get install -y cmake make
-          apt-get install -y clang-tidy-13
+          sudo apt-get update
+          sudo apt-get install -y cmake make
+
+      - name: Install clang
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 14
 
       - name: Prepare CMake
         run: |
@@ -28,8 +30,8 @@ jobs:
           cmake -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON ..
           cd ..
         env:
-          CXX: clang-13
+          CXX: clang-14
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-13 -q -j $(nproc) -p=cmake.output -extra-arg=-w
+          run-clang-tidy-14 -q -j $(nproc) -p=cmake.output -extra-arg=-w
