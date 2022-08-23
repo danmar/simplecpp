@@ -26,10 +26,7 @@ jobs:
 
       - name: Prepare CMake
         run: |
-          mkdir cmake.output
-          cd cmake.output
-          cmake -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON ..
-          cd ..
+          cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON
         env:
           CXX: clang-15
 
