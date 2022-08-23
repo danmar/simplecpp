@@ -28,11 +28,12 @@ int main(int argc, char **argv)
 
     // Settings..
     simplecpp::DUI dui;
+    bool quiet = false;
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
         if (*arg == '-') {
             char c = arg[1];
-            if (c != 'D' && c != 'U' && c != 'I' && c != 'i' && c != 's')
+            if (c != 'D' && c != 'U' && c != 'I' && c != 'i' && c != 's' && c != 'q')
                 continue;  // Ignored
             const char *value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
@@ -53,6 +54,9 @@ int main(int argc, char **argv)
                 if (std::strncmp(arg, "-std=",5)==0)
                     dui.std = arg + 5;
                 break;
+            case 'q':
+                quiet = true;
+                break;
             }
         } else {
             filename = arg;
@@ -66,6 +70,8 @@ int main(int argc, char **argv)
         std::cout << "  -IPATH          Include path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;
         std::cout << "  -UNAME          Undefine NAME." << std::endl;
+        std::cout << "  -std=STD        Specify standard." << std::endl;
+        std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::exit(0);
     }
 
@@ -82,36 +88,39 @@ int main(int argc, char **argv)
     simplecpp::preprocess(outputTokens, rawtokens, files, included, dui, &outputList);
 
     // Output
-    std::cout << outputTokens.stringify() << std::endl;
-    for (const simplecpp::Output &output : outputList) {
-        std::cerr << output.location.file() << ':' << output.location.line << ": ";
-        switch (output.type) {
-        case simplecpp::Output::ERROR:
-            std::cerr << "#error: ";
-            break;
-        case simplecpp::Output::WARNING:
-            std::cerr << "#warning: ";
-            break;
-        case simplecpp::Output::MISSING_HEADER:
-            std::cerr << "missing header: ";
-            break;
-        case simplecpp::Output::INCLUDE_NESTED_TOO_DEEPLY:
-            std::cerr << "include nested too deeply: ";
-            break;
-        case simplecpp::Output::SYNTAX_ERROR:
-            std::cerr << "syntax error: ";
-            break;
-        case simplecpp::Output::PORTABILITY_BACKSLASH:
-            std::cerr << "portability: ";
-            break;
-        case simplecpp::Output::UNHANDLED_CHAR_ERROR:
-            std::cerr << "unhandled char error: ";
-            break;
-        case simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND:
-            std::cerr << "explicit include not found: ";
-            break;
+    if (!quiet) {
+        std::cout << outputTokens.stringify() << std::endl;
+
+        for (const simplecpp::Output &output : outputList) {
+            std::cerr << output.location.file() << ':' << output.location.line << ": ";
+            switch (output.type) {
+            case simplecpp::Output::ERROR:
+                std::cerr << "#error: ";
+                break;
+            case simplecpp::Output::WARNING:
+                std::cerr << "#warning: ";
+                break;
+            case simplecpp::Output::MISSING_HEADER:
+                std::cerr << "missing header: ";
+                break;
+            case simplecpp::Output::INCLUDE_NESTED_TOO_DEEPLY:
+                std::cerr << "include nested too deeply: ";
+                break;
+            case simplecpp::Output::SYNTAX_ERROR:
+                std::cerr << "syntax error: ";
+                break;
+            case simplecpp::Output::PORTABILITY_BACKSLASH:
+                std::cerr << "portability: ";
+                break;
+            case simplecpp::Output::UNHANDLED_CHAR_ERROR:
+                std::cerr << "unhandled char error: ";
+                break;
+            case simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND:
+                std::cerr << "explicit include not found: ";
+                break;
+            }
+            std::cerr << output.msg << std::endl;
         }
-        std::cerr << output.msg << std::endl;
     }
 
     // cleanup included tokenlists
