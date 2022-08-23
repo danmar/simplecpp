@@ -34,4 +34,4 @@ jobs:
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-14 -q -j $(nproc) -p=cmake.output -extra-arg=-w
+          run-clang-tidy-14 -q -j $(nproc) -p=cmake.output
