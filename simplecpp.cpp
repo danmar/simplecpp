@@ -95,6 +95,7 @@ static const simplecpp::TokenString HAS_INCLUDE("__has_include");
 
 template<class T> static std::string toString(T t)
 {
+    // NOLINTNEXTLINE(misc-const-correctness) - false positive
     std::ostringstream ostr;
     ostr << t;
     return ostr.str();
@@ -350,9 +351,9 @@ static unsigned char readChar(std::istream &istr, unsigned int bom)
         if (bom == 0 && static_cast<char>(istr.peek()) == '\n')
             (void)istr.get();
         else if (bom == 0xfeff || bom == 0xfffe) {
-            int c1 = istr.get();
-            int c2 = istr.get();
-            int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
+            const int c1 = istr.get();
+            const int c2 = istr.get();
+            const int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
             if (ch16 != '\n') {
                 istr.unget();
                 istr.unget();
@@ -397,7 +398,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
 
     // The UTF-16 BOM is 0xfffe or 0xfeff.
     if (ch1 >= 0xfe) {
-        unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
+        const unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
         if (istr.peek() >= 0xfe)
             return bom | static_cast<unsigned char>(istr.get());
         istr.unget();
@@ -428,7 +429,7 @@ static std::string escapeString(const std::string &str)
     std::ostringstream ostr;
     ostr << '\"';
     for (std::size_t i = 1U; i < str.size() - 1; ++i) {
-        char c = str[i];
+        const char c = str[i];
         if (c == '\\' || c == '\"' || c == '\'')
             ostr << '\\';
         ostr << c;
@@ -957,10 +958,10 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
         if (tok->op == '*')
             result = (stringToLL(tok->previous->str()) * stringToLL(tok->next->str()));
         else if (tok->op == '/' || tok->op == '%') {
-            long long rhs = stringToLL(tok->next->str());
+            const long long rhs = stringToLL(tok->next->str());
             if (rhs == 0)
                 throw std::overflow_error("division/modulo by zero");
-            long long lhs = stringToLL(tok->previous->str());
+            const long long lhs = stringToLL(tok->previous->str());
             if (rhs == -1 && lhs == std::numeric_limits<long long>::min())
                 throw std::overflow_error("division overflow");
             if (tok->op == '/')
@@ -1955,8 +1956,8 @@ namespace simplecpp {
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
                 throw invalidHashHash::unexpectedNewline(tok->location, name());
 
-            bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
+            const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
+            const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
             if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
                 throw invalidHashHash::unexpectedToken(tok->location, name(), A);
 
@@ -2094,7 +2095,7 @@ namespace simplecpp {
 
         std::string::size_type pos = 0;
         if (cygwinPath.size() >= 11 && startsWith(cygwinPath, "/cygdrive/")) {
-            unsigned char driveLetter = cygwinPath[10];
+            const unsigned char driveLetter = cygwinPath[10];
             if (std::isalpha(driveLetter)) {
                 if (cygwinPath.size() == 11) {
                     windowsPath = toupper(driveLetter);
@@ -2440,10 +2441,10 @@ static unsigned long long stringToULLbounded(
     std::size_t maxlen = std::string::npos
 )
 {
-    std::string sub = s.substr(pos, maxlen);
+    const std::string sub = s.substr(pos, maxlen);
     const char* start = sub.c_str();
     char* end;
-    unsigned long long value = std::strtoull(start, &end, base);
+    const unsigned long long value = std::strtoull(start, &end, base);
     pos += end - start;
     if (end - start < minlen)
         throw std::runtime_error("expected digit");
@@ -2516,7 +2517,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
 
         if (str[pos] == '\\') {
             pos++;
-            char escape = str[pos++];
+            const char escape = str[pos++];
 
             if (pos >= str.size())
                 throw std::runtime_error("unexpected end of character literal");
@@ -2583,7 +2584,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
             case 'u':
             case 'U': {
                 // universal character names have exactly 4 or 8 digits
-                std::size_t ndigits = (escape == 'u' ? 4 : 8);
+                const std::size_t ndigits = (escape == 'u' ? 4 : 8);
                 value = stringToULLbounded(str, pos, 16, ndigits, ndigits);
 
                 // UTF-8 encodes code points above 0x7f in multiple code units
@@ -2626,7 +2627,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                     if (pos + 1 >= str.size())
                         throw std::runtime_error("assumed UTF-8 encoded source, but character literal ends unexpectedly");
 
-                    unsigned char c = str[pos++];
+                    const unsigned char c = str[pos++];
 
                     if (((c >> 6) != 2)    // ensure c has form 0xb10xxxxxx
                         || (!value && additional_bytes == 1 && c < 0xa0)    // overlong 3-bytes encoding
@@ -2894,7 +2895,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!sameline(rawtok, htok))
             continue;
 
-        bool systemheader = (htok->str()[0] == '<');
+        const bool systemheader = (htok->str()[0] == '<');
         const std::string header(realFilename(htok->str().substr(1U, htok->str().size() - 2U)));
         if (hasFile(ret, sourcefile, header, dui, systemheader))
             continue;
@@ -3098,7 +3099,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 try {
                     const Macro &macro = Macro(rawtok->previous, files);
                     if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
-                        MacroMap::iterator it = macros.find(macro.name());
+                        const MacroMap::iterator it = macros.find(macro.name());
                         if (it == macros.end())
                             macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
                         else
