@@ -21,7 +21,8 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 14
+          sudo ./llvm.sh 15
+          sudo apt-get install clang-tidy-15
 
       - name: Prepare CMake
         run: |
@@ -30,8 +31,8 @@ jobs:
           cmake -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON ..
           cd ..
         env:
-          CXX: clang-14
+          CXX: clang-15
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-14 -q -j $(nproc) -p=cmake.output
+          run-clang-tidy-15 -q -j $(nproc) -p=cmake.output
