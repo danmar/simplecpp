@@ -1492,10 +1492,10 @@ static void ifalt()   // using "and", "or", etc
 
 static void ifexpr()
 {
-    const char *code = "#define MACRO()  (1)\n"
-                       "#if ~MACRO() & 8\n"
-                       "1\n"
-                       "#endif";
+    const char code[] = "#define MACRO()  (1)\n"
+                        "#if ~MACRO() & 8\n"
+                        "1\n"
+                        "#endif";
     ASSERT_EQUALS("\n\n1", preprocess(code));
 }
 
@@ -2125,7 +2125,7 @@ static void tokenMacro4()
     simplecpp::TokenList tokenList(files);
     const simplecpp::TokenList rawtokens = makeTokenList(code,files);
     simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
-    const simplecpp::Token *tok = tokenList.cfront();
+    const simplecpp::Token * const tok = tokenList.cfront();
     ASSERT_EQUALS("1", tok->str());
     ASSERT_EQUALS("A", tok->macro);
 }
@@ -2140,7 +2140,7 @@ static void tokenMacro5()
     simplecpp::TokenList tokenList(files);
     const simplecpp::TokenList rawtokens = makeTokenList(code,files);
     simplecpp::preprocess(tokenList, rawtokens, files, filedata, simplecpp::DUI());
-    const simplecpp::Token *tok = tokenList.cfront()->next;
+    const simplecpp::Token * const tok = tokenList.cfront()->next;
     ASSERT_EQUALS("D", tok->str());
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
 }
