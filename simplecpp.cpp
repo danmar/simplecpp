@@ -400,7 +400,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
 
     // The UTF-16 BOM is 0xfffe or 0xfeff.
     if (ch1 >= 0xfe) {
-        const unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
+        const unsigned short bom = static_cast<unsigned short>((static_cast<unsigned char>(istr.get()) << 8));
         if (istr.peek() >= 0xfe)
             return bom | static_cast<unsigned char>(istr.get());
         istr.unget();
@@ -779,7 +779,7 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
 {
     if (!tok || tok->str().size() != 1U)
         return false;
-    const char c = std::tolower(tok->str()[0]);
+    const char c = static_cast<char>(std::tolower(tok->str()[0]));
     return c == 'f' || c == 'l';
 }
 
@@ -2100,11 +2100,11 @@ namespace simplecpp {
             const unsigned char driveLetter = cygwinPath[10];
             if (std::isalpha(driveLetter)) {
                 if (cygwinPath.size() == 11) {
-                    windowsPath = toupper(driveLetter);
+                    windowsPath = static_cast<char>(toupper(driveLetter));
                     windowsPath += ":\\";   // volume root directory
                     pos = 11;
                 } else if (cygwinPath[11] == '/') {
-                    windowsPath = toupper(driveLetter);
+                    windowsPath = static_cast<char>(toupper(driveLetter));
                     windowsPath += ":";
                     pos = 11;
                 }

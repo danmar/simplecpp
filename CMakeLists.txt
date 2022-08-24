@@ -14,7 +14,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shadow-field-in-constructor)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-shadow-field-in-constructor)
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
