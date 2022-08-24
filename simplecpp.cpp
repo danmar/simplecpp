@@ -540,7 +540,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     const Token *numtok = cback();
                     while (numtok->comment)
                         numtok = numtok->previous;
-                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                    lineDirective(location.fileIndex, static_cast<unsigned int>(std::atol(numtok->str().c_str())), &location);
                 } else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
                     const Token *strtok = cback();
                     while (strtok->comment)
@@ -549,7 +549,7 @@ void simplecpp::TokenList::readfile(std::istream &istr, const std::string &filen
                     while (numtok->comment)
                         numtok = numtok->previous;
                     lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
-                                  std::atol(numtok->str().c_str()), &location);
+                                  static_cast<unsigned int>(std::atol(numtok->str().c_str())), &location);
                 }
                 // #endfile
                 else if (lastline == "# endfile" && !loc.empty()) {
@@ -1265,7 +1265,7 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
             return i;
     }
     files.push_back(filename);
-    return files.size() - 1U;
+    return static_cast<unsigned int>(files.size() - 1U);
 }
 
 

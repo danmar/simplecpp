@@ -14,7 +14,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shadow-field-in-constructor)
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
@@ -50,6 +50,9 @@ endif()
 
 add_executable(testrunner $<TARGET_OBJECTS:simplecpp_obj> test.cpp)
 set_property(TARGET testrunner PROPERTY CXX_STANDARD 11)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(testrunner PRIVATE -Wno-shorten-64-to-32)
+endif()
 
 enable_testing()
 add_test(NAME testrunner COMMAND testrunner)
