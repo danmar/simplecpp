@@ -1842,7 +1842,7 @@ namespace simplecpp {
                 return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros2, parametertokens);
             }
 
-            else if (tok->str() == DEFINED) {
+            if (tok->str() == DEFINED) {
                 const Token *tok2 = tok->next;
                 const Token *tok3 = tok2 ? tok2->next : nullptr;
                 const Token *tok4 = tok3 ? tok3->next : nullptr;
@@ -1989,7 +1989,7 @@ namespace simplecpp {
             } else {
                 std::string strAB;
 
-                const bool varargs = variadic && args.size() >= 1U && B->str() == args[args.size()-1U];
+                const bool varargs = variadic && !args.empty() && B->str() == args[args.size()-1U];
 
                 if (expandArg(&tokensB, B, parametertokens)) {
                     if (tokensB.empty())
@@ -2008,7 +2008,7 @@ namespace simplecpp {
                 if (A->previous && A->previous->str() == "\\") {
                     if (strAB[0] == 'u' && strAB.size() == 5)
                         throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
-                    else if (strAB[0] == 'U' && strAB.size() == 9)
+                    if (strAB[0] == 'U' && strAB.size() == 9)
                         throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
                 }
 
@@ -2487,7 +2487,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
 
     std::size_t pos;
 
-    if (str.size() >= 1 && str[0] == '\'') {
+    if (!str.empty() && str[0] == '\'') {
         narrow = true;
         pos = 1;
     } else if (str.size() >= 2 && str[0] == 'u' && str[1] == '\'') {
@@ -2611,7 +2611,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                 int additional_bytes;
                 if (value >= 0xf5)  // higher values would result in code points above 0x10ffff
                     throw std::runtime_error("assumed UTF-8 encoded source, but sequence is invalid");
-                else if (value >= 0xf0)
+                if (value >= 0xf0)
                     additional_bytes = 3;
                 else if (value >= 0xe0)
                     additional_bytes = 2;
@@ -2678,7 +2678,7 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
             continue;
         if (tok->str().compare(0,2,"0x") == 0)
             tok->setstr(toString(stringToULL(tok->str())));
-        else if (!tok->number && tok->str().find('\'') != tok->str().npos)
+        else if (!tok->number && tok->str().find('\'') != std::string::npos)
             tok->setstr(toString(simplecpp::characterLiteralToLL(tok->str())));
     }
 }
@@ -2840,7 +2840,7 @@ static bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedat
     return !getFileName(filedata, sourcefile, header, dui, systemheader).empty();
 }
 
-std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::map<std::string, simplecpp::TokenList*> ret;
 
@@ -2856,16 +2856,16 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         std::ifstream fin(filename.c_str());
         if (!fin.is_open()) {
             if (outputList) {
-                simplecpp::Output err(fileNumbers);
+                simplecpp::Output err(filenames);
                 err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
-                err.location = Location(fileNumbers);
+                err.location = Location(filenames);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
                 outputList->push_back(err);
             }
             continue;
         }
 
-        TokenList *tokenlist = new TokenList(fin, fileNumbers, filename, outputList);
+        TokenList *tokenlist = new TokenList(fin, filenames, filename, outputList);
         if (!tokenlist->front()) {
             delete tokenlist;
             continue;
@@ -2904,7 +2904,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!f.is_open())
             continue;
 
-        TokenList *tokens = new TokenList(f, fileNumbers, header2, outputList);
+        TokenList *tokens = new TokenList(f, filenames, header2, outputList);
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());
