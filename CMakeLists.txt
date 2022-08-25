@@ -12,9 +12,9 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors)
     # we are not interested in these
-    add_compile_options(-Wno-multichar)
+    add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32)
+    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14)
         # not all tools support DWARF 5 yet so stick to version 4
