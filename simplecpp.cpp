@@ -1276,7 +1276,7 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), variadic(false), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), valueDefinedInCode_(false) {}
 
         Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previous, tok))
@@ -2063,9 +2063,6 @@ namespace simplecpp {
         /** arguments for macro */
         std::vector<TokenString> args;
 
-        /** is macro variadic? */
-        bool variadic;
-
         /** first token in replacement string */
         const Token *valueToken;
 
@@ -2080,6 +2077,9 @@ namespace simplecpp {
 
         /** usage of this macro */
         mutable std::list<Location> usageList;
+
+        /** is macro variadic? */
+        bool variadic;
 
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
