@@ -16,11 +16,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
 
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14)
-        # not all tools support DWARF 5 yet so stick to version 4
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
+        # TODO: verify this regression still exists in clang-15
+        if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+            # work around performance regression - see https://github.com/llvm/llvm-project/issues/53555
+            add_compile_options(-mllvm -inline-deferral)
+        endif()
+
+        # use force DWARF 4 debug format since not all tools might be able to handle DWARF 5 yet - e.g. valgrind on ubuntu 20.04
         add_compile_options(-gdwarf-4)
-        # work around performance regression in clang-14
-        add_compile_options(-mllvm -inline-deferral)
     endif()
 endif()
 

@@ -30,12 +30,12 @@ int main(int argc, char **argv)
     simplecpp::DUI dui;
     bool quiet = false;
     for (int i = 1; i < argc; i++) {
-        const char *arg = argv[i];
+        const char * const arg = argv[i];
         if (*arg == '-') {
-            char c = arg[1];
+            const char c = arg[1];
             if (c != 'D' && c != 'U' && c != 'I' && c != 'i' && c != 's' && c != 'q')
                 continue;  // Ignored
-            const char *value = arg[2] ? (argv[i] + 2) : argv[++i];
+            const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
             case 'D': // define symbol
                 dui.defines.push_back(value);
