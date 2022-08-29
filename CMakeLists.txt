@@ -50,9 +50,6 @@ endif()
 
 add_executable(testrunner $<TARGET_OBJECTS:simplecpp_obj> test.cpp)
 set_property(TARGET testrunner PROPERTY CXX_STANDARD 11)
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(testrunner PRIVATE -Wno-shorten-64-to-32)
-endif()
 
 enable_testing()
 add_test(NAME testrunner COMMAND testrunner)

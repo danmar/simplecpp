@@ -50,7 +50,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+static int assertEquals(const unsigned long long &expected, const unsigned long long &actual, int line)
 {
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
 }
