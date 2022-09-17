@@ -14,7 +14,7 @@ test:	testrunner	simplecpp
 	# The -std=c++03 makes sure that simplecpp.cpp is C++03 conformant. We don't require a C++11 compiler
 	g++ -std=c++03 -fsyntax-only simplecpp.cpp
 	./testrunner
-	python run-tests.py
+	python3 run-tests.py
 
 simplecpp:	main.o simplecpp.o
 	$(CXX) $(LDFLAGS) main.o simplecpp.o -o simplecpp

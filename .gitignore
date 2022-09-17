@@ -28,3 +28,7 @@
 *.app
 simplecpp
 testrunner
+
+# CLion
+/.idea
+/cmake-build-*

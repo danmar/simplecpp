@@ -48,6 +48,7 @@
 namespace simplecpp {
 
     typedef std::string TokenString;
+    class Macro;
 
     /**
      * Location in source code
@@ -106,7 +107,7 @@ namespace simplecpp {
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string) {
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
         }
 
         void flags() {
@@ -152,11 +153,11 @@ namespace simplecpp {
             return tok;
         }
 
-        void setExpandedFrom(const Token *tok, const void* m) {
+        void setExpandedFrom(const Token *tok, const Macro* m) {
             mExpandedFrom = tok->mExpandedFrom;
             mExpandedFrom.insert(m);
         }
-        bool isExpandedFrom(const void* m) const {
+        bool isExpandedFrom(const Macro* m) const {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
         }
 
@@ -165,7 +166,7 @@ namespace simplecpp {
     private:
         TokenString string;
 
-        std::set<const void*> mExpandedFrom;
+        std::set<const Macro*> mExpandedFrom;
 
         // Not implemented - prevent assignment
         Token &operator=(const Token &tok);
@@ -238,8 +239,8 @@ namespace simplecpp {
         void deleteToken(Token *tok) {
             if (!tok)
                 return;
-            Token *prev = tok->previous;
-            Token *next = tok->next;
+            Token * const prev = tok->previous;
+            Token * const next = tok->next;
             if (prev)
                 prev->next = next;
             if (next)
@@ -350,6 +351,12 @@ namespace simplecpp {
 
     /** Convert Cygwin path to Windows path */
     SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
+
+    /** Returns the __STDC_VERSION__ value for a given standard */
+    SIMPLECPP_LIB std::string getCStdString(const std::string &std);
+
+    /** Returns the __cplusplus value for a given standard */
+    SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)

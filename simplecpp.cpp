@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <ctime>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -57,6 +58,19 @@ static bool isOct(const std::string &s)
     return s.size()>1 && (s[0]=='0') && (s[1] >= '0') && (s[1] < '8');
 }
 
+// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
+static bool isStringLiteral_(const std::string &s)
+{
+    return s.size() > 1 && (s[0]=='\"') && (*s.rbegin()=='\"');
+}
+
+// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
+static bool isCharLiteral_(const std::string &s)
+{
+    // char literal patterns can include 'a', '\t', '\000', '\xff', 'abcd', and maybe ''
+    // This only checks for the surrounding '' but doesn't parse the content.
+    return s.size() > 1 && (s[0]=='\'') && (*s.rbegin()=='\'');
+}
 
 static const simplecpp::TokenString DEFINE("define");
 static const simplecpp::TokenString UNDEF("undef");
@@ -81,6 +95,7 @@ static const simplecpp::TokenString HAS_INCLUDE("__has_include");
 
 template<class T> static std::string toString(T t)
 {
+    // NOLINTNEXTLINE(misc-const-correctness) - false positive
     std::ostringstream ostr;
     ostr << t;
     return ostr.str();
@@ -270,7 +285,7 @@ void simplecpp::TokenList::clear()
 {
     backToken = nullptr;
     while (frontToken) {
-        Token *next = frontToken->next;
+        Token * const next = frontToken->next;
         delete frontToken;
         frontToken = next;
     }
@@ -336,9 +351,9 @@ static unsigned char readChar(std::istream &istr, unsigned int bom)
         if (bom == 0 && static_cast<char>(istr.peek()) == '\n')
             (void)istr.get();
         else if (bom == 0xfeff || bom == 0xfffe) {
-            int c1 = istr.get();
-            int c2 = istr.get();
-            int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
+            const int c1 = istr.get();
+            const int c2 = istr.get();
+            const int ch16 = (bom == 0xfeff) ? (c1<<8 | c2) : (c2<<8 | c1);
             if (ch16 != '\n') {
                 istr.unget();
                 istr.unget();
@@ -383,7 +398,7 @@ static unsigned short getAndSkipBOM(std::istream &istr)
 
     // The UTF-16 BOM is 0xfffe or 0xfeff.
     if (ch1 >= 0xfe) {
-        unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
+        const unsigned short bom = (static_cast<unsigned char>(istr.get()) << 8);
         if (istr.peek() >= 0xfe)
             return bom | static_cast<unsigned char>(istr.get());
         istr.unget();
@@ -414,7 +429,7 @@ static std::string escapeString(const std::string &str)
     std::ostringstream ostr;
     ostr << '\"';
     for (std::size_t i = 1U; i < str.size() - 1; ++i) {
-        char c = str[i];
+        const char c = str[i];
         if (c == '\\' || c == '\"' || c == '\'')
             ostr << '\\';
         ostr << c;
@@ -845,7 +860,7 @@ void simplecpp::TokenList::combineOperators()
                     start = start->previous;
                 }
                 if (indentlevel == -1 && start) {
-                    const Token *ftok = start;
+                    const Token * const ftok = start;
                     bool isFuncDecl = ftok->name;
                     while (isFuncDecl) {
                         if (!start->name && start->str() != "::" && start->op != '*' && start->op != '&')
@@ -943,10 +958,10 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
         if (tok->op == '*')
             result = (stringToLL(tok->previous->str()) * stringToLL(tok->next->str()));
         else if (tok->op == '/' || tok->op == '%') {
-            long long rhs = stringToLL(tok->next->str());
+            const long long rhs = stringToLL(tok->next->str());
             if (rhs == 0)
                 throw std::overflow_error("division/modulo by zero");
-            long long lhs = stringToLL(tok->previous->str());
+            const long long lhs = stringToLL(tok->previous->str());
             if (rhs == -1 && lhs == std::numeric_limits<long long>::min())
                 throw std::overflow_error("division overflow");
             if (tok->op == '/')
@@ -1145,7 +1160,7 @@ void simplecpp::TokenList::removeComments()
 {
     Token *tok = frontToken;
     while (tok) {
-        Token *tok1 = tok;
+        Token * const tok1 = tok;
         tok = tok->next;
         if (tok1->comment)
             deleteToken(tok1);
@@ -1253,16 +1268,16 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 
 
 namespace simplecpp {
-	class Macro;
+    class Macro;
 #if __cplusplus >= 201103L
-	using MacroMap = std::unordered_map<TokenString,Macro>;
+    using MacroMap = std::unordered_map<TokenString,Macro>;
 #else
-	typedef std::map<TokenString,Macro> MacroMap;
+    typedef std::map<TokenString,Macro> MacroMap;
 #endif
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), variadic(false), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), valueDefinedInCode_(false) {}
 
         Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previous, tok))
@@ -1381,7 +1396,7 @@ namespace simplecpp {
                 TokenList rawtokens2(inputFiles);
                 const Location loc(macro2tok->location);
                 while (macro2tok) {
-                    Token *next = macro2tok->next;
+                    Token * const next = macro2tok->next;
                     rawtokens2.push_back(new Token(macro2tok->str(), loc));
                     output2.deleteToken(macro2tok);
                     macro2tok = next;
@@ -1434,8 +1449,8 @@ namespace simplecpp {
         /** base class for errors */
         struct Error {
             Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
-            Location location;
-            std::string what;
+            const Location location;
+            const std::string what;
         };
 
         /** Struct that is thrown when macro is expanded with wrong number of parameters */
@@ -1445,7 +1460,28 @@ namespace simplecpp {
 
         /** Struct that is thrown when there is invalid ## usage */
         struct invalidHashHash : public Error {
-            invalidHashHash(const Location &loc, const std::string &macroName) : Error(loc, "Invalid ## usage when expanding \'" + macroName + "\'.") {}
+            static inline std::string format(const std::string &macroName, const std::string &message) {
+                return "Invalid ## usage when expanding \'" + macroName + "\': " + message;
+            }
+
+            invalidHashHash(const Location &loc, const std::string &macroName, const std::string &message)
+                : Error(loc, format(macroName, message)) { }
+
+            static inline invalidHashHash unexpectedToken(const Location &loc, const std::string &macroName, const Token *tokenA) {
+                return invalidHashHash(loc, macroName, "Unexpected token '"+ tokenA->str()+"'");
+            }
+
+            static inline invalidHashHash cannotCombine(const Location &loc, const std::string &macroName, const Token *tokenA, const Token *tokenB) {
+                return invalidHashHash(loc, macroName, "Combining '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token.");
+            }
+
+            static inline invalidHashHash unexpectedNewline(const Location &loc, const std::string &macroName) {
+                return invalidHashHash(loc, macroName, "Unexpected newline");
+            }
+
+            static inline invalidHashHash universalCharacterUB(const Location &loc, const std::string &macroName, const Token* tokenA, const std::string& strAB) {
+                return invalidHashHash(loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.");
+            }
         };
     private:
         /** Create new token where Token::macro is set for replaced tokens */
@@ -1669,7 +1705,7 @@ namespace simplecpp {
                     // A##B => AB
                     if (sameline(tok, tok->next) && tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
                         if (!sameline(tok, tok->next->next->next))
-                            throw invalidHashHash(tok->location, name());
+                            throw invalidHashHash::unexpectedNewline(tok->location, name());
                         TokenList new_output(files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
@@ -1756,7 +1792,7 @@ namespace simplecpp {
             TokenList temp2(files);
             temp2.push_back(new Token(temp.cback()->str(), tok->location));
 
-            const Token *tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
+            const Token * const tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
             if (!tok2)
                 return tok->next;
             output->takeTokens(temp);
@@ -1797,7 +1833,7 @@ namespace simplecpp {
                 }
                 TokenList tokens(files);
                 tokens.push_back(new Token(*tok));
-                const Token *tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
+                const Token * const tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
                 if (!tok2) {
                     output->push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
@@ -1807,10 +1843,10 @@ namespace simplecpp {
                 return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros2, parametertokens);
             }
 
-            else if (tok->str() == DEFINED) {
-                const Token *tok2 = tok->next;
-                const Token *tok3 = tok2 ? tok2->next : nullptr;
-                const Token *tok4 = tok3 ? tok3->next : nullptr;
+            if (tok->str() == DEFINED) {
+                const Token * const tok2 = tok->next;
+                const Token * const tok3 = tok2 ? tok2->next : nullptr;
+                const Token * const tok4 = tok3 ? tok3->next : nullptr;
                 const Token *defToken = nullptr;
                 const Token *lastToken = nullptr;
                 if (sameline(tok, tok4) && tok2->op == '(' && tok3->name && tok4->op == ')') {
@@ -1916,71 +1952,98 @@ namespace simplecpp {
         const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             Token *A = output->back();
             if (!A)
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash(tok->location, name(), "Missing first argument");
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::unexpectedNewline(tok->location, name());
 
-            bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual)
-                throw invalidHashHash(tok->location, name());
+            const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
+            const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
+            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
+                throw invalidHashHash::unexpectedToken(tok->location, name(), A);
 
-            Token *B = tok->next->next;
+            Token * const B = tok->next->next;
             if (!B->name && !B->number && B->op && !B->isOneOf("#="))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::unexpectedToken(tok->location, name(), B);
 
             if ((canBeConcatenatedWithEqual && B->op != '=') ||
                 (!canBeConcatenatedWithEqual && B->op == '='))
-                throw invalidHashHash(tok->location, name());
+                throw invalidHashHash::cannotCombine(tok->location, name(), A, B);
 
-            std::string strAB;
-
-            const bool varargs = variadic && args.size() >= 1U && B->str() == args[args.size()-1U];
+            // Superficial check; more in-depth would in theory be possible _after_ expandArg
+            if (canBeConcatenatedStringOrChar && (B->number || !B->name))
+                throw invalidHashHash::cannotCombine(tok->location, name(), A, B);
 
             TokenList tokensB(files);
-            if (expandArg(&tokensB, B, parametertokens)) {
-                if (tokensB.empty())
-                    strAB = A->str();
-                else if (varargs && A->op == ',') {
-                    strAB = ",";
-                } else {
-                    strAB = A->str() + tokensB.cfront()->str();
-                    tokensB.deleteToken(tokensB.front());
-                }
-            } else {
-                strAB = A->str() + B->str();
-            }
-
             const Token *nextTok = B->next;
-            if (varargs && tokensB.empty() && tok->previous->str() == ",")
-                output->deleteToken(A);
-            else if (strAB != "," && macros.find(strAB) == macros.end()) {
-                A->setstr(strAB);
-                for (Token *b = tokensB.front(); b; b = b->next)
-                    b->location = loc;
-                output->takeTokens(tokensB);
-            } else if (nextTok->op == '#' && nextTok->next->op == '#') {
-                TokenList output2(files);
-                output2.push_back(new Token(strAB, tok->location));
-                nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
-                output->deleteToken(A);
-                output->takeTokens(output2);
-            } else {
-                output->deleteToken(A);
-                TokenList tokens(files);
-                tokens.push_back(new Token(strAB, tok->location));
-                // for function like macros, push the (...)
-                if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
-                    const MacroMap::const_iterator it = macros.find(strAB);
-                    if (it != macros.end() && expandedmacros.find(strAB) == expandedmacros.end() && it->second.functionLike()) {
-                        const Token *tok2 = appendTokens(&tokens, loc, B->next, macros, expandedmacros, parametertokens);
-                        if (tok2)
-                            nextTok = tok2->next;
-                    }
+
+            if (canBeConcatenatedStringOrChar) {
+                // It seems clearer to handle this case separately even though the code is similar-ish, but we don't want to merge here.
+                // TODO The question is whether the ## or varargs may still apply, and how to provoke?
+                if (expandArg(&tokensB, B, parametertokens)) {
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                } else {
+                    tokensB.push_back(new Token(*B));
+                    tokensB.back()->location = loc;
                 }
-                expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
-                for (Token *b = tokensB.front(); b; b = b->next)
-                    b->location = loc;
                 output->takeTokens(tokensB);
+            } else {
+                std::string strAB;
+
+                const bool varargs = variadic && !args.empty() && B->str() == args[args.size()-1U];
+
+                if (expandArg(&tokensB, B, parametertokens)) {
+                    if (tokensB.empty())
+                        strAB = A->str();
+                    else if (varargs && A->op == ',') {
+                        strAB = ",";
+                    } else {
+                        strAB = A->str() + tokensB.cfront()->str();
+                        tokensB.deleteToken(tokensB.front());
+                    }
+                } else {
+                    strAB = A->str() + B->str();
+                }
+
+                // producing universal character is undefined behavior
+                if (A->previous && A->previous->str() == "\\") {
+                    if (strAB[0] == 'u' && strAB.size() == 5)
+                        throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
+                    if (strAB[0] == 'U' && strAB.size() == 9)
+                        throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
+                }
+
+                if (varargs && tokensB.empty() && tok->previous->str() == ",")
+                    output->deleteToken(A);
+                else if (strAB != "," && macros.find(strAB) == macros.end()) {
+                    A->setstr(strAB);
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                    output->takeTokens(tokensB);
+                } else if (nextTok->op == '#' && nextTok->next->op == '#') {
+                    TokenList output2(files);
+                    output2.push_back(new Token(strAB, tok->location));
+                    nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
+                    output->deleteToken(A);
+                    output->takeTokens(output2);
+                } else {
+                    output->deleteToken(A);
+                    TokenList tokens(files);
+                    tokens.push_back(new Token(strAB, tok->location));
+                    // for function like macros, push the (...)
+                    if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
+                        const MacroMap::const_iterator it = macros.find(strAB);
+                        if (it != macros.end() && expandedmacros.find(strAB) == expandedmacros.end() && it->second.functionLike()) {
+                            const Token * const tok2 = appendTokens(&tokens, loc, B->next, macros, expandedmacros, parametertokens);
+                            if (tok2)
+                                nextTok = tok2->next;
+                        }
+                    }
+                    expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
+                    for (Token *b = tokensB.front(); b; b = b->next)
+                        b->location = loc;
+                    output->takeTokens(tokensB);
+                }
             }
 
             return nextTok;
@@ -2001,9 +2064,6 @@ namespace simplecpp {
         /** arguments for macro */
         std::vector<TokenString> args;
 
-        /** is macro variadic? */
-        bool variadic;
-
         /** first token in replacement string */
         const Token *valueToken;
 
@@ -2019,6 +2079,9 @@ namespace simplecpp {
         /** usage of this macro */
         mutable std::list<Location> usageList;
 
+        /** is macro variadic? */
+        bool variadic;
+
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
     };
@@ -2032,7 +2095,7 @@ namespace simplecpp {
 
         std::string::size_type pos = 0;
         if (cygwinPath.size() >= 11 && startsWith(cygwinPath, "/cygdrive/")) {
-            unsigned char driveLetter = cygwinPath[10];
+            const unsigned char driveLetter = cygwinPath[10];
             if (std::isalpha(driveLetter)) {
                 if (cygwinPath.size() == 11) {
                     windowsPath = toupper(driveLetter);
@@ -2435,10 +2498,10 @@ static unsigned long long stringToULLbounded(
     std::size_t maxlen = std::string::npos
 )
 {
-    std::string sub = s.substr(pos, maxlen);
-    const char* start = sub.c_str();
+    const std::string sub = s.substr(pos, maxlen);
+    const char * const start = sub.c_str();
     char* end;
-    unsigned long long value = std::strtoull(start, &end, base);
+    const unsigned long long value = std::strtoull(start, &end, base);
     pos += end - start;
     if (end - start < minlen)
         throw std::runtime_error("expected digit");
@@ -2482,7 +2545,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
 
     std::size_t pos;
 
-    if (str.size() >= 1 && str[0] == '\'') {
+    if (!str.empty() && str[0] == '\'') {
         narrow = true;
         pos = 1;
     } else if (str.size() >= 2 && str[0] == 'u' && str[1] == '\'') {
@@ -2511,7 +2574,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
 
         if (str[pos] == '\\') {
             pos++;
-            char escape = str[pos++];
+            const char escape = str[pos++];
 
             if (pos >= str.size())
                 throw std::runtime_error("unexpected end of character literal");
@@ -2578,7 +2641,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
             case 'u':
             case 'U': {
                 // universal character names have exactly 4 or 8 digits
-                std::size_t ndigits = (escape == 'u' ? 4 : 8);
+                const std::size_t ndigits = (escape == 'u' ? 4 : 8);
                 value = stringToULLbounded(str, pos, 16, ndigits, ndigits);
 
                 // UTF-8 encodes code points above 0x7f in multiple code units
@@ -2606,7 +2669,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                 int additional_bytes;
                 if (value >= 0xf5)  // higher values would result in code points above 0x10ffff
                     throw std::runtime_error("assumed UTF-8 encoded source, but sequence is invalid");
-                else if (value >= 0xf0)
+                if (value >= 0xf0)
                     additional_bytes = 3;
                 else if (value >= 0xe0)
                     additional_bytes = 2;
@@ -2621,7 +2684,7 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
                     if (pos + 1 >= str.size())
                         throw std::runtime_error("assumed UTF-8 encoded source, but character literal ends unexpectedly");
 
-                    unsigned char c = str[pos++];
+                    const unsigned char c = str[pos++];
 
                     if (((c >> 6) != 2)    // ensure c has form 0xb10xxxxxx
                         || (!value && additional_bytes == 1 && c < 0xa0)    // overlong 3-bytes encoding
@@ -2673,13 +2736,24 @@ static void simplifyNumbers(simplecpp::TokenList &expr)
             continue;
         if (tok->str().compare(0,2,"0x") == 0)
             tok->setstr(toString(stringToULL(tok->str())));
-        else if (!tok->number && tok->str().find('\'') != tok->str().npos)
+        else if (!tok->number && tok->str().find('\'') != std::string::npos)
             tok->setstr(toString(simplecpp::characterLiteralToLL(tok->str())));
+    }
+}
+
+static void simplifyComments(simplecpp::TokenList &expr)
+{
+    for (simplecpp::Token *tok = expr.front(); tok;) {
+        simplecpp::Token * const d = tok;
+        tok = tok->next;
+        if (d->comment)
+            expr.deleteToken(d);
     }
 }
 
 static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
 {
+    simplifyComments(expr);
     simplifySizeof(expr, sizeOfType);
     simplifyHasInclude(expr, dui);
     simplifyName(expr);
@@ -2825,7 +2899,7 @@ static bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedat
     return !getFileName(filedata, sourcefile, header, dui, systemheader).empty();
 }
 
-std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &fileNumbers, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
     std::map<std::string, simplecpp::TokenList*> ret;
 
@@ -2841,16 +2915,16 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         std::ifstream fin(filename.c_str());
         if (!fin.is_open()) {
             if (outputList) {
-                simplecpp::Output err(fileNumbers);
+                simplecpp::Output err(filenames);
                 err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
-                err.location = Location(fileNumbers);
+                err.location = Location(filenames);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
                 outputList->push_back(err);
             }
             continue;
         }
 
-        TokenList *tokenlist = new TokenList(fin, fileNumbers, filename, outputList);
+        TokenList *tokenlist = new TokenList(fin, filenames, filename, outputList);
         if (!tokenlist->front()) {
             delete tokenlist;
             continue;
@@ -2875,11 +2949,11 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
         const std::string &sourcefile = rawtok->location.file();
 
-        const Token *htok = rawtok->nextSkipComments();
+        const Token * const htok = rawtok->nextSkipComments();
         if (!sameline(rawtok, htok))
             continue;
 
-        bool systemheader = (htok->str()[0] == '<');
+        const bool systemheader = (htok->str()[0] == '<');
         const std::string header(realFilename(htok->str().substr(1U, htok->str().size() - 2U)));
         if (hasFile(ret, sourcefile, header, dui, systemheader))
             continue;
@@ -2889,7 +2963,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!f.is_open())
             continue;
 
-        TokenList *tokens = new TokenList(f, fileNumbers, header2, outputList);
+        TokenList *tokens = new TokenList(f, filenames, header2, outputList);
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());
@@ -2900,7 +2974,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 
 static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
 {
-    const simplecpp::Token *tok = *tok1;
+    const simplecpp::Token * const tok = *tok1;
     const simplecpp::MacroMap::const_iterator it = macros.find(tok->str());
     if (it != macros.end()) {
         simplecpp::TokenList value(files);
@@ -2923,6 +2997,31 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
         *tok1 = tok->next;
     }
     return true;
+}
+
+static void getLocaltime(struct tm &ltime)
+{
+    time_t t;
+    time(&t);
+#ifndef _WIN32
+    localtime_r(&t, &ltime);
+#else
+    localtime_s(&ltime, &t);
+#endif
+}
+
+static std::string getDateDefine(struct tm *timep)
+{
+    char buf[] = "??? ?? ????";
+    strftime(buf, sizeof(buf), "%b %d %Y", timep);
+    return std::string("\"").append(buf).append("\"");
+}
+
+static std::string getTimeDefine(struct tm *timep)
+{
+    char buf[] = "??:??:??";
+    strftime(buf, sizeof(buf), "%T", timep);
+    return std::string("\"").append(buf).append("\"");
 }
 
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
@@ -2967,15 +3066,21 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", files)));
     macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", files)));
     macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", files)));
+    struct tm ltime = {};
+    getLocaltime(ltime);
+    macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), files)));
+    macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), files)));
 
-    if (dui.std == "c++11")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201103L", files)));
-    else if (dui.std == "c++14")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201402L", files)));
-    else if (dui.std == "c++17")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "201703L", files)));
-    else if (dui.std == "c++20")
-        macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", "202002L", files)));
+    if (!dui.std.empty()) {
+        std::string std_def = simplecpp::getCStdString(dui.std);
+        if (!std_def.empty()) {
+            macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, files)));
+        } else {
+            std_def = simplecpp::getCppStdString(dui.std);
+            if (!std_def.empty())
+                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, files)));
+        }
+    }
 
     // TRUE => code in current #if block should be kept
     // ELSE_IS_TRUE => code in current #if block should be dropped. the code in the #else should be kept.
@@ -3052,7 +3157,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 try {
                     const Macro &macro = Macro(rawtok->previous, files);
                     if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
-                        MacroMap::iterator it = macros.find(macro.name());
+                        const MacroMap::iterator it = macros.find(macro.name());
                         if (it == macros.end())
                             macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
                         else
@@ -3110,7 +3215,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     return;
                 }
 
-                const Token *inctok = inc2.cfront();
+                const Token * const inctok = inc2.cfront();
 
                 const bool systemheader = (inctok->op == '<');
                 const std::string header(realFilename(inctok->str().substr(1U, inctok->str().size() - 2U)));
@@ -3120,7 +3225,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     std::ifstream f;
                     header2 = openHeader(f, dui, rawtok->location.file(), header, systemheader);
                     if (f.is_open()) {
-                        TokenList *tokens = new TokenList(f, files, header2, outputList);
+                        TokenList * const tokens = new TokenList(f, files, header2, outputList);
                         filedata[header2] = tokens;
                     }
                 }
@@ -3142,7 +3247,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                 } else if (pragmaOnce.find(header2) == pragmaOnce.end()) {
                     includetokenstack.push(gotoNextLine(rawtok));
-                    const TokenList *includetokens = filedata.find(header2)->second;
+                    const TokenList * const includetokens = filedata.find(header2)->second;
                     rawtok = includetokens ? includetokens->cfront() : nullptr;
                     continue;
                 }
@@ -3378,6 +3483,47 @@ void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
     for (std::map<std::string, TokenList*>::iterator it = filedata.begin(); it != filedata.end(); ++it)
         delete it->second;
     filedata.clear();
+}
+
+std::string simplecpp::getCStdString(const std::string &std)
+{
+    if (std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89") {
+        // __STDC_VERSION__ is not set for C90 although the macro was added in the 1994 amendments
+        return "";
+    }
+    if (std == "c99" || std == "c9x" || std == "iso9899:1999" || std == "iso9899:199x" || std == "gnu99"|| std == "gnu9x")
+        return "199901L";
+    if (std == "c11" || std == "c1x" || std == "iso9899:2011" || std == "gnu11" || std == "gnu1x")
+        return "201112L";
+    if (std == "c17" || std == "c18" || std == "iso9899:2017" || std == "iso9899:2018" || std == "gnu17"|| std == "gnu18")
+        return "201710L";
+    if (std == "c2x" || std == "gnu2x") {
+        // Clang 11, 12, 13 return "201710L" - correct in 14
+        return "202000L";
+    }
+    return "";
+}
+
+std::string simplecpp::getCppStdString(const std::string &std)
+{
+    if (std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03")
+        return "199711L";
+    if (std == "c++11" || std == "gnu++11" || std == "c++0x" || std == "gnu++0x")
+        return "201103L";
+    if (std == "c++14" || std == "c++1y" || std == "gnu++14" || std == "gnu++1y")
+        return "201402L";
+    if (std == "c++17" || std == "c++1z" || std == "gnu++17" || std == "gnu++1z")
+        return "201703L";
+    if (std == "c++20" || std == "c++2a" || std == "gnu++20" || std == "gnu++2a") {
+        // GCC 10 returns "201703L" - correct in 11+
+        return "202002L";
+    }
+    if (std == "c++23" || std == "c++2b" || std == "gnu++23" || std == "gnu++2b") {
+        // supported by GCC 11+ and Clang 12+
+        // Clang 12, 13, 14 do not support "c++23" and "gnu++23"
+        return "202100L";
+    }
+    return "";
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)

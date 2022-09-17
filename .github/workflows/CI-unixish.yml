@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         compiler: [clang++, g++]
-        os: [ubuntu-18.04, ubuntu-20.04, macos-10.15]
+        os: [ubuntu-18.04, ubuntu-20.04, ubuntu-22.04, macos-11, macos-12]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -35,4 +35,24 @@ jobs:
       if: matrix.os == 'ubuntu-20.04'
       run: |
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
-    
+
+    - name: Run AddressSanitizer
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        make clean
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
+      env:
+        ASAN_OPTIONS: detect_stack_use_after_return=1
+
+    - name: Run UndefinedBehaviorSanitizer
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        make clean
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
+
+    # TODO: enable when false positives are fixed
+    - name: Run MemorySanitizer
+      if: false && matrix.os == 'ubuntu-20.04' && matrix.compiler == 'clang++'
+      run: |
+        make clean
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"
