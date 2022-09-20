@@ -1221,7 +1221,24 @@ static void hashhash_universal_character()
 static void has_include_1()
 {
     const char code[] = "#ifdef __has_include\n"
-                        "  #ifdef __has_include(\"simplecpp.h\")\n"
+                        "  #if __has_include(\"simplecpp.h\")\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "c++17";
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    dui.std = "c++14";
+    ASSERT_EQUALS("", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+static void has_include_2()
+{
+    const char code[] = "#if defined( __has_include)\n"
+                        "  #if /*commant*/ __has_include /*comment*/(\"simplecpp.h\") // comment\n"
                         "    A\n"
                         "  #else\n"
                         "    B\n"
@@ -1233,10 +1250,44 @@ static void has_include_1()
     ASSERT_EQUALS("", preprocess(code));
 }
 
-static void has_include_2()
+static void has_include_3()
+{
+    const char code[] = "#ifdef __has_include\n"
+                        "  #if __has_include(<realFileName1.cpp>)\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "c++17";
+    // Test file not found...
+    ASSERT_EQUALS("\n\n\n\nB", preprocess(code, dui));
+    // Unless -I is set (preferably, we should differentiate -I and -isystem...)
+    dui.includePaths.push_back("./testsuite");
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+static void has_include_4()
+{
+    const char code[] = "#ifdef __has_include\n"
+                        "  #if __has_include(\"testsuite/realFileName1.cpp\")\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "c++17";
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+static void has_include_5()
 {
     const char code[] = "#if defined( __has_include)\n"
-                        "  #ifdef __has_include(\"simplecpp.h\")\n"
+                        "  #if !__has_include(<testsuite/unrealFileName2.abcdef>)\n"
                         "    A\n"
                         "  #else\n"
                         "    B\n"
@@ -2480,6 +2531,9 @@ int main(int argc, char **argv)
     // c++17 __has_include
     TEST_CASE(has_include_1);
     TEST_CASE(has_include_2);
+    TEST_CASE(has_include_3);
+    TEST_CASE(has_include_4);
+    TEST_CASE(has_include_5);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);

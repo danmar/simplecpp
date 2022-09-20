@@ -2404,6 +2404,63 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
     }
 }
 
+/** Evaluate __has_include(file) */
+static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
+static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
+{
+    for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
+        if (tok->str() != "__has_include")
+            continue;
+        simplecpp::Token *tok1 = tok->next;
+        if (!tok1) {
+            throw std::runtime_error("missing __has_include argument");
+        }
+        simplecpp::Token *tok2 = tok1->next;
+        if (!tok2) {
+            throw std::runtime_error("missing __has_include argument");
+        }
+        if (tok1->op == '(') {
+            tok1 = tok1->next;
+            while (tok2->op != ')') {
+                tok2 = tok2->next;
+                if (!tok2) {
+                    throw std::runtime_error("invalid __has_include expression");
+                }
+            }
+        }
+
+        const std::string &sourcefile = tok->location.file();
+        const bool systemheader = (tok1 && tok1->op == '<');
+        std::string header;
+        if (systemheader) {
+            simplecpp::Token *tok3 = tok1->next;
+            if (!tok3) {
+                throw std::runtime_error("missing __has_include closing angular bracket");
+            }
+            while (tok3->op != '>') {
+                tok3 = tok3->next;
+                if (!tok3) {
+                    throw std::runtime_error("invalid __has_include expression");
+                }
+            }
+
+            for (simplecpp::Token *headerToken = tok1->next; headerToken != tok3; headerToken = headerToken->next)
+                header += headerToken->str();
+            header = realFilename(header);
+        }
+        else {
+            header = realFilename(tok1->str().substr(1U, tok1->str().size() - 2U));
+        }
+        std::ifstream f;
+        const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
+        tok->setstr(header2.empty() ? "0" : "1");
+
+        tok2 = tok2->next;
+        while (tok->next != tok2)
+            expr.deleteToken(tok->next);
+    }
+}
+
 static const char * const altopData[] = {"and","or","bitand","bitor","compl","not","not_eq","xor"};
 static const std::set<std::string> altop(&altopData[0], &altopData[8]);
 static void simplifyName(simplecpp::TokenList &expr)
@@ -2694,10 +2751,11 @@ static void simplifyComments(simplecpp::TokenList &expr)
     }
 }
 
-static long long evaluate(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
+static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
 {
     simplifyComments(expr);
     simplifySizeof(expr, sizeOfType);
+    simplifyHasInclude(expr, dui);
     simplifyName(expr);
     simplifyNumbers(expr);
     expr.constFold();
@@ -3258,17 +3316,30 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const bool par = (tok && tok->op == '(');
                             if (par)
                                 tok = tok->next;
+                            bool closingAngularBracket = false;
                             if (tok) {
                                 const std::string &sourcefile = rawtok->location.file();
-                                const bool systemheader = (tok->str()[0] == '<');
-                                const std::string header(realFilename(tok->str().substr(1U, tok->str().size() - 2U)));
+                                const bool systemheader = (tok && tok->op == '<');
+                                std::string header;
+
+                                if (systemheader) {
+                                    while ((tok = tok->next) && tok->op != '>')
+                                        header += tok->str();
+                                    header = realFilename(header);
+                                    if (tok && tok->op == '>')
+                                        closingAngularBracket = true;
+                                }
+                                else {
+                                    header = realFilename(tok->str().substr(1U, tok->str().size() - 2U));
+                                    closingAngularBracket = true;
+                                }
                                 std::ifstream f;
                                 const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
                                 expr.push_back(new Token(header2.empty() ? "0" : "1", tok->location));
                             }
                             if (par)
                                 tok = tok ? tok->next : nullptr;
-                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
+                            if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')') || (!closingAngularBracket)) {
                                 if (outputList) {
                                     Output out(rawtok->location.files);
                                     out.type = Output::SYNTAX_ERROR;
@@ -3298,11 +3369,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             std::string E;
                             for (const simplecpp::Token *tok = expr.cfront(); tok; tok = tok->next)
                                 E += (E.empty() ? "" : " ") + tok->str();
-                            const long long result = evaluate(expr, sizeOfType);
+                            const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
                             ifCond->push_back(IfCond(rawtok->location, E, result));
                         } else {
-                            const long long result = evaluate(expr, sizeOfType);
+                            const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
                         }
                     } catch (const std::exception &e) {
