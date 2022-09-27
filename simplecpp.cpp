@@ -242,7 +242,7 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), b
 }
 
 #if __cplusplus >= 201103L
-simplecpp::TokenList::TokenList(TokenList &&other) : TokenList(other)
+simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(nullptr), backToken(nullptr), files(other.files)
 {
     *this = std::move(other);
 }
