@@ -375,6 +375,8 @@ class FileStream : public simplecpp::TokenList::Stream {
 public:
     FileStream(const std::string &filename)
         : file(fopen(filename.c_str(), "rb"))
+        , lastCh(0)
+        , lastStatus(0)
     {
         init();
     }
