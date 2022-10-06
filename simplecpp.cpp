@@ -317,9 +317,9 @@ private:
         // The UTF-16 BOM is 0xfffe or 0xfeff.
         if (ch1 >= 0xfe) {
             (void)get();
-            const unsigned short bom = (static_cast<unsigned char>(ch1) << 8);
+            const unsigned short byte = (static_cast<unsigned char>(ch1) << 8);
             if (peek() >= 0xfe)
-                return bom | static_cast<unsigned char>(get());
+                return byte | static_cast<unsigned char>(get());
             unget();
             return 0;
         }
