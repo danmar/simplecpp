@@ -24,44 +24,59 @@
 
 int main(int argc, char **argv)
 {
-    const char *filename = nullptr;
+    bool error = false;
 
     // Settings..
+    const char *filename = nullptr;
     simplecpp::DUI dui;
     bool quiet = false;
     for (int i = 1; i < argc; i++) {
         const char * const arg = argv[i];
         if (*arg == '-') {
+            bool found = false;
             const char c = arg[1];
-            if (c != 'D' && c != 'U' && c != 'I' && c != 'i' && c != 's' && c != 'q')
-                continue;  // Ignored
             const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
             case 'D': // define symbol
                 dui.defines.push_back(value);
+                found = true;
                 break;
             case 'U': // undefine symbol
                 dui.undefined.insert(value);
+                found = true;
                 break;
             case 'I': // include path
                 dui.includePaths.push_back(value);
+                found = true;
                 break;
             case 'i':
-                if (std::strncmp(arg, "-include=",9)==0)
+                if (std::strncmp(arg, "-include=",9)==0) {
                     dui.includes.push_back(arg+9);
+                    found = true;
+                }
                 break;
             case 's':
-                if (std::strncmp(arg, "-std=",5)==0)
+                if (std::strncmp(arg, "-std=",5)==0) {
                     dui.std = arg + 5;
+                    found = true;
+                }
                 break;
             case 'q':
                 quiet = true;
+                found = true;
                 break;
+            }
+            if (!found) {
+                std::cout << "Option '" << arg << "' is unknown." << std::endl;
+                error = true;
             }
         } else {
             filename = arg;
         }
     }
+
+    if (error)
+        std::exit(1);
 
     if (!filename) {
         std::cout << "Syntax:" << std::endl;
