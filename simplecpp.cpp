@@ -24,13 +24,15 @@
 
 #include <algorithm>
 #include <climits>
+#include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <exception>
-#include <fstream>
+#include <fstream> // IWYU pragma: keep
 #include <iostream>
 #include <limits>
-#include <sstream>
+#include <sstream> // IWYU pragma: keep
 #include <stack>
 #include <stdexcept>
 #if __cplusplus >= 201103L
