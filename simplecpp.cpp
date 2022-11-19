@@ -2862,11 +2862,15 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
     if (systemheader) {
         ret = openHeaderIncludePath(f, dui, header);
-        return ret.empty() ? openHeaderRelative(f, sourcefile, header) : ret;
+        if (ret.empty())
+            return openHeaderRelative(f, sourcefile, header);
+        return ret;
     }
 
     ret = openHeaderRelative(f, sourcefile, header);
-    return ret.empty() ? openHeaderIncludePath(f, dui, header) : ret;
+    if (ret.empty())
+        openHeaderIncludePath(f, dui, header);
+    return ret;
 }
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
