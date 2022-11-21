@@ -16,6 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-2019, windows-2022]
+        config: [Release, Debug]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -40,9 +41,9 @@ jobs:
       
       - name: Build
         run: |
-           msbuild -m simplecpp.sln /p:Configuration=Release /p:Platform=x64 || exit /b !errorlevel!
+           msbuild -m simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
            
       - name: Test
         run: |
-          .\Release\testrunner.exe || exit /b !errorlevel!
+          .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
         
