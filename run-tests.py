@@ -103,7 +103,8 @@ for cmd in commands:
   gcc_output = cleanup(comm[0])
 
   simplecpp_cmd = ['./simplecpp']
-  simplecpp_cmd.extend(cmd.split(' '))
+  # -E is not supported and we bail out on unknown options
+  simplecpp_cmd.extend(cmd.replace('-E ', '', 1).split(' '))
   p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
   simplecpp_ec = p.returncode
