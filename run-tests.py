@@ -106,7 +106,9 @@ for cmd in commands:
   simplecpp_cmd.extend(cmd.split(' '))
   p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
+  simplecpp_ec = p.returncode
   simplecpp_output = cleanup(comm[0])
+  simplecpp_err = comm[0].decode('utf-8').strip()
 
   if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
@@ -115,6 +117,8 @@ for cmd in commands:
       usedTodos.append(filename)
     else:
       print('FAILED ' + cmd)
+      if simplecpp_ec:
+          print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
 
 for filename in todo:
