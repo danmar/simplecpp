@@ -2,6 +2,7 @@
 import glob
 import os
 import subprocess
+import sys
 
 def cleanup(out):
   ret = ''
@@ -80,6 +81,7 @@ todo = [
 
 numberOfSkipped = 0
 numberOfFailed = 0
+numberOfFixed = 0
 
 usedTodos = []
 
@@ -118,9 +120,14 @@ for cmd in commands:
 for filename in todo:
     if not filename in usedTodos:
         print('FIXED ' + filename)
+        numberOfFixed = numberOfFixed + 1
 
 print('Number of tests: ' + str(len(commands)))
 print('Number of skipped: ' + str(numberOfSkipped))
-print('Number of todos: ' + str(len(usedTodos)))
+print('Number of todos (fixed): ' + str(len(usedTodos)) + ' (' + str(numberOfFixed) + ')')
 print('Number of failed: ' + str(numberOfFailed))
 
+if numberOfFailed or numberOfFixed:
+    sys.exit(1)
+
+sys.exit(0)
