@@ -62,7 +62,7 @@ jobs:
         make clean
         make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
 
-    # TODO: enable when false positives are fixed
+    # TODO: requires instrumented libc++
     - name: Run MemorySanitizer
       if: false && matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
       run: |
