@@ -39,6 +39,18 @@ jobs:
           make -j$(nproc) CXX=${{ matrix.compiler }} CXXFLAGS="-gdwarf-4"
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
 
+    - name: Run with libstdc++ debug mode
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
+      run: |
+        make clean
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
+
+    - name: Run with libc++ debug mode
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
+      run: |
+        make clean
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-stdlib=libc++ -g3 -DLIBCXX_ENABLE_DEBUG_MODE" LDFLAGS="-lc++"
+
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-22.04'
       run: |
