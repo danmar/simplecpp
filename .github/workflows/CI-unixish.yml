@@ -37,7 +37,7 @@ jobs:
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
 
     - name: Run with libstdc++ debug mode
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'g++'
       run: |
         make clean
         make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
