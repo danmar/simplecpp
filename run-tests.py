@@ -2,6 +2,7 @@
 import glob
 import os
 import subprocess
+import sys
 
 def cleanup(out):
   ret = ''
@@ -80,6 +81,7 @@ todo = [
 
 numberOfSkipped = 0
 numberOfFailed = 0
+numberOfFixed = 0
 
 usedTodos = []
 
@@ -101,10 +103,13 @@ for cmd in commands:
   gcc_output = cleanup(comm[0])
 
   simplecpp_cmd = ['./simplecpp']
-  simplecpp_cmd.extend(cmd.split(' '))
+  # -E is not supported and we bail out on unknown options
+  simplecpp_cmd.extend(cmd.replace('-E ', '', 1).split(' '))
   p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
+  simplecpp_ec = p.returncode
   simplecpp_output = cleanup(comm[0])
+  simplecpp_err = comm[0].decode('utf-8').strip()
 
   if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
@@ -113,14 +118,21 @@ for cmd in commands:
       usedTodos.append(filename)
     else:
       print('FAILED ' + cmd)
+      if simplecpp_ec:
+          print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
 
 for filename in todo:
     if not filename in usedTodos:
         print('FIXED ' + filename)
+        numberOfFixed = numberOfFixed + 1
 
 print('Number of tests: ' + str(len(commands)))
 print('Number of skipped: ' + str(numberOfSkipped))
-print('Number of todos: ' + str(len(usedTodos)))
+print('Number of todos (fixed): ' + str(len(usedTodos)) + ' (' + str(numberOfFixed) + ')')
 print('Number of failed: ' + str(numberOfFailed))
 
+if numberOfFailed or numberOfFixed:
+    sys.exit(1)
+
+sys.exit(0)
