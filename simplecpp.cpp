@@ -2871,7 +2871,7 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
     ret = openHeaderRelative(f, sourcefile, header);
     if (ret.empty())
-        openHeaderIncludePath(f, dui, header);
+        return openHeaderIncludePath(f, dui, header);
     return ret;
 }
 
