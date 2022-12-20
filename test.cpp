@@ -1653,6 +1653,22 @@ static void nestedInclude()
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
 }
 
+static void systemInclude()
+{
+    const char code[] = "#include <limits.h>\n";
+    std::vector<std::string> files;
+    simplecpp::TokenList rawtokens = makeTokenList(code,files,"local/limits.h");
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    filedata["limits.h"] = nullptr;
+    filedata["local/limits.h"] = &rawtokens;
+
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::preprocess(tokens2, rawtokens, files, filedata, simplecpp::DUI(), &outputList);
+
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 static void multiline1()
 {
     const char code[] = "#define A \\\n"
@@ -2566,6 +2582,7 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
     TEST_CASE(nestedInclude);
+    TEST_CASE(systemInclude);
 
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);
