@@ -2424,6 +2424,59 @@ static void cpluscplusDefine()
     ASSERT_EQUALS("\n201103L", preprocess(code, dui));
 }
 
+static void assertToken(const std::string& s, bool name, bool number, bool comment, char op = '\0')
+{
+    const std::vector<std::string> f;
+    const simplecpp::Location l(f);
+    const simplecpp::Token t(s, l);
+    ASSERT_EQUALS(name, t.name);
+    ASSERT_EQUALS(number, t.number);
+    ASSERT_EQUALS(comment, t.comment);
+    ASSERT_EQUALS(op, t.op);
+}
+
+static void token()
+{
+    // name
+    assertToken("n", true, false, false, 'n');
+    assertToken("name", true, false, false);
+    assertToken("name_1", true, false, false);
+    assertToken("name2", true, false, false);
+    assertToken("name$", true, false, false);
+
+    // character literal
+    assertToken("'n'", false, false, false);
+    assertToken("'\\''", false, false, false);
+    assertToken("'\\u0012'", false, false, false);
+    assertToken("'\\xff'", false, false, false);
+    assertToken("u8'\\u0012'", false, false, false);
+    assertToken("u'\\u0012'", false, false, false);
+    assertToken("L'\\u0012'", false, false, false);
+    assertToken("U'\\u0012'", false, false, false);
+
+    // include
+    assertToken("<include>", false, false, false);
+
+    // comment
+    assertToken("/*comment*/", false, false, true);
+    assertToken("// TODO", false, false, true);
+
+    // string literal
+    assertToken("\"literal\"", false, false, false);
+
+    // op
+    assertToken("<", false, false, false, '<');
+    assertToken(">", false, false, false, '>');
+    assertToken("(", false, false, false, '(');
+    assertToken(")", false, false, false, ')');
+
+    // number
+    assertToken("2", false, true, false, '2');
+    assertToken("22", false, true, false);
+    assertToken("-2", false, true, false);
+    assertToken("-22", false, true, false);
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -2630,6 +2683,8 @@ int main(int argc, char **argv)
 
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
+
+    TEST_CASE(token);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
