@@ -2438,7 +2438,7 @@ static void assertToken(const std::string& s, bool name, bool number, bool comme
 static void token()
 {
     // name
-    assertToken("n", true, false, false, 'n');
+    assertToken("n", true, false, false);
     assertToken("name", true, false, false);
     assertToken("name_1", true, false, false);
     assertToken("name2", true, false, false);
@@ -2471,7 +2471,7 @@ static void token()
     assertToken(")", false, false, false, ')');
 
     // number
-    assertToken("2", false, true, false, '2');
+    assertToken("2", false, true, false);
     assertToken("22", false, true, false);
     assertToken("-2", false, true, false);
     assertToken("-22", false, true, false);
