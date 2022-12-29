@@ -2475,6 +2475,8 @@ static void token()
     assertToken("22", false, true, false);
     assertToken("-2", false, true, false);
     assertToken("-22", false, true, false);
+    assertToken("+2", false, true, false);
+    assertToken("+22", false, true, false);
 }
 
 int main(int argc, char **argv)
