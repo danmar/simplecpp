@@ -46,7 +46,7 @@ jobs:
       if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-stdlib=libc++ -g3 -DLIBCXX_ENABLE_DEBUG_MODE" LDFLAGS="-lc++"
+        make -j$(nproc) test CXX=${{ matrix.compiler }} CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_ENABLE_ASSERTIONS=1" LDFLAGS="-lc++"
 
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-22.04'
