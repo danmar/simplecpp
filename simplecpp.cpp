@@ -2618,7 +2618,7 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
-        if (tok->str() != "__has_include")
+        if (tok->str() != HAS_INCLUDE)
             continue;
         simplecpp::Token *tok1 = tok->next;
         if (!tok1) {
