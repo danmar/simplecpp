@@ -2623,6 +2623,9 @@ static bool isCpp17OrLater(const simplecpp::DUI &dui)
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
+    if (!isCpp17OrLater(dui))
+        return;
+
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->str() != HAS_INCLUDE)
             continue;
