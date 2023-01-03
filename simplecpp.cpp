@@ -1980,7 +1980,7 @@ namespace simplecpp {
                             if (tok->next->str() == "(")
                               ++paren;
                             else if (tok->next->str() == ")")
-                              --paren;                            
+                              --paren;
                             if (paren == 0)
                               return tok->next->next;
                             tok = tok->next;
@@ -2614,6 +2614,12 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
 }
 
 /** Evaluate __has_include(file) */
+static bool isCpp17OrLater(const simplecpp::DUI &dui)
+{
+    const std::string std_ver = simplecpp::getCppStdString(dui.std);
+    return !std_ver.empty() && (std_ver >= "201703L");
+}
+
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
@@ -3277,7 +3283,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     // use a dummy vector for the macros because as this is not part of the file and would add an empty entry - e.g. /usr/include/poll.h
     std::vector<std::string> dummy;
 
-    const bool hasInclude = (dui.std.size() == 5 && dui.std.compare(0,3,"c++") == 0 && dui.std >= "c++17");
+    const bool hasInclude = isCpp17OrLater(dui);
     MacroMap macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
