@@ -2812,8 +2812,8 @@ static NonExistingFilesCache nonExistingFilesCache;
 
 static std::string openHeader(std::ifstream &f, const std::string &path)
 {
-#ifdef SIMPLECPP_WINDOWS
     std::string simplePath = simplecpp::simplifyPath(path);
+#ifdef SIMPLECPP_WINDOWS
     if (nonExistingFilesCache.contains(simplePath))
         return "";  // file is known not to exist, skip expensive file open call
 
@@ -2825,8 +2825,8 @@ static std::string openHeader(std::ifstream &f, const std::string &path)
         return "";
     }
 #else
-    f.open(path.c_str());
-    return f.is_open() ? simplecpp::simplifyPath(path) : "";
+    f.open(simplePath.c_str());
+    return f.is_open() ? simplePath : "";
 #endif
 }
 
