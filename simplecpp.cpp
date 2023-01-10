@@ -2796,6 +2796,11 @@ public:
         m_pathSet.insert(path);
     }
 
+    void clear() {
+        ScopedLock lock(m_criticalSection);
+        m_pathSet.clear();
+    }
+
 private:
     std::set<std::string> m_pathSet;
     CRITICAL_SECTION m_criticalSection;
@@ -2907,6 +2912,11 @@ static bool hasFile(const std::map<std::string, simplecpp::TokenList *> &filedat
 
 std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
 {
+#ifdef SIMPLECPP_WINDOWS
+    if (dui.clearIncludeCache)
+        nonExistingFilesCache .clear();
+#endif
+
     std::map<std::string, simplecpp::TokenList*> ret;
 
     std::list<const Token *> filelist;
@@ -3032,6 +3042,11 @@ static std::string getTimeDefine(struct tm *timep)
 
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
 {
+#ifdef SIMPLECPP_WINDOWS
+    if (dui.clearIncludeCache)
+        nonExistingFilesCache.clear();
+#endif
+
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
     sizeOfType.insert(std::make_pair("char", sizeof(char)));
     sizeOfType.insert(std::make_pair("short", sizeof(short)));
