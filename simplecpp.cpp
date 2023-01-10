@@ -2816,18 +2816,14 @@ static std::string openHeader(std::ifstream &f, const std::string &path)
 #ifdef SIMPLECPP_WINDOWS
     if (nonExistingFilesCache.contains(simplePath))
         return "";  // file is known not to exist, skip expensive file open call
-
+#endif
     f.open(simplePath.c_str());
     if (f.is_open())
         return simplePath;
-    else {
-        nonExistingFilesCache.add(simplePath);
-        return "";
-    }
-#else
-    f.open(simplePath.c_str());
-    return f.is_open() ? simplePath : "";
+#ifdef SIMPLECPP_WINDOWS
+    nonExistingFilesCache.add(simplePath);
 #endif
+    return "";
 }
 
 static std::string getRelativeFileName(const std::string &sourcefile, const std::string &header)
