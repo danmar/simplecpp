@@ -457,7 +457,7 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
-void simplecpp::TokenList::lineDirective(unsigned int fileIndex, unsigned int line, Location *location)
+void simplecpp::TokenList::lineDirective(std::size_t fileIndex, unsigned int line, Location *location)
 {
     if (fileIndex != location->fileIndex || line >= location->line) {
         location->fileIndex = fileIndex;
@@ -779,7 +779,7 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
 {
     if (!tok || tok->str().size() != 1U)
         return false;
-    const char c = std::tolower(tok->str()[0]);
+    const char c = (char)std::tolower(tok->str()[0]);
     return c == 'f' || c == 'l';
 }
 
@@ -1258,9 +1258,9 @@ bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
     return prevTok && prevTok->str()[0] == '#';
 }
 
-unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
+std::size_t simplecpp::TokenList::fileIndex(const std::string &filename)
 {
-    for (unsigned int i = 0; i < files.size(); ++i) {
+    for (size_t i = 0; i < files.size(); ++i) {
         if (files[i] == filename)
             return i;
     }
@@ -2097,14 +2097,14 @@ namespace simplecpp {
 
         std::string::size_type pos = 0;
         if (cygwinPath.size() >= 11 && startsWith(cygwinPath, "/cygdrive/")) {
-            const unsigned char driveLetter = cygwinPath[10];
+            const char driveLetter = cygwinPath[10];
             if (std::isalpha(driveLetter)) {
                 if (cygwinPath.size() == 11) {
-                    windowsPath = toupper(driveLetter);
+                    windowsPath = (char)toupper(driveLetter);
                     windowsPath += ":\\";   // volume root directory
                     pos = 11;
                 } else if (cygwinPath[11] == '/') {
-                    windowsPath = toupper(driveLetter);
+                    windowsPath = (char)toupper(driveLetter);
                     windowsPath += ":";
                     pos = 11;
                 }
@@ -2768,7 +2768,7 @@ static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui,
 static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
 {
     const unsigned int line = tok->location.line;
-    const unsigned int file = tok->location.fileIndex;
+    const std::size_t file = tok->location.fileIndex;
     while (tok && tok->location.line == line && tok->location.fileIndex == file)
         tok = tok->next;
     return tok;
