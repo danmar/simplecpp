@@ -2864,8 +2864,6 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
     if (systemheader) {
         ret = openHeaderIncludePath(f, dui, header);
-        if (ret.empty())
-            return openHeaderRelative(f, sourcefile, header);
         return ret;
     }
 
@@ -2894,8 +2892,8 @@ static std::string getFileName(const std::map<std::string, simplecpp::TokenList 
             return s;
     }
 
-    if (filedata.find(relativeFilename) != filedata.end())
-        return relativeFilename;
+    if (systemheader && filedata.find(header) != filedata.end())
+        return header;
 
     return "";
 }
@@ -3223,7 +3221,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 const Token * const inctok = inc2.cfront();
 
-                const bool systemheader = (inctok->op == '<');
+                const bool systemheader = (inctok->str()[0] == '<');
                 const std::string header(realFilename(inctok->str().substr(1U, inctok->str().size() - 2U)));
                 std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui, systemheader);
                 if (header2.empty()) {
