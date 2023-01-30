@@ -2440,6 +2440,64 @@ static void cpluscplusDefine()
     ASSERT_EQUALS("\n201103L", preprocess(code, dui));
 }
 
+static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
+{
+    const std::vector<std::string> f;
+    const simplecpp::Location l(f);
+    const simplecpp::Token t(s, l);
+    assertEquals(name, t.name, line);
+    assertEquals(number, t.number, line);
+    assertEquals(comment, t.comment, line);
+    assertEquals(op, t.op, line);
+}
+
+#define ASSERT_TOKEN(s, na, nu, c) assertToken(s, na, nu, c, '\0', __LINE__)
+#define ASSERT_TOKEN_OP(s, na, nu, c, o) assertToken(s, na, nu, c, o, __LINE__)
+
+static void token()
+{
+    // name
+    ASSERT_TOKEN("n", true, false, false);
+    ASSERT_TOKEN("name", true, false, false);
+    ASSERT_TOKEN("name_1", true, false, false);
+    ASSERT_TOKEN("name2", true, false, false);
+    ASSERT_TOKEN("name$", true, false, false);
+
+    // character literal
+    ASSERT_TOKEN("'n'", false, false, false);
+    ASSERT_TOKEN("'\\''", false, false, false);
+    ASSERT_TOKEN("'\\u0012'", false, false, false);
+    ASSERT_TOKEN("'\\xff'", false, false, false);
+    ASSERT_TOKEN("u8'\\u0012'", false, false, false);
+    ASSERT_TOKEN("u'\\u0012'", false, false, false);
+    ASSERT_TOKEN("L'\\u0012'", false, false, false);
+    ASSERT_TOKEN("U'\\u0012'", false, false, false);
+
+    // include
+    ASSERT_TOKEN("<include>", false, false, false);
+
+    // comment
+    ASSERT_TOKEN("/*comment*/", false, false, true);
+    ASSERT_TOKEN("// TODO", false, false, true);
+
+    // string literal
+    ASSERT_TOKEN("\"literal\"", false, false, false);
+
+    // op
+    ASSERT_TOKEN_OP("<", false, false, false, '<');
+    ASSERT_TOKEN_OP(">", false, false, false, '>');
+    ASSERT_TOKEN_OP("(", false, false, false, '(');
+    ASSERT_TOKEN_OP(")", false, false, false, ')');
+
+    // number
+    ASSERT_TOKEN("2", false, true, false);
+    ASSERT_TOKEN("22", false, true, false);
+    ASSERT_TOKEN("-2", false, true, false);
+    ASSERT_TOKEN("-22", false, true, false);
+    ASSERT_TOKEN("+2", false, true, false);
+    ASSERT_TOKEN("+22", false, true, false);
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -2647,6 +2705,8 @@ int main(int argc, char **argv)
 
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
+
+    TEST_CASE(token);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
