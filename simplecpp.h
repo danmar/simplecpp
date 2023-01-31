@@ -36,6 +36,7 @@
 #  else
 #    define SIMPLECPP_LIB
 #  endif
+#  pragma warning(disable: 4706)
 #else
 #  define SIMPLECPP_LIB
 #endif
@@ -87,9 +88,9 @@ namespace simplecpp {
         }
 
         const std::vector<std::string> &files;
-        unsigned int fileIndex;
+        std::size_t fileIndex;
         unsigned int line;
-        unsigned int col;
+        std::size_t col;
     private:
         static const std::string emptyFileName;
     };
@@ -280,12 +281,12 @@ namespace simplecpp {
         void constFoldQuestionOp(Token **tok1);
 
         std::string readUntil(std::istream &istr, const Location &location, char start, char end, OutputList *outputList, unsigned int bom);
-        void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
+        void lineDirective(std::size_t fileIndex, unsigned int line, Location *location);
 
         std::string lastLine(int maxsize=100000) const;
         bool isLastLinePreprocessor(int maxsize=100000) const;
 
-        unsigned int fileIndex(const std::string &filename);
+        std::size_t fileIndex(const std::string &filename);
 
         Token *frontToken;
         Token *backToken;
