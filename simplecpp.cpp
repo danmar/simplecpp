@@ -428,7 +428,7 @@ simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &fi
     readfile(stream,filename,outputList);
 }
 
-simplecpp::TokenList::TokenList(std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
+simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList)
         : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     FileStream stream(filename);
@@ -3045,7 +3045,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         }
         fin.close();
 
-        TokenList *tokenlist = new TokenList(filenames, filename, outputList);
+        TokenList *tokenlist = new TokenList(filename, filenames, outputList);
         if (!tokenlist->front()) {
             delete tokenlist;
             continue;
@@ -3085,7 +3085,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             continue;
         f.close();
 
-        TokenList *tokens = new TokenList(filenames, header2, outputList);
+        TokenList *tokens = new TokenList(header2, filenames, outputList);
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());

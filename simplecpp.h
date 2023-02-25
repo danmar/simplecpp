@@ -196,8 +196,10 @@ namespace simplecpp {
         class Stream;
 
         explicit TokenList(std::vector<std::string> &filenames);
+        /** generates a token list from the given std::istream parameter */
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
-        TokenList(std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList = nullptr);
+        /** generates a token list from the given filename parameter */
+        TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
 #if __cplusplus >= 201103L
         TokenList(TokenList &&other);

@@ -105,7 +105,7 @@ int main(int argc, char **argv)
         rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
     }
     else {
-        rawtokens = new simplecpp::TokenList(files,filename,&outputList);
+        rawtokens = new simplecpp::TokenList(filename,files,&outputList);
     }
     rawtokens->removeComments();
     std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(*rawtokens, files, dui, &outputList);
