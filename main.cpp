@@ -25,9 +25,10 @@
 int main(int argc, char **argv)
 {
     bool error = false;
+    const char *filename = nullptr;
+    bool use_istream = false;
 
     // Settings..
-    const char *filename = nullptr;
     simplecpp::DUI dui;
     bool quiet = false;
     for (int i = 1; i < argc; i++) {
@@ -52,6 +53,10 @@ int main(int argc, char **argv)
             case 'i':
                 if (std::strncmp(arg, "-include=",9)==0) {
                     dui.includes.push_back(arg+9);
+                    found = true;
+                }
+                else if (std::strncmp(arg, "-is",3)==0) {
+                    use_istream = true;
                     found = true;
                 }
                 break;
@@ -87,20 +92,29 @@ int main(int argc, char **argv)
         std::cout << "  -UNAME          Undefine NAME." << std::endl;
         std::cout << "  -std=STD        Specify standard." << std::endl;
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
+        std::cout << "  -is             Use std::istream interface." << std::endl;
         std::exit(0);
     }
 
     // Perform preprocessing
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
-    std::ifstream f(filename);
-    simplecpp::TokenList rawtokens(f,files,filename,&outputList);
-    rawtokens.removeComments();
-    std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(rawtokens, files, dui, &outputList);
+    simplecpp::TokenList *rawtokens;
+    if (use_istream) {
+        std::ifstream f(filename);
+        rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
+    }
+    else {
+        rawtokens = new simplecpp::TokenList(filename,files,&outputList);
+    }
+    rawtokens->removeComments();
+    std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(*rawtokens, files, dui, &outputList);
     for (std::pair<std::string, simplecpp::TokenList *> i : included)
         i.second->removeComments();
     simplecpp::TokenList outputTokens(files);
-    simplecpp::preprocess(outputTokens, rawtokens, files, included, dui, &outputList);
+    simplecpp::preprocess(outputTokens, *rawtokens, files, included, dui, &outputList);
+    delete rawtokens;
+    rawtokens = nullptr;
 
     // Output
     if (!quiet) {

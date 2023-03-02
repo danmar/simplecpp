@@ -10,9 +10,11 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # no need for c++98 compatibility
     add_compile_options(-Wno-c++98-compat-pedantic)
     # these are not really fixable
-    add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors)
+    add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors -Wno-weak-vtables)
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
+    # ignore C++11-specific warning
+    add_compile_options(-Wno-suggest-override -Wno-suggest-destructor-override)
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
 
