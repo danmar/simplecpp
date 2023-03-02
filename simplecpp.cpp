@@ -2355,7 +2355,7 @@ namespace simplecpp {
         if (unc)
             path = '/' + path;
 
-        return path.find_first_of("*?") == std::string::npos ? realFilename(path) : path;
+        return strpbrk(path.c_str(), "*?") == nullptr ? realFilename(path) : path;
     }
 }
 
