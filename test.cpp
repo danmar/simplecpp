@@ -33,7 +33,8 @@
 
 enum Input {
     Stringstream,
-    Fstream
+    Fstream,
+    File
 };
 
 static Input USE_INPUT = Stringstream;
@@ -59,6 +60,8 @@ static const char* inputString(Input input) {
             return "Stringstream";
         case Fstream:
             return "Fstream";
+        case File:
+            return "File";
     }
 }
 
@@ -119,6 +122,14 @@ static simplecpp::TokenList makeTokenListFromFstream(const char code[], std::siz
     return tokenList;
 }
 
+static simplecpp::TokenList makeTokenListFromFile(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename, simplecpp::OutputList *outputList)
+{
+    const std::string tmpfile = writeFile(code, size, filename);
+    simplecpp::TokenList tokenList(tmpfile, filenames, outputList);
+    remove(tmpfile.c_str());
+    return tokenList;
+}
+
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
     switch (USE_INPUT) {
@@ -128,6 +139,8 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
         }
         case Fstream:
             return makeTokenListFromFstream(code, size, filenames, filename, outputList);
+        case File:
+            return makeTokenListFromFile(code, size, filenames, filename, outputList);
     }
 }
 
@@ -2896,5 +2909,6 @@ int main(int argc, char **argv)
 {
     runTests(argc, argv, Stringstream);
     runTests(argc, argv, Fstream);
+    runTests(argc, argv, File);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
