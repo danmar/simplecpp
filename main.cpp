@@ -31,11 +31,13 @@ int main(int argc, char **argv)
     // Settings..
     simplecpp::DUI dui;
     bool quiet = false;
+    bool error_only = false;
     for (int i = 1; i < argc; i++) {
         const char * const arg = argv[i];
         if (*arg == '-') {
             bool found = false;
             const char c = arg[1];
+            // TODO: treats every additional parameter as value requiring the options to be specified after the filename
             const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
             case 'D': // define symbol
@@ -70,11 +72,18 @@ int main(int argc, char **argv)
                 quiet = true;
                 found = true;
                 break;
+            case 'e':
+                error_only = true;
+                found = true;
+                break;
             }
             if (!found) {
-                std::cout << "Option '" << arg << "' is unknown." << std::endl;
+                std::cout << "error: option '" << arg << "' is unknown." << std::endl;
                 error = true;
             }
+        } else if (filename) {
+            std::cout << "error: multiple filenames specified" << std::endl;
+            std::exit(1);
         } else {
             filename = arg;
         }
@@ -83,9 +92,14 @@ int main(int argc, char **argv)
     if (error)
         std::exit(1);
 
+    if (quiet && error_only) {
+        std::cout << "error: -e cannot be used in conjunction with -q" << std::endl;
+        std::exit(1);
+    }
+
     if (!filename) {
         std::cout << "Syntax:" << std::endl;
-        std::cout << "simplecpp [options] filename" << std::endl;
+        std::cout << "simplecpp filename [options]" << std::endl;
         std::cout << "  -DNAME          Define NAME." << std::endl;
         std::cout << "  -IPATH          Include path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;
@@ -93,6 +107,7 @@ int main(int argc, char **argv)
         std::cout << "  -std=STD        Specify standard." << std::endl;
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::cout << "  -is             Use std::istream interface." << std::endl;
+        std::cout << "  -e              Output errors only." << std::endl;
         std::exit(0);
     }
 
@@ -102,6 +117,10 @@ int main(int argc, char **argv)
     simplecpp::TokenList *rawtokens;
     if (use_istream) {
         std::ifstream f(filename);
+        if (!f.is_open()) {
+            std::cout << "error: could not open file '" << filename << "'" << std::endl;
+            std::exit(1);
+        }
         rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
     }
     else {
@@ -118,7 +137,8 @@ int main(int argc, char **argv)
 
     // Output
     if (!quiet) {
-        std::cout << outputTokens.stringify() << std::endl;
+        if (!error_only)
+            std::cout << outputTokens.stringify() << std::endl;
 
         for (const simplecpp::Output &output : outputList) {
             std::cerr << output.location.file() << ':' << output.location.line << ": ";
