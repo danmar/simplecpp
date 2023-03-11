@@ -37,21 +37,28 @@ int main(int argc, char **argv)
         if (*arg == '-') {
             bool found = false;
             const char c = arg[1];
-            // TODO: treats every additional parameter as value requiring the options to be specified after the filename
-            const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
             switch (c) {
             case 'D': // define symbol
+            {
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.defines.push_back(value);
                 found = true;
                 break;
+            }
             case 'U': // undefine symbol
+            {
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.undefined.insert(value);
                 found = true;
                 break;
+            }
             case 'I': // include path
+            {
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.includePaths.push_back(value);
                 found = true;
                 break;
+            }
             case 'i':
                 if (std::strncmp(arg, "-include=",9)==0) {
                     dui.includes.push_back(arg+9);
@@ -99,7 +106,7 @@ int main(int argc, char **argv)
 
     if (!filename) {
         std::cout << "Syntax:" << std::endl;
-        std::cout << "simplecpp filename [options]" << std::endl;
+        std::cout << "simplecpp [options] filename" << std::endl;
         std::cout << "  -DNAME          Define NAME." << std::endl;
         std::cout << "  -IPATH          Include path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;
