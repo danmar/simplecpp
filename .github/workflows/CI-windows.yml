@@ -46,4 +46,8 @@ jobs:
       - name: Test
         run: |
           .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
+
+      - name: Selfcheck
+        run: |
+          .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
         
