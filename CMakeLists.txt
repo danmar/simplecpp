@@ -3,6 +3,16 @@ project (simplecpp LANGUAGES CXX)
 
 option(DISABLE_CPP03_SYNTAX_CHECK "Disable the C++03 syntax check." OFF)
 
+include(CheckCXXCompilerFlag)
+
+function(add_compile_options_safe FLAG)
+    string(MAKE_C_IDENTIFIER "HAS_CXX_FLAG${FLAG}" mangled_flag)
+    check_cxx_compiler_flag(${FLAG} ${mangled_flag})
+    if (${mangled_flag})
+        add_compile_options(${FLAG})
+    endif()
+endfunction()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef -Wold-style-cast -Wno-multichar)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -11,6 +21,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-c++98-compat-pedantic)
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors -Wno-weak-vtables)
+    add_compile_options_safe(-Wno-unsafe-buffer-usage)
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # ignore C++11-specific warning
