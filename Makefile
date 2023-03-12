@@ -16,6 +16,9 @@ test:	testrunner	simplecpp
 	./testrunner
 	python3 run-tests.py
 
+selfcheck:	simplecpp
+	./selfcheck.sh
+
 simplecpp:	main.o simplecpp.o
 	$(CXX) $(LDFLAGS) main.o simplecpp.o -o simplecpp
 

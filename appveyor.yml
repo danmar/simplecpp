@@ -17,3 +17,4 @@ build_script:
 
 test_script:
   - debug\testrunner.exe
+  - debug\simplecpp.exe simplecpp.cpp -e
