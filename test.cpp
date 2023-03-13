@@ -1207,6 +1207,18 @@ static void hashhash_invalid_missing_args()
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Missing first argument\n", toString(outputList));
 }
 
+static void hashhash_null_stmt()
+{
+    const char code[] =
+        "# define B(x) C ## x\n"
+        "#\n"
+        "# define C0 1\n"
+        "\n"
+        "B(0);\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("\n\n\n\n1 ;", preprocess(code, &outputList));
+}
+
 static void hashhash_universal_character()
 {
     const char code[] =
@@ -2636,6 +2648,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash_invalid_2);
     TEST_CASE(hashhash_invalid_string_number);
     TEST_CASE(hashhash_invalid_missing_args);
+    TEST_CASE(hashhash_null_stmt);
     // C standard, 5.1.1.2, paragraph 4:
     //    If a character sequence that matches the syntax of a universal
     //    character name is produced by token concatenation (6.10.3.3),

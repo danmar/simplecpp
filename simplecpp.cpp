@@ -2132,7 +2132,7 @@ namespace simplecpp {
                     for (Token *b = tokensB.front(); b; b = b->next)
                         b->location = loc;
                     output->takeTokens(tokensB);
-                } else if (nextTok->op == '#' && nextTok->next->op == '#') {
+                } else if (sameline(B, nextTok) && sameline(B, nextTok->next) && nextTok->op == '#' && nextTok->next->op == '#') {
                     TokenList output2(files);
                     output2.push_back(new Token(strAB, tok->location));
                     nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
