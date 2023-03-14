@@ -104,6 +104,8 @@ static simplecpp::TokenList makeTokenListFromFstream(const char code[], std::siz
 {
     const std::string tmpfile = writeFile(code, size, filename);
     std::ifstream fin(tmpfile);
+    if (!fin.is_open())
+        throw std::runtime_error("could not open " + tmpfile);
     simplecpp::TokenList tokenList(fin, filenames, tmpfile, outputList);
     remove(tmpfile.c_str());
     return tokenList;
@@ -112,6 +114,9 @@ static simplecpp::TokenList makeTokenListFromFstream(const char code[], std::siz
 static simplecpp::TokenList makeTokenListFromFile(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename, simplecpp::OutputList *outputList)
 {
     const std::string tmpfile = writeFile(code, size, filename);
+    std::ifstream fin(tmpfile);
+    if (!fin.is_open())
+        throw std::runtime_error("could not open " + tmpfile);
     simplecpp::TokenList tokenList(tmpfile, filenames, outputList);
     remove(tmpfile.c_str());
     return tokenList;
