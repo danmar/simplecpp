@@ -23,6 +23,7 @@
 #include "simplecpp.h"
 
 #include <algorithm>
+#include <cassert>
 #include <climits>
 #include <cstddef>
 #include <cstdlib>
@@ -351,6 +352,7 @@ public:
     StdIStream(std::istream &istr)
         : istr(istr)
     {
+        assert(istr.good());
         init();
     }
 
@@ -378,6 +380,7 @@ public:
         , lastCh(0)
         , lastStatus(0)
     {
+        assert(file != nullptr);
         init();
     }
 
