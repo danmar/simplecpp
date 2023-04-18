@@ -1967,6 +1967,34 @@ static void include8()    // #include MACRO(X)
     ASSERT_EQUALS("file0,3,missing_header,Header not found: <../somewhere/header.h>\n", toString(outputList));
 }
 
+static void include9()
+{
+    const char code_c[] = "#define HDR \"1.h\"\n"
+                          "#include HDR\n";
+    const char code_h[] = "/**/ #define X 1\n"  // <- comment before hash should be ignored
+                          "x=X;";
+
+    std::vector<std::string> files;
+
+    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "1.c");
+    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "1.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("1.c", files[0]);
+    ASSERT_EQUALS("1.h", files[1]);
+
+    std::map<std::string, simplecpp::TokenList *> filedata;
+    filedata["1.c"] = &rawtokens_c;
+    filedata["1.h"] = &rawtokens_h;
+
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    dui.includePaths.push_back(".");
+    simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
+
+    ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
+}
+
 static void readfile_nullbyte()
 {
     const char code[] = "ab\0cd";
@@ -2707,6 +2735,7 @@ int main(int argc, char **argv)
     TEST_CASE(include6); // invalid code: #include MACRO(,)
     TEST_CASE(include7); // #include MACRO
     TEST_CASE(include8); // #include MACRO(X)
+    TEST_CASE(include9); // #include MACRO
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
