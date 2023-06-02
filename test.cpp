@@ -765,6 +765,13 @@ static void define_va_args_3()   // min number of arguments
     ASSERT_EQUALS("\n1", preprocess(code));
 }
 
+static void define_va_args_4() // cppcheck trac #9754
+{
+    const char code[] = "#define A(x, y, ...) printf(x, y, __VA_ARGS__)\n"
+                        "A(1, 2)\n";
+    ASSERT_EQUALS("\nprintf ( 1 , 2 )", preprocess(code));
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -2633,6 +2640,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
+    TEST_CASE(define_va_args_4);
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
