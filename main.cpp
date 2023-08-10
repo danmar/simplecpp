@@ -18,9 +18,14 @@
 
 #include "simplecpp.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <cstring>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 int main(int argc, char **argv)
 {

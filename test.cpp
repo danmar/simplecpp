@@ -16,11 +16,18 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <limits>
-#include <sstream>
-#include <vector>
 #include "simplecpp.h"
+
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 static int numberOfFailedAssertions = 0;
 

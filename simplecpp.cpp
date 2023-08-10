@@ -20,11 +20,14 @@
 #define SIMPLECPP_WINDOWS
 #define NOMINMAX
 #endif
+
 #include "simplecpp.h"
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <climits>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -33,13 +36,18 @@
 #include <fstream> // IWYU pragma: keep
 #include <iostream>
 #include <limits>
+#include <list>
+#include <map>
+#include <set>
 #include <sstream> // IWYU pragma: keep
 #include <stack>
 #include <stdexcept>
+#include <string>
 #if __cplusplus >= 201103L
 #include <unordered_map>
 #endif
 #include <utility>
+#include <vector>
 
 #ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
@@ -3132,6 +3140,7 @@ static void getLocaltime(struct tm &ltime)
     time_t t;
     time(&t);
 #ifndef _WIN32
+    // NOLINTNEXTLINE(misc-include-cleaner) - false positive
     localtime_r(&t, &ltime);
 #else
     localtime_s(&ltime, &t);
