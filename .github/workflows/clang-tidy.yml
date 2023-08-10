@@ -24,6 +24,10 @@ jobs:
           sudo ./llvm.sh 17
           sudo apt-get install clang-tidy-17
 
+      - name: Verify clang-tidy configuration
+        run: |
+          clang-tidy-17 --verify-config
+
       - name: Prepare CMake
         run: |
           cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON
