@@ -159,14 +159,6 @@ namespace simplecpp {
             return tok;
         }
 
-        void setExpandedFrom(const Token *tok, const Macro* m) {
-            mExpandedFrom = tok->mExpandedFrom;
-            mExpandedFrom.insert(m);
-        }
-        bool isExpandedFrom(const Macro* m) const {
-            return mExpandedFrom.find(m) != mExpandedFrom.end();
-        }
-
         void printAll() const;
         void printOut() const;
     private:

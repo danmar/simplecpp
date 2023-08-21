@@ -768,6 +768,14 @@ static void define_define_18()
     ASSERT_EQUALS("\n\n\n( ( p -> var ) ) ;", preprocess(code));
 }
 
+static void define_define_19()
+{
+    const char code[] = "#define A0(a, b)  ((a) + (b))\n"
+                        "#define A1(a, b)  ((a) > (b)) ? A0((a) - (b), (b)) : A0((b) - (a), (a))\n"
+                        "	A1(a, b);";
+    ASSERT_EQUALS("\n\n( ( a ) > ( b ) ) ? ( ( ( a ) - ( b ) ) + ( ( b ) ) ) : ( ( ( b ) - ( a ) ) + ( ( a ) ) ) ;", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -2662,6 +2670,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_16);
     TEST_CASE(define_define_17);
     TEST_CASE(define_define_18);
+    TEST_CASE(define_define_19);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
