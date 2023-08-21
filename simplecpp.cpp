@@ -1700,6 +1700,11 @@ namespace simplecpp {
                 return invalidHashHash(loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.");
             }
         };
+
+        bool expandsTok(const Token *tok) const
+        {
+            return expandedToks.find(tok) != expandedToks.end();
+        }
     private:
         /** Create new token where Token::macro is set for replaced tokens */
         Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
@@ -1707,7 +1712,7 @@ namespace simplecpp {
             if (replaced)
                 tok->macro = nameTokDef->str();
             if (expandedFromToken)
-                tok->setExpandedFrom(expandedFromToken, this);
+                const_cast<Macro*>(this)->addExpandedTok(tok);
             return tok;
         }
 
@@ -2199,7 +2204,7 @@ namespace simplecpp {
                 return true;
             for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
                 const MacroMap::const_iterator it = macros.find(partok->str());
-                if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
+                if (it != macros.end() && !it->second.expandsTok(partok) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
                     std::set<TokenString> expandedmacros2(expandedmacros); // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
                     expandedmacros2.erase(name());
                     partok = it->second.expand(output, loc, partok, macros, std::move(expandedmacros2));
@@ -2370,6 +2375,11 @@ namespace simplecpp {
             return (it != expandedmacros.end());
         }
 
+        void addExpandedTok(const Token *tok)
+        {
+            expandedToks.insert(tok);
+        }
+
         /** name token in definition */
         const Token *nameTokDef;
 
@@ -2403,6 +2413,8 @@ namespace simplecpp {
 
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
+
+        std::set<const Token*> expandedToks;
     };
 }
 
