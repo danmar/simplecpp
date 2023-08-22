@@ -45,6 +45,7 @@
 #endif
 
 #if defined(_MSC_VER)
+#  pragma warning(push)
 // suppress warnings about "conversion from 'type1' to 'type2', possible loss of data"
 #  pragma warning(disable : 4267)
 #  pragma warning(disable : 4244)
@@ -369,6 +370,10 @@ namespace simplecpp {
     /** Returns the __cplusplus value for a given standard */
     SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
 #undef nullptr
