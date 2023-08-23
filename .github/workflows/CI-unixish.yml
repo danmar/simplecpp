@@ -35,6 +35,19 @@ jobs:
       run: |
         make -j$(nproc) selfcheck
 
+    - name: Run CMake
+      run: |
+        cmake -S . -B cmake.output
+
+    - name: CMake simplecpp
+      run: |
+        cmake --build cmake.output --target simplecpp -- -j $(nproc)
+
+    - name: CMake testrunner
+      run: |
+        cmake --build cmake.output --target testrunner -- -j $(nproc)
+        ./cmake.output/testrunner
+
     - name: Run valgrind
       if: matrix.os == 'ubuntu-22.04'
       run: |
