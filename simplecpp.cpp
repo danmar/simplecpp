@@ -1708,7 +1708,7 @@ namespace simplecpp {
     private:
         /** Create new token where Token::macro is set for replaced tokens */
         Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
-            Token *tok = new Token(str,loc);
+            Token * const tok = new Token(str,loc);
             if (replaced)
                 tok->macro = nameTokDef->str();
             if (expandedFromToken)
