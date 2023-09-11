@@ -3701,7 +3701,7 @@ std::string simplecpp::getCppStdString(const std::string &std)
         // GCC 11, 12, 13 return "202100L"
         // Clang 12, 13, 14, 15, 16 do not support "c++23" and "gnu++23" and return "202101L"
         // Clang 17, 18 return "202302L"
-        return "202100L"; // TODO: update value?
+        return "202302L";
     }
     if (std == "c++26" || std == "c++2c" || std == "gnu++26" || std == "gnu++2c") {
         // supported by Clang 17+
