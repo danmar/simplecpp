@@ -57,6 +57,14 @@
 #undef ERROR
 #endif
 
+#if __cplusplus >= 201103L
+#define OVERRIDE override
+#define EXPLICIT explicit
+#else
+#define OVERRIDE
+#define EXPLICIT
+#endif
+
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
 #define nullptr NULL
 #endif
@@ -236,6 +244,7 @@ void simplecpp::Token::printOut() const
     std::cout << std::endl;
 }
 
+// cppcheck-suppress noConstructor - we call init() in the inherited to initialize the private members
 class simplecpp::TokenList::Stream {
 public:
     virtual ~Stream() {}
@@ -354,23 +363,24 @@ protected:
 
 class StdIStream : public simplecpp::TokenList::Stream {
 public:
-    StdIStream(std::istream &istr)
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    EXPLICIT StdIStream(std::istream &istr)
         : istr(istr)
     {
         assert(istr.good());
         init();
     }
 
-    virtual int get() {
+    virtual int get() OVERRIDE {
         return istr.get();
     }
-    virtual int peek() {
+    virtual int peek() OVERRIDE {
         return istr.peek();
     }
-    virtual void unget() {
+    virtual void unget() OVERRIDE {
         istr.unget();
     }
-    virtual bool good() {
+    virtual bool good() OVERRIDE {
         return istr.good();
     }
 
@@ -380,7 +390,8 @@ private:
 
 class FileStream : public simplecpp::TokenList::Stream {
 public:
-    FileStream(const std::string &filename)
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    EXPLICIT FileStream(const std::string &filename)
         : file(fopen(filename.c_str(), "rb"))
         , lastCh(0)
         , lastStatus(0)
@@ -389,25 +400,25 @@ public:
         init();
     }
 
-    ~FileStream() {
+    ~FileStream() OVERRIDE {
         fclose(file);
         file = nullptr;
     }
 
-    virtual int get() {
+    virtual int get() OVERRIDE {
         lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
-    virtual int peek() {
+    virtual int peek() OVERRIDE{
         // keep lastCh intact
         const int ch = fgetc(file);
         unget_internal(ch);
         return ch;
     }
-    virtual void unget() {
+    virtual void unget() OVERRIDE {
         unget_internal(lastCh);
     }
-    virtual bool good() {
+    virtual bool good() OVERRIDE {
         return lastStatus != EOF;
     }
 
@@ -421,6 +432,9 @@ private:
         else
             ungetc(ch, file);
     }
+
+    FileStream(const FileStream&);
+    FileStream &operator=(const FileStream&);
 
     FILE *file;
     int lastCh;
@@ -1437,6 +1451,7 @@ namespace simplecpp {
                     tokenListDefine = other.tokenListDefine;
                     parseDefine(tokenListDefine.cfront());
                 }
+                usageList = other.usageList;
             }
             return *this;
         }
@@ -2502,6 +2517,7 @@ namespace simplecpp {
         if (unc)
             path = '/' + path;
 
+        // cppcheck-suppress duplicateExpressionTernary - platform-dependent implementation
         return strpbrk(path.c_str(), "*?") == nullptr ? realFilename(path) : path;
     }
 }
@@ -2595,6 +2611,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
 
             for (simplecpp::Token *headerToken = tok1->next; headerToken != tok3; headerToken = headerToken->next)
                 header += headerToken->str();
+            // cppcheck-suppress selfAssignment - platform-dependent implementation
             header = realFilename(header);
         }
         else {
@@ -3164,14 +3181,14 @@ static void getLocaltime(struct tm &ltime)
 #endif
 }
 
-static std::string getDateDefine(struct tm *timep)
+static std::string getDateDefine(const struct tm *timep)
 {
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(struct tm *timep)
+static std::string getTimeDefine(const struct tm *timep)
 {
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%T", timep);
@@ -3484,6 +3501,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 if (systemheader) {
                                     while ((tok = tok->next) && tok->op != '>')
                                         header += tok->str();
+                                    // cppcheck-suppress selfAssignment - platform-dependent implementation
                                     header = realFilename(header);
                                     if (tok && tok->op == '>')
                                         closingAngularBracket = true;
