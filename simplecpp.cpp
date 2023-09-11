@@ -402,7 +402,7 @@ public:
         init();
     }
 
-    ~FileStream() {
+    ~FileStream() OVERRIDE {
         fclose(file);
         file = nullptr;
     }
