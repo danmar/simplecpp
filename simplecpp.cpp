@@ -430,6 +430,8 @@ private:
             ungetc(ch, file);
     }
 
+    FileStream(const FileStream&);
+
     FILE *file;
     int lastCh;
     int lastStatus;
