@@ -2492,6 +2492,7 @@ namespace simplecpp {
         if (unc)
             path = '/' + path;
 
+        // cppcheck-suppress duplicateExpressionTernary - platform-dependent implementation
         return strpbrk(path.c_str(), "*?") == nullptr ? realFilename(path) : path;
     }
 }
