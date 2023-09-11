@@ -3674,10 +3674,12 @@ std::string simplecpp::getCStdString(const std::string &std)
         return "201112L";
     if (std == "c17" || std == "c18" || std == "iso9899:2017" || std == "iso9899:2018" || std == "gnu17"|| std == "gnu18")
         return "201710L";
-    if (std == "c2x" || std == "gnu2x") {
+    if (std == "c23" || std == "gnu23" || std == "c2x" || std == "gnu2x") {
         // supported by GCC 9+ and Clang 9+
         // Clang 9, 10, 11, 12, 13 return "201710L"
-        return "202000L";
+        // Clang 14, 15, 16, 17 return "202000L"
+        // Clang 9, 10, 11, 12, 13, 14, 15, 16, 17 do not support "c23" and "gnu23"
+        return "202311L";
     }
     return "";
 }
