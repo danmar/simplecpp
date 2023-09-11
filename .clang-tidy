@@ -49,7 +49,6 @@ Checks: >
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
         -performance-inefficient-string-concatenation,
-        -performance-move-constructor-init,
         -performance-no-automatic-move,
         -performance-noexcept-move-constructor
 HeaderFilterRegex: '.*'
