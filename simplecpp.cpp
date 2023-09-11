@@ -44,6 +44,9 @@
 #include <stdexcept>
 #include <string>
 #if __cplusplus >= 201103L
+#ifdef SIMPLECPP_WINDOWS
+#include <mutex>
+#endif
 #include <unordered_map>
 #endif
 #include <utility>
@@ -137,11 +140,6 @@ static unsigned long long stringToULL(const std::string &s)
         istr >> std::oct;
     istr >> ret;
     return ret;
-}
-
-static bool startsWith(const std::string &str, const std::string &s)
-{
-    return (str.size() >= s.size() && str.compare(0, s.size(), s) == 0);
 }
 
 static bool endsWith(const std::string &s, const std::string &e)
@@ -2215,6 +2213,12 @@ namespace simplecpp {
 
 namespace simplecpp {
 
+#ifdef __CYGWIN__
+    bool startsWith(const std::string &str, const std::string &s)
+    {
+        return (str.size() >= s.size() && str.compare(0, s.size(), s) == 0);
+    }
+
     std::string convertCygwinToWindowsPath(const std::string &cygwinPath)
     {
         std::string windowsPath;
@@ -2244,67 +2248,86 @@ namespace simplecpp {
 
         return windowsPath;
     }
+#endif
 }
 
 #ifdef SIMPLECPP_WINDOWS
 
-class ScopedLock {
+#if __cplusplus >= 201103L
+using MyMutex = std::mutex;
+template<class T>
+using MyLock = std::lock_guard<T>;
+#else
+class MyMutex {
 public:
-    explicit ScopedLock(CRITICAL_SECTION& criticalSection)
-        : m_criticalSection(criticalSection) {
-        EnterCriticalSection(&m_criticalSection);
-    }
-
-    ~ScopedLock() {
-        LeaveCriticalSection(&m_criticalSection);
-    }
-
-private:
-    ScopedLock& operator=(const ScopedLock&);
-    ScopedLock(const ScopedLock&);
-
-    CRITICAL_SECTION& m_criticalSection;
-};
-
-class RealFileNameMap {
-public:
-    RealFileNameMap() {
+    MyMutex() {
         InitializeCriticalSection(&m_criticalSection);
     }
 
-    ~RealFileNameMap() {
+    ~MyMutex() {
         DeleteCriticalSection(&m_criticalSection);
     }
 
-    bool getCacheEntry(const std::string& path, std::string* returnPath) {
-        ScopedLock lock(m_criticalSection);
+    CRITICAL_SECTION* lock() {
+        return &m_criticalSection;
+    }
+private:
+    CRITICAL_SECTION m_criticalSection;
+};
 
-        std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
+template<typename T>
+class MyLock {
+public:
+    explicit MyLock(T& m)
+        : m_mutex(m) {
+        EnterCriticalSection(m_mutex.lock());
+    }
+
+    ~MyLock() {
+        LeaveCriticalSection(m_mutex.lock());
+    }
+
+private:
+    MyLock& operator=(const MyLock&);
+    MyLock(const MyLock&);
+
+    T& m_mutex;
+};
+#endif
+
+class RealFileNameMap {
+public:
+    RealFileNameMap() {}
+
+    bool getCacheEntry(const std::string& path, std::string& returnPath) {
+        MyLock<MyMutex> lock(m_mutex);
+
+        const std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
         if (it != m_fileMap.end()) {
-            *returnPath = it->second;
+            returnPath = it->second;
             return true;
         }
         return false;
     }
 
     void addToCache(const std::string& path, const std::string& actualPath) {
-        ScopedLock lock(m_criticalSection);
+        MyLock<MyMutex> lock(m_mutex);
         m_fileMap[path] = actualPath;
     }
 
 private:
     std::map<std::string, std::string> m_fileMap;
-    CRITICAL_SECTION m_criticalSection;
+    MyMutex m_mutex;
 };
 
 static RealFileNameMap realFileNameMap;
 
-static bool realFileName(const std::string &f, std::string *result)
+static bool realFileName(const std::string &f, std::string &result)
 {
     // are there alpha characters in last subpath?
     bool alpha = false;
     for (std::string::size_type pos = 1; pos <= f.size(); ++pos) {
-        unsigned char c = f[f.size() - pos];
+        const unsigned char c = f[f.size() - pos];
         if (c == '/' || c == '\\')
             break;
         if (std::isalpha(c)) {
@@ -2323,16 +2346,16 @@ static bool realFileName(const std::string &f, std::string *result)
         WIN32_FIND_DATAA FindFileData;
 
 #ifdef __CYGWIN__
-        std::string fConverted = simplecpp::convertCygwinToWindowsPath(f);
-        HANDLE hFind = FindFirstFileExA(fConverted.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
+        const std::string fConverted = simplecpp::convertCygwinToWindowsPath(f);
+        const HANDLE hFind = FindFirstFileExA(fConverted.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 #else
         HANDLE hFind = FindFirstFileExA(f.c_str(), FindExInfoBasic, &FindFileData, FindExSearchNameMatch, NULL, 0);
 #endif
 
         if (INVALID_HANDLE_VALUE == hFind)
             return false;
-        *result = FindFileData.cFileName;
-        realFileNameMap.addToCache(f, *result);
+        result = FindFileData.cFileName;
+        realFileNameMap.addToCache(f, result);
         FindClose(hFind);
     }
     return true;
@@ -2345,14 +2368,14 @@ static std::string realFilename(const std::string &f)
 {
     std::string ret;
     ret.reserve(f.size()); // this will be the final size
-    if (realFilePathMap.getCacheEntry(f, &ret))
+    if (realFilePathMap.getCacheEntry(f, ret))
         return ret;
 
     // Current subpath
     std::string subpath;
 
     for (std::string::size_type pos = 0; pos < f.size(); ++pos) {
-        unsigned char c = f[pos];
+        const unsigned char c = f[pos];
 
         // Separator.. add subpath and separator
         if (c == '/' || c == '\\') {
@@ -2362,12 +2385,12 @@ static std::string realFilename(const std::string &f)
                 continue;
             }
 
-            bool isDriveSpecification =
+            const bool isDriveSpecification =
                 (pos == 2 && subpath.size() == 2 && std::isalpha(subpath[0]) && subpath[1] == ':');
 
             // Append real filename (proper case)
             std::string f2;
-            if (!isDriveSpecification && realFileName(f.substr(0, pos), &f2))
+            if (!isDriveSpecification && realFileName(f.substr(0, pos), f2))
                 ret += f2;
             else
                 ret += subpath;
@@ -2383,7 +2406,7 @@ static std::string realFilename(const std::string &f)
 
     if (!subpath.empty()) {
         std::string f2;
-        if (realFileName(f,&f2))
+        if (realFileName(f,f2))
             ret += f2;
         else
             ret += subpath;
@@ -2902,32 +2925,26 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
 
 class NonExistingFilesCache {
 public:
-    NonExistingFilesCache() {
-        InitializeCriticalSection(&m_criticalSection);
-    }
-
-    ~NonExistingFilesCache() {
-        DeleteCriticalSection(&m_criticalSection);
-    }
+    NonExistingFilesCache() {}
 
     bool contains(const std::string& path) {
-        ScopedLock lock(m_criticalSection);
+        MyLock<MyMutex> lock(m_mutex);
         return (m_pathSet.find(path) != m_pathSet.end());
     }
 
     void add(const std::string& path) {
-        ScopedLock lock(m_criticalSection);
+        MyLock<MyMutex> lock(m_mutex);
         m_pathSet.insert(path);
     }
 
     void clear() {
-        ScopedLock lock(m_criticalSection);
+        MyLock<MyMutex> lock(m_mutex);
         m_pathSet.clear();
     }
 
 private:
     std::set<std::string> m_pathSet;
-    CRITICAL_SECTION m_criticalSection;
+    MyMutex m_mutex;
 };
 
 static NonExistingFilesCache nonExistingFilesCache;
@@ -3032,7 +3049,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
 {
 #ifdef SIMPLECPP_WINDOWS
     if (dui.clearIncludeCache)
-        nonExistingFilesCache .clear();
+        nonExistingFilesCache.clear();
 #endif
 
     std::map<std::string, simplecpp::TokenList*> ret;
