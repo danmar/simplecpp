@@ -3160,14 +3160,14 @@ static void getLocaltime(struct tm &ltime)
 #endif
 }
 
-static std::string getDateDefine(struct tm *timep)
+static std::string getDateDefine(const struct tm *timep)
 {
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(struct tm *timep)
+static std::string getTimeDefine(const struct tm *timep)
 {
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%T", timep);
