@@ -169,6 +169,9 @@ int main(int argc, char **argv)
             case simplecpp::Output::FILE_NOT_FOUND:
                 std::cerr << "file not found: ";
                 break;
+            case simplecpp::Output::DUI_ERROR:
+                std::cerr << "dui error: ";
+                break;
             }
             std::cerr << output.msg << std::endl;
         }

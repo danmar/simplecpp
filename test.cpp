@@ -154,6 +154,9 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::FILE_NOT_FOUND:
             ostr << "file_not_found,";
             break;
+        case simplecpp::Output::Type::DUI_ERROR:
+            ostr << "dui_error,";
+            break;
         }
 
         ostr << output.msg << '\n';
@@ -2656,6 +2659,48 @@ static void cpluscplusDefine()
     ASSERT_EQUALS("\n201103L", preprocess(code, dui));
 }
 
+static void invalidStd()
+{
+    const char code[] = "";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    dui.std = "c88";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("unknown standard specified: 'c88'", outputList.cbegin()->msg);
+    outputList.clear();
+
+    dui.std = "gnu88";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("unknown standard specified: 'gnu88'", outputList.cbegin()->msg);
+    outputList.clear();
+
+    dui.std = "d99";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("unknown standard specified: 'd99'", outputList.cbegin()->msg);
+    outputList.clear();
+
+    dui.std = "c++77";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("unknown standard specified: 'c++77'", outputList.cbegin()->msg);
+    outputList.clear();
+
+    dui.std = "gnu++33";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("unknown standard specified: 'gnu++33'", outputList.cbegin()->msg);
+    outputList.clear();
+}
+
 static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
@@ -2984,6 +3029,7 @@ int main(int argc, char **argv)
 
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
+    TEST_CASE(invalidStd);
 
     TEST_CASE(token);
 
