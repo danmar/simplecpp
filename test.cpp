@@ -455,6 +455,7 @@ static void constFold()
     ASSERT_EQUALS("exception", testConstFold("?2:3"));
 }
 
+#ifdef __CYGWIN__
 static void convertCygwinPath()
 {
     // absolute paths
@@ -472,6 +473,7 @@ static void convertCygwinPath()
     ASSERT_EQUALS("\\cygdrive", simplecpp::convertCygwinToWindowsPath("/cygdrive"));
     ASSERT_EQUALS("\\cygdrive\\", simplecpp::convertCygwinToWindowsPath("/cygdrive/"));
 }
+#endif
 
 static void define1()
 {
@@ -2628,7 +2630,9 @@ int main(int argc, char **argv)
 
     TEST_CASE(constFold);
 
+#ifdef __CYGWIN__
     TEST_CASE(convertCygwinPath);
+#endif
 
     TEST_CASE(define1);
     TEST_CASE(define2);
