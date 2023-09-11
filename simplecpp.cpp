@@ -56,8 +56,10 @@
 
 #if __cplusplus >= 201103L
 #define OVERRIDE override
+#define EXPLICIT explicit
 #else
 #define OVERRIDE
+#define EXPLICIT
 #endif
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
@@ -362,7 +364,7 @@ protected:
 
 class StdIStream : public simplecpp::TokenList::Stream {
 public:
-    StdIStream(std::istream &istr)
+    EXPLICIT StdIStream(std::istream &istr)
         : istr(istr)
     {
         assert(istr.good());
@@ -388,7 +390,7 @@ private:
 
 class FileStream : public simplecpp::TokenList::Stream {
 public:
-    FileStream(const std::string &filename)
+    EXPLICIT FileStream(const std::string &filename)
         : file(fopen(filename.c_str(), "rb"))
         , lastCh(0)
         , lastStatus(0)
