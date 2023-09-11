@@ -2585,6 +2585,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
 
             for (simplecpp::Token *headerToken = tok1->next; headerToken != tok3; headerToken = headerToken->next)
                 header += headerToken->str();
+            // cppcheck-suppress selfAssignment - platform-dependent implementation
             header = realFilename(header);
         }
         else {
@@ -3480,6 +3481,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 if (systemheader) {
                                     while ((tok = tok->next) && tok->op != '>')
                                         header += tok->str();
+                                    // cppcheck-suppress selfAssignment - platform-dependent implementation
                                     header = realFilename(header);
                                     if (tok && tok->op == '>')
                                         closingAngularBracket = true;
