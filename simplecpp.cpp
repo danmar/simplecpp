@@ -365,6 +365,7 @@ protected:
 
 class StdIStream : public simplecpp::TokenList::Stream {
 public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
     EXPLICIT StdIStream(std::istream &istr)
         : istr(istr)
     {
@@ -391,6 +392,7 @@ private:
 
 class FileStream : public simplecpp::TokenList::Stream {
 public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
     EXPLICIT FileStream(const std::string &filename)
         : file(fopen(filename.c_str(), "rb"))
         , lastCh(0)
