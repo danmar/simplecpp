@@ -431,6 +431,7 @@ private:
     }
 
     FileStream(const FileStream&);
+    FileStream &operator=(const FileStream&);
 
     FILE *file;
     int lastCh;
