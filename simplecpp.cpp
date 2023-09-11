@@ -54,6 +54,12 @@
 #undef ERROR
 #endif
 
+#if __cplusplus >= 201103L
+#define OVERRIDE override
+#else
+#define OVERRIDE
+#endif
+
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
 #define nullptr NULL
 #endif
@@ -363,16 +369,16 @@ public:
         init();
     }
 
-    virtual int get() {
+    virtual int get() OVERRIDE {
         return istr.get();
     }
-    virtual int peek() {
+    virtual int peek() OVERRIDE {
         return istr.peek();
     }
-    virtual void unget() {
+    virtual void unget() OVERRIDE {
         istr.unget();
     }
-    virtual bool good() {
+    virtual bool good() OVERRIDE {
         return istr.good();
     }
 
@@ -396,20 +402,20 @@ public:
         file = nullptr;
     }
 
-    virtual int get() {
+    virtual int get() OVERRIDE {
         lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
-    virtual int peek() {
+    virtual int peek() OVERRIDE{
         // keep lastCh intact
         const int ch = fgetc(file);
         unget_internal(ch);
         return ch;
     }
-    virtual void unget() {
+    virtual void unget() OVERRIDE {
         unget_internal(lastCh);
     }
-    virtual bool good() {
+    virtual bool good() OVERRIDE {
         return lastStatus != EOF;
     }
 
