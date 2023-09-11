@@ -32,7 +32,7 @@
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
-#define ASSERT_THROW(stmt, e) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e&) {} } while(false)
+#define ASSERT_THROW_EQUALS(stmt, e, expected) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e& ex) { assertEquals((expected), (ex.what()), __LINE__); } } while(false)
 
 static std::string pprint(const std::string &in)
 {
@@ -289,7 +289,7 @@ static void characterLiteral()
     // END Implementation-specific results
 #endif
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("'\\9'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'\\9'"), std::runtime_error, "invalid escape sequence");
 
     // Input is manually encoded to (escaped) UTF-8 byte sequences
     // to avoid dependence on source encoding used for this file
@@ -309,18 +309,18 @@ static void characterLiteral()
     ASSERT_EQUALS(0x157, simplecpp::characterLiteralToLL("u'\305\227'"));
     ASSERT_EQUALS(0xff0f, simplecpp::characterLiteralToLL("u'\357\274\217'"));
     ASSERT_EQUALS(0x3042, simplecpp::characterLiteralToLL("u'\343\201\202'"));
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u'\360\223\200\200'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u'\360\223\200\200'"), std::runtime_error, "code point too large");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\302\265'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\305\227'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\357\274\217'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\343\201\202'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("u8'\360\223\200\200'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\302\265'"), std::runtime_error, "code point too large");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\305\227'"), std::runtime_error, "code point too large");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\357\274\217'"), std::runtime_error, "code point too large");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\343\201\202'"), std::runtime_error, "code point too large");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\360\223\200\200'"), std::runtime_error, "code point too large");
 
     ASSERT_EQUALS('\x89', simplecpp::characterLiteralToLL("'\x89'"));
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x89'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x89'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf4\x90\x80\x80'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf4\x90\x80\x80'"), std::runtime_error, "code point too large");
 
     // following examples based on https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
     ASSERT_EQUALS(0x80, simplecpp::characterLiteralToLL("U'\xc2\x80'"));
@@ -336,38 +336,38 @@ static void characterLiteral()
     ASSERT_EQUALS(0xfffd, simplecpp::characterLiteralToLL("U'\xef\xbf\xbd'"));
     ASSERT_EQUALS(0x10ffff, simplecpp::characterLiteralToLL("U'\xf4\x8f\xbf\xbf'"));
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f\x8f'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x80\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x80\x8f\x8f\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf\x8f\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xbf\x8f\x8f\x8f'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xbf\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xbf\x8f\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xbf\x8f\x8f\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0 '"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x8f '"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f '"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xc0'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xc0 '"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xe0\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xe0\x8f '"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf0\x8f\x8f '"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf8'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xff'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf8'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xff'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0\xaf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x80\xaf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\xaf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc1\xbf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x9f\xbf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x8f\xbf\xbf'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xc0\x80'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xe0\x80\x80'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\x80'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xc0\xaf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xe0\x80\xaf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\xaf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xc1\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xe0\x9f\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf0\x8f\xbf\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xc0\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xe0\x80\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xf0\x80\x80\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xed\xa0\x80'"), std::runtime_error);
-    ASSERT_THROW(simplecpp::characterLiteralToLL("U'\xed\xbf\xbf'"), std::runtime_error);
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xed\xa0\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xed\xbf\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 }
 
 static void combineOperators_floatliteral()
