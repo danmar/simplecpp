@@ -294,7 +294,7 @@ namespace simplecpp {
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
-        std::string lastLine(int maxsize=100000) const;
+        std::string lastLine(int maxsize=1000) const;
         bool isLastLinePreprocessor(int maxsize=100000) const;
 
         unsigned int fileIndex(const std::string &filename);
