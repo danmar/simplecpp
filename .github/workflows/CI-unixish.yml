@@ -13,6 +13,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      CXX: ${{ matrix.compiler }}
+
     steps:
     - uses: actions/checkout@v3
 
@@ -23,21 +26,34 @@ jobs:
           sudo apt-get install valgrind
           
     - name: make simplecpp
-      run: make -j$(nproc) CXX=${{ matrix.compiler }}
+      run: make -j$(nproc)
 
     - name: make test
-      run: make -j$(nproc) test CXX=${{ matrix.compiler }}
+      run: make -j$(nproc) test
 
     - name: selfcheck
       run: |
-        make -j$(nproc) selfcheck CXX=${{ matrix.compiler }}
+        make -j$(nproc) selfcheck
+
+    - name: Run CMake
+      run: |
+        cmake -S . -B cmake.output
+
+    - name: CMake simplecpp
+      run: |
+        cmake --build cmake.output --target simplecpp -- -j $(nproc)
+
+    - name: CMake testrunner
+      run: |
+        cmake --build cmake.output --target testrunner -- -j $(nproc)
+        ./cmake.output/testrunner
 
     - name: Run valgrind
       if: matrix.os == 'ubuntu-22.04'
       run: |
           make clean
           # this valgrind version doesn't support DWARF 5 yet
-          make -j$(nproc) CXX=${{ matrix.compiler }} CXXFLAGS="-gdwarf-4"
+          make -j$(nproc) CXXFLAGS="-gdwarf-4"
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./simplecpp simplecpp.cpp -e
 
@@ -45,19 +61,19 @@ jobs:
       if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'g++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXX=${{ matrix.compiler }} CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
+        make -j$(nproc) test selfcheck CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
 
     - name: Run with libc++ debug mode
       if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXX=${{ matrix.compiler }} CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_ENABLE_ASSERTIONS=1" LDFLAGS="-lc++"
+        make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_ENABLE_ASSERTIONS=1" LDFLAGS="-lc++"
 
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-22.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
+        make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
       env:
         ASAN_OPTIONS: detect_stack_use_after_return=1
 
@@ -65,11 +81,11 @@ jobs:
       if: matrix.os == 'ubuntu-22.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
+        make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
 
     # TODO: requires instrumented libc++
     - name: Run MemorySanitizer
       if: false && matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXX=${{ matrix.compiler }} CXXFLAGS="-O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"
+        make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"
