@@ -55,6 +55,12 @@ using mode_t = unsigned short;
 #  include <sys/types.h>
 #endif
 
+#ifdef __GNUC__
+#  define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#  define unlikely(x) (x)
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -466,6 +472,77 @@ private:
     int lastStatus;
 };
 
+class FileStreamBuffered : public simplecpp::TokenList::Stream {
+public:
+    FileStreamBuffered(const std::string &filename, std::vector<std::string> &files)
+        : file(fopen(filename.c_str(), "rb"))
+        , lastStatus(0)
+        , buf_len(0)
+        , buf_idx(-1)
+    {
+        if (!file) {
+            files.push_back(filename);
+            throw simplecpp::Output(files, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
+        }
+        init();
+    }
+
+    ~FileStreamBuffered() {
+        fclose(file);
+        file = nullptr;
+    }
+
+    virtual int get() {
+        read_internal();
+        return buf[buf_idx++];
+    }
+    virtual int peek() {
+        read_internal();
+        return buf[buf_idx];
+    }
+    virtual void unget() {
+        --buf_idx;
+    }
+    virtual bool good() {
+        return lastStatus != EOF;
+    }
+
+private:
+    void read_internal() {
+        // check if we are in the last chunk
+        if (unlikely(buf_idx >= buf_len)) {
+            if (buf_len != sizeof(buf)) {
+                lastStatus = EOF;
+                return;
+            }
+        }
+
+        if (unlikely(buf_idx == -1 || buf_idx == buf_len))
+        {
+            buf_idx = 0;
+            buf_len = fread(buf, 1, sizeof(buf), file);
+            if (buf_len == 0) {
+                lastStatus = EOF;
+            }
+            else if (buf_len != sizeof(buf)) {
+                if (ferror(file)) {
+                    // TODO: is this correct?
+                    lastStatus = EOF;
+                }
+            }
+        }
+    }
+
+    FileStreamBuffered(const FileStreamBuffered&);
+    FileStreamBuffered &operator=(const FileStreamBuffered&);
+
+    FILE *file;
+    int lastStatus;
+    unsigned char buf[8192];
+    int buf_len;
+    int buf_idx;
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
@@ -486,7 +563,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     try {
-        FileStream stream(filename, filenames);
+        FileStreamBuffered stream(filename, filenames);
         readfile(stream,filename,outputList);
     } catch (const simplecpp::Output & e) { // TODO handle extra type of errors
         outputList->push_back(e);
