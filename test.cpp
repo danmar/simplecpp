@@ -593,6 +593,19 @@ static void define12()
                   "} ;", preprocess(code));
 }
 
+static void define13()
+{
+    const char code[] = "#define M 180.\n"
+                        "extern void g();\n"
+                        "void f(double d) {\n"
+                        "    if (d > M) {}\n"
+                        "}\n";
+    ASSERT_EQUALS("\nextern void g ( ) ;\n"
+                  "void f ( double d ) {\n"
+                  "if ( d > 180. ) { }\n"
+                  "}", preprocess(code));
+}
+
 
 
 static void define_invalid_1()
@@ -2646,6 +2659,7 @@ int main(int argc, char **argv)
     TEST_CASE(define10);
     TEST_CASE(define11);
     TEST_CASE(define12);
+    TEST_CASE(define13);
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
