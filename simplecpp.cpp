@@ -625,8 +625,6 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         unsigned char ch = stream.readChar();
         if (!stream.good())
             break;
-        if (ch < ' ' && ch != '\t' && ch != '\n' && ch != '\r')
-            ch = ' ';
 
         if (ch >= 0x80) {
             if (outputList) {
@@ -692,7 +690,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             continue;
         }
 
-        if (std::isspace(ch)) {
+        if (ch <= ' ') {
             location.col++;
             continue;
         }
