@@ -1406,7 +1406,7 @@ const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
 bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
 {
     const Token * const prevTok = lastLineTok(maxsize);
-    return prevTok && prevTok->str()[0] == '#';
+    return prevTok && prevTok->op == '#';
 }
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
