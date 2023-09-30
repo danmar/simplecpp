@@ -699,17 +699,20 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
         TokenString currentToken;
 
-        if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#' && isLastLinePreprocessor() && (lastLine() == "# error" || lastLine() == "# warning")) {
-            char prev = ' ';
-            while (stream.good() && (prev == '\\' || (ch != '\r' && ch != '\n'))) {
-                currentToken += ch;
-                prev = ch;
-                ch = stream.readChar();
+        if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#') {
+            const Token* const llTok = lastLineTok();
+            if (llTok && llTok->op == '#' && llTok->next && (llTok->next->str() == "error" || llTok->next->str() == "warning")) {
+                char prev = ' ';
+                while (stream.good() && (prev == '\\' || (ch != '\r' && ch != '\n'))) {
+                    currentToken += ch;
+                    prev = ch;
+                    ch = stream.readChar();
+                }
+                stream.ungetChar();
+                push_back(new Token(currentToken, location));
+                location.adjust(currentToken);
+                continue;
             }
-            stream.ungetChar();
-            push_back(new Token(currentToken, location));
-            location.adjust(currentToken);
-            continue;
         }
 
         // number or name
@@ -841,12 +844,16 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             else
                 back()->setstr(prefix + s);
 
-            if (newlines > 0 && isLastLinePreprocessor() && lastLine().compare(0,9,"# define ") == 0) {
-                multiline += newlines;
-                location.adjust(s);
-            } else {
-                location.adjust(currentToken);
+            if (newlines > 0 ) {
+                const Token * const llTok = lastLineTok();
+                if (llTok && llTok->op == '#' && llTok->next && llTok->next->str() == "define" && llTok->next->next) {
+                    multiline += newlines;
+                    location.adjust(s);
+                    continue;
+                }
             }
+
+            location.adjust(currentToken);
             continue;
         }
 
@@ -854,10 +861,13 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             currentToken += ch;
         }
 
-        if (*currentToken.begin() == '<' && isLastLinePreprocessor() && lastLine() == "# include") {
-            currentToken = readUntil(stream, location, '<', '>', outputList);
-            if (currentToken.size() < 2U)
-                return;
+        if (*currentToken.begin() == '<') {
+            const Token * const llTok = lastLineTok();
+            if (llTok && llTok->op == '#' && llTok->next && llTok->next->str() == "include") {
+                currentToken = readUntil(stream, location, '<', '>', outputList);
+                if (currentToken.size() < 2U)
+                    return;
+            }
         }
 
         push_back(new Token(currentToken, location));
@@ -1377,7 +1387,7 @@ std::string simplecpp::TokenList::lastLine(int maxsize) const
     return ret;
 }
 
-bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
 {
     const Token* prevTok = nullptr;
     int count = 0;
@@ -1387,9 +1397,15 @@ bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
         if (tok->comment)
             continue;
         if (++count > maxsize)
-            return false;
+            return nullptr;
         prevTok = tok;
     }
+    return prevTok;
+}
+
+bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+{
+    const Token * const prevTok = lastLineTok(maxsize);
     return prevTok && prevTok->str()[0] == '#';
 }
 
