@@ -299,7 +299,7 @@ namespace simplecpp {
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
         std::string lastLine(int maxsize=1000) const;
-        bool isLastLinePreprocessor(int maxsize=100000) const;
+        bool isLastLinePreprocessor(int maxsize=1000) const;
 
         unsigned int fileIndex(const std::string &filename);
 
