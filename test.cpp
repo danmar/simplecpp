@@ -783,6 +783,15 @@ static void define_define_18()
     ASSERT_EQUALS("\n\n\n( ( p -> var ) ) ;", preprocess(code));
 }
 
+static void define_define_19() // #292
+{
+    const char code[] = "#define X 1,2,3\n"
+                        "#define Foo(A, B) A\n"
+                        "#define Bar Foo(X, 0)\n"
+                        "Bar\n";
+    ASSERT_EQUALS("\n\n\n1 , 2 , 3", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -1294,7 +1303,7 @@ static void has_include_1()
 static void has_include_2()
 {
     const char code[] = "#if defined( __has_include)\n"
-                        "  #if /*commant*/ __has_include /*comment*/(\"simplecpp.h\") // comment\n"
+                        "  #if /*comment*/ __has_include /*comment*/(\"simplecpp.h\") // comment\n"
                         "    A\n"
                         "  #else\n"
                         "    B\n"
@@ -2680,6 +2689,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_16);
     TEST_CASE(define_define_17);
     TEST_CASE(define_define_18);
+    TEST_CASE(define_define_19);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
