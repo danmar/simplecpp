@@ -820,6 +820,88 @@ static void define_va_args_4() // cppcheck trac #9754
     ASSERT_EQUALS("\nprintf ( 1 , 2 )", preprocess(code));
 }
 
+static void define_va_opt_1() 
+{
+    const char code[] = "#define p1(fmt, args...) printf(fmt __VA_OPT__(,) args)\n"
+                        "p1(\"hello\");\n"
+                        "p1(\"%s\", \"hello\");\n";
+
+    ASSERT_EQUALS("\nprintf ( \"hello\" ) ;\n"
+        "printf ( \"%s\" , \"hello\" ) ;",
+        preprocess(code));
+}
+
+static void define_va_opt_2() 
+{
+    const char code[] = "#define err(...)\\\n"
+                        "__VA_OPT__(\\\n"
+                        "printf(__VA_ARGS__);\\\n"
+                        ")\n"
+                        "#define err2(something, ...) __VA_OPT__(err(__VA_ARGS__))\n"
+                        "err2(test)\n"
+                        "err2(test, \"%d\", 2)\n";
+
+    ASSERT_EQUALS("\n\n\n\n\n\nprintf ( \"%d\" , 2 ) ;", preprocess(code));
+}
+
+static void define_va_opt_3()
+{
+    // non-escaped newline without closing parenthesis
+    const char code1[] = "#define err(...) __VA_OPT__(printf( __VA_ARGS__);\n"
+                         ")\n"
+                         "err()";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code1, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
+        toString(outputList));
+
+    outputList.clear();
+
+    // non-escaped newline without open parenthesis
+    const char code2[] = "#define err(...) __VA_OPT__\n"
+                         "(something)\n"
+                         "err()";
+
+    ASSERT_EQUALS("", preprocess(code2, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
+        toString(outputList));
+}
+
+static void define_va_opt_4() 
+{
+    // missing parenthesis
+    const char code1[] = "#define err(...) __VA_OPT__ something\n"
+                         "err()";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code1, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
+        toString(outputList));
+
+    outputList.clear();
+
+    // missing open parenthesis
+    const char code2[] = "#define err(...) __VA_OPT__ something)\n"
+                         "err()";
+
+    ASSERT_EQUALS("", preprocess(code2, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
+        toString(outputList));
+}
+
+static void define_va_opt_5()
+{
+    // parenthesis not directly proceeding __VA_OPT__
+    const char code[] = "#define err(...) __VA_OPT__ something (something)\n"
+                        "err()";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
+        toString(outputList));
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -2694,6 +2776,11 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
     TEST_CASE(define_va_args_4);
+    TEST_CASE(define_va_opt_1);
+    TEST_CASE(define_va_opt_2);
+    TEST_CASE(define_va_opt_3);
+    TEST_CASE(define_va_opt_4);
+    TEST_CASE(define_va_opt_5);
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);

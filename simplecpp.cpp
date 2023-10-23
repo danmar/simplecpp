@@ -1959,7 +1959,25 @@ namespace simplecpp {
             // Macro parameter..
             {
                 TokenList temp(files);
-                if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
+                if (tok->str() == "__VA_OPT__") {
+                    if (sameline(tok, tok->next) && tok->next->str() == "(") {
+                        tok = tok->next;
+                        int paren = 1;
+                        while (sameline(tok, tok->next)) {
+                            if (tok->next->str() == "(")
+                              ++paren;
+                            else if (tok->next->str() == ")")
+                              --paren;                            
+                            if (paren == 0)
+                              return tok->next->next;
+                            tok = tok->next;
+                            if (parametertokens.front()->next->str() != ")" && parametertokens.size() > args.size())
+                              tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens)->previous;
+                        }
+                    }
+                    throw Error(tok->location, "Missing parenthesis for __VA_OPT__(content)");
+                }
+                else if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
                     if (tok->str() == "__VA_ARGS__" && temp.empty() && output->cback() && output->cback()->str() == "," &&
                         tok->nextSkipComments() && tok->nextSkipComments()->str() == ")")
                         output->deleteToken(output->back());
