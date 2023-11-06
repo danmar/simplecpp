@@ -1977,7 +1977,7 @@ namespace simplecpp {
                     }
                     throw Error(tok->location, "Missing parenthesis for __VA_OPT__(content)");
                 }
-                else if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
+                if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
                     if (tok->str() == "__VA_ARGS__" && temp.empty() && output->cback() && output->cback()->str() == "," &&
                         tok->nextSkipComments() && tok->nextSkipComments()->str() == ")")
                         output->deleteToken(output->back());
