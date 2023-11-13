@@ -27,7 +27,6 @@
 #include <cassert>
 #include <cctype>
 #include <climits>
-#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
