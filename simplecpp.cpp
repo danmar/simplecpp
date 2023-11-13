@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cctype>
 #include <climits>
-#include <cstddef>
+#include <cstddef> // IWYU pragma: keep
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
