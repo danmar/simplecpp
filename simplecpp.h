@@ -180,7 +180,8 @@ namespace simplecpp {
             SYNTAX_ERROR,
             PORTABILITY_BACKSLASH,
             UNHANDLED_CHAR_ERROR,
-            EXPLICIT_INCLUDE_NOT_FOUND
+            EXPLICIT_INCLUDE_NOT_FOUND,
+            FILE_NOT_FOUND
         } type;
         Location location;
         std::string msg;

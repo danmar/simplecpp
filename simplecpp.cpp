@@ -385,7 +385,8 @@ public:
         , lastCh(0)
         , lastStatus(0)
     {
-        assert(file != nullptr);
+        if (file != nullptr)
+            throw simplecpp::Output::FILE_NOT_FOUND;
         init();
     }
 
@@ -442,8 +443,18 @@ simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &fi
 simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList)
         : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
-    FileStream stream(filename);
-    readfile(stream,filename,outputList);
+    try
+    {
+        FileStream stream(filename);
+        readfile(stream,filename,outputList);
+    }
+    catch(const simplecpp::Output::Type e) // TODO handle extra type of errors
+    {
+        simplecpp::Output err(files);
+        err.type = e;
+        err.msg = "File not found: " + filename;
+        outputList->push_back(err);
+    }
 }
 
 simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), backToken(nullptr), files(other.files)
