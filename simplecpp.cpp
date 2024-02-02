@@ -385,8 +385,10 @@ public:
         , lastCh(0)
         , lastStatus(0)
     {
-        if (file != nullptr)
-            throw simplecpp::Output::FILE_NOT_FOUND;
+        if (!file) {
+            std::vector<std::string> location;
+            throw simplecpp::Output(location, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
+        }
         init();
     }
 
@@ -448,12 +450,9 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
         FileStream stream(filename);
         readfile(stream,filename,outputList);
     }
-    catch(const simplecpp::Output::Type e) // TODO handle extra type of errors
+    catch(const simplecpp::Output e) // TODO handle extra type of errors
     {
-        simplecpp::Output err(files);
-        err.type = e;
-        err.msg = "File not found: " + filename;
-        outputList->push_back(err);
+        outputList->push_back(e);
     }
 }
 

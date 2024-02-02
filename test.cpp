@@ -71,6 +71,11 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
+static simplecpp::TokenList makeTokenListFromFile(std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
+{
+    return simplecpp::TokenList(filename, filenames, outputList);
+}
+
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
     std::istringstream istr(std::string(code, size));
@@ -150,6 +155,10 @@ static std::string toString(const simplecpp::OutputList &outputList)
             break;
         case simplecpp::Output::Type::EXPLICIT_INCLUDE_NOT_FOUND:
             ostr << "explicit_include_not_found,";
+            break;
+        case simplecpp::Output::Type::FILE_NOT_FOUND:
+            ostr << "file_not_found,";
+            break;
         }
 
         ostr << output.msg << '\n';
@@ -2374,6 +2383,14 @@ static void tokenMacro5()
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
 }
 
+static void makeTokenListNoFile()
+{
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    (void)makeTokenListFromFile(files, "NotAFile", &outputList);
+    ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
+}
+
 static void undef()
 {
     const char code[] = "#define A\n"
@@ -2899,6 +2916,8 @@ int main(int argc, char **argv)
     TEST_CASE(tokenMacro3);
     TEST_CASE(tokenMacro4);
     TEST_CASE(tokenMacro5);
+
+    TEST_CASE(makeTokenListNoFile);
 
     TEST_CASE(undef);
 
