@@ -386,7 +386,7 @@ public:
         , lastStatus(0)
     {
         if (!file) {
-            std::vector<std::string> location;
+            const std::vector<std::string> location;
             throw simplecpp::Output(location, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
         }
         init();
