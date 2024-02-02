@@ -166,6 +166,9 @@ int main(int argc, char **argv)
             case simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND:
                 std::cerr << "explicit include not found: ";
                 break;
+            case simplecpp::Output::FILE_NOT_FOUND:
+                std::cerr << "file not found: ";
+                break;
             }
             std::cerr << output.msg << std::endl;
         }
