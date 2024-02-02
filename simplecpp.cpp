@@ -450,7 +450,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
         FileStream stream(filename);
         readfile(stream,filename,outputList);
     }
-    catch(const simplecpp::Output e) // TODO handle extra type of errors
+    catch(const simplecpp::Output & e) // TODO handle extra type of errors
     {
         outputList->push_back(e);
     }

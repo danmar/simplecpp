@@ -71,11 +71,6 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
-static simplecpp::TokenList makeTokenListFromFile(std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
-{
-    return simplecpp::TokenList(filename, filenames, outputList);
-}
-
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
     std::istringstream istr(std::string(code, size));
@@ -2275,6 +2270,14 @@ static void readfile_error()
                   "X",readfile("#if !A\n#error\n#endif\nX\n"));
 }
 
+static void readfile_file_not_found()
+{
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    simplecpp::TokenList("NotAFile", files, &outputList);
+    ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
+}
+
 static void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -2381,14 +2384,6 @@ static void tokenMacro5()
     const simplecpp::Token * const tok = tokenList.cfront()->next;
     ASSERT_EQUALS("D", tok->str());
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
-}
-
-static void makeTokenListNoFile()
-{
-    simplecpp::OutputList outputList;
-    std::vector<std::string> files;
-    (void)makeTokenListFromFile(files, "NotAFile", &outputList);
-    ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
 }
 
 static void undef()
@@ -2908,6 +2903,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_cpp14_number);
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);
+    TEST_CASE(readfile_file_not_found);
 
     TEST_CASE(stringify1);
 
@@ -2916,8 +2912,6 @@ int main(int argc, char **argv)
     TEST_CASE(tokenMacro3);
     TEST_CASE(tokenMacro4);
     TEST_CASE(tokenMacro5);
-
-    TEST_CASE(makeTokenListNoFile);
 
     TEST_CASE(undef);
 
