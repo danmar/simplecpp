@@ -150,6 +150,10 @@ static std::string toString(const simplecpp::OutputList &outputList)
             break;
         case simplecpp::Output::Type::EXPLICIT_INCLUDE_NOT_FOUND:
             ostr << "explicit_include_not_found,";
+            break;
+        case simplecpp::Output::Type::FILE_NOT_FOUND:
+            ostr << "file_not_found,";
+            break;
         }
 
         ostr << output.msg << '\n';
@@ -2266,6 +2270,14 @@ static void readfile_error()
                   "X",readfile("#if !A\n#error\n#endif\nX\n"));
 }
 
+static void readfile_file_not_found()
+{
+    simplecpp::OutputList outputList;
+    std::vector<std::string> files;
+    (void)simplecpp::TokenList("NotAFile", files, &outputList);
+    ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
+}
+
 static void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -2891,6 +2903,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_cpp14_number);
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);
+    TEST_CASE(readfile_file_not_found);
 
     TEST_CASE(stringify1);
 
