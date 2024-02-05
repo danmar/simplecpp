@@ -9,13 +9,22 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+enum Input {
+    Stringstream,
+    Fstream,
+    File
+};
+
+static Input USE_INPUT = Stringstream;
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -32,11 +41,22 @@ static std::string pprint(const std::string &in)
     return ret;
 }
 
+static const char* inputString(Input input) {
+    switch (input) {
+        case Stringstream:
+            return "Stringstream";
+        case Fstream:
+            return "Fstream";
+        case File:
+            return "File";
+    }
+}
+
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
     if (expected != actual) {
         numberOfFailedAssertions++;
-        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "------ assertion failed (" << inputString(USE_INPUT) << ") ---------" << std::endl;
         std::cerr << "line " << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
@@ -71,10 +91,49 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
+static std::string writeFile(const char code[], std::size_t size, const std::string &filename) {
+    std::string tmpfile = filename.empty() ? "code.tmp" : filename;
+    {
+        std::ofstream of(tmpfile, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+        of.write(code, size);
+    }
+    return tmpfile;
+}
+
+static simplecpp::TokenList makeTokenListFromFstream(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename, simplecpp::OutputList *outputList)
+{
+    const std::string tmpfile = writeFile(code, size, filename);
+    std::ifstream fin(tmpfile);
+    if (!fin.is_open())
+        throw std::runtime_error("could not open " + tmpfile);
+    simplecpp::TokenList tokenList(fin, filenames, tmpfile, outputList);
+    remove(tmpfile.c_str());
+    return tokenList;
+}
+
+static simplecpp::TokenList makeTokenListFromFile(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename, simplecpp::OutputList *outputList)
+{
+    const std::string tmpfile = writeFile(code, size, filename);
+    std::ifstream fin(tmpfile);
+    if (!fin.is_open())
+        throw std::runtime_error("could not open " + tmpfile);
+    simplecpp::TokenList tokenList(tmpfile, filenames, outputList);
+    remove(tmpfile.c_str());
+    return tokenList;
+}
+
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
-    return simplecpp::TokenList(istr,filenames,filename,outputList);
+    switch (USE_INPUT) {
+        case Stringstream: {
+            std::istringstream istr(std::string(code, size));
+            return simplecpp::TokenList(istr, filenames, filename, outputList);
+        }
+        case Fstream:
+            return makeTokenListFromFstream(code, size, filenames, filename, outputList);
+        case File:
+            return makeTokenListFromFile(code, size, filenames, filename, outputList);
+    }
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
@@ -94,11 +153,11 @@ static std::string readfile(const char code[], std::size_t size, simplecpp::Outp
     return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, const std::string &file = std::string())
 {
     std::vector<std::string> files;
     std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::TokenList tokens = makeTokenList(code,files);
+    simplecpp::TokenList tokens = makeTokenList(code,files,file);
     tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, filedata, dui, outputList);
@@ -108,6 +167,11 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
 static std::string preprocess(const char code[])
 {
     return preprocess(code, simplecpp::DUI(), nullptr);
+}
+
+static std::string preprocess(const char code[], const std::string &file)
+{
+    return preprocess(code, simplecpp::DUI(), nullptr, file);
 }
 
 static std::string preprocess(const char code[], const simplecpp::DUI &dui)
@@ -180,7 +244,7 @@ static void backslash()
 
 static void builtin()
 {
-    ASSERT_EQUALS("\"\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__"));
+    ASSERT_EQUALS("\"test.c\" 1 0", preprocess("__FILE__ __LINE__ __COUNTER__", "test.c"));
     ASSERT_EQUALS("\n\n3", preprocess("\n\n__LINE__"));
     ASSERT_EQUALS("\n\n0", preprocess("\n\n__COUNTER__"));
     ASSERT_EQUALS("\n\n0 1", preprocess("\n\n__COUNTER__ __COUNTER__"));
@@ -2714,8 +2778,10 @@ static void token()
     ASSERT_TOKEN("+22", false, true, false);
 }
 
-int main(int argc, char **argv)
+static void runTests(int argc, char **argv, Input input)
 {
+    USE_INPUT = input;
+
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);
@@ -2939,6 +3005,12 @@ int main(int argc, char **argv)
     TEST_CASE(cpluscplusDefine);
 
     TEST_CASE(token);
+}
 
+int main(int argc, char **argv)
+{
+    runTests(argc, argv, Stringstream);
+    runTests(argc, argv, Fstream);
+    runTests(argc, argv, File);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
