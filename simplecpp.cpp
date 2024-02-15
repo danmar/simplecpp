@@ -3085,9 +3085,11 @@ static std::string getFileName(const std::map<std::string, simplecpp::TokenList 
         return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
     }
 
-    const std::string relativeFilename = getRelativeFileName(sourcefile, header);
-    if (!systemheader && filedata.find(relativeFilename) != filedata.end())
-        return relativeFilename;
+    if (!systemheader) {
+        const std::string relativeFilename = getRelativeFileName(sourcefile, header);
+        if (filedata.find(relativeFilename) != filedata.end())
+            return relativeFilename;
+    }
 
     for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
         std::string s = simplecpp::simplifyPath(getIncludePathFileName(*it, header));
