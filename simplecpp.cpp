@@ -31,6 +31,7 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
+#include <sys/stat.h>
 #if __cplusplus >= 201103L
 #ifdef SIMPLECPP_WINDOWS
 #include <mutex>
@@ -39,6 +40,12 @@
 #endif
 #include <utility>
 #include <vector>
+
+#ifdef _WIN32
+using mode_t = unsigned short;
+#else
+#include <sys/types.h>
+#endif
 
 #ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
@@ -3999,6 +4006,24 @@ std::string simplecpp::getCppStdString(cppstd_t std)
 std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
+}
+
+static mode_t file_type(const std::string &path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return 0;
+    return file_stat.st_mode & S_IFMT;
+}
+
+bool simplecpp::isFile(const std::string &path)
+{
+    return file_type(path) == S_IFREG;
+}
+
+bool simplecpp::isDirectory(const std::string &path)
+{
+    return file_type(path) == S_IFDIR;
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
