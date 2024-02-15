@@ -1776,6 +1776,44 @@ static void missingHeader3()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+#ifndef _WIN32
+static void missingHeader4()
+{
+    // this is a directory
+    const char code[] = "#include \"/\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/\"\n", toString(outputList));
+}
+
+static void missingHeader5()
+{
+    // this is a directory
+    const char code[] = "#include \"/usr\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/usr\"\n", toString(outputList));
+}
+
+static void missingHeader6()
+{
+    // this is a directory
+    const char code[] = "#include </>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </>\n", toString(outputList));
+}
+
+static void missingHeader7()
+{
+    // this is a directory
+    const char code[] = "#include </usr>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </usr>\n", toString(outputList));
+}
+#endif
+
 static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
@@ -2914,6 +2952,12 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
+#ifndef _WIN32
+    TEST_CASE(missingHeader4);
+    TEST_CASE(missingHeader5);
+    TEST_CASE(missingHeader6);
+    TEST_CASE(missingHeader7);
+#endif
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
 
