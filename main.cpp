@@ -121,6 +121,10 @@ int main(int argc, char **argv)
             std::cout << "error: could not open file '" << filename << "'" << std::endl;
             std::exit(1);
         }
+        if (!simplecpp::isFile(filename)) {
+            std::cout << "error: could not open file '" << filename << "' - not a regular file" << std::endl;
+            std::exit(1);
+        }
         rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
     } else {
         rawtokens = new simplecpp::TokenList(filename,files,&outputList);
