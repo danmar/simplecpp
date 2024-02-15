@@ -38,6 +38,7 @@ Checks: >
         -modernize-use-override,
         -modernize-use-trailing-return-type,
         -modernize-use-using,
+        -readability-avoid-nested-conditional-operator,
         -readability-braces-around-statements,
         -readability-function-cognitive-complexity,
         -readability-function-size,
