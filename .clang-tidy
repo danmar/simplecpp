@@ -45,6 +45,7 @@ Checks: >
         -readability-identifier-length,
         -readability-isolate-declaration,
         -readability-magic-numbers,
+        -readability-redundant-inline-specifier,
         -readability-simplify-boolean-expr,
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
