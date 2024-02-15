@@ -400,6 +400,20 @@ namespace simplecpp {
         bool removeComments{}; /** remove comment tokens from included files */
     };
 
+    /**
+     * @brief Checks if given path is a file
+     * @param path Path to be checked
+     * @return true if given path is a file
+     */
+    SIMPLECPP_LIB bool isFile(const std::string &path);
+
+    /**
+     * @brief Checks if a given path is a directory
+     * @param path Path to be checked
+     * @return true if given path is a directory
+     */
+    SIMPLECPP_LIB bool isDirectory(const std::string &path);
+
     struct SIMPLECPP_LIB FileData {
         /** The canonical filename associated with this data */
         std::string filename;
