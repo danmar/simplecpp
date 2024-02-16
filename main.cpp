@@ -11,7 +11,6 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 int main(int argc, char **argv)
@@ -110,6 +109,8 @@ int main(int argc, char **argv)
         std::exit(0);
     }
 
+    dui.removeComments = true;
+
     // Perform preprocessing
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
@@ -126,11 +127,10 @@ int main(int argc, char **argv)
         rawtokens = new simplecpp::TokenList(filename,files,&outputList);
     }
     rawtokens->removeComments();
-    std::map<std::string, simplecpp::TokenList*> included = simplecpp::load(*rawtokens, files, dui, &outputList);
-    for (std::pair<std::string, simplecpp::TokenList *> i : included)
-        i.second->removeComments();
     simplecpp::TokenList outputTokens(files);
-    simplecpp::preprocess(outputTokens, *rawtokens, files, included, dui, &outputList);
+    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
+    simplecpp::cleanup(filedata);
     delete rawtokens;
     rawtokens = nullptr;
 
@@ -173,9 +173,6 @@ int main(int argc, char **argv)
             std::cerr << output.msg << std::endl;
         }
     }
-
-    // cleanup included tokenlists
-    simplecpp::cleanup(included);
 
     return 0;
 }
