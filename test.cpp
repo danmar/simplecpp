@@ -3221,6 +3221,16 @@ static void fuzz_crash()
     }
 }
 
+static void leak()
+{
+    const char code[] = "#include</\\\\>\n"
+                        "#include</\\\\>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </\\\\>\n"
+                  "file0,2,missing_header,Header not found: </\\\\>\n", toString(outputList));
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -3480,6 +3490,8 @@ int main(int argc, char **argv)
     TEST_CASE(preprocess_files);
 
     TEST_CASE(fuzz_crash);
+
+    TEST_CASE(leak);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
