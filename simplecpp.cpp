@@ -1984,7 +1984,7 @@ namespace simplecpp {
                             if (paren == 0)
                               return tok->next->next;
                             tok = tok->next;
-                            if (parametertokens.front()->next->str() != ")" && parametertokens.size() > args.size())
+                            if (parametertokens.size() > args.size() && parametertokens.front()->next->str() != ")")
                               tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens)->previous;
                         }
                     }
