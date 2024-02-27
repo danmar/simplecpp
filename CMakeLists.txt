@@ -28,6 +28,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # ignore C++11-specific warning
     add_compile_options(-Wno-suggest-override -Wno-suggest-destructor-override)
+    # contradicts -Wcovered-switch-default
+    add_compile_options(-Wno-switch-default)
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
 
