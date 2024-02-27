@@ -2714,6 +2714,15 @@ static void token()
     ASSERT_TOKEN("+22", false, true, false);
 }
 
+static void fuzz_crash()
+{
+    {
+        const char code[] = "#define n __VA_OPT__(u\n"
+                            "n\n";
+        (void)preprocess(code, simplecpp::DUI()); // do not crash
+    }
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -2939,6 +2948,8 @@ int main(int argc, char **argv)
     TEST_CASE(cpluscplusDefine);
 
     TEST_CASE(token);
+
+    TEST_CASE(fuzz_crash);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
