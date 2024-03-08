@@ -3145,6 +3145,8 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
             continue;
         }
 
+        if (dui.removeComments)
+            tokenlist->removeComments();
         ret[filename] = tokenlist;
         filelist.push_back(tokenlist->front());
     }
@@ -3180,6 +3182,8 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         f.close();
 
         TokenList *tokens = new TokenList(header2, filenames, outputList);
+        if (dui.removeComments)
+            tokens->removeComments();
         ret[header2] = tokens;
         if (tokens->front())
             filelist.push_back(tokens->front());
@@ -3448,6 +3452,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     header2 = openHeader(f, dui, rawtok->location.file(), header, systemheader);
                     if (f.is_open()) {
                         TokenList * const tokens = new TokenList(f, files, header2, outputList);
+                        if (dui.removeComments)
+                            tokens->removeComments();
                         filedata[header2] = tokens;
                     }
                 }
