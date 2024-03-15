@@ -2656,6 +2656,22 @@ static void cpluscplusDefine()
     ASSERT_EQUALS("\n201103L", preprocess(code, dui));
 }
 
+static void invalidStd()
+{
+    const char code[] = "";
+    simplecpp::DUI dui;
+    dui.std = "c88";
+    ASSERT_THROW(preprocess(code, dui), std::runtime_error);
+    dui.std = "gnu88";
+    ASSERT_THROW(preprocess(code, dui), std::runtime_error);
+    dui.std = "d99";
+    ASSERT_THROW(preprocess(code, dui), std::runtime_error);
+    dui.std = "c++77";
+    ASSERT_THROW(preprocess(code, dui), std::runtime_error);
+    dui.std = "gnu++33";
+    ASSERT_THROW(preprocess(code, dui), std::runtime_error);
+}
+
 static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
@@ -2946,6 +2962,7 @@ int main(int argc, char **argv)
 
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
+    TEST_CASE(invalidStd);
 
     TEST_CASE(token);
 
