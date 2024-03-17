@@ -2614,11 +2614,20 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
 }
 
 /** Evaluate __has_include(file) */
+static bool isCpp17OrLater(const simplecpp::DUI &dui)
+{
+    const std::string std_ver = simplecpp::getCppStdString(dui.std);
+    return !std_ver.empty() && (std_ver >= "201703L");
+}
+
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
+    if (!isCpp17OrLater(dui))
+        return;
+
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
-        if (tok->str() != "__has_include")
+        if (tok->str() != HAS_INCLUDE)
             continue;
         simplecpp::Token *tok1 = tok->next;
         if (!tok1) {
@@ -3274,7 +3283,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
     sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
 
-    const bool hasInclude = (dui.std.size() == 5 && dui.std.compare(0,3,"c++") == 0 && dui.std >= "c++17");
+    const bool hasInclude = isCpp17OrLater(dui);
     MacroMap macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
