@@ -21,7 +21,8 @@
 enum Input {
     Stringstream,
     Fstream,
-    File
+    File,
+    CharBuffer
 };
 
 static Input USE_INPUT = Stringstream;
@@ -49,6 +50,8 @@ static const char* inputString(Input input) {
             return "Fstream";
         case File:
             return "File";
+        case CharBuffer:
+            return "CharBuffer";
     }
 }
 
@@ -133,6 +136,8 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
             return makeTokenListFromFstream(code, size, filenames, filename, outputList);
         case File:
             return makeTokenListFromFile(code, size, filenames, filename, outputList);
+        case CharBuffer:
+            return simplecpp::TokenList(code, size, filenames, filename, outputList);
     }
 }
 
@@ -3023,5 +3028,6 @@ int main(int argc, char **argv)
     runTests(argc, argv, Stringstream);
     runTests(argc, argv, Fstream);
     runTests(argc, argv, File);
+    runTests(argc, argv, CharBuffer);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
