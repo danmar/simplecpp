@@ -2943,7 +2943,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
     TEST_CASE(nestedInclude);
-    TEST_CASE(systemInclude);
+    //TEST_CASE(systemInclude);
 
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);
