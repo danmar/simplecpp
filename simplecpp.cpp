@@ -377,6 +377,42 @@ private:
     std::istream &istr;
 };
 
+class StdCharBufStream : public simplecpp::TokenList::Stream {
+public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    StdCharBufStream(const unsigned char* str, std::size_t size)
+        : str(str)
+        , size(size)
+        , pos(0)
+        , lastStatus(0)
+    {
+        init();
+    }
+
+    virtual int get() OVERRIDE {
+        if (pos >= size)
+            return lastStatus = EOF;
+        return str[pos++];
+    }
+    virtual int peek() OVERRIDE {
+        if (pos >= size)
+            return lastStatus = EOF;
+        return str[pos];
+    }
+    virtual void unget() OVERRIDE {
+        --pos;
+    }
+    virtual bool good() OVERRIDE {
+        return lastStatus != EOF;
+    }
+
+private:
+    const unsigned char *str;
+    const std::size_t size;
+    std::size_t pos;
+    int lastStatus;
+};
+
 class FileStream : public simplecpp::TokenList::Stream {
 public:
     // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
