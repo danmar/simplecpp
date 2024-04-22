@@ -272,6 +272,10 @@ namespace simplecpp {
         /** sizeof(T) */
         std::map<std::string, std::size_t> sizeOfType;
 
+        const std::vector<std::string>& getFiles() const {
+            return files;
+        }
+
     private:
         void combineOperators();
 
