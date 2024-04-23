@@ -2720,7 +2720,7 @@ static void preprocess_files()
         const char code[] = "#define A";
         std::vector<std::string> files;
 
-        simplecpp::TokenList tokens = makeTokenList(code, files);
+        const simplecpp::TokenList tokens = makeTokenList(code, files);
         ASSERT_EQUALS(1, files.size());
         ASSERT_EQUALS("", *files.cbegin());
 
@@ -2737,7 +2737,7 @@ static void preprocess_files()
         const char code[] = "#define A";
         std::vector<std::string> files;
 
-        simplecpp::TokenList tokens = makeTokenList(code, files, "test.cpp");
+        const simplecpp::TokenList tokens = makeTokenList(code, files, "test.cpp");
         ASSERT_EQUALS(1, files.size());
         ASSERT_EQUALS("test.cpp", *files.cbegin());
 
