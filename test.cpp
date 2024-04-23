@@ -2714,6 +2714,44 @@ static void token()
     ASSERT_TOKEN("+22", false, true, false);
 }
 
+static void preprocess_files()
+{
+    {
+        const char code[] = "#define A";
+        std::vector<std::string> files;
+
+        const simplecpp::TokenList tokens = makeTokenList(code, files);
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("", *files.cbegin());
+
+        simplecpp::TokenList tokens2(files);
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("", *files.cbegin());
+
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::preprocess(tokens2, tokens, files, filedata, simplecpp::DUI(), nullptr);
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("", *files.cbegin());
+    }
+    {
+        const char code[] = "#define A";
+        std::vector<std::string> files;
+
+        const simplecpp::TokenList tokens = makeTokenList(code, files, "test.cpp");
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("test.cpp", *files.cbegin());
+
+        simplecpp::TokenList tokens2(files);
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("test.cpp", *files.cbegin());
+
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::preprocess(tokens2, tokens, files, filedata, simplecpp::DUI(), nullptr);
+        ASSERT_EQUALS(1, files.size());
+        ASSERT_EQUALS("test.cpp", *files.cbegin());
+    }
+}
+
 static void fuzz_crash()
 {
     {
@@ -2948,6 +2986,8 @@ int main(int argc, char **argv)
     TEST_CASE(cpluscplusDefine);
 
     TEST_CASE(token);
+
+    TEST_CASE(preprocess_files);
 
     TEST_CASE(fuzz_crash);
 
