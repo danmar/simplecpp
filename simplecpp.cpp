@@ -3463,7 +3463,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     std::ifstream f;
                     header2 = openHeader(f, dui, rawtok->location.file(), header, systemheader);
                     if (f.is_open()) {
-                        TokenList * const tokens = new TokenList(f, files, header2, outputList);
+                        f.close();
+                        TokenList * const tokens = new TokenList(header2, files, outputList);
                         if (dui.removeComments)
                             tokens->removeComments();
                         filedata[header2] = tokens;
