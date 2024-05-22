@@ -181,7 +181,8 @@ namespace simplecpp {
             PORTABILITY_BACKSLASH,
             UNHANDLED_CHAR_ERROR,
             EXPLICIT_INCLUDE_NOT_FOUND,
-            FILE_NOT_FOUND
+            FILE_NOT_FOUND,
+            DUI_ERROR
         } type;
         explicit Output(const std::vector<std::string>& files, Type type, const std::string& msg) : type(type), location(files), msg(msg) {}
         Location location;

@@ -3315,8 +3315,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy)));
         } else {
             std_def = simplecpp::getCppStdString(dui.std);
-            if (!std_def.empty())
-                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
+            if (std_def.empty()) {
+                if (outputList) {
+                    simplecpp::Output err(files);
+                    err.type = Output::DUI_ERROR;
+                    err.msg = "unknown standard specified: '" + dui.std + "'";
+                    outputList->push_back(err);
+                }
+                output.clear();
+                return;
+            }
+            macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
         }
     }
 
