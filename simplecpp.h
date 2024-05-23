@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  * simplecpp - A simple and high-fidelity C/C++ preprocessor library
  * Copyright (C) 2016-2023 simplecpp team
  */
