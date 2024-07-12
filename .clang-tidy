@@ -17,6 +17,7 @@ Checks: >
         -objc-*,
         -openmp-*,
         -zircon-*,
+        -boost-use-ranges,
         -bugprone-branch-clone,
         -bugprone-easily-swappable-parameters,
         -bugprone-narrowing-conversions,
