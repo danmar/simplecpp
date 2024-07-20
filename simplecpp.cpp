@@ -22,6 +22,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <istream>
 #include <limits>
 #include <list>
 #include <map>
