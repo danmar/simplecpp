@@ -373,6 +373,20 @@ namespace simplecpp {
 
     /** Returns the __cplusplus value for a given standard */
     SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
+
+    /**
+     * @brief Checks if given path is a file
+     * @param path Path to be checked
+     * @return true if given path is a file
+     */
+    SIMPLECPP_LIB bool isFile(const std::string &path);
+
+    /**
+     * @brief Checks if a given path is a directory
+     * @param path Path to be checked
+     * @return true if given path is a directory
+     */
+    SIMPLECPP_LIB bool isDirectory(const std::string &path);
 }
 
 #if defined(_MSC_VER)
