@@ -43,6 +43,8 @@
 #ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
 #undef ERROR
+#else
+#include <unistd.h>
 #endif
 
 #if __cplusplus >= 201103L
@@ -3087,11 +3089,29 @@ static std::string openHeader(std::ifstream &f, const std::string &path)
     return "";
 }
 
+static std::string currentDirectory() {
+#ifdef SIMPLECPP_WINDOWS
+    TCHAR NPath[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, NPath);
+    return NPath;
+#else
+    const std::size_t size = 1024;
+    char the_path[size];
+    getcwd(the_path, size);
+    return the_path;
+#endif
+}
+
 static std::string getRelativeFileName(const std::string &sourcefile, const std::string &header)
 {
+    std::string path;
     if (sourcefile.find_first_of("\\/") != std::string::npos)
-        return simplecpp::simplifyPath(sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header);
-    return simplecpp::simplifyPath(header);
+        path = sourcefile.substr(0, sourcefile.find_last_of("\\/") + 1U) + header;
+    else
+        path = header;
+    if (!isAbsolutePath(path))
+        path = currentDirectory() + "/" + path;
+    return simplecpp::simplifyPath(path);
 }
 
 static std::string openHeaderRelative(std::ifstream &f, const std::string &sourcefile, const std::string &header)
@@ -3102,6 +3122,8 @@ static std::string openHeaderRelative(std::ifstream &f, const std::string &sourc
 static std::string getIncludePathFileName(const std::string &includePath, const std::string &header)
 {
     std::string path = includePath;
+    if (!isAbsolutePath(includePath))
+        path = currentDirectory() + "/" + path;
     if (!path.empty() && path[path.size()-1U]!='/' && path[path.size()-1U]!='\\')
         path += '/';
     return path + header;
@@ -3141,7 +3163,8 @@ static std::string getFileName(const std::map<std::string, simplecpp::TokenList 
         return "";
     }
     if (isAbsolutePath(header)) {
-        return (filedata.find(header) != filedata.end()) ? simplecpp::simplifyPath(header) : "";
+	const std::string simplifiedHeaderPath = simplecpp::simplifyPath(header);
+        return (filedata.find(simplifiedHeaderPath) != filedata.end()) ? simplifiedHeaderPath : "";
     }
 
     if (!systemheader) {
