@@ -1829,6 +1829,25 @@ static void missingHeader3()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void missingHeader4()
+{
+    const char code[] = R"_(
+        #pragma once "^boost/"
+        #pragma once "^google/protobuf/"
+        #pragma once "\.pb\.h$"
+        #pragma once "^inc/"i
+        #include "boost/config/workaround.hpp"
+        #include "google/protobuf/stubs/port.h"
+        #include "proto/message.pb.h"
+        #include "inc/lowercase.h"
+        #include "Inc/MixedCase.h"
+        #include "INC/UPPERCASE.H"
+    )_"; // none of the given files are included
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
@@ -3057,6 +3076,7 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
+    TEST_CASE(missingHeader4);
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
 

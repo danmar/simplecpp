@@ -26,6 +26,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -3382,6 +3383,15 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
     std::set<std::string> pragmaOnce;
 
+    // Support an odd #pragma once usage to prevent unwanted inclusions from happening even once
+    // Example:
+    // #ifdef CPPCHECK
+    // #   pragma once "^boost/"
+    // #   pragma once "^google/protobuf/"
+    // #   pragma once "\.pb\.h$"
+    // #endif
+    std::map<std::string, std::regex> pragmaOddOnce;
+
     includetokenstack.push(rawtokens.cfront());
     for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
         const std::map<std::string, TokenList*>::const_iterator f = filedata.find(*it);
@@ -3508,6 +3518,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 const bool systemheader = (inctok->str()[0] == '<');
                 const std::string header(realFilename(inctok->str().substr(1U, inctok->str().size() - 2U)));
+                if (std::find_if(pragmaOddOnce.begin(), pragmaOddOnce.end(), [&header](auto r) { return std::regex_search(header, r.second); }) != pragmaOddOnce.end()) {
+                    rawtok = gotoNextLine(rawtok);
+                    continue;
+                }
                 std::string header2 = getFileName(filedata, rawtok->location.file(), header, dui, systemheader);
                 if (header2.empty()) {
                     // try to load file..
@@ -3708,7 +3722,29 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         macros.erase(tok->str());
                 }
             } else if (ifstates.top() == True && rawtok->str() == PRAGMA && rawtok->next && rawtok->next->str() == ONCE && sameline(rawtok,rawtok->next)) {
-                pragmaOnce.insert(rawtok->location.file());
+                std::string regex;
+                for (const Token *inctok = rawtok->next; sameline(rawtok, inctok = inctok->next); ) {
+                    if (!inctok->comment)
+                        regex += inctok->str();
+                }
+                if (!regex.empty()) {
+                    std::regex_constants::syntax_option_type options = std::regex_constants::ECMAScript;
+                    while (regex.back() != regex.front()) {
+                        switch (regex.back()) {
+                        case 'i':
+                            options |= std::regex_constants::icase;
+                            break;
+                        default:
+                            break;
+                        }
+                        regex.pop_back();
+                    }
+                    if (size_t const len = regex.length() - 1) {
+                        pragmaOddOnce[regex] = std::regex(regex.c_str() + 1, len - 1, options);
+                    }
+                } else {
+                    pragmaOnce.insert(rawtok->location.file());
+                }
             }
             rawtok = gotoNextLine(rawtok);
             continue;
