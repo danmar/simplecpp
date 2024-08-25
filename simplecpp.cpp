@@ -2178,7 +2178,7 @@ namespace simplecpp {
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
                 throw invalidHashHash::unexpectedNewline(tok->location, name());
 
-            const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
+            const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^=!<>") || A->str() == "<<" || A->str() == ">>";
             const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
             if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
                 throw invalidHashHash::unexpectedToken(tok->location, name(), A);

@@ -1155,6 +1155,10 @@ static void hashhash9()
                         "ADD_OPERATOR(&);\n"
                         "ADD_OPERATOR(|);\n"
                         "ADD_OPERATOR(^);\n"
+                        "ADD_OPERATOR(=);\n"
+                        "ADD_OPERATOR(!);\n"
+                        "ADD_OPERATOR(<);\n"
+                        "ADD_OPERATOR(>);\n"
                         "ADD_OPERATOR(<<);\n"
                         "ADD_OPERATOR(>>);\n";
     const char expected[] = "\n"
@@ -1166,6 +1170,10 @@ static void hashhash9()
                             "void operator &= ( void ) { x = x & 1 ; } ;\n"
                             "void operator |= ( void ) { x = x | 1 ; } ;\n"
                             "void operator ^= ( void ) { x = x ^ 1 ; } ;\n"
+                            "void operator == ( void ) { x = x = 1 ; } ;\n"
+                            "void operator != ( void ) { x = x ! 1 ; } ;\n"
+                            "void operator <= ( void ) { x = x < 1 ; } ;\n"
+                            "void operator >= ( void ) { x = x > 1 ; } ;\n"
                             "void operator <<= ( void ) { x = x << 1 ; } ;\n"
                             "void operator >>= ( void ) { x = x >> 1 ; } ;";
     ASSERT_EQUALS(expected, preprocess(code));
@@ -1374,7 +1382,7 @@ static void hashhash_invalid_string_number()
         "#define BAD(x) x##12345\nBAD(\"ABC\")";
 
     simplecpp::OutputList outputList;
-    preprocess(code, simplecpp::DUI(), &outputList);
+    preprocess(code, &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Combining '\"ABC\"' and '12345' yields an invalid token.\n", toString(outputList));
 }
 
@@ -1384,7 +1392,7 @@ static void hashhash_invalid_missing_args()
         "#define BAD(x) ##x\nBAD()";
 
     simplecpp::OutputList outputList;
-    preprocess(code, simplecpp::DUI(), &outputList);
+    preprocess(code, &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'BAD', Invalid ## usage when expanding 'BAD': Missing first argument\n", toString(outputList));
 }
 
@@ -1405,7 +1413,7 @@ static void hashhash_universal_character()
     const char code[] =
         "#define A(x,y) x##y\nint A(\\u01,04);";
     simplecpp::OutputList outputList;
-    preprocess(code, simplecpp::DUI(), &outputList);
+    preprocess(code, &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '\\u01' and '04' yields universal character '\\u0104'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.\n", toString(outputList));
 }
 
@@ -2915,7 +2923,7 @@ static void fuzz_crash()
     {
         const char code[] = "#define n __VA_OPT__(u\n"
                             "n\n";
-        (void)preprocess(code, simplecpp::DUI()); // do not crash
+        (void)preprocess(code); // do not crash
     }
 }
 
