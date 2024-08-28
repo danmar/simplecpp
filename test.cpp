@@ -717,6 +717,17 @@ static void define_define_11()
     ASSERT_EQUALS("\n\n\n\nP2DIR ;", preprocess(code));
 }
 
+static void define_define_11a()
+{
+    const char code[] = "#define A_B_C              0x1\n"
+                        "#define A_ADDRESS          0x00001000U\n"
+                        "#define A                  ((uint32_t ) A_ADDRESS)\n"
+                        "#define CONCAT(x, y, z)    x ## _ ## y ## _ ## z\n"
+                        "#define TEST_MACRO         CONCAT(A, B, C)\n"
+                        "TEST_MACRO\n";
+    ASSERT_EQUALS("\n\n\n\n\n0x1", preprocess(code));
+}
+
 static void define_define_12()
 {
     const char code[] = "#define XY(Z)  Z\n"
@@ -2855,6 +2866,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_9); // line break in nested macro call
     TEST_CASE(define_define_10);
     TEST_CASE(define_define_11);
+    TEST_CASE(define_define_11a);
     TEST_CASE(define_define_12); // expand result of ##
     TEST_CASE(define_define_13);
     TEST_CASE(define_define_14);
