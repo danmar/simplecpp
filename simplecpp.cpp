@@ -2140,7 +2140,8 @@ namespace simplecpp {
          */
         const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             TokenList tokenListHash(files);
-            tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros, parametertokens);
+            const MacroMap macros2; // temporarily bypass macro expansion
+            tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
             std::ostringstream ostr;
             ostr << '\"';
             for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next)

@@ -1030,6 +1030,11 @@ static void hash()
                   preprocess("#define A(x)  (x)\n"
                              "#define B(x)  A(#x)\n"
                              "B(123)"));
+
+    ASSERT_EQUALS("\n\nprintf ( \"bar(3)\" \"\\n\" ) ;",
+                  preprocess("#define bar(x) x % 2\n"
+                             "#define foo(x) printf(#x \"\\n\")\n"
+                             "foo(bar(3));"));
 }
 
 static void hashhash1()   // #4703
