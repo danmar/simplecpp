@@ -1895,6 +1895,14 @@ namespace simplecpp {
                     if (sameline(tok, tok->next) && tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
                         if (!sameline(tok, tok->next->next->next))
                             throw invalidHashHash::unexpectedNewline(tok->location, name());
+                        if (variadic && tok->op == ',' && tok->next->next->next->str() == args.back()) {
+                            Token *const comma = newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok);
+                            output->push_back(comma);
+                            tok = expandToken(output, loc, tok->next->next->next, macros, expandedmacros, parametertokens2);
+                            if (output->back() == comma)
+                                output->deleteToken(comma);
+                            continue;
+                        }
                         TokenList new_output(files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));

@@ -1074,6 +1074,16 @@ static void hashhash4()    // nonstandard gcc/clang extension for empty varargs
     ASSERT_EQUALS("\n\na ( 1 ) ;", preprocess(code));
 }
 
+static void hashhash4a()
+{
+    const char code[] = "#define GETMYID(a) ((a))+1\n"
+                        "#define FIGHT_FOO(c, ...) foo(c, ##__VA_ARGS__)\n"
+                        "#define FIGHT_BAR(c, args...) bar(c, ##args)\n"
+                        "FIGHT_FOO(1, GETMYID(a));\n"
+                        "FIGHT_BAR(1, GETMYID(b));";
+    ASSERT_EQUALS("\n\n\nfoo ( 1 , ( ( a ) ) + 1 ) ;\nbar ( 1 , ( ( b ) ) + 1 ) ;", preprocess(code));
+}
+
 static void hashhash5()
 {
     ASSERT_EQUALS("x1", preprocess("x##__LINE__"));
@@ -2909,6 +2919,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash2);
     TEST_CASE(hashhash3);
     TEST_CASE(hashhash4);
+    TEST_CASE(hashhash4a); // #66, #130
     TEST_CASE(hashhash5);
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
