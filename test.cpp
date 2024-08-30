@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -2593,8 +2596,8 @@ static void simplifyPath_cppcheck()
     ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/../"));
 
     // Handling of UNC paths on Windows
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("///src/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("//" STRINGIZE(UNCHOST) "/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("///" STRINGIZE(UNCHOST) "/test.cpp"));
 }
 
 static void simplifyPath_New()
