@@ -1786,7 +1786,7 @@ namespace simplecpp {
                     // A##B => AB
                     tok = expandHashHash(tokens, rawloc, tok, macros, expandedmacros, parametertokens);
                 } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
-                    tok = expandHash(tokens, rawloc, tok, macros, expandedmacros, parametertokens);
+                    tok = expandHash(tokens, rawloc, tok, expandedmacros, parametertokens);
                 } else {
                     if (!expandArg(tokens, tok, rawloc, macros, expandedmacros, parametertokens)) {
                         tokens->push_back(new Token(*tok));
@@ -1947,7 +1947,7 @@ namespace simplecpp {
                     tok = expandHashHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
                 } else {
                     // #123 => "123"
-                    tok = expandHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
+                    tok = expandHash(output, loc, tok->previous, expandedmacros, parametertokens2);
                 }
             }
 
@@ -2141,12 +2141,11 @@ namespace simplecpp {
          * @param output  destination tokenlist
          * @param loc     location for expanded token
          * @param tok     The # token
-         * @param macros  all macros
          * @param expandedmacros   set with expanded macros, with this macro
          * @param parametertokens  parameters given when expanding this macro
          * @return token after the X
          */
-        const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             TokenList tokenListHash(files);
             const MacroMap macros2; // temporarily bypass macro expansion
             tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
