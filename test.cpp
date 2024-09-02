@@ -47,7 +47,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+static int assertEquals(const long long &expected, const long long &actual, int line)
 {
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
 }
@@ -1038,6 +1038,12 @@ static void hash()
                   preprocess("#define bar(x) x % 2\n"
                              "#define foo(x) printf(#x \"\\n\")\n"
                              "foo(bar(3));"));
+
+    ASSERT_EQUALS("\n\n\n\"Y Y\"",
+                  preprocess("#define X(x,y)    x y\n"
+                             "#define STR_(x)   #x\n"
+                             "#define STR(x)    STR_(x)\n"
+                             "STR(X(Y,Y))"));
 }
 
 static void hashhash1()   // #4703

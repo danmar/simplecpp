@@ -886,7 +886,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
 
             if (prefix.empty())
-                push_back(new Token(s, location)); // push string without newlines
+                push_back(new Token(s, location, isspace(stream.peekChar()))); // push string without newlines
             else
                 back()->setstr(prefix + s);
 
@@ -916,7 +916,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
         }
 
-        push_back(new Token(currentToken, location));
+        push_back(new Token(currentToken, location, isspace(stream.peekChar())));
 
         if (multiline)
             location.col += currentToken.size();
@@ -1546,9 +1546,9 @@ namespace simplecpp {
                 // Copy macro call to a new tokenlist with no linebreaks
                 const Token * const rawtok1 = rawtok;
                 TokenList rawtokens2(inputFiles);
-                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                 rawtok = rawtok->next;
-                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                 rawtok = rawtok->next;
                 int par = 1;
                 while (rawtok && par > 0) {
@@ -1558,7 +1558,7 @@ namespace simplecpp {
                         --par;
                     else if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok))
                         throw Error(rawtok->location, "it is invalid to use a preprocessor directive as macro parameter");
-                    rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                    rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                     rawtok = rawtok->next;
                 }
                 if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
@@ -2128,6 +2128,8 @@ namespace simplecpp {
                     partok = partok->next;
                 }
             }
+            if (tok->whitespaceahead && output->back())
+                output->back()->whitespaceahead = true;
             return true;
         }
 
@@ -2146,8 +2148,12 @@ namespace simplecpp {
             tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
             std::ostringstream ostr;
             ostr << '\"';
-            for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next)
+            for (const Token *hashtok = tokenListHash.cfront(), *next; hashtok; hashtok = next) {
+                next = hashtok->next;
                 ostr << hashtok->str();
+                if (next && hashtok->whitespaceahead)
+                    ostr << ' ';
+            }
             ostr << '\"';
             output->push_back(newMacroToken(escapeString(ostr.str()), loc, isReplaced(expandedmacros)));
             return tok;
