@@ -26,7 +26,6 @@
 #include <limits>
 #include <list>
 #include <map>
-#include <regex>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -3293,6 +3292,40 @@ static std::string getTimeDefine(const struct tm *timep)
     return std::string("\"").append(buf).append("\"");
 }
 
+// Reuse some code from https://compressionratings.com/d_archiver_template.html
+// SPDX-License-Identifier: CC0-1.0
+class simplecpp::Mask : public std::string {
+public:
+    explicit Mask(const std::string &s) : std::string(s), i(false) {
+        if (size_t len = length()) {
+            while (at(--len) != at(0)) {
+                switch (at(len)) {
+                case 'i':
+                    i = true;
+                    break;
+                default:
+                    break;
+                }
+            }
+            resize(len);
+            if (len)
+                erase(0, 1);
+        }
+    }
+    bool match(const char *s) const {
+        return (i ? fnmatch<std::tolower> : fnmatch<identity>)(ustr(c_str()), ustr(s)) == 0;
+    }
+private:
+    typedef const unsigned char *ustr;
+    static int identity(int x) { return x; }
+    template<int(*normalize)(int)>
+    static int fnmatch(ustr m, ustr s) {
+        if (*m == '*') for (++m; *s; ++s) if (!fnmatch<normalize>(m, s)) return 0;
+        return (!*s || !(normalize(*s) == normalize(*m) || *m == '?')) ? *m | *s : fnmatch<normalize>(++m, ++s);
+    }
+    bool i; // whether to ignore character case
+};
+
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
 {
 #ifdef SIMPLECPP_WINDOWS
@@ -3386,11 +3419,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     // Support an odd #pragma once usage to prevent unwanted inclusions from happening even once
     // Example:
     // #ifdef CPPCHECK
-    // #   pragma once "^boost/"
-    // #   pragma once "^google/protobuf/"
-    // #   pragma once "\.pb\.h$"
+    // #   pragma once "boost/*"
+    // #   pragma once "google/protobuf/*"
+    // #   pragma once "*.pb.h"
     // #endif
-    std::map<std::string, std::regex> pragmaOddOnce;
+    std::set<Mask> pragmaOddOnce;
 
     includetokenstack.push(rawtokens.cfront());
     for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
@@ -3518,7 +3551,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 const bool systemheader = (inctok->str()[0] == '<');
                 const std::string header(realFilename(inctok->str().substr(1U, inctok->str().size() - 2U)));
-                if (std::find_if(pragmaOddOnce.begin(), pragmaOddOnce.end(), [&header](auto r) { return std::regex_search(header, r.second); }) != pragmaOddOnce.end()) {
+                bool ignore = false;
+                for (std::set<Mask>::iterator it = pragmaOddOnce.begin(); it != pragmaOddOnce.end() && !ignore; ++it)
+                    ignore = it->match(header.c_str());
+                if (ignore) {
                     rawtok = gotoNextLine(rawtok);
                     continue;
                 }
@@ -3722,26 +3758,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         macros.erase(tok->str());
                 }
             } else if (ifstates.top() == True && rawtok->str() == PRAGMA && rawtok->next && rawtok->next->str() == ONCE && sameline(rawtok,rawtok->next)) {
-                std::string regex;
+                std::string mask;
                 for (const Token *inctok = rawtok->next; sameline(rawtok, inctok = inctok->next); ) {
                     if (!inctok->comment)
-                        regex += inctok->str();
+                        mask += inctok->str();
                 }
-                if (!regex.empty()) {
-                    std::regex_constants::syntax_option_type options = std::regex_constants::ECMAScript;
-                    while (regex.back() != regex.front()) {
-                        switch (regex.back()) {
-                        case 'i':
-                            options |= std::regex_constants::icase;
-                            break;
-                        default:
-                            break;
-                        }
-                        regex.pop_back();
-                    }
-                    if (size_t const len = regex.length() - 1) {
-                        pragmaOddOnce[regex] = std::regex(regex.c_str() + 1, len - 1, options);
-                    }
+                if (!mask.empty()) {
+                    pragmaOddOnce.insert(Mask(mask));
                 } else {
                     pragmaOnce.insert(rawtok->location.file());
                 }

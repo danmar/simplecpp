@@ -18,6 +18,7 @@
 
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
+#define CODE(x) #x "\n"
 
 static int numberOfFailedAssertions = 0;
 
@@ -1839,18 +1840,17 @@ static void missingHeader3()
 
 static void missingHeader4()
 {
-    const char code[] = R"_(
-        #pragma once "^boost/"
-        #pragma once "^google/protobuf/"
-        #pragma once "\.pb\.h$"
-        #pragma once "^inc/"i
-        #include "boost/config/workaround.hpp"
-        #include "google/protobuf/stubs/port.h"
-        #include "proto/message.pb.h"
-        #include "inc/lowercase.h"
-        #include "Inc/MixedCase.h"
-        #include "INC/UPPERCASE.H"
-    )_"; // none of the given files are included
+    const char code[] = CODE(#pragma once "boost/*")
+                        CODE(#pragma once "google/protobuf/*")
+                        CODE(#pragma once "*.pb.h")
+                        CODE(#pragma once "inc/*" i)
+                        CODE(#include "boost/config/workaround.hpp")
+                        CODE(#include "google/protobuf/stubs/port.h")
+                        CODE(#include "proto/message.pb.h")
+                        CODE(#include "inc/lowercase.h")
+                        CODE(#include "Inc/MixedCase.h")
+                        CODE(#include "INC/UPPERCASE.H");
+    // none of the given files are included
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("", toString(outputList));

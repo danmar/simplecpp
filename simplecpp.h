@@ -47,6 +47,7 @@ namespace simplecpp {
 
     typedef std::string TokenString;
     class Macro;
+    class Mask;
 
     /**
      * Location in source code
