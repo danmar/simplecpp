@@ -3360,12 +3360,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy)));
 
     if (!dui.std.empty()) {
-        std::string std_def = simplecpp::getCStdString(dui.std);
-        if (!std_def.empty()) {
-            macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy)));
+        const cstd_t c_std = simplecpp::getCStd(dui.std);
+        if (c_std != CUnknown) {
+            const std::string std_def = simplecpp::getCStdString(c_std);
+            if (!std_def.empty())
+                macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy)));
         } else {
-            std_def = simplecpp::getCppStdString(dui.std);
-            if (std_def.empty()) {
+            const cppstd_t cpp_std = simplecpp::getCppStd(dui.std);
+            if (cpp_std == CPPUnknown) {
                 if (outputList) {
                     simplecpp::Output err(files);
                     err.type = Output::DUI_ERROR;
@@ -3375,7 +3377,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 output.clear();
                 return;
             }
-            macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
+            const std::string std_def = simplecpp::getCppStdString(cpp_std);
+            if (!std_def.empty())
+                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
         }
     }
 
