@@ -2701,6 +2701,23 @@ static void invalidStd()
     outputList.clear();
 }
 
+static void stdEnum()
+{
+    ASSERT_EQUALS(simplecpp::cstd_t::C89, simplecpp::getCStd("c89"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C89, simplecpp::getCStd("c90"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C11, simplecpp::getCStd("iso9899:2011"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C23, simplecpp::getCStd("gnu23"));
+    ASSERT_EQUALS(simplecpp::cstd_t::CUnknown, simplecpp::getCStd("gnu77"));
+    ASSERT_EQUALS(simplecpp::cstd_t::CUnknown, simplecpp::getCStd("c++11"));
+
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP03, simplecpp::getCppStd("c++03"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP03, simplecpp::getCppStd("c++98"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP17, simplecpp::getCppStd("c++1z"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP26, simplecpp::getCppStd("gnu++26"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPPUnknown, simplecpp::getCppStd("gnu++77"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPPUnknown, simplecpp::getCppStd("c11"));
+}
+
 static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
@@ -3030,6 +3047,7 @@ int main(int argc, char **argv)
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
     TEST_CASE(invalidStd);
+    TEST_CASE(stdEnum);
 
     TEST_CASE(token);
 
