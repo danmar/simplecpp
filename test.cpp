@@ -2718,6 +2718,33 @@ static void stdEnum()
     ASSERT_EQUALS(simplecpp::cppstd_t::CPPUnknown, simplecpp::getCppStd("c11"));
 }
 
+static void stdValid()
+{
+    const char code[] = "";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    dui.std = "c89";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "gnu23";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "c++03";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "gnu++26";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+}
+
 static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
@@ -3048,6 +3075,7 @@ int main(int argc, char **argv)
     TEST_CASE(cpluscplusDefine);
     TEST_CASE(invalidStd);
     TEST_CASE(stdEnum);
+    TEST_CASE(stdValid);
 
     TEST_CASE(token);
 
