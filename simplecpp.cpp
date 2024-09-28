@@ -886,7 +886,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
 
             if (prefix.empty())
-                push_back(new Token(s, location, isspace(stream.peekChar()))); // push string without newlines
+                push_back(new Token(s, location, std::isspace(stream.peekChar()))); // push string without newlines
             else
                 back()->setstr(prefix + s);
 
@@ -916,7 +916,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
         }
 
-        push_back(new Token(currentToken, location, isspace(stream.peekChar())));
+        push_back(new Token(currentToken, location, std::isspace(stream.peekChar())));
 
         if (multiline)
             location.col += currentToken.size();
