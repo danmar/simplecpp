@@ -924,6 +924,21 @@ static void define_ifdef()
 
 }
 
+static void pragma_backslash()
+{
+    const char code[] = "#pragma comment (longstring, \\\n"
+                         "\"HEADER\\\n"
+                         "This is a very long string that is\\\n"
+                         "a multi-line string.\\\n"
+                         "How much more do I have to say?\\\n"
+                         "Well, be prepared, because the\\\n"
+                         "story is just beginning. This is a test\\\n"
+                         "string for demonstration purposes. \")\n";
+    
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+}
+
 static void dollar()
 {
     ASSERT_EQUALS("$ab", readfile("$ab"));
@@ -2952,6 +2967,8 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_3);
     TEST_CASE(define_va_opt_4);
     TEST_CASE(define_va_opt_5);
+
+    TEST_CASE(pragma_backslash); // multiline pragma directive
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
