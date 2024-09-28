@@ -102,8 +102,6 @@ static const simplecpp::TokenString ONCE("once");
 
 static const simplecpp::TokenString HAS_INCLUDE("__has_include");
 
-static const simplecpp::TokenString INNER_COMMA(",,");
-
 template<class T> static std::string toString(T t)
 {
     // NOLINTNEXTLINE(misc-const-correctness) - false positive
@@ -888,7 +886,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
 
             if (prefix.empty())
-                push_back(new Token(s, location)); // push string without newlines
+                push_back(new Token(s, location, isspace(stream.peekChar()))); // push string without newlines
             else
                 back()->setstr(prefix + s);
 
@@ -918,7 +916,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
         }
 
-        push_back(new Token(currentToken, location));
+        push_back(new Token(currentToken, location, isspace(stream.peekChar())));
 
         if (multiline)
             location.col += currentToken.size();
@@ -1548,9 +1546,9 @@ namespace simplecpp {
                 // Copy macro call to a new tokenlist with no linebreaks
                 const Token * const rawtok1 = rawtok;
                 TokenList rawtokens2(inputFiles);
-                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                 rawtok = rawtok->next;
-                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                 rawtok = rawtok->next;
                 int par = 1;
                 while (rawtok && par > 0) {
@@ -1560,13 +1558,10 @@ namespace simplecpp {
                         --par;
                     else if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok))
                         throw Error(rawtok->location, "it is invalid to use a preprocessor directive as macro parameter");
-                    rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location));
+                    rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                     rawtok = rawtok->next;
                 }
-                bool first = true;
-                if (valueToken && valueToken->str() == rawtok1->str())
-                    first = false;
-                if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros, first))
+                if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
                     rawtok = rawtok1->next;
             } else {
                 rawtok = expand(&output2, rawtok->location, rawtok, macros, expandedmacros);
@@ -1622,10 +1617,6 @@ namespace simplecpp {
                 rawtok = rawtok2->next;
             }
             output->takeTokens(output2);
-            for (Token* tok = output->front(); tok; tok = tok->next) {
-                if (tok->str() == INNER_COMMA)
-                    tok->setstr(",");
-            }
             return rawtok;
         }
 
@@ -1792,28 +1783,12 @@ namespace simplecpp {
                     // A##B => AB
                     tok = expandHashHash(tokens, rawloc, tok, macros, expandedmacros, parametertokens);
                 } else if (tok->op == '#' && sameline(tok, tok->next) && tok->next->op != '#') {
-                    tok = expandHash(tokens, rawloc, tok, macros, expandedmacros, parametertokens);
+                    tok = expandHash(tokens, rawloc, tok, expandedmacros, parametertokens);
                 } else {
                     if (!expandArg(tokens, tok, rawloc, macros, expandedmacros, parametertokens)) {
-                        bool expanded = false;
-                        const MacroMap::const_iterator it = macros.find(tok->str());
-                        if (it != macros.end() && expandedmacros.find(tok->str()) == expandedmacros.end()) {
-                            const Macro &m = it->second;
-                            if (!m.functionLike()) {
-                                Token* mtok = tokens->back();
-                                m.expand(tokens, rawloc, tok, macros, expandedmacros);
-                                for (mtok = mtok->next; mtok; mtok = mtok->next) {
-                                    if (mtok->op == ',')
-                                        mtok->setstr(INNER_COMMA);
-                                }
-                                expanded = true;
-                            }
-                        }
-                        if (!expanded) {
-                            tokens->push_back(new Token(*tok));
-                            if (tok->macro.empty() && (par > 0 || tok->str() != "("))
-                                tokens->back()->macro = name();
-                        }
+                        tokens->push_back(new Token(*tok));
+                        if (tok->macro.empty() && (par > 0 || tok->str() != "("))
+                            tokens->back()->macro = name();
                     }
 
                     if (tok->op == '(')
@@ -1831,10 +1806,8 @@ namespace simplecpp {
             return sameline(lpar,tok) ? tok : nullptr;
         }
 
-        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const MacroMap &macros, std::set<TokenString> expandedmacros, bool first=false) const {
-
-            if (!first)
-                expandedmacros.insert(nameTokInst->str());
+        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const MacroMap &macros, std::set<TokenString> expandedmacros) const {
+            expandedmacros.insert(nameTokInst->str());
 
             usageList.push_back(loc);
 
@@ -1917,6 +1890,14 @@ namespace simplecpp {
                     if (sameline(tok, tok->next) && tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
                         if (!sameline(tok, tok->next->next->next))
                             throw invalidHashHash::unexpectedNewline(tok->location, name());
+                        if (variadic && tok->op == ',' && tok->next->next->next->str() == args.back()) {
+                            Token *const comma = newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok);
+                            output->push_back(comma);
+                            tok = expandToken(output, loc, tok->next->next->next, macros, expandedmacros, parametertokens2);
+                            if (output->back() == comma)
+                                output->deleteToken(comma);
+                            continue;
+                        }
                         TokenList new_output(files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
@@ -1961,7 +1942,7 @@ namespace simplecpp {
                     tok = expandHashHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
                 } else {
                     // #123 => "123"
-                    tok = expandHash(output, loc, tok->previous, macros, expandedmacros, parametertokens2);
+                    tok = expandHash(output, loc, tok->previous, expandedmacros, parametertokens2);
                 }
             }
 
@@ -2138,14 +2119,17 @@ namespace simplecpp {
                 return true;
             for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
                 const MacroMap::const_iterator it = macros.find(partok->str());
-                if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end()))
-                    partok = it->second.expand(output, loc, partok, macros, expandedmacros);
-                else {
+                if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
+                    const std::set<TokenString> expandedmacros2; // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
+                    partok = it->second.expand(output, loc, partok, macros, expandedmacros2);
+                } else {
                     output->push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));
                     output->back()->macro = partok->macro;
                     partok = partok->next;
                 }
             }
+            if (tok->whitespaceahead && output->back())
+                output->back()->whitespaceahead = true;
             return true;
         }
 
@@ -2154,18 +2138,22 @@ namespace simplecpp {
          * @param output  destination tokenlist
          * @param loc     location for expanded token
          * @param tok     The # token
-         * @param macros  all macros
          * @param expandedmacros   set with expanded macros, with this macro
          * @param parametertokens  parameters given when expanding this macro
          * @return token after the X
          */
-        const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             TokenList tokenListHash(files);
-            tok = expandToken(&tokenListHash, loc, tok->next, macros, expandedmacros, parametertokens);
+            const MacroMap macros2; // temporarily bypass macro expansion
+            tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
             std::ostringstream ostr;
             ostr << '\"';
-            for (const Token *hashtok = tokenListHash.cfront(); hashtok; hashtok = hashtok->next)
+            for (const Token *hashtok = tokenListHash.cfront(), *next; hashtok; hashtok = next) {
+                next = hashtok->next;
                 ostr << hashtok->str();
+                if (next && hashtok->whitespaceahead)
+                    ostr << ' ';
+            }
             ostr << '\"';
             output->push_back(newMacroToken(escapeString(ostr.str()), loc, isReplaced(expandedmacros)));
             return tok;

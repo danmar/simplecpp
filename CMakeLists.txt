@@ -5,6 +5,11 @@ option(DISABLE_CPP03_SYNTAX_CHECK "Disable the C++03 syntax check." OFF)
 
 include(CheckCXXCompilerFlag)
 
+if (WIN32)
+    # prevent simplifyPath_cppcheck() from wasting time on looking for a hypothetical network host
+    add_definitions(-DUNCHOST=$ENV{COMPUTERNAME})
+endif()
+
 function(add_compile_options_safe FLAG)
     string(MAKE_C_IDENTIFIER "HAS_CXX_FLAG${FLAG}" mangled_flag)
     check_cxx_compiler_flag(${FLAG} ${mangled_flag})

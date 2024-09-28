@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -44,7 +47,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+static int assertEquals(const long long &expected, const long long &actual, int line)
 {
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
 }
@@ -717,6 +720,17 @@ static void define_define_11()
     ASSERT_EQUALS("\n\n\n\nP2DIR ;", preprocess(code));
 }
 
+static void define_define_11a()
+{
+    const char code[] = "#define A_B_C              0x1\n"
+                        "#define A_ADDRESS          0x00001000U\n"
+                        "#define A                  ((uint32_t ) A_ADDRESS)\n"
+                        "#define CONCAT(x, y, z)    x ## _ ## y ## _ ## z\n"
+                        "#define TEST_MACRO         CONCAT(A, B, C)\n"
+                        "TEST_MACRO\n";
+    ASSERT_EQUALS("\n\n\n\n\n0x1", preprocess(code));
+}
+
 static void define_define_12()
 {
     const char code[] = "#define XY(Z)  Z\n"
@@ -1019,6 +1033,17 @@ static void hash()
                   preprocess("#define A(x)  (x)\n"
                              "#define B(x)  A(#x)\n"
                              "B(123)"));
+
+    ASSERT_EQUALS("\n\nprintf ( \"bar(3)\" \"\\n\" ) ;",
+                  preprocess("#define bar(x) x % 2\n"
+                             "#define foo(x) printf(#x \"\\n\")\n"
+                             "foo(bar(3));"));
+
+    ASSERT_EQUALS("\n\n\n\"Y Y\"",
+                  preprocess("#define X(x,y)    x y\n"
+                             "#define STR_(x)   #x\n"
+                             "#define STR(x)    STR_(x)\n"
+                             "STR(X(Y,Y))"));
 }
 
 static void hashhash1()   // #4703
@@ -1056,6 +1081,16 @@ static void hashhash4()    // nonstandard gcc/clang extension for empty varargs
            "#define B(x, ...)   A(x, ## __VA_ARGS__)\n"
            "B(1);";
     ASSERT_EQUALS("\n\na ( 1 ) ;", preprocess(code));
+}
+
+static void hashhash4a()
+{
+    const char code[] = "#define GETMYID(a) ((a))+1\n"
+                        "#define FIGHT_FOO(c, ...) foo(c, ##__VA_ARGS__)\n"
+                        "#define FIGHT_BAR(c, args...) bar(c, ##args)\n"
+                        "FIGHT_FOO(1, GETMYID(a));\n"
+                        "FIGHT_BAR(1, GETMYID(b));";
+    ASSERT_EQUALS("\n\n\nfoo ( 1 , ( ( a ) ) + 1 ) ;\nbar ( 1 , ( ( b ) ) + 1 ) ;", preprocess(code));
 }
 
 static void hashhash5()
@@ -2567,8 +2602,8 @@ static void simplifyPath_cppcheck()
     ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/../"));
 
     // Handling of UNC paths on Windows
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("///src/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("//" STRINGIZE(UNCHOST) "/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("///" STRINGIZE(UNCHOST) "/test.cpp"));
 }
 
 static void simplifyPath_New()
@@ -2899,6 +2934,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_9); // line break in nested macro call
     TEST_CASE(define_define_10);
     TEST_CASE(define_define_11);
+    TEST_CASE(define_define_11a);
     TEST_CASE(define_define_12); // expand result of ##
     TEST_CASE(define_define_13);
     TEST_CASE(define_define_14);
@@ -2936,6 +2972,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash2);
     TEST_CASE(hashhash3);
     TEST_CASE(hashhash4);
+    TEST_CASE(hashhash4a); // #66, #130
     TEST_CASE(hashhash5);
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
