@@ -24,6 +24,12 @@ jobs:
       run: |
           sudo apt-get update
           sudo apt-get install valgrind
+
+    - name: Install missing software on ubuntu (clang++)
+      if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
+      run: |
+        sudo apt-get update
+        sudo apt-get install libc++-18-dev
           
     - name: make simplecpp
       run: make -j$(nproc)
