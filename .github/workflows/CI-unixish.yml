@@ -68,12 +68,11 @@ jobs:
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
 
-    # TODO: change it to -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG when the compiler is at least Clang 18
-    - name: Run with libc++ debug mode
+    - name: Run with libc++ hardening mode
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_ENABLE_ASSERTIONS=1" LDFLAGS="-lc++"
+        make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
 
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-24.04'
