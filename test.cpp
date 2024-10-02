@@ -1834,7 +1834,7 @@ static void missingHeader4()
     const char code[] = "#/**/include <>\n";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("actual:file0,1,syntax_error,No header in #include\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
 
 static void nestedInclude()
