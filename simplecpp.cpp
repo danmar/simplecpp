@@ -3480,7 +3480,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     inc2.takeTokens(inc1);
                 }
 
-                if (!inc2.empty() && inc2.cfront()->op == '<' && inc2.cback()->op == '>') {
+                if (!inc1.empty() && !inc2.empty() && inc2.cfront()->op == '<' && inc2.cback()->op == '>') {
                     TokenString hdr;
                     // TODO: Sometimes spaces must be added in the string
                     // Somehow preprocessToken etc must be told that the location should be source location not destination location

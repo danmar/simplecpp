@@ -1829,6 +1829,14 @@ static void missingHeader3()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void missingHeader4()
+{
+    const char code[] = "#/**/include <>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
+}
+
 static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
@@ -3057,6 +3065,7 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
+    TEST_CASE(missingHeader4);
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
 
