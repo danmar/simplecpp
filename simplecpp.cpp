@@ -477,20 +477,6 @@ simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &fi
     readfile(stream,filename,outputList);
 }
 
-simplecpp::TokenList::TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : frontToken(nullptr), backToken(nullptr), files(filenames)
-{
-    StdCharBufStream stream(data, size);
-    readfile(stream,filename,outputList);
-}
-
-simplecpp::TokenList::TokenList(const char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-        : frontToken(nullptr), backToken(nullptr), files(filenames)
-{
-    StdCharBufStream stream(reinterpret_cast<const unsigned char*>(data), size);
-    readfile(stream,filename,outputList);
-}
-
 simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList)
         : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
