@@ -390,6 +390,8 @@ static void combineOperators_floatliteral()
     ASSERT_EQUALS("0x1p+3f", preprocess("0x1p+3f"));
     ASSERT_EQUALS("0x1p+3L", preprocess("0x1p+3L"));
     ASSERT_EQUALS("1p + 3", preprocess("1p+3"));
+    ASSERT_EQUALS("1.0_a . b", preprocess("1.0_a.b"));
+    ASSERT_EQUALS("1_a . b", preprocess("1_a.b"));
 }
 
 static void combineOperators_increment()
