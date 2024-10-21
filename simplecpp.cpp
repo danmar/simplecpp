@@ -1002,7 +1002,7 @@ void simplecpp::TokenList::combineOperators()
                 continue;
             }
             // float literals..
-            if (tok->previous && tok->previous->number && sameline(tok->previous, tok)) {
+            if (tok->previous && tok->previous->number && sameline(tok->previous, tok) && tok->previous->str().find_first_of("._") == std::string::npos) {
                 tok->setstr(tok->previous->str() + '.');
                 deleteToken(tok->previous);
                 if (sameline(tok, tok->next) && (isFloatSuffix(tok->next) || (tok->next && tok->next->startsWithOneOf("AaBbCcDdEeFfPp")))) {
