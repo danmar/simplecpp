@@ -731,6 +731,13 @@ static void define_define_11a()
                         "#define TEST_MACRO         CONCAT(A, B, C)\n"
                         "TEST_MACRO\n";
     ASSERT_EQUALS("\n\n\n\n\n0x1", preprocess(code));
+    
+    const char code2[] = "#define ADDER_S(a, b) a + b\n" // #374
+                         "#define ADDER(x) ADDER_S(x)\n"
+                         "#define ARGUMENTS 1, 2\n"
+                         "#define RUN ADDER(ARGUMENTS)\n"
+                         "void f() { RUN; }\n";
+    ASSERT_EQUALS("\n\n\n\nvoid f ( ) { 1 + 2 ; }", preprocess(code2));
 }
 
 static void define_define_12()
