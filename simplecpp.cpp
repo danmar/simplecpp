@@ -3125,20 +3125,20 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
 
 static bool IsFileExists(const std::string& simplePath)
 {
-    if (simplePath.empty())
-    {
-        return false;
-    }
+	if (simplePath.empty())
+	{
+		return false;
+	}
 
-    // This is a workaround to properly check if a file exists,
+	// This is a workaround to properly check if a file exists,
 	// since std::ifstream::good() incorrectly returns true for directories
-    std::fstream fs(simplePath, std::ios::app);
-    if (fs.good())
-    {
-        return true;
-    }
+	std::fstream fs(simplePath, std::ios::in | std::ios::out);
+	if (fs.good())
+	{
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 static std::string getFileName(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
