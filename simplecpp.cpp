@@ -3709,6 +3709,18 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 }
             } else if (ifstates.top() == True && rawtok->str() == PRAGMA && rawtok->next && rawtok->next->str() == ONCE && sameline(rawtok,rawtok->next)) {
                 pragmaOnce.insert(rawtok->location.file());
+            } else if (rawtok->str() == PRAGMA) {
+                const Token *start = rawtok->next;
+                if (!start) {
+                    continue;
+                }
+                const Token *end = start->next;
+                while (sameline(rawtok,end)) {
+                    end = end->next;
+                }
+                if (dui.pragmaTokenCallback) {
+                    dui.pragmaTokenCallback(start, end);
+                }
             }
             rawtok = gotoNextLine(rawtok);
             continue;

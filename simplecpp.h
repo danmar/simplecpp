@@ -14,6 +14,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <functional>
 
 #ifdef _WIN32
 #  ifdef SIMPLECPP_EXPORT
@@ -337,7 +338,7 @@ namespace simplecpp {
      * On the command line these are configured by -D, -U, -I, --include, -std
      */
     struct SIMPLECPP_LIB DUI {
-        DUI() : clearIncludeCache(false), removeComments(false) {}
+        DUI() : clearIncludeCache(false), removeComments(false), pragmaTokenCallback(nullptr) {}
         std::list<std::string> defines;
         std::set<std::string> undefined;
         std::list<std::string> includePaths;
@@ -345,6 +346,9 @@ namespace simplecpp {
         std::string std;
         bool clearIncludeCache;
         bool removeComments; /** remove comment tokens from included files */
+
+        // Callbacks for handling parts of the token stream
+        std::function<void(const Token *start, const Token *end)> pragmaTokenCallback = nullptr;
     };
 
     SIMPLECPP_LIB long long characterLiteralToLL(const std::string& str);
