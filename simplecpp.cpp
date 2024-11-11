@@ -3715,7 +3715,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     continue;
                 }
                 const Token *end = start->next;
-                while (sameline(rawtok,end)) {
+                while (end && sameline(rawtok,end) && end->next) {
                     end = end->next;
                 }
                 if (dui.pragmaTokenCallback) {
