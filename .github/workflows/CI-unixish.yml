@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         compiler: [clang++, g++]
-        os: [ubuntu-20.04, ubuntu-22.04, macos-12, macos-13, macos-14]
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, macos-13, macos-14]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -20,10 +20,16 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install missing software on ubuntu
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-24.04'
       run: |
           sudo apt-get update
           sudo apt-get install valgrind
+
+    - name: Install missing software on ubuntu (clang++)
+      if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
+      run: |
+        sudo apt-get update
+        sudo apt-get install libc++-18-dev
           
     - name: make simplecpp
       run: make -j$(nproc)
@@ -49,29 +55,27 @@ jobs:
         ./cmake.output/testrunner
 
     - name: Run valgrind
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-24.04'
       run: |
           make clean
-          # this valgrind version doesn't support DWARF 5 yet
-          make -j$(nproc) CXXFLAGS="-gdwarf-4"
+          make -j$(nproc)
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./simplecpp simplecpp.cpp -e
 
     - name: Run with libstdc++ debug mode
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'g++'
+      if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
 
-    # TODO: change it to -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG when the compiler is at least Clang 18
-    - name: Run with libc++ debug mode
-      if: matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
+    - name: Run with libc++ hardening mode
+      if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_ENABLE_ASSERTIONS=1" LDFLAGS="-lc++"
+        make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
 
     - name: Run AddressSanitizer
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
@@ -79,14 +83,14 @@ jobs:
         ASAN_OPTIONS: detect_stack_use_after_return=1
 
     - name: Run UndefinedBehaviorSanitizer
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
 
     # TODO: requires instrumented libc++
     - name: Run MemorySanitizer
-      if: false && matrix.os == 'ubuntu-22.04' && matrix.compiler == 'clang++'
+      if: false && matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"

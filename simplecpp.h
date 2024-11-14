@@ -39,6 +39,11 @@
 #endif
 
 namespace simplecpp {
+    /** C code standard */
+    enum cstd_t { CUnknown=-1, C89, C99, C11, C17, C23 };
+
+    /** C++ code standard */
+    enum cppstd_t { CPPUnknown=-1, CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26 };
 
     typedef std::string TokenString;
     class Macro;
@@ -94,13 +99,13 @@ namespace simplecpp {
      */
     class SIMPLECPP_LIB Token {
     public:
-        Token(const TokenString &s, const Location &loc) :
-            location(loc), previous(nullptr), next(nullptr), string(s) {
+        Token(const TokenString &s, const Location &loc, bool wsahead = false) :
+            whitespaceahead(wsahead), location(loc), previous(nullptr), next(nullptr), string(s) {
             flags();
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), location(tok.location), previous(nullptr), next(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
         }
 
         void flags() {
@@ -132,6 +137,7 @@ namespace simplecpp {
         bool comment;
         bool name;
         bool number;
+        bool whitespaceahead;
         Location location;
         Token *previous;
         Token *next;
@@ -153,6 +159,8 @@ namespace simplecpp {
         void setExpandedFrom(const Token *tok, const Macro* m) {
             mExpandedFrom = tok->mExpandedFrom;
             mExpandedFrom.insert(m);
+            if (tok->whitespaceahead)
+                whitespaceahead = true;
         }
         bool isExpandedFrom(const Macro* m) const {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
@@ -368,11 +376,19 @@ namespace simplecpp {
     /** Convert Cygwin path to Windows path */
     SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
 
+    /** Returns the C version a given standard */
+    SIMPLECPP_LIB cstd_t getCStd(const std::string &std);
+
+    /** Returns the C++ version a given standard */
+    SIMPLECPP_LIB cppstd_t getCppStd(const std::string &std);
+
     /** Returns the __STDC_VERSION__ value for a given standard */
     SIMPLECPP_LIB std::string getCStdString(const std::string &std);
+    SIMPLECPP_LIB std::string getCStdString(cstd_t std);
 
     /** Returns the __cplusplus value for a given standard */
     SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
+    SIMPLECPP_LIB std::string getCppStdString(cppstd_t std);
 }
 
 #if defined(_MSC_VER)

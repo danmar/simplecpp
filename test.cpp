@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -44,7 +47,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     return (expected == actual);
 }
 
-static int assertEquals(const unsigned int &expected, const unsigned int &actual, int line)
+static int assertEquals(const long long &expected, const long long &actual, int line)
 {
     return assertEquals(std::to_string(expected), std::to_string(actual), line);
 }
@@ -387,6 +390,8 @@ static void combineOperators_floatliteral()
     ASSERT_EQUALS("0x1p+3f", preprocess("0x1p+3f"));
     ASSERT_EQUALS("0x1p+3L", preprocess("0x1p+3L"));
     ASSERT_EQUALS("1p + 3", preprocess("1p+3"));
+    ASSERT_EQUALS("1.0_a . b", preprocess("1.0_a.b"));
+    ASSERT_EQUALS("1_a . b", preprocess("1_a.b"));
 }
 
 static void combineOperators_increment()
@@ -717,6 +722,24 @@ static void define_define_11()
     ASSERT_EQUALS("\n\n\n\nP2DIR ;", preprocess(code));
 }
 
+static void define_define_11a()
+{
+    const char code[] = "#define A_B_C              0x1\n"
+                        "#define A_ADDRESS          0x00001000U\n"
+                        "#define A                  ((uint32_t ) A_ADDRESS)\n"
+                        "#define CONCAT(x, y, z)    x ## _ ## y ## _ ## z\n"
+                        "#define TEST_MACRO         CONCAT(A, B, C)\n"
+                        "TEST_MACRO\n";
+    ASSERT_EQUALS("\n\n\n\n\n0x1", preprocess(code));
+    
+    const char code2[] = "#define ADDER_S(a, b) a + b\n" // #374
+                         "#define ADDER(x) ADDER_S(x)\n"
+                         "#define ARGUMENTS 1, 2\n"
+                         "#define RUN ADDER(ARGUMENTS)\n"
+                         "void f() { RUN; }\n";
+    ASSERT_EQUALS("\n\n\n\nvoid f ( ) { 1 + 2 ; }", preprocess(code2));
+}
+
 static void define_define_12()
 {
     const char code[] = "#define XY(Z)  Z\n"
@@ -910,6 +933,21 @@ static void define_ifdef()
 
 }
 
+static void pragma_backslash()
+{
+    const char code[] = "#pragma comment (longstring, \\\n"
+                         "\"HEADER\\\n"
+                         "This is a very long string that is\\\n"
+                         "a multi-line string.\\\n"
+                         "How much more do I have to say?\\\n"
+                         "Well, be prepared, because the\\\n"
+                         "story is just beginning. This is a test\\\n"
+                         "string for demonstration purposes. \")\n";
+    
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+}
+
 static void dollar()
 {
     ASSERT_EQUALS("$ab", readfile("$ab"));
@@ -1019,6 +1057,17 @@ static void hash()
                   preprocess("#define A(x)  (x)\n"
                              "#define B(x)  A(#x)\n"
                              "B(123)"));
+
+    ASSERT_EQUALS("\n\nprintf ( \"bar(3)\" \"\\n\" ) ;",
+                  preprocess("#define bar(x) x % 2\n"
+                             "#define foo(x) printf(#x \"\\n\")\n"
+                             "foo(bar(3));"));
+
+    ASSERT_EQUALS("\n\n\n\"Y Y\"",
+                  preprocess("#define X(x,y)    x y\n"
+                             "#define STR_(x)   #x\n"
+                             "#define STR(x)    STR_(x)\n"
+                             "STR(X(Y,Y))"));
 }
 
 static void hashhash1()   // #4703
@@ -1056,6 +1105,16 @@ static void hashhash4()    // nonstandard gcc/clang extension for empty varargs
            "#define B(x, ...)   A(x, ## __VA_ARGS__)\n"
            "B(1);";
     ASSERT_EQUALS("\n\na ( 1 ) ;", preprocess(code));
+}
+
+static void hashhash4a()
+{
+    const char code[] = "#define GETMYID(a) ((a))+1\n"
+                        "#define FIGHT_FOO(c, ...) foo(c, ##__VA_ARGS__)\n"
+                        "#define FIGHT_BAR(c, args...) bar(c, ##args)\n"
+                        "FIGHT_FOO(1, GETMYID(a));\n"
+                        "FIGHT_BAR(1, GETMYID(b));";
+    ASSERT_EQUALS("\n\n\nfoo ( 1 , ( ( a ) ) + 1 ) ;\nbar ( 1 , ( ( b ) ) + 1 ) ;", preprocess(code));
 }
 
 static void hashhash5()
@@ -1777,6 +1836,14 @@ static void missingHeader3()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("", toString(outputList));
+}
+
+static void missingHeader4()
+{
+    const char code[] = "#/**/include <>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
 
 static void nestedInclude()
@@ -2567,8 +2634,8 @@ static void simplifyPath_cppcheck()
     ASSERT_EQUALS("src/", simplecpp::simplifyPath("src/abc/../"));
 
     // Handling of UNC paths on Windows
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("//src/test.cpp"));
-    ASSERT_EQUALS("//src/test.cpp", simplecpp::simplifyPath("///src/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("//" STRINGIZE(UNCHOST) "/test.cpp"));
+    ASSERT_EQUALS("//" STRINGIZE(UNCHOST) "/test.cpp", simplecpp::simplifyPath("///" STRINGIZE(UNCHOST) "/test.cpp"));
 }
 
 static void simplifyPath_New()
@@ -2698,6 +2765,50 @@ static void invalidStd()
     ASSERT_EQUALS(1, outputList.size());
     ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
     ASSERT_EQUALS("unknown standard specified: 'gnu++33'", outputList.cbegin()->msg);
+    outputList.clear();
+}
+
+static void stdEnum()
+{
+    ASSERT_EQUALS(simplecpp::cstd_t::C89, simplecpp::getCStd("c89"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C89, simplecpp::getCStd("c90"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C11, simplecpp::getCStd("iso9899:2011"));
+    ASSERT_EQUALS(simplecpp::cstd_t::C23, simplecpp::getCStd("gnu23"));
+    ASSERT_EQUALS(simplecpp::cstd_t::CUnknown, simplecpp::getCStd("gnu77"));
+    ASSERT_EQUALS(simplecpp::cstd_t::CUnknown, simplecpp::getCStd("c++11"));
+
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP03, simplecpp::getCppStd("c++03"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP03, simplecpp::getCppStd("c++98"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP17, simplecpp::getCppStd("c++1z"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPP26, simplecpp::getCppStd("gnu++26"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPPUnknown, simplecpp::getCppStd("gnu++77"));
+    ASSERT_EQUALS(simplecpp::cppstd_t::CPPUnknown, simplecpp::getCppStd("c11"));
+}
+
+static void stdValid()
+{
+    const char code[] = "";
+    simplecpp::DUI dui;
+    simplecpp::OutputList outputList;
+
+    dui.std = "c89";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "gnu23";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "c++03";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
+    outputList.clear();
+
+    dui.std = "gnu++26";
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
+    ASSERT_EQUALS(0, outputList.size());
     outputList.clear();
 }
 
@@ -2855,6 +2966,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_9); // line break in nested macro call
     TEST_CASE(define_define_10);
     TEST_CASE(define_define_11);
+    TEST_CASE(define_define_11a);
     TEST_CASE(define_define_12); // expand result of ##
     TEST_CASE(define_define_13);
     TEST_CASE(define_define_14);
@@ -2872,6 +2984,8 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_3);
     TEST_CASE(define_va_opt_4);
     TEST_CASE(define_va_opt_5);
+
+    TEST_CASE(pragma_backslash); // multiline pragma directive
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
@@ -2892,6 +3006,7 @@ int main(int argc, char **argv)
     TEST_CASE(hashhash2);
     TEST_CASE(hashhash3);
     TEST_CASE(hashhash4);
+    TEST_CASE(hashhash4a); // #66, #130
     TEST_CASE(hashhash5);
     TEST_CASE(hashhash6);
     TEST_CASE(hashhash7); // # ## #  (C standard; 6.10.3.3.p4)
@@ -2959,6 +3074,7 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
+    TEST_CASE(missingHeader4);
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
 
@@ -3030,6 +3146,8 @@ int main(int argc, char **argv)
     TEST_CASE(stdcVersionDefine);
     TEST_CASE(cpluscplusDefine);
     TEST_CASE(invalidStd);
+    TEST_CASE(stdEnum);
+    TEST_CASE(stdValid);
 
     TEST_CASE(token);
 
