@@ -2680,7 +2680,7 @@ static std::string currentDirectoryOSCalc() {
 }
 
 static const std::string& currentDirectory() {
-    static std::string curdir = simplecpp::simplifyPath(currentDirectoryOSCalc());
+    static const std::string curdir = simplecpp::simplifyPath(currentDirectoryOSCalc());
     return curdir;
 }
 
@@ -2698,7 +2698,7 @@ static std::string toAbsolutePath(const std::string& path) {
 static std::pair<std::string, bool> extractRelativePathFromAbsolute(const std::string& absolutepath) {
     static const std::string prefix = currentDirectory() + "/";
     if (startsWith(absolutepath, prefix)) {
-        std::size_t size = prefix.size();
+        const std::size_t size = prefix.size();
         return std::make_pair(absolutepath.substr(size, absolutepath.size() - size), true);
     }
     // otherwise
@@ -3215,8 +3215,7 @@ static std::string getFileIdPath(const std::map<std::string, simplecpp::TokenLis
     }
 
     for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-        std::string s = simplecpp::simplifyPath(getIncludePathFileName(*it, header));
-        const std::string match = findPathInMapBothRelativeAndAbsolute(filedata, s);
+        const std::string match = findPathInMapBothRelativeAndAbsolute(filedata, simplecpp::simplifyPath(getIncludePathFileName(*it, header)));
         if (!match.empty()) {
             return match;
         }
