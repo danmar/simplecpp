@@ -20,6 +20,7 @@ endfunction()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef -Wold-style-cast -Wno-multichar)
+    add_compile_options(-Wno-shadow) # TODO: fix these
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
