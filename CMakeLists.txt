@@ -38,6 +38,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 
     add_compile_options(-Wsuggest-attribute=noreturn)
     add_compile_options_safe(-Wuseless-cast)
+
+    add_compile_options(-Wno-shadow) # TODO: fix these
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
