@@ -88,19 +88,19 @@ jobs:
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -g3 -D_GLIBCXX_DEBUG"
+        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -Wno-multichar -g3 -D_GLIBCXX_DEBUG"
 
     - name: Run with libc++ hardening mode
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
+        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -Wno-multichar -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
 
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
+        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -Wno-multichar -O2 -g3 -fsanitize=address" LDFLAGS="-fsanitize=address"
       env:
         ASAN_OPTIONS: detect_stack_use_after_return=1
 
@@ -108,7 +108,7 @@ jobs:
       if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
+        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -Wno-multichar -O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
       env:
         UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:report_error_type=1
 
@@ -117,4 +117,4 @@ jobs:
       if: false && matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"
+        make -j$(nproc) test selfcheck CXXFLAGS="-Werror -Wno-multichar -O2 -g3 -stdlib=libc++ -fsanitize=memory" LDFLAGS="-lc++ -fsanitize=memory"
