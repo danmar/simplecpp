@@ -58,6 +58,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
 
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        add_compile_options(-Wno-c++11-long-long)
+    endif()
+
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
         if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
