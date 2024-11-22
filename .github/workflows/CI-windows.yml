@@ -40,12 +40,14 @@ jobs:
 
       - name: Run CMake
         run: |
-          cmake -G "Visual Studio 17 2022" -A x64 . || exit /b !errorlevel!
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=On . || exit /b !errorlevel!
 
       - name: Build
         run: |
            msbuild -m simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
-           
+        env:
+          _CL_: /WX
+
       - name: Test
         run: |
           .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
