@@ -2772,6 +2772,18 @@ static void userdef()
     ASSERT_EQUALS("\n123", preprocess(code, dui));
 }
 
+static void userundef_src()
+{
+    const char code[] =
+        "#define A\n"
+        "#ifdef A\n"
+        "123\n"
+        "#endif\n";
+    simplecpp::DUI dui;
+    dui.undefined.insert("A");
+    ASSERT_EQUALS("\n\n123", preprocess(code, dui));
+}
+
 static void utf8()
 {
     ASSERT_EQUALS("123", readfile("\xEF\xBB\xBF 123"));
@@ -3483,6 +3495,7 @@ int main(int argc, char **argv)
     TEST_CASE(undef);
 
     TEST_CASE(userdef);
+    TEST_CASE(userundef_src);
 
     // utf/unicode
     TEST_CASE(utf8);
