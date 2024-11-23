@@ -7,6 +7,7 @@
 #define simplecppH
 
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include <iosfwd>
 #include <list>
@@ -389,14 +390,33 @@ namespace simplecpp {
         long long result; // condition result
     };
 
+    struct SIMPLECPP_LIB Define {
+        enum Type : std::uint8_t {
+            Def,
+            Undef,
+            Builtin
+        };
+
+        Define() : undef(false) {}
+        Define(const std::string& def, Type t = Def) : undef(t == Undef) {
+            const Define d = parse(def, false);
+            name = d.name;
+            value = d.value;
+        }
+        std::string name;
+        std::string value;
+        bool undef;
+
+        static Define parse(const std::string& def, bool prefix = true); /** parse -D/-U string */
+    };
+
     /**
      * Command line preprocessor settings.
      * On the command line these are configured by -D, -U, -I, --include, -std
      */
     struct SIMPLECPP_LIB DUI {
         DUI() : clearIncludeCache(false), removeComments(false) {}
-        std::list<std::string> defines;
-        std::set<std::string> undefined;
+        std::list<Define> defines;
         std::list<std::string> includePaths;
         std::list<std::string> includes;
         std::string std;
