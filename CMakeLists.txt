@@ -19,18 +19,24 @@ function(add_compile_options_safe FLAG)
 endfunction()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-pedantic)
     add_compile_options(-Wall)
     add_compile_options(-Wextra)
-    add_compile_options(-pedantic)
-    add_compile_options(-Wcast-qual)
-    add_compile_options(-Wfloat-equal)
-    add_compile_options(-Wmissing-declarations)
-    add_compile_options(-Wmissing-format-attribute)
-    add_compile_options(-Wredundant-decls)
-    add_compile_options(-Wshadow)
+    add_compile_options(-Wcast-qual)                # Cast for removing type qualifiers
+    add_compile_options(-Wfloat-equal)              # Floating values used in equality comparisons
+    add_compile_options(-Wmissing-declarations)     # If a global function is defined without a previous declaration
+    add_compile_options(-Wmissing-format-attribute) #
+    add_compile_options(-Wno-long-long)
+    add_compile_options(-Wpacked)                   #
+    add_compile_options(-Wredundant-decls)          # if anything is declared more than once in the same scope
     add_compile_options(-Wundef)
-    add_compile_options(-Wold-style-cast)
+    add_compile_options(-Wno-missing-braces)
+    add_compile_options(-Wno-sign-compare)
     add_compile_options(-Wno-multichar)
+    add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
+
+    add_compile_options(-Wsuggest-attribute=noreturn)
+    add_compile_options_safe(-Wuseless-cast)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
