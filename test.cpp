@@ -800,6 +800,18 @@ static void define_define_19() // #292
     ASSERT_EQUALS("\n\n\n1 , 2 , 3", preprocess(code));
 }
 
+static void define_define_20() // #384 arg contains comma
+{
+    const char code[] = "#define Z_IS_ENABLED1(config_macro) Z_IS_ENABLED2(_XXXX##config_macro)\n"
+                        "#define _XXXX1 _YYYY,\n"
+                        "#define Z_IS_ENABLED2(one_or_two_args) Z_IS_ENABLED3(one_or_two_args 1, 0)\n"
+                        "#define Z_IS_ENABLED3(ignore_this, val, ...) val\n"
+                        "#define IS_ENABLED(config_macro) Z_IS_ENABLED1(config_macro)\n"
+                        "#define FEATURE 1\n"
+                        "a = IS_ENABLED(FEATURE)\n";
+    ASSERT_EQUALS("\n\n\n\n\n\na = 1", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -2966,6 +2978,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_17);
     TEST_CASE(define_define_18);
     TEST_CASE(define_define_19);
+    TEST_CASE(define_define_20); // 384 arg contains comma
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
