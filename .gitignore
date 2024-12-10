@@ -32,3 +32,6 @@ testrunner
 # CLion
 /.idea
 /cmake-build-*
+
+# python
+__pycache__/
