@@ -821,6 +821,14 @@ static void define_define_20() // #384 arg contains comma
     ASSERT_EQUALS("\n\n\n\n\n\na = 1", preprocess(code));
 }
 
+static void define_define_21() // #397 DEBRACKET macro
+{
+    const char code[] = "#define A(val) B val\n"
+                        "#define B(val) val\n"
+                        "A((2))\n";
+    ASSERT_EQUALS("\n\n2", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -2999,6 +3007,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_18);
     TEST_CASE(define_define_19);
     TEST_CASE(define_define_20); // 384 arg contains comma
+    TEST_CASE(define_define_21);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
