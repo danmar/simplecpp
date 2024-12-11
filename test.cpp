@@ -731,7 +731,7 @@ static void define_define_11a()
                         "#define TEST_MACRO         CONCAT(A, B, C)\n"
                         "TEST_MACRO\n";
     ASSERT_EQUALS("\n\n\n\n\n0x1", preprocess(code));
-    
+
     const char code2[] = "#define ADDER_S(a, b) a + b\n" // #374
                          "#define ADDER(x) ADDER_S(x)\n"
                          "#define ARGUMENTS 1, 2\n"
@@ -849,18 +849,18 @@ static void define_va_args_4() // cppcheck trac #9754
     ASSERT_EQUALS("\nprintf ( 1 , 2 )", preprocess(code));
 }
 
-static void define_va_opt_1() 
+static void define_va_opt_1()
 {
     const char code[] = "#define p1(fmt, args...) printf(fmt __VA_OPT__(,) args)\n"
                         "p1(\"hello\");\n"
                         "p1(\"%s\", \"hello\");\n";
 
     ASSERT_EQUALS("\nprintf ( \"hello\" ) ;\n"
-        "printf ( \"%s\" , \"hello\" ) ;",
-        preprocess(code));
+                  "printf ( \"%s\" , \"hello\" ) ;",
+                  preprocess(code));
 }
 
-static void define_va_opt_2() 
+static void define_va_opt_2()
 {
     const char code[] = "#define err(...)\\\n"
                         "__VA_OPT__(\\\n"
@@ -883,7 +883,7 @@ static void define_va_opt_3()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
-        toString(outputList));
+                  toString(outputList));
 
     outputList.clear();
 
@@ -894,10 +894,10 @@ static void define_va_opt_3()
 
     ASSERT_EQUALS("", preprocess(code2, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
-        toString(outputList));
+                  toString(outputList));
 }
 
-static void define_va_opt_4() 
+static void define_va_opt_4()
 {
     // missing parenthesis
     const char code1[] = "#define err(...) __VA_OPT__ something\n"
@@ -906,7 +906,7 @@ static void define_va_opt_4()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
-        toString(outputList));
+                  toString(outputList));
 
     outputList.clear();
 
@@ -916,7 +916,7 @@ static void define_va_opt_4()
 
     ASSERT_EQUALS("", preprocess(code2, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
-        toString(outputList));
+                  toString(outputList));
 }
 
 static void define_va_opt_5()
@@ -928,7 +928,7 @@ static void define_va_opt_5()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'err', Missing parenthesis for __VA_OPT__(content)\n",
-        toString(outputList));
+                  toString(outputList));
 }
 
 static void define_ifdef()
@@ -948,14 +948,14 @@ static void define_ifdef()
 static void pragma_backslash()
 {
     const char code[] = "#pragma comment (longstring, \\\n"
-                         "\"HEADER\\\n"
-                         "This is a very long string that is\\\n"
-                         "a multi-line string.\\\n"
-                         "How much more do I have to say?\\\n"
-                         "Well, be prepared, because the\\\n"
-                         "story is just beginning. This is a test\\\n"
-                         "string for demonstration purposes. \")\n";
-    
+                        "\"HEADER\\\n"
+                        "This is a very long string that is\\\n"
+                        "a multi-line string.\\\n"
+                        "How much more do I have to say?\\\n"
+                        "Well, be prepared, because the\\\n"
+                        "story is just beginning. This is a test\\\n"
+                        "string for demonstration purposes. \")\n";
+
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
 }

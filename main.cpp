@@ -29,22 +29,19 @@ int main(int argc, char **argv)
             bool found = false;
             const char c = arg[1];
             switch (c) {
-            case 'D': // define symbol
-            {
+            case 'D': { // define symbol
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.defines.push_back(value);
                 found = true;
                 break;
             }
-            case 'U': // undefine symbol
-            {
+            case 'U': { // undefine symbol
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.undefined.insert(value);
                 found = true;
                 break;
             }
-            case 'I': // include path
-            {
+            case 'I': { // include path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
                 dui.includePaths.push_back(value);
                 found = true;
@@ -54,8 +51,7 @@ int main(int argc, char **argv)
                 if (std::strncmp(arg, "-include=",9)==0) {
                     dui.includes.push_back(arg+9);
                     found = true;
-                }
-                else if (std::strncmp(arg, "-is",3)==0) {
+                } else if (std::strncmp(arg, "-is",3)==0) {
                     use_istream = true;
                     found = true;
                 }
@@ -122,8 +118,7 @@ int main(int argc, char **argv)
             std::exit(1);
         }
         rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
-    }
-    else {
+    } else {
         rawtokens = new simplecpp::TokenList(filename,files,&outputList);
     }
     rawtokens->removeComments();
