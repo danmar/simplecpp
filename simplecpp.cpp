@@ -110,6 +110,15 @@ template<class T> static std::string toString(T t)
     return ostr.str();
 }
 
+#ifdef SIMPLECPP_DEBUG_MACRO_EXPANSION
+static std::string locstring(const simplecpp::Location &loc)
+{
+    std::ostringstream ostr;
+    ostr << '[' << loc.file() << ':' << loc.line << ':' << loc.col << ']';
+    return ostr.str();
+}
+#endif
+
 static long long stringToLL(const std::string &s)
 {
     long long ret;
@@ -1528,6 +1537,10 @@ namespace simplecpp {
                              std::vector<std::string> &inputFiles) const {
             std::set<TokenString> expandedmacros;
 
+#ifdef SIMPLECPP_DEBUG_MACRO_EXPANSION
+            std::cout << "expand " << name() << " " << locstring(rawtok->location) << std::endl;
+#endif
+
             TokenList output2(inputFiles);
 
             if (functionLike() && rawtok->next && rawtok->next->op == '(') {
@@ -1796,6 +1809,10 @@ namespace simplecpp {
 
         const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const MacroMap &macros, std::set<TokenString> expandedmacros) const {
             expandedmacros.insert(nameTokInst->str());
+
+#ifdef SIMPLECPP_DEBUG_MACRO_EXPANSION
+            std::cout << "  expand " << name() << " " << locstring(defineLocation()) << std::endl;
+#endif
 
             usageList.push_back(loc);
 
@@ -2168,8 +2185,7 @@ namespace simplecpp {
 
             const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
             const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
-            if (!A->name && !A->number && A->op != ',' && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar)
-                throw invalidHashHash::unexpectedToken(tok->location, name(), A);
+            const bool unexpectedA = (!A->name && !A->number && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar);
 
             Token * const B = tok->next->next;
             if (!B->name && !B->number && B->op && !B->isOneOf("#="))
@@ -2187,6 +2203,9 @@ namespace simplecpp {
             const Token *nextTok = B->next;
 
             if (canBeConcatenatedStringOrChar) {
+                if (unexpectedA)
+                    throw invalidHashHash::unexpectedToken(tok->location, name(), A);
+
                 // It seems clearer to handle this case separately even though the code is similar-ish, but we don't want to merge here.
                 // TODO The question is whether the ## or varargs may still apply, and how to provoke?
                 if (expandArg(&tokensB, B, parametertokens)) {
@@ -2205,13 +2224,17 @@ namespace simplecpp {
                 if (expandArg(&tokensB, B, parametertokens)) {
                     if (tokensB.empty())
                         strAB = A->str();
-                    else if (varargs && A->op == ',') {
+                    else if (varargs && A->op == ',')
                         strAB = ",";
-                    } else {
+                    else if (varargs && unexpectedA)
+                        throw invalidHashHash::unexpectedToken(tok->location, name(), A);
+                    else {
                         strAB = A->str() + tokensB.cfront()->str();
                         tokensB.deleteToken(tokensB.front());
                     }
                 } else {
+                    if (unexpectedA)
+                        throw invalidHashHash::unexpectedToken(tok->location, name(), A);
                     strAB = A->str() + B->str();
                 }
 
