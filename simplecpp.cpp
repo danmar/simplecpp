@@ -2055,8 +2055,7 @@ namespace simplecpp {
                 const Token * tok2 = nullptr;
                 if (tok->next->op == '(')
                     tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
-                else if (tok->next->name && tok->next->next && tok->next->next->op != '(') {
-                    expandToken(&tokens, loc, tok->next, macros, expandedmacros2, parametertokens);
+                else if (expandArg(&tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
                     if (tokens.cfront()->next && tokens.cfront()->next->op == '(')
                         tok2 = tok->next;
                 }

@@ -823,10 +823,16 @@ static void define_define_20() // #384 arg contains comma
 
 static void define_define_21() // #397 DEBRACKET macro
 {
-    const char code[] = "#define A(val) B val\n"
-                        "#define B(val) val\n"
-                        "A((2))\n";
-    ASSERT_EQUALS("\n\n2", preprocess(code));
+    const char code1[] = "#define A(val) B val\n"
+                         "#define B(val) val\n"
+                         "A((2))\n";
+    ASSERT_EQUALS("\n\n2", preprocess(code1));
+
+    const char code2[] = "#define x (2)\n"
+                         "#define A B x\n"
+                         "#define B(val) val\n"
+                         "A\n";
+    ASSERT_EQUALS("\n\n\nB ( 2 )", preprocess(code2));
 }
 
 static void define_va_args_1()
