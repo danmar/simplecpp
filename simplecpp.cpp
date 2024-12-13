@@ -2046,13 +2046,19 @@ namespace simplecpp {
                     calledMacro.expand(&temp, loc, tok, macros, expandedmacros);
                     return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros2, parametertokens);
                 }
-                if (!sameline(tok, tok->next) || tok->next->op != '(') {
+                if (!sameline(tok, tok->next)) {
                     output->push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
                 }
                 TokenList tokens(files);
                 tokens.push_back(new Token(*tok));
-                const Token * const tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
+                const Token * tok2 = nullptr;
+                if (tok->next->op == '(')
+                    tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
+                else if (expandArg(&tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
+                    if (tokens.cfront()->next && tokens.cfront()->next->op == '(')
+                        tok2 = tok->next;
+                }
                 if (!tok2) {
                     output->push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
