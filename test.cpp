@@ -833,6 +833,12 @@ static void define_define_21() // #397 DEBRACKET macro
                          "#define B(val) val\n"
                          "A\n";
     ASSERT_EQUALS("\n\n\nB ( 2 )", preprocess(code2));
+
+    const char code3[] = "#define __GET_ARG2_DEBRACKET(ignore_this, val, ...) __DEBRACKET val\n"
+                         "#define __DEBRACKET(...) __VA_ARGS__\n"
+                         "#5 \"a.c\"\n"
+                         "__GET_ARG2_DEBRACKET(432 (33), (B))\n";
+    ASSERT_EQUALS("\n#line 5 \"a.c\"\nB", preprocess(code3));
 }
 
 static void define_va_args_1()
