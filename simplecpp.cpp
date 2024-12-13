@@ -2056,6 +2056,7 @@ namespace simplecpp {
                 if (tok->next->op == '(')
                     tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
                 else if (expandArg(&tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
+                    tokens.front()->location = loc;
                     if (tokens.cfront()->next && tokens.cfront()->next->op == '(')
                         tok2 = tok->next;
                 }
