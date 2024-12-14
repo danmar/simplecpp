@@ -2066,7 +2066,7 @@ namespace simplecpp {
                 }
                 TokenList temp(files);
                 calledMacro.expand(&temp, loc, tokens.cfront(), macros, expandedmacros);
-                return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros2, parametertokens);
+                return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros, parametertokens);
             }
 
             if (tok->str() == DEFINED) {

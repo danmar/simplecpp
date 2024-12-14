@@ -841,6 +841,15 @@ static void define_define_21() // #397 DEBRACKET macro
     ASSERT_EQUALS("\n#line 5 \"a.c\"\nB", preprocess(code3));
 }
 
+static void define_define_22() // #400 inner macro not expanded after hash hash
+{
+    const char code[] = "#define FOO(a) CAT(DO, STUFF)(1,2)\n"
+                        "#define DOSTUFF(a, b)  CAT(3, 4)\n"
+                        "#define CAT(a, b) a##b\n"
+                        "FOO(1)\n";
+    ASSERT_EQUALS("\n\n\n34", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -3020,6 +3029,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_19);
     TEST_CASE(define_define_20); // 384 arg contains comma
     TEST_CASE(define_define_21);
+    TEST_CASE(define_define_22); // #400
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
