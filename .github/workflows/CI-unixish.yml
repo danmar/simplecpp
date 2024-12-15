@@ -38,8 +38,8 @@ jobs:
 
     - name: Install missing Python packages
       run: |
-        python3 -m pip --user install pip --upgrade
-        python3 -m pip --user install pytest
+        python3 -m pip install pip --upgrade --user
+        python3 -m pip install pytest --user
 
     - name: make simplecpp
       run: make -j$(nproc)
