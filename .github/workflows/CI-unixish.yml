@@ -30,7 +30,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libc++-18-dev
-          
+
+    - name: Install missing software on macos
+      if: contains(matrix.os, 'macos')
+      run: |
+        brew install python3
+
+    - name: Install missing Python packages
+      run: |
+        python3 -m pip config set global.break-system-packages true
+        python3 -m pip install pip --upgrade
+        python3 -m pip install pytest
+
     - name: make simplecpp
       run: make -j$(nproc)
 
@@ -40,6 +51,10 @@ jobs:
     - name: selfcheck
       run: |
         make -j$(nproc) selfcheck
+
+    - name: integration test
+      run: |
+        python3 -m pytest integration_test.py
 
     - name: Run CMake
       run: |
