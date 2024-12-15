@@ -38,7 +38,10 @@ def __run_subprocess(args, env=None, cwd=None, timeout=None):
 
 def simplecpp(args = [], cwd = None):
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    simplecpp_path = os.path.join(dir_path, "simplecpp")
+    if 'SIMPLECPP_EXE_PATH' in os.environ:
+        simplecpp_path = os.environ['SIMPLECPP_EXE_PATH']
+    else:
+        simplecpp_path = os.path.join(dir_path, "simplecpp")
     return __run_subprocess([simplecpp_path] + args, cwd = cwd)
 
 def quoted_string(s):
