@@ -1,6 +1,7 @@
 ## test with python -m pytest integration_test.py
 
 import os
+import pytest
 from testutils import simplecpp, format_include_path_arg, format_include
 
 def __test_relative_header_create_header(dir, with_pragma_once=True):
@@ -16,7 +17,11 @@ def __test_relative_header_create_header(dir, with_pragma_once=True):
                 """)
     return header_file, "error: #error header_was_already_included"
 
-def __test_relative_header_create_source(dir, include1, include2, is_include1_sys=False, is_include2_sys=False):
+def __test_relative_header_create_source(dir, include1, include2, is_include1_sys=False, is_include2_sys=False, inv=False):
+    if inv:
+        return __test_relative_header_create_source(dir, include1=include2, include2=include1, is_include1_sys=is_include2_sys, is_include2_sys=is_include1_sys)
+    ## otherwise
+
     src_file = os.path.join(dir, 'test.c')
     with open(src_file, 'wt') as f:
         f.write(f"""
@@ -26,104 +31,62 @@ def __test_relative_header_create_source(dir, include1, include2, is_include1_sy
                 """)
     return src_file
 
+@pytest.mark.parametrize("with_pragma_once", (False, True))
+@pytest.mark.parametrize("is_sys", (False, True))
+def test_relative_header_1(tmpdir, with_pragma_once, is_sys):
+    _, double_include_error = __test_relative_header_create_header(tmpdir, with_pragma_once=with_pragma_once)
 
-def test_relative_header_0_rel(tmpdir):
-    _, double_include_error = __test_relative_header_create_header(tmpdir, with_pragma_once=False)
+    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test.h", is_include1_sys=is_sys, is_include2_sys=is_sys)
 
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test.h")
-
-    args = [test_file]
-
-    _, _, stderr = simplecpp(args, cwd=tmpdir)
-    assert double_include_error in stderr
-
-def test_relative_header_0_sys(tmpdir):
-    _, double_include_error = __test_relative_header_create_header(tmpdir, with_pragma_once=False)
-
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test.h", is_include1_sys=True, is_include2_sys=True)
-
-    args = [format_include_path_arg(tmpdir), test_file]
-
-    _, _, stderr = simplecpp(args)
-    assert double_include_error in stderr
-
-def test_relative_header_1_rel(tmpdir):
-    __test_relative_header_create_header(tmpdir)
-
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test.h")
-
-    args = [test_file]
+    args = ([format_include_path_arg(tmpdir)] if is_sys else []) + [test_file]
 
     _, _, stderr = simplecpp(args, cwd=tmpdir)
-    assert stderr == ''
 
-def test_relative_header_1_sys(tmpdir):
-    __test_relative_header_create_header(tmpdir)
+    if with_pragma_once:
+        assert stderr == ''
+    else:
+        assert double_include_error in stderr
 
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test.h", is_include1_sys=True, is_include2_sys=True)
-
-    args = [format_include_path_arg(tmpdir), test_file]
-
-    _, _, stderr = simplecpp(args)
-    assert stderr == ''
-
-## TODO: the following tests should pass after applying simplecpp#362
-
-def test_relative_header_2(tmpdir):
+@pytest.mark.parametrize("inv", (False, True))
+def test_relative_header_2(tmpdir, inv):
     header_file, _ = __test_relative_header_create_header(tmpdir)
 
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", header_file)
+    test_file = __test_relative_header_create_source(tmpdir, "test.h", header_file, inv=inv)
 
     args = [test_file]
 
     _, _, stderr = simplecpp(args, cwd=tmpdir)
     assert stderr == ''
 
-def test_relative_header_3(tmpdir):
+@pytest.mark.parametrize("is_sys", (False, True))
+@pytest.mark.parametrize("inv", (False, True))
+def test_relative_header_3(tmpdir, is_sys, inv):
     test_subdir = os.path.join(tmpdir, "test_subdir")
     os.mkdir(test_subdir)
     header_file, _ = __test_relative_header_create_header(test_subdir)
 
-    test_file = __test_relative_header_create_source(tmpdir, "test_subdir/test.h", header_file)
+    test_file = __test_relative_header_create_source(tmpdir, "test_subdir/test.h", header_file, is_include1_sys=is_sys, inv=inv)
 
     args = [test_file]
 
     _, _, stderr = simplecpp(args, cwd=tmpdir)
-    assert stderr == ''
 
-def test_relative_header_3_inv(tmpdir):
+    if is_sys:
+        assert "missing header: Header not found" in stderr
+    else:
+        assert stderr == ''
+
+@pytest.mark.parametrize("use_short_path", (False, True))
+@pytest.mark.parametrize("is_sys", (False, True))
+@pytest.mark.parametrize("inv", (False, True))
+def test_relative_header_4(tmpdir, use_short_path, is_sys, inv):
     test_subdir = os.path.join(tmpdir, "test_subdir")
     os.mkdir(test_subdir)
     header_file, _ = __test_relative_header_create_header(test_subdir)
+    if use_short_path:
+        header_file = "test_subdir/test.h"
 
-    test_file = __test_relative_header_create_source(tmpdir, header_file, "test_subdir/test.h")
-
-    args = [test_file]
-
-    _, _, stderr = simplecpp(args, cwd=tmpdir)
-    assert stderr == ''
-
-
-def test_relative_header_4(tmpdir):
-    test_subdir = os.path.join(tmpdir, "test_subdir")
-    os.mkdir(test_subdir)
-    header_file, _ = __test_relative_header_create_header(test_subdir)
-
-    test_file = __test_relative_header_create_source(tmpdir, header_file, "test.h", is_include2_sys=True)
-
-    args = [format_include_path_arg(test_subdir), test_file]
-
-    _, _, stderr = simplecpp(args, cwd=tmpdir)
-    assert stderr == ''
-
-
-
-def test_relative_header_5(tmpdir):
-    test_subdir = os.path.join(tmpdir, "test_subdir")
-    os.mkdir(test_subdir)
-    __test_relative_header_create_header(test_subdir)
-
-    test_file = __test_relative_header_create_source(tmpdir, "test.h", "test_subdir/test.h", is_include1_sys=True)
+    test_file = __test_relative_header_create_source(tmpdir, header_file, "test.h", is_include2_sys=is_sys, inv=inv)
 
     args = [format_include_path_arg(test_subdir), test_file]
 
