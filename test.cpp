@@ -1484,7 +1484,8 @@ static void has_include_1()
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
-    ASSERT_EQUALS("", preprocess(code));
+    // we default to latest standard
+    ASSERT_EQUALS("\n\nA", preprocess(code));
 }
 
 static void has_include_2()
@@ -1499,7 +1500,6 @@ static void has_include_2()
     simplecpp::DUI dui;
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
-    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void has_include_3()
@@ -1518,7 +1518,6 @@ static void has_include_3()
     // Unless -I is set (preferably, we should differentiate -I and -isystem...)
     dui.includePaths.push_back("./testsuite");
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
-    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void has_include_4()
@@ -1533,7 +1532,6 @@ static void has_include_4()
     simplecpp::DUI dui;
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
-    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void has_include_5()
@@ -1548,7 +1546,6 @@ static void has_include_5()
     simplecpp::DUI dui;
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
-    ASSERT_EQUALS("", preprocess(code));
 }
 
 static void ifdef1()
@@ -2766,6 +2763,7 @@ static void stdcVersionDefine()
     simplecpp::DUI dui;
     dui.std = "c11";
     ASSERT_EQUALS("\n201112L", preprocess(code, dui));
+    ASSERT_EQUALS("\n202311L", preprocess(code)); // default to latest
 }
 
 static void cpluscplusDefine()
@@ -2776,6 +2774,7 @@ static void cpluscplusDefine()
     simplecpp::DUI dui;
     dui.std = "c++11";
     ASSERT_EQUALS("\n201103L", preprocess(code, dui));
+    ASSERT_EQUALS("\n202400L", preprocess(code)); // default to latest
 }
 
 static void invalidStd()
