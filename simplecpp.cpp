@@ -1328,7 +1328,7 @@ static int getTokensDeleteCount(simplecpp::Token *tok, const std::set<std::strin
     return count;
 }
 
-void simplecpp::TokenList::simpleSquash(Token *tok, const std::string & result)
+void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 {
     tok = tok->previous;
     tok->setstr(result);
