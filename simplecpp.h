@@ -302,7 +302,7 @@ namespace simplecpp {
         void constFoldQuestionOp(Token **tok1);
 
         //Token * deleteUntil(Token *tok, const std::string & breakPoint, Token *(step)(Token *));
-        //static int getTokensDeleteCount(Token *tok, const std::set<std::string> & breakPoints, Token *(step)(Token *), const std::pair<std::string, std::string> & brackets);
+        static int getTokensDeleteCount(Token *tok, const std::set<std::string> & breakPoints, Token *(step)(Token *), const std::pair<std::string, std::string> & brackets);
 
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);

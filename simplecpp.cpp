@@ -954,7 +954,7 @@ void simplecpp::TokenList::constFold()
         constFoldQuestionOp(&tok);
 
         // If there is no '(' we are done with the constant folding
-        if (tok->op != '(')
+        if (!tok || tok->op != '(')
             break;
 
         if (!tok->next || !tok->next->next || tok->next->next->op != ')')
@@ -1290,6 +1290,55 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
     }
 }
 
+static simplecpp::Token * stepForward(simplecpp::Token *tok)
+{
+    if (!tok)
+        return nullptr;
+    return tok->next;
+}
+
+static simplecpp::Token * stepBack(simplecpp::Token *tok)
+{
+    if (!tok)
+        return nullptr;
+    return tok->previous;
+}
+
+/* simplecpp::Token * simplecpp::TokenList::deleteUntil(Token *tok, const std::string & breakPoint, Token *(step)(Token *))
+{
+    while (tok) {
+        if (tok->str() == breakPoint)
+            return tok;
+        Token * oldToken = tok;
+        tok = (step)(tok);
+        deleteToken(oldToken);
+    }
+    return nullptr;
+} */
+
+int simplecpp::TokenList::getTokensDeleteCount(Token *tok, const std::set<std::string> & breakPoints, Token *(step)(Token *), const std::pair<std::string, std::string> & brackets)
+{
+    int count = 0;
+    bool skip = false;
+    for (; tok; tok = (step)(tok)) {
+        if (skip){
+            ++count;
+            if (tok->str() == brackets.second) {
+                skip = false;
+                continue;
+            }
+        } else if (tok->str() == brackets.first) {
+            skip = true;
+            ++count;
+        } else if (breakPoints.count(tok->str()) != 0) {
+            break;
+        } else {
+            ++count;
+        }
+    }
+    return count;
+}
+
 static const std::string AND("and");
 static const std::string OR("or");
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
@@ -1303,16 +1352,57 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         }
         if (tok->str() != "&&" && tok->str() != "||")
             continue;
-        if (!tok->previous || !tok->previous->number)
+        if (!tok->previous || !tok->next)
             continue;
-        if (!tok->next || !tok->next->number)
+        if (!tok->previous->number && !tok->next->number)
             continue;
 
         int result;
-        if (tok->str() == "||")
-            result = (stringToLL(tok->previous->str()) || stringToLL(tok->next->str()));
-        else /*if (tok->str() == "&&")*/
-            result = (stringToLL(tok->previous->str()) && stringToLL(tok->next->str()));
+        std::set<std::string> breakPoints;
+        breakPoints.insert(":");
+        breakPoints.insert("?");
+        if (tok->str() == "||"){
+            if (stringToLL(tok->previous->str())) {
+                int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
+                tok = tok->previous;
+                count += 2;
+                tok->setstr(toString(1));
+                for (; count > 0; --count)
+                    deleteToken(tok->next);
+                break;
+            }
+            if (stringToLL(tok->next->str())) {
+                int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
+                tok = tok->next;
+                count += 2;
+                tok->setstr(toString(1));
+                for (; count > 0; --count)
+                    deleteToken(tok->previous);
+                break;
+            }
+            result = 0;
+        } else /*if (tok->str() == "&&")*/ {
+            breakPoints.insert("||");
+            if (!stringToLL(tok->previous->str())) {
+                int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
+                tok = tok->previous;
+                count += 2;
+                tok->setstr(toString(0));
+                for (; count > 0; --count)
+                    deleteToken(tok->next);
+                break;
+            }
+            if (!stringToLL(tok->next->str())) {
+                int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
+                tok = tok->next;
+                count += 2;
+                tok->setstr(toString(0));
+                for (; count > 0; --count)
+                    deleteToken(tok->previous);
+                break;
+            }
+            result = 1;
+        }
 
         tok = tok->previous;
         tok->setstr(toString(result));
