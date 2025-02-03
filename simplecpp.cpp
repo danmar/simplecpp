@@ -1336,7 +1336,7 @@ void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
     deleteToken(tok->next);
 }
 
-void simplecpp::TokenList::squashTokens(Token *tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
+void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
 {
     Token *(*step)(Token *) = forwardDirection ? &stepForward : &stepBack;
     for (int count = getTokensDeleteCount((step)(tok), breakPoints, step, forwardDirection ? std::make_pair<std::string, std::string>("(", ")") : std::make_pair<std::string, std::string>(")", "(")); count > 0; --count)
