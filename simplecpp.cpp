@@ -1304,19 +1304,7 @@ static simplecpp::Token * stepBack(simplecpp::Token *tok)
     return tok->previous;
 }
 
-/* simplecpp::Token * simplecpp::TokenList::deleteUntil(Token *tok, const std::string & breakPoint, Token *(step)(Token *))
-{
-    while (tok) {
-        if (tok->str() == breakPoint)
-            return tok;
-        Token * oldToken = tok;
-        tok = (step)(tok);
-        deleteToken(oldToken);
-    }
-    return nullptr;
-} */
-
-int simplecpp::TokenList::getTokensDeleteCount(Token *tok, const std::set<std::string> & breakPoints, Token *(step)(Token *), const std::pair<std::string, std::string> & brackets)
+static int getTokensDeleteCount(simplecpp::Token *tok, const std::set<std::string> & breakPoints, simplecpp::Token *(step)(simplecpp::Token *), const std::pair<std::string, std::string> & brackets)
 {
     int count = 0;
     bool skip = false;
@@ -1340,6 +1328,22 @@ int simplecpp::TokenList::getTokensDeleteCount(Token *tok, const std::set<std::s
     return count;
 }
 
+void simplecpp::TokenList::simpleSquash(Token *tok, const std::string & result)
+{
+    tok = tok->previous;
+    tok->setstr(result);
+    deleteToken(tok->next);
+    deleteToken(tok->next);
+}
+
+void simplecpp::TokenList::squashTokens(Token *tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
+{
+    Token *(*step)(Token *) = forwardDirection ? &stepForward : &stepBack;
+    for (int count = getTokensDeleteCount((step)(tok), breakPoints, step, forwardDirection ? std::make_pair<std::string, std::string>("(", ")") : std::make_pair<std::string, std::string>(")", "(")); count > 0; --count)
+        deleteToken((step)(tok));
+    simpleSquash(tok, result);
+}
+
 static const std::string AND("and");
 static const std::string OR("or");
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
@@ -1358,43 +1362,21 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         if (!tok->previous->number && !tok->next->number)
             continue;
 
-        int result;
         std::set<std::string> breakPoints;
         breakPoints.insert(":");
         breakPoints.insert("?");
         if (tok->str() == "||"){
-            if (stringToLL(tok->previous->str())) {
-                int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
-                for (; count > 0; --count)
-                    deleteToken(tok->next);
-                result = 1;
-            } else if (stringToLL(tok->next->str())) {
-                int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
-                for (; count > 0; --count)
-                    deleteToken(tok->previous);
-                result = 1;
+            if (stringToLL(tok->previous->str()) || stringToLL(tok->next->str())) {
+                squashTokens(tok, breakPoints, stringToLL(tok->previous->str()), toString(1));
             } else
-                result = 0;
+                simpleSquash(tok, toString(0));
         } else /*if (tok->str() == "&&")*/ {
             breakPoints.insert("||");
-            if (!stringToLL(tok->previous->str())) {
-                int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
-                for (; count > 0; --count)
-                    deleteToken(tok->next);
-                result = 0;
-            } else if (!stringToLL(tok->next->str())) {
-                int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
-                for (; count > 0; --count)
-                    deleteToken(tok->previous);
-                result = 0;
+            if (!stringToLL(tok->previous->str()) || !stringToLL(tok->next->str())) {
+                squashTokens(tok, breakPoints, !stringToLL(tok->previous->str()), toString(0));
             } else
-                result = 1;
+                simpleSquash(tok, toString(1));
         }
-
-        tok = tok->previous;
-        tok->setstr(toString(result));
-        deleteToken(tok->next);
-        deleteToken(tok->next);
     }
 }
 
