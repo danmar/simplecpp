@@ -1320,6 +1320,7 @@ int simplecpp::TokenList::getTokensDeleteCount(Token *tok, const std::set<std::s
 {
     int count = 0;
     bool skip = false;
+    tok = (step)(tok);
     for (; tok; tok = (step)(tok)) {
         if (skip){
             ++count;
@@ -1364,44 +1365,30 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         if (tok->str() == "||"){
             if (stringToLL(tok->previous->str())) {
                 int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
-                tok = tok->previous;
-                count += 2;
-                tok->setstr(toString(1));
                 for (; count > 0; --count)
                     deleteToken(tok->next);
-                break;
-            }
-            if (stringToLL(tok->next->str())) {
+                result = 1;
+            } else if (stringToLL(tok->next->str())) {
                 int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
-                tok = tok->next;
-                count += 2;
-                tok->setstr(toString(1));
                 for (; count > 0; --count)
                     deleteToken(tok->previous);
-                break;
-            }
-            result = 0;
+                result = 1;
+            } else
+                result = 0;
         } else /*if (tok->str() == "&&")*/ {
             breakPoints.insert("||");
             if (!stringToLL(tok->previous->str())) {
                 int count = getTokensDeleteCount(tok->next, breakPoints, &stepForward, std::make_pair<std::string, std::string>("(", ")"));
-                tok = tok->previous;
-                count += 2;
-                tok->setstr(toString(0));
                 for (; count > 0; --count)
                     deleteToken(tok->next);
-                break;
-            }
-            if (!stringToLL(tok->next->str())) {
+                result = 0;
+            } else if (!stringToLL(tok->next->str())) {
                 int count = getTokensDeleteCount(tok->previous, breakPoints, &stepBack, std::make_pair<std::string, std::string>(")", "("));
-                tok = tok->next;
-                count += 2;
-                tok->setstr(toString(0));
                 for (; count > 0; --count)
                     deleteToken(tok->previous);
-                break;
-            }
-            result = 1;
+                result = 0;
+            } else
+                result = 1;
         }
 
         tok = tok->previous;
