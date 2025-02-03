@@ -452,6 +452,10 @@ static void constFold()
     ASSERT_EQUALS("1", testConstFold("010==8"));
     ASSERT_EQUALS("exception", testConstFold("!1 ? 2 :"));
     ASSERT_EQUALS("exception", testConstFold("?2:3"));
+    ASSERT_EQUALS("0", testConstFold("( 0 ) && 10 < X"));
+    ASSERT_EQUALS("0", testConstFold("1+2*(3+4) && 7 - 7"));
+    ASSERT_EQUALS("1", testConstFold("( 1 ) || 10 < X"));
+    ASSERT_EQUALS("1", testConstFold("1+2*(3+4) || 8 - 7"));
 }
 
 #ifdef __CYGWIN__
