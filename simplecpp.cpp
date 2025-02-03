@@ -1164,10 +1164,7 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
         } else
             continue;
 
-        tok = tok->previous;
-        tok->setstr(toString(result));
-        deleteToken(tok->next);
-        deleteToken(tok->next);
+        simpleSquash(tok, toString(result));
     }
 }
 
@@ -1187,10 +1184,7 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok)
         else
             continue;
 
-        tok = tok->previous;
-        tok->setstr(toString(result));
-        deleteToken(tok->next);
-        deleteToken(tok->next);
+        simpleSquash(tok, toString(result));
     }
 }
 
@@ -1210,10 +1204,7 @@ void simplecpp::TokenList::constFoldShift(Token *tok)
         else
             continue;
 
-        tok = tok->previous;
-        tok->setstr(toString(result));
-        deleteToken(tok->next);
-        deleteToken(tok->next);
+        simpleSquash(tok, toString(result));
     }
 }
 
@@ -1247,10 +1238,7 @@ void simplecpp::TokenList::constFoldComparison(Token *tok)
         else
             continue;
 
-        tok = tok->previous;
-        tok->setstr(toString(result));
-        deleteToken(tok->next);
-        deleteToken(tok->next);
+        simpleSquash(tok, toString(result));
     }
 }
 
@@ -1282,10 +1270,7 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
                 result = (stringToLL(tok->previous->str()) ^ stringToLL(tok->next->str()));
             else /*if (*op == '|')*/
                 result = (stringToLL(tok->previous->str()) | stringToLL(tok->next->str()));
-            tok = tok->previous;
-            tok->setstr(toString(result));
-            deleteToken(tok->next);
-            deleteToken(tok->next);
+            simpleSquash(tok, toString(result));
         }
     }
 }
