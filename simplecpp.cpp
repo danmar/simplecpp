@@ -1334,6 +1334,37 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
     simpleSquash(tok, result);
 }
 
+static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool forwardDirection)
+{
+    simplecpp::Token *(*step)(simplecpp::Token *) = &stepForward;
+    int brackets = 0;
+    bool ret = false;
+    if (!forwardDirection)
+        step = &stepBack;
+
+    for (; tok; tok = (step)(tok)) {
+        if (stringToLL(tok->str()) == value) {
+            ret = true;
+            continue;
+        }
+        if (tok->op == ')') {
+            if (brackets) {
+                --brackets;
+                continue;
+            }
+            if (ret)
+                break;
+            return false;
+        }
+        if (tok->op == '(') {
+            ++brackets;
+            continue;
+        }
+        return false;
+    }
+    return ret;
+}
+
 static const std::string AND("and");
 static const std::string OR("or");
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
@@ -1356,16 +1387,14 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         breakPoints.insert(":");
         breakPoints.insert("?");
         if (tok->str() == "||"){
-            if (stringToLL(tok->previous->str()) || stringToLL(tok->next->str())) {
+            if (checkSideForSingleInt(tok->previous, 1LL, false) || checkSideForSingleInt(tok->next, 1LL, true))
                 squashTokens(tok, breakPoints, stringToLL(tok->previous->str()), toString(1));
-            } else
-                simpleSquash(tok, toString(0));
         } else /*if (tok->str() == "&&")*/ {
             breakPoints.insert("||");
-            if (!stringToLL(tok->previous->str()) || !stringToLL(tok->next->str())) {
+            if (checkSideForSingleInt(tok->previous, 0LL, false) || checkSideForSingleInt(tok->next, 0LL, true))
                 squashTokens(tok, breakPoints, !stringToLL(tok->previous->str()), toString(0));
-            } else
-                simpleSquash(tok, toString(1));
+            else if (checkSideForSingleInt(tok->previous, 1LL, false) == checkSideForSingleInt(tok->next, 1LL, true))
+                simpleSquash(tok, "1");
         }
     }
 }

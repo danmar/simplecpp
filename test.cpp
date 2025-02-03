@@ -456,6 +456,7 @@ static void constFold()
     ASSERT_EQUALS("0", testConstFold("1+2*(3+4) && 7 - 7"));
     ASSERT_EQUALS("1", testConstFold("( 1 ) || 10 < X"));
     ASSERT_EQUALS("1", testConstFold("1+2*(3+4) || 8 - 7"));
+    ASSERT_EQUALS("X >= 0 || 0 < Y", testConstFold("X >= 0 || 0 < Y"));
 }
 
 #ifdef __CYGWIN__
@@ -1599,6 +1600,22 @@ static void ifA()
 
     simplecpp::DUI dui;
     dui.defines.push_back("A=1");
+    ASSERT_EQUALS("\nX", preprocess(code, dui));
+}
+
+static void ifXorY()
+{
+    const char code[] = "#if Z > 0 || 0 < Y\n"
+                        "X\n"
+                        "#endif";
+    ASSERT_EQUALS("", preprocess(code));
+
+    simplecpp::DUI dui;
+    dui.defines.push_back("Z=1");
+    ASSERT_EQUALS("\nX", preprocess(code, dui));
+
+    dui.defines.clear();
+    dui.defines.push_back("Y=15");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -3108,6 +3125,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifdef2);
     TEST_CASE(ifndef);
     TEST_CASE(ifA);
+    TEST_CASE(ifXorY);
     TEST_CASE(ifCharLiteral);
     TEST_CASE(ifDefined);
     TEST_CASE(ifDefinedNoPar);
