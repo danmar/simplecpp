@@ -1289,30 +1289,6 @@ static simplecpp::Token * stepBack(simplecpp::Token *tok)
     return tok->previous;
 }
 
-static int getTokensDeleteCount(simplecpp::Token *tok, const std::set<std::string> & breakPoints, simplecpp::Token *(step)(simplecpp::Token *), const std::pair<std::string, std::string> & brackets)
-{
-    int count = 0;
-    bool skip = false;
-    tok = (step)(tok);
-    for (; tok; tok = (step)(tok)) {
-        if (skip){
-            ++count;
-            if (tok->str() == brackets.second) {
-                skip = false;
-                continue;
-            }
-        } else if (tok->str() == brackets.first) {
-            skip = true;
-            ++count;
-        } else if (breakPoints.count(tok->str()) != 0) {
-            break;
-        } else {
-            ++count;
-        }
-    }
-    return count;
-}
-
 void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 {
     tok = tok->previous;
@@ -1323,14 +1299,34 @@ void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 
 void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
 {
-    Token *(*step)(Token *) = &stepForward;
+    simplecpp::Token *(*step)(simplecpp::Token *) = &stepForward;
     std::pair<std::string, std::string> brackets = std::make_pair<std::string, std::string>("(", ")");
     if (!forwardDirection) {
         step = &stepBack;
         brackets = std::make_pair<std::string, std::string>(")", "(");
     }
-    for (int count = getTokensDeleteCount((step)(tok), breakPoints, step, brackets); count > 0; --count)
-        deleteToken((step)(tok));
+    int count = 0;
+    int skip = 0;
+    Token * tok2 = step(tok);
+    tok2 = step(tok2);
+    for (; tok2; tok2 = step(tok2)) {
+        if (skip){
+            ++count;
+            if (tok->str() == brackets.second) {
+                --skip;
+                continue;
+            }
+        } else if (tok2->str() == brackets.first) {
+            ++skip;
+            ++count;
+        } else if (breakPoints.count(tok2->str()) != 0) {
+            break;
+        } else {
+            ++count;
+        }
+    }
+    for (; count > 0; --count)
+        deleteToken(step(tok));
     simpleSquash(tok, result);
 }
 
@@ -1342,7 +1338,7 @@ static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool 
     if (!forwardDirection)
         step = &stepBack;
 
-    for (; tok; tok = (step)(tok)) {
+    for (; tok; tok = step(tok)) {
         if (stringToLL(tok->str()) == value) {
             ret = true;
             continue;
