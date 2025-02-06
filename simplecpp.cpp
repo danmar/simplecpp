@@ -1302,7 +1302,7 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
     const char * const brackets = forwardDirection ? "()" : ")(";
     Token* Token::* const step = forwardDirection ? &Token::next : &Token::previous;
     int skip = 0;
-    const Token * tok1 = tok->*step;
+    const Token * const tok1 = tok->*step;
     while (tok1 && tok1->*step) {
         if (skip){
             if ((tok1->*step)->op == brackets[1])
