@@ -1299,34 +1299,31 @@ void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 
 void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
 {
-    simplecpp::Token *(*step)(simplecpp::Token *) = &stepForward;
-    std::pair<std::string, std::string> brackets = std::make_pair<std::string, std::string>("(", ")");
-    if (!forwardDirection) {
-        step = &stepBack;
-        brackets = std::make_pair<std::string, std::string>(")", "(");
-    }
-    int count = 0;
+    const char *brackets = forwardDirection ? (const char[2]) {'(',')'} : (const char[2]) {')','('};
     int skip = 0;
-    Token * tok2 = step(tok);
-    tok2 = step(tok2);
-    for (; tok2; tok2 = step(tok2)) {
+    Token * tok1 = forwardDirection ? tok->next : tok->previous;
+    if (!tok1) {
+        simpleSquash(tok, result);
+        return;
+    }
+    for (Token * tok2 = forwardDirection ? tok1->next : tok1->previous; tok1 && tok2; tok1 = tok2, tok2 = forwardDirection ? tok2->next : tok2->previous) {
         if (skip){
-            ++count;
-            if (tok->str() == brackets.second) {
+            if (tok2->op == brackets[1])
                 --skip;
-                continue;
-            }
-        } else if (tok2->str() == brackets.first) {
+            deleteToken(tok2);
+            tok2 = tok1;
+        } else if (tok2->op == brackets[0]) {
             ++skip;
-            ++count;
+            deleteToken(tok2);
+            tok2 = tok1;
         } else if (breakPoints.count(tok2->str()) != 0) {
+            deleteToken(tok2);
             break;
         } else {
-            ++count;
+            deleteToken(tok2);
+            tok2 = tok1;
         }
     }
-    for (; count > 0; --count)
-        deleteToken(step(tok));
     simpleSquash(tok, result);
 }
 
