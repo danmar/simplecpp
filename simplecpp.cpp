@@ -1299,7 +1299,7 @@ void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 
 void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
 {
-    const char *brackets = forwardDirection ? "()" : ")(";
+    const char const *brackets = forwardDirection ? "()" : ")(";
     int skip = 0;
     Token * tok1 = forwardDirection ? tok->next : tok->previous;
     if (!tok1) {
