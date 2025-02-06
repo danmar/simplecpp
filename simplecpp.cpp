@@ -1300,28 +1300,22 @@ void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
 {
     const char * const brackets = forwardDirection ? "()" : ")(";
+    Token* Token:: * const step = forwardDirection ? &Token::next : &Token::previous;
     int skip = 0;
-    Token * tok1 = forwardDirection ? tok->next : tok->previous;
-    if (!tok1) {
-        simpleSquash(tok, result);
-        return;
-    }
-    for (Token * tok2 = forwardDirection ? tok1->next : tok1->previous; tok1 && tok2; tok1 = tok2, tok2 = forwardDirection ? tok2->next : tok2->previous) {
+    Token * tok1 = tok->*step;
+    while (tok1 && tok1->*step) {
         if (skip){
-            if (tok2->op == brackets[1])
+            if ((tok1->*step)->op == brackets[1])
                 --skip;
-            deleteToken(tok2);
-            tok2 = tok1;
-        } else if (tok2->op == brackets[0]) {
+            deleteToken(tok1->*step);
+        } else if ((tok1->*step)->op == brackets[0]) {
             ++skip;
-            deleteToken(tok2);
-            tok2 = tok1;
-        } else if (breakPoints.count(tok2->str()) != 0) {
-            deleteToken(tok2);
+            deleteToken(tok1->*step);
+        } else if (breakPoints.count((tok1->*step)->str()) != 0) {
+            deleteToken(tok1->*step);
             break;
         } else {
-            deleteToken(tok2);
-            tok2 = tok1;
+            deleteToken(tok1->*step);
         }
     }
     simpleSquash(tok, result);
