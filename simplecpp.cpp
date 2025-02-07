@@ -1275,20 +1275,6 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
     }
 }
 
-static simplecpp::Token * stepForward(simplecpp::Token *tok)
-{
-    if (!tok)
-        return nullptr;
-    return tok->next;
-}
-
-static simplecpp::Token * stepBack(simplecpp::Token *tok)
-{
-    if (!tok)
-        return nullptr;
-    return tok->previous;
-}
-
 void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
 {
     tok = tok->previous;
@@ -1321,16 +1307,13 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
     simpleSquash(tok, result);
 }
 
-static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool forwardDirection)
+static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool forwardDirection, bool any = false)
 {
-    simplecpp::Token *(*step)(simplecpp::Token *) = &stepForward;
+    simplecpp::Token* simplecpp::Token::* const step = forwardDirection ? &simplecpp::Token::next : &simplecpp::Token::previous;
     int brackets = 0;
     bool ret = false;
-    if (!forwardDirection)
-        step = &stepBack;
-
-    for (; tok; tok = step(tok)) {
-        if (stringToLL(tok->str()) == value) {
+    for (; tok; tok = tok->*step) {
+        if (tok->number && (stringToLL(tok->str()) == value || any)) {
             ret = true;
             continue;
         }
@@ -1374,13 +1357,13 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         breakPoints.insert(":");
         breakPoints.insert("?");
         if (tok->str() == "||"){
-            if (checkSideForSingleInt(tok->previous, 1LL, false) || checkSideForSingleInt(tok->next, 1LL, true))
-                squashTokens(tok, breakPoints, stringToLL(tok->previous->str()), toString(1));
+            if (checkSideForSingleInt(tok->previous, 1LL, false) || (checkSideForSingleInt(tok->next, 1LL, true) && checkSideForSingleInt(tok->previous, 1LL, false, true)))
+                squashTokens(tok, breakPoints, checkSideForSingleInt(tok->previous, 1LL, false), toString(1));
         } else /*if (tok->str() == "&&")*/ {
             breakPoints.insert("||");
-            if (checkSideForSingleInt(tok->previous, 0LL, false) || checkSideForSingleInt(tok->next, 0LL, true))
-                squashTokens(tok, breakPoints, !stringToLL(tok->previous->str()), toString(0));
-            else if (checkSideForSingleInt(tok->previous, 1LL, false) == checkSideForSingleInt(tok->next, 1LL, true))
+            if (checkSideForSingleInt(tok->previous, 0LL, false) || (checkSideForSingleInt(tok->next, 0LL, true) && checkSideForSingleInt(tok->previous, 0LL, false, true)))
+                squashTokens(tok, breakPoints, checkSideForSingleInt(tok->previous, 0LL, false), toString(0));
+            else if (checkSideForSingleInt(tok->previous, 1LL, false) && checkSideForSingleInt(tok->previous, 1LL, false) == checkSideForSingleInt(tok->next, 1LL, true))
                 simpleSquash(tok, "1");
         }
     }
