@@ -458,6 +458,7 @@ static void constFold()
     ASSERT_EQUALS("1", testConstFold("1+2*(3+4) || 8 - 7"));
     ASSERT_EQUALS("X && 0", testConstFold("X && 0"));
     ASSERT_EQUALS("X >= 0 || 0 < Y", testConstFold("X >= 0 || 0 < Y"));
+    ASSERT_EQUALS("X && 1 && Z", testConstFold("X && (1 || Y) && Z"));
 }
 
 #ifdef __CYGWIN__

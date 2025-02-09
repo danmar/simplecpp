@@ -1290,10 +1290,12 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
     int skip = 0;
     const Token * const tok1 = tok->*step;
     while (tok1 && tok1->*step) {
-        if (skip){
-            if ((tok1->*step)->op == brackets[1])
+        if ((tok1->*step)->op == brackets[1]){
+            if (skip) {
                 --skip;
-            deleteToken(tok1->*step);
+                deleteToken(tok1->*step);
+            } else
+                break;
         } else if ((tok1->*step)->op == brackets[0]) {
             ++skip;
             deleteToken(tok1->*step);
@@ -1310,25 +1312,24 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
 static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool forwardDirection, bool any = false)
 {
     simplecpp::Token* simplecpp::Token::* const step = forwardDirection ? &simplecpp::Token::next : &simplecpp::Token::previous;
-    int brackets = 0;
+    const char * const brackets = forwardDirection ? "()" : ")(";
+    int bracket = 0;
     bool ret = false;
     for (; tok; tok = tok->*step) {
         if (tok->number && (stringToLL(tok->str()) == value || any)) {
             ret = true;
             continue;
         }
-        if (tok->op == ')') {
-            if (brackets) {
-                --brackets;
+        if (tok->op == brackets[0]) {
+            ++bracket;
+            continue;
+        }
+        if (tok->op == brackets[1]) {
+            if (bracket) {
+                --bracket;
                 continue;
             }
-            if (ret)
-                break;
-            return false;
-        }
-        if (tok->op == '(') {
-            ++brackets;
-            continue;
+            break;
         }
         return false;
     }
