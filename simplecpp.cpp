@@ -1296,6 +1296,8 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
                 deleteToken(tok1->*step);
             } else
                 break;
+        } else if (skip) {
+            deleteToken(tok1->*step);
         } else if ((tok1->*step)->op == brackets[0]) {
             ++skip;
             deleteToken(tok1->*step);
@@ -1314,10 +1316,10 @@ static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool 
     simplecpp::Token* simplecpp::Token::* const step = forwardDirection ? &simplecpp::Token::next : &simplecpp::Token::previous;
     const char * const brackets = forwardDirection ? "()" : ")(";
     int bracket = 0;
-    bool ret = false;
+    bool found = false;
     for (; tok; tok = tok->*step) {
         if (tok->number && (stringToLL(tok->str()) == value || any)) {
-            ret = true;
+            found = true;
             continue;
         }
         if (tok->op == brackets[0]) {
@@ -1333,7 +1335,7 @@ static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool 
         }
         return false;
     }
-    return ret;
+    return found;
 }
 
 static const std::string AND("and");
