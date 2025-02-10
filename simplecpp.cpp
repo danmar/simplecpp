@@ -1296,10 +1296,10 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
                 deleteToken(tok1->*step);
             } else
                 break;
-        } else if (skip) {
-            deleteToken(tok1->*step);
         } else if ((tok1->*step)->op == brackets[0]) {
             ++skip;
+            deleteToken(tok1->*step);
+        } else if (skip) {
             deleteToken(tok1->*step);
         } else if (breakPoints.count((tok1->*step)->str()) != 0) {
             deleteToken(tok1->*step);
@@ -1311,31 +1311,11 @@ void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string>
     simpleSquash(tok, result);
 }
 
-static bool checkSideForSingleInt(simplecpp::Token * tok, long long value, bool forwardDirection, bool any = false)
+static simplecpp::Token * constFoldGetOperand(simplecpp::Token * tok, bool forwardDirection)
 {
     simplecpp::Token* simplecpp::Token::* const step = forwardDirection ? &simplecpp::Token::next : &simplecpp::Token::previous;
-    const char * const brackets = forwardDirection ? "()" : ")(";
-    int bracket = 0;
-    bool found = false;
-    for (; tok; tok = tok->*step) {
-        if (tok->number && (stringToLL(tok->str()) == value || any)) {
-            found = true;
-            continue;
-        }
-        if (tok->op == brackets[0]) {
-            ++bracket;
-            continue;
-        }
-        if (tok->op == brackets[1]) {
-            if (bracket) {
-                --bracket;
-                continue;
-            }
-            break;
-        }
-        return false;
-    }
-    return found;
+    const char bracket = forwardDirection ? ')' : '(';
+    return tok->*step && (tok->*step)->number && (!((tok->*step)->*step) ||  (((tok->*step)->*step)->op == bracket)) ? tok->*step : nullptr;
 }
 
 static const std::string AND("and");
@@ -1351,22 +1331,22 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         }
         if (tok->str() != "&&" && tok->str() != "||")
             continue;
-        if (!tok->previous || !tok->next)
-            continue;
-        if (!tok->previous->number && !tok->next->number)
+        const Token* lhs = constFoldGetOperand(tok, false);
+        const Token* rhs = constFoldGetOperand(tok, true);
+        if (!lhs) // if lhs is NaN we don't need fold as it will be evalueted
             continue;
 
         std::set<std::string> breakPoints;
         breakPoints.insert(":");
         breakPoints.insert("?");
         if (tok->str() == "||"){
-            if (checkSideForSingleInt(tok->previous, 1LL, false) || (checkSideForSingleInt(tok->next, 1LL, true) && checkSideForSingleInt(tok->previous, 1LL, false, true)))
-                squashTokens(tok, breakPoints, checkSideForSingleInt(tok->previous, 1LL, false), toString(1));
+            if (stringToLL(lhs->str()) == 1LL || (rhs && stringToLL(rhs->str()) == 1LL))
+                squashTokens(tok, breakPoints, stringToLL(lhs->str()) == 1LL, toString(1));
         } else /*if (tok->str() == "&&")*/ {
             breakPoints.insert("||");
-            if (checkSideForSingleInt(tok->previous, 0LL, false) || (checkSideForSingleInt(tok->next, 0LL, true) && checkSideForSingleInt(tok->previous, 0LL, false, true)))
-                squashTokens(tok, breakPoints, checkSideForSingleInt(tok->previous, 0LL, false), toString(0));
-            else if (checkSideForSingleInt(tok->previous, 1LL, false) && checkSideForSingleInt(tok->previous, 1LL, false) == checkSideForSingleInt(tok->next, 1LL, true))
+            if (stringToLL(lhs->str()) == 0LL || (rhs && stringToLL(rhs->str()) == 0LL))
+                squashTokens(tok, breakPoints, stringToLL(lhs->str()) == 0LL, toString(0));
+            else if (rhs && stringToLL(lhs->str()) && stringToLL(rhs->str()))
                 simpleSquash(tok, "1");
         }
     }
