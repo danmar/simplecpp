@@ -15,7 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-2019, windows-2022]
+        os: [windows-2019, windows-2022, windows-2025]
         config: [Release, Debug]
       fail-fast: false
 
@@ -44,7 +44,7 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 . || exit /b !errorlevel!
 
       - name: Run cmake
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2022' || matrix.os == 'windows-2025'
         run: |
           cmake -G "Visual Studio 17 2022" -A x64 . || exit /b !errorlevel!
 
