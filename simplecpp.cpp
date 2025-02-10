@@ -1331,8 +1331,8 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         }
         if (tok->str() != "&&" && tok->str() != "||")
             continue;
-        const Token* lhs = constFoldGetOperand(tok, false);
-        const Token* rhs = constFoldGetOperand(tok, true);
+        const Token* const lhs = constFoldGetOperand(tok, false);
+        const Token* const rhs = constFoldGetOperand(tok, true);
         if (!lhs) // if lhs is NaN we don't need fold as it will be evalueted
             continue;
 
