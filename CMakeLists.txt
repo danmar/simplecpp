@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.10)
 project (simplecpp LANGUAGES CXX)
 
 option(DISABLE_CPP03_SYNTAX_CHECK "Disable the C++03 syntax check." OFF)
