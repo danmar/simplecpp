@@ -26,18 +26,7 @@ jobs:
 
       - name: Setup msbuild.exe
         uses: microsoft/setup-msbuild@v2
-
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          check-latest: true
-
-      - name: Install missing Python packages
-        run: |
-          python -m pip install pip --upgrade || exit /b !errorlevel!
-          python -m pip install pytest || exit /b !errorlevel!
-
+        
       - name: Run cmake
         if: matrix.os == 'windows-2019'
         run: |
@@ -59,9 +48,4 @@ jobs:
       - name: Selfcheck
         run: |
           .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
-
-      - name: integration test
-        run: |
-          set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
-          python -m pytest integration_test.py || exit /b !errorlevel!
         
