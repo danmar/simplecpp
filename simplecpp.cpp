@@ -2169,7 +2169,8 @@ namespace simplecpp {
             for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
                 const MacroMap::const_iterator it = macros.find(partok->str());
                 if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
-                    const std::set<TokenString> expandedmacros2; // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
+                    std::set<TokenString> expandedmacros2(expandedmacros); // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
+                    expandedmacros2.erase(name());
                     partok = it->second.expand(output, loc, partok, macros, expandedmacros2);
                 } else {
                     output->push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));

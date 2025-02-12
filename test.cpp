@@ -859,6 +859,16 @@ static void define_define_22() // #400 inner macro not expanded after hash hash
     ASSERT_EQUALS("\n\n\n34", preprocess(code));
 }
 
+static void define_define_23() // #403 crash (infinite recursion)
+{
+    const char code[] = "#define C_(x, y)       x ## y\n"
+                        "#define C(x, y)        C_(x, y)\n"
+                        "#define X(func)        C(Y, C(func, Z))\n"
+                        "#define die X(die)\n"
+                        "die(void);\n";
+    ASSERT_EQUALS("\n\n\n\nYdieZ ( void ) ;", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -3055,6 +3065,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_20); // 384 arg contains comma
     TEST_CASE(define_define_21);
     TEST_CASE(define_define_22); // #400
+    TEST_CASE(define_define_23); // #403 - crash, infinite recursion
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
