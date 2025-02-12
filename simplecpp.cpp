@@ -947,7 +947,7 @@ void simplecpp::TokenList::constFold()
         constFoldQuestionOp(&tok);
 
         // If there is no '(' we are done with the constant folding
-        if (!tok || tok->op != '(')
+        if (tok->op != '(')
             break;
 
         if (!tok->next || !tok->next->next || tok->next->next->op != ')')
@@ -1157,7 +1157,10 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
         } else
             continue;
 
-        simpleSquash(tok, toString(result));
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
     }
 }
 
@@ -1177,7 +1180,10 @@ void simplecpp::TokenList::constFoldAddSub(Token *tok)
         else
             continue;
 
-        simpleSquash(tok, toString(result));
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
     }
 }
 
@@ -1197,7 +1203,10 @@ void simplecpp::TokenList::constFoldShift(Token *tok)
         else
             continue;
 
-        simpleSquash(tok, toString(result));
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
     }
 }
 
@@ -1231,7 +1240,10 @@ void simplecpp::TokenList::constFoldComparison(Token *tok)
         else
             continue;
 
-        simpleSquash(tok, toString(result));
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
     }
 }
 
@@ -1263,51 +1275,12 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
                 result = (stringToLL(tok->previous->str()) ^ stringToLL(tok->next->str()));
             else /*if (*op == '|')*/
                 result = (stringToLL(tok->previous->str()) | stringToLL(tok->next->str()));
-            simpleSquash(tok, toString(result));
+            tok = tok->previous;
+            tok->setstr(toString(result));
+            deleteToken(tok->next);
+            deleteToken(tok->next);
         }
     }
-}
-
-void simplecpp::TokenList::simpleSquash(Token *&tok, const std::string & result)
-{
-    tok = tok->previous;
-    tok->setstr(result);
-    deleteToken(tok->next);
-    deleteToken(tok->next);
-}
-
-void simplecpp::TokenList::squashTokens(Token *&tok, const std::set<std::string> & breakPoints, bool forwardDirection, const std::string & result)
-{
-    const char * const brackets = forwardDirection ? "()" : ")(";
-    Token* Token::* const step = forwardDirection ? &Token::next : &Token::previous;
-    int skip = 0;
-    const Token * const tok1 = tok->*step;
-    while (tok1 && tok1->*step) {
-        if ((tok1->*step)->op == brackets[1]){
-            if (skip) {
-                --skip;
-                deleteToken(tok1->*step);
-            } else
-                break;
-        } else if ((tok1->*step)->op == brackets[0]) {
-            ++skip;
-            deleteToken(tok1->*step);
-        } else if (skip) {
-            deleteToken(tok1->*step);
-        } else if (breakPoints.count((tok1->*step)->str()) != 0) {
-            break;
-        } else {
-            deleteToken(tok1->*step);
-        }
-    }
-    simpleSquash(tok, result);
-}
-
-static simplecpp::Token * constFoldGetOperand(simplecpp::Token * tok, bool forwardDirection)
-{
-    simplecpp::Token* simplecpp::Token::* const step = forwardDirection ? &simplecpp::Token::next : &simplecpp::Token::previous;
-    const char bracket = forwardDirection ? ')' : '(';
-    return tok->*step && (tok->*step)->number && (!((tok->*step)->*step) ||  (((tok->*step)->*step)->op == bracket)) ? tok->*step : nullptr;
 }
 
 static const std::string AND("and");
@@ -1323,24 +1296,21 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
         }
         if (tok->str() != "&&" && tok->str() != "||")
             continue;
-        const Token* const lhs = constFoldGetOperand(tok, false);
-        const Token* const rhs = constFoldGetOperand(tok, true);
-        if (!lhs) // if lhs is not a single number we don't need to fold
+        if (!tok->previous || !tok->previous->number)
+            continue;
+        if (!tok->next || !tok->next->number)
             continue;
 
-        std::set<std::string> breakPoints;
-        breakPoints.insert(":");
-        breakPoints.insert("?");
-        if (tok->str() == "||"){
-            if (stringToLL(lhs->str()) != 0LL || (rhs && stringToLL(rhs->str()) != 0LL))
-                squashTokens(tok, breakPoints, stringToLL(lhs->str()) != 0LL, toString(1));
-        } else /*if (tok->str() == "&&")*/ {
-            breakPoints.insert("||");
-            if (stringToLL(lhs->str()) == 0LL || (rhs && stringToLL(rhs->str()) == 0LL))
-                squashTokens(tok, breakPoints, stringToLL(lhs->str()) == 0LL, toString(0));
-            else if (rhs && stringToLL(lhs->str()) && stringToLL(rhs->str()))
-                simpleSquash(tok, "1");
-        }
+        int result;
+        if (tok->str() == "||")
+            result = (stringToLL(tok->previous->str()) || stringToLL(tok->next->str()));
+        else /*if (tok->str() == "&&")*/
+            result = (stringToLL(tok->previous->str()) && stringToLL(tok->next->str()));
+
+        tok = tok->previous;
+        tok->setstr(toString(result));
+        deleteToken(tok->next);
+        deleteToken(tok->next);
     }
 }
 
