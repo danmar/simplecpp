@@ -1717,6 +1717,17 @@ static void ifDefinedHashHash()
     ASSERT_EQUALS("file0,4,#error,#error FOO is enabled\n", toString(outputList));
 }
 
+static void ifDefinedHashHash2()
+{
+    // #409
+    // do not crash when expanding P()  (as ## rhs is "null")
+    // note: gcc outputs "defined E"
+    const char code[] = "#define P(p)defined E##p\n"
+                        "P()\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("\n0", preprocess(code, &outputList));
+}
+
 static void ifLogical()
 {
     const char code[] = "#if defined(A) || defined(B)\n"
@@ -3149,6 +3160,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifDefinedInvalid1);
     TEST_CASE(ifDefinedInvalid2);
     TEST_CASE(ifDefinedHashHash);
+    TEST_CASE(ifDefinedHashHash2);
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);
