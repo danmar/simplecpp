@@ -20,6 +20,7 @@ endfunction()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -pedantic -Wcast-qual -Wfloat-equal -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wshadow -Wundef -Wold-style-cast -Wno-multichar)
+    add_compile_options(-Wno-shadow) # TODO: fix these
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -37,6 +38,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-switch-default)
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        add_compile_options(-Wno-c++11-long-long)
+    endif()
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
