@@ -42,6 +42,7 @@
 
 #ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
+#include <atlconv.h>
 #undef ERROR
 #else
 #include <unistd.h>
