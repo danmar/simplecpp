@@ -2693,7 +2693,7 @@ static std::string currentDirectoryOSCalc() {
     char NPathA[MAX_PATH];
     ::WideCharToMultiByte(CP_ACP, 0, NPath, lstrlen(NPath), NPathA, MAX_PATH, NULL, NULL);
     return NPathA;
-#elif
+#else
     // in this case, TCHAR* is just defined to be a char*
     return NPath;
 #endif
