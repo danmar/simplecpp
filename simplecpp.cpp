@@ -2689,7 +2689,7 @@ static std::string currentDirectoryOSCalc() {
 #ifdef SIMPLECPP_WINDOWS
     TCHAR NPath[MAX_PATH];
     GetCurrentDirectory(MAX_PATH, NPath);
-    CT2CA NPathA(NPath);
+    CW2A NPathA(NPath);
     return NPathA;
 #else
     const std::size_t size = 1024;
