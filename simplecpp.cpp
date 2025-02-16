@@ -2341,11 +2341,6 @@ namespace simplecpp {
 namespace simplecpp {
 
 #ifdef __CYGWIN__
-    bool startsWith(const std::string &str, const std::string &s)
-    {
-        return (str.size() >= s.size() && str.compare(0, s.size(), s) == 0);
-    }
-
     std::string convertCygwinToWindowsPath(const std::string &cygwinPath)
     {
         std::string windowsPath;
