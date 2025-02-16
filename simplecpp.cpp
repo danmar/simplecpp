@@ -41,8 +41,8 @@
 #include <vector>
 
 #ifdef SIMPLECPP_WINDOWS
-#include <windows.h>
 #include <atlconv.h>
+#include <windows.h>
 #undef ERROR
 #else
 #include <unistd.h>
