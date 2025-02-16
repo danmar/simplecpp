@@ -2688,10 +2688,15 @@ static std::string currentDirectoryOSCalc() {
 #ifdef SIMPLECPP_WINDOWS
     TCHAR NPath[MAX_PATH];
     GetCurrentDirectory(MAX_PATH, NPath);
+#ifdef _UNICODE
     // convert the result from TCHAR* to char*
     char NPathA[MAX_PATH];
     ::WideCharToMultiByte(CP_ACP, 0, NPath, lstrlen(NPath), NPathA, MAX_PATH, NULL, NULL);
     return NPathA;
+#elif
+    // in this case, TCHAR* is just defined to be a char*
+    return NPath;
+#endif
 #else
     const std::size_t size = 1024;
     char the_path[size];
