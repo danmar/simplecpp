@@ -1329,6 +1329,7 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
 void simplecpp::TokenList::constFoldQuestionOp(Token **tok1)
 {
     bool gotoTok1 = false;
+    // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
     for (Token *tok = *tok1; tok && tok->op != ')'; tok =  gotoTok1 ? *tok1 : tok->next) {
         gotoTok1 = false;
         if (tok->str() != "?")
@@ -1945,6 +1946,7 @@ namespace simplecpp {
                 }
             }
 
+            // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
             Token * const output_end_1 = output.back();
 
             const Token *valueToken2;
@@ -2250,7 +2252,7 @@ namespace simplecpp {
             const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
             const bool unexpectedA = (!A->name && !A->number && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar);
 
-            Token * const B = tok->next->next;
+            const Token * const B = tok->next->next;
             if (!B->name && !B->number && B->op && !B->isOneOf("#="))
                 throw invalidHashHash::unexpectedToken(tok->location, name(), B);
 
@@ -2528,11 +2530,11 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->str() != "sizeof")
             continue;
-        simplecpp::Token *tok1 = tok->next;
+        const simplecpp::Token *tok1 = tok->next;
         if (!tok1) {
             throw std::runtime_error("missing sizeof argument");
         }
-        simplecpp::Token *tok2 = tok1->next;
+        const simplecpp::Token *tok2 = tok1->next;
         if (!tok2) {
             throw std::runtime_error("missing sizeof argument");
         }
@@ -2547,7 +2549,7 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
         }
 
         std::string type;
-        for (simplecpp::Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
+        for (const simplecpp::Token *typeToken = tok1; typeToken != tok2; typeToken = typeToken->next) {
             if ((typeToken->str() == "unsigned" || typeToken->str() == "signed") && typeToken->next->name)
                 continue;
             if (typeToken->str() == "*" && type.find('*') != std::string::npos)
@@ -2598,11 +2600,11 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->str() != HAS_INCLUDE)
             continue;
-        simplecpp::Token *tok1 = tok->next;
+        const simplecpp::Token *tok1 = tok->next;
         if (!tok1) {
             throw std::runtime_error("missing __has_include argument");
         }
-        simplecpp::Token *tok2 = tok1->next;
+        const simplecpp::Token *tok2 = tok1->next;
         if (!tok2) {
             throw std::runtime_error("missing __has_include argument");
         }
@@ -2620,7 +2622,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
         const bool systemheader = (tok1 && tok1->op == '<');
         std::string header;
         if (systemheader) {
-            simplecpp::Token *tok3 = tok1->next;
+            const simplecpp::Token *tok3 = tok1->next;
             if (!tok3) {
                 throw std::runtime_error("missing __has_include closing angular bracket");
             }
@@ -2631,7 +2633,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
                 }
             }
 
-            for (simplecpp::Token *headerToken = tok1->next; headerToken != tok3; headerToken = headerToken->next)
+            for (const simplecpp::Token *headerToken = tok1->next; headerToken != tok3; headerToken = headerToken->next)
                 header += headerToken->str();
         } else {
             header = tok1->str().substr(1U, tok1->str().size() - 2U);
