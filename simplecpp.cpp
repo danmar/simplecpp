@@ -1681,6 +1681,13 @@ namespace simplecpp {
                 return invalidHashHash(loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.");
             }
         };
+
+        std::string dump() const {
+            std::string ret;
+            for (const Token *tok = nameTokDef; sameline(nameTokDef,tok); tok = tok->next)
+                ret += "\n" + toString(tok->location.col) + ":" + tok->str();
+            return ret.substr(1);
+        }
     private:
         /** Create new token where Token::macro is set for replaced tokens */
         Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
@@ -3826,11 +3833,14 @@ std::string simplecpp::precompileHeader(const TokenList &rawtokens, std::vector<
                         macroMap);
 
     std::string ret;
+    ret = "files\n";
+    for (int i = 0; i < files.size(); ++i)
+        ret += toString(i) + ":" + files[i] + "\n";
+    ret += "tokens\n";
     unsigned int fileIndex = 0;
     unsigned int line = 0;
     unsigned int col = 0;
     for (const simplecpp::Token *tok = output.cfront(); tok; tok = tok->next) {
-        ret += "\n";
         if (tok->location.fileIndex != fileIndex) {
             fileIndex = tok->location.fileIndex;
             ret += "f" + toString(fileIndex);
@@ -3843,11 +3853,10 @@ std::string simplecpp::precompileHeader(const TokenList &rawtokens, std::vector<
             col = tok->location.col;
             ret += "c" + toString(col);
         }
-        ret += ":" + tok->str();
+        ret += ":" + tok->str() + "\n";
     }
-    for (simplecpp::MacroMap::const_iterator it = macroMap.begin(); it != macroMap.end(); ++it) {
-        ret += "\nM" + it->second.name();
-    }
+    for (simplecpp::MacroMap::const_iterator it = macroMap.begin(); it != macroMap.end(); ++it)
+        ret += "[MACRO]\n" + it->second.dump() + "\n";
     return ret;
 }
 

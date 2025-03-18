@@ -132,8 +132,7 @@ int main(int argc, char **argv)
     rawtokens->removeComments();
     simplecpp::TokenList outputTokens(files);
     if (precompile) {
-        std::ofstream f(filename + std::string(".pc"));
-        f << simplecpp::precompileHeader(*rawtokens, files, dui, &outputList);
+        std::cout << simplecpp::precompileHeader(*rawtokens, files, dui, &outputList);
     } else {
         std::map<std::string, simplecpp::TokenList*> filedata;
         simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
