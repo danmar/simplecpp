@@ -3314,8 +3314,10 @@ static std::string getTimeDefine(const struct tm *timep)
     return std::string("\"").append(buf).append("\"");
 }
 
-void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
+static void simplecppPreprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond, simplecpp::MacroMap& macros)
 {
+    using namespace simplecpp;
+
 #ifdef SIMPLECPP_WINDOWS
     if (dui.clearIncludeCache)
         nonExistingFilesCache.clear();
@@ -3347,7 +3349,6 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     std::vector<std::string> dummy;
 
     const bool hasInclude = isCpp17OrLater(dui);
-    MacroMap macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
         const std::string::size_type eq = macrostr.find('=');
@@ -3790,6 +3791,64 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
         }
     }
+}
+
+void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, simplecpp::TokenList *> &filedata, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
+{
+    MacroMap macroMap;
+    simplecppPreprocess(output,
+                        rawtokens,
+                        files,
+                        filedata,
+                        dui,
+                        outputList,
+                        macroUsage,
+                        ifCond,
+                        macroMap);
+}
+
+
+std::string simplecpp::precompileHeader(const TokenList &rawtokens, std::vector<std::string> &files, const DUI &dui, OutputList *outputList)
+{
+    std::map<std::string, TokenList*> filedata;
+    simplecpp::TokenList output(files);
+    std::list<simplecpp::MacroUsage> macroUsage;
+    std::list<simplecpp::IfCond> ifCond;
+    simplecpp::MacroMap macroMap;
+    simplecppPreprocess(output,
+                        rawtokens,
+                        files,
+                        filedata,
+                        dui,
+                        outputList,
+                        &macroUsage,
+                        &ifCond,
+                        macroMap);
+
+    std::string ret;
+    unsigned int fileIndex = 0;
+    unsigned int line = 0;
+    unsigned int col = 0;
+    for (const simplecpp::Token *tok = output.cfront(); tok; tok = tok->next) {
+        ret += "\n";
+        if (tok->location.fileIndex != fileIndex) {
+            fileIndex = tok->location.fileIndex;
+            ret += "f" + toString(fileIndex);
+        }
+        if (tok->location.line != line) {
+            line = tok->location.line;
+            ret += "l" + toString(line);
+        }
+        if (tok->location.col != col) {
+            col = tok->location.col;
+            ret += "c" + toString(col);
+        }
+        ret += ":" + tok->str();
+    }
+    for (simplecpp::MacroMap::const_iterator it = macroMap.begin(); it != macroMap.end(); ++it) {
+        ret += "\nM" + it->second.name();
+    }
+    return ret;
 }
 
 void simplecpp::cleanup(std::map<std::string, TokenList*> &filedata)
