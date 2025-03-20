@@ -149,7 +149,8 @@ static unsigned long long stringToULL(const std::string &s)
     return ret;
 }
 
-static bool startsWith(const std::string &s, const std::string &p)
+// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild 
+static bool startsWith_(const std::string &s, const std::string &p)
 {
     return (s.size() >= p.size()) && std::equal(p.begin(), p.end(), s.begin());
 }
@@ -2346,7 +2347,7 @@ namespace simplecpp {
         std::string windowsPath;
 
         std::string::size_type pos = 0;
-        if (cygwinPath.size() >= 11 && startsWith(cygwinPath, "/cygdrive/")) {
+        if (cygwinPath.size() >= 11 && startsWith_(cygwinPath, "/cygdrive/")) {
             const unsigned char driveLetter = cygwinPath[10];
             if (std::isalpha(driveLetter)) {
                 if (cygwinPath.size() == 11) {
@@ -2723,7 +2724,7 @@ static std::string toAbsolutePath(const std::string& path) {
 
 static std::pair<std::string, bool> extractRelativePathFromAbsolute(const std::string& absolutepath) {
     static const std::string prefix = currentDirectory() + "/";
-    if (startsWith(absolutepath, prefix)) {
+    if (startsWith_(absolutepath, prefix)) {
         const std::size_t size = prefix.size();
         return std::make_pair(absolutepath.substr(size, absolutepath.size() - size), true);
     }
