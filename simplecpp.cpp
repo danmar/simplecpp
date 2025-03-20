@@ -2716,10 +2716,10 @@ static std::string toAbsolutePath(const std::string& path) {
         return path;// preserve error file path that is indicated by an empty string
     }
     if (!isAbsolutePath(path)) {
-        return currentDirectory() + "/" + path;
+        return simplecpp::simplifyPath(currentDirectory() + "/" + path);
     }
     // otherwise
-    return path;
+    return simplecpp::simplifyPath(path);
 }
 
 static std::pair<std::string, bool> extractRelativePathFromAbsolute(const std::string& absolutepath) {
