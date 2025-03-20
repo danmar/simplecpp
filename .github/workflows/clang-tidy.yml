@@ -21,19 +21,19 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 19
-          sudo apt-get install clang-tidy-19
+          sudo ./llvm.sh 20
+          sudo apt-get install clang-tidy-20
 
       - name: Verify clang-tidy configuration
         run: |
-          clang-tidy-19 --verify-config
+          clang-tidy-20 --verify-config
 
       - name: Prepare CMake
         run: |
           cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDISABLE_CPP03_SYNTAX_CHECK=ON
         env:
-          CXX: clang-19
+          CXX: clang-20
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-19 -q -j $(nproc) -p=cmake.output
+          run-clang-tidy-20 -q -j $(nproc) -p=cmake.output
