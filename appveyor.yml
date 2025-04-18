@@ -2,19 +2,49 @@ version: 1.{build}
 
 environment:
   matrix:
-    - VisualStudioVersion: 14.0
-      platform: "Win32"
+    - VisualStudio: 14.0
+      VisualStudioGenerator: "14 2015"
+      ConfigurationPlatform: "Win32"
       configuration: "Debug"
       vcvarsall_platform: "x86"
       PlatformToolset: "v140"
+    - VisualStudio: 14.0
+      VisualStudioGenerator: "14 2015"
+      ConfigurationPlatform: "Win64"
+      configuration: "Debug"
+      vcvarsall_platform: "x64"
+      PlatformToolset: "v140"
+    - VisualStudio: 2017
+      VisualStudioGenerator: "15 2017"
+      ConfigurationPlatform: "Win32"
+      configuration: "Debug"
+      vcvarsall_platform: "x86"
+      PlatformToolset: "v141"
+    - VisualStudio: 2017
+      VisualStudioGenerator: "15 2017"
+      ConfigurationPlatform: "Win64"
+      configuration: "Debug"
+      vcvarsall_platform: "x64"
+      PlatformToolset: "v141"
+    - VisualStudio: 2019
+      VisualStudioGenerator: "16 2019"
+      ConfigurationPlatform: "Win32"
+      configuration: "Debug"
+      vcvarsall_platform: "x86"
+      PlatformToolset: "v142"
+    - VisualStudio: 2019
+      VisualStudioGenerator: "16 2019"
+      ConfigurationPlatform: "Win64"
+      configuration: "Debug"
+      vcvarsall_platform: "x64"
+      PlatformToolset: "v142"
 
 build_script:
-  - ECHO Building %configuration% %platform% with MSVC %VisualStudioVersion% using %PlatformToolset% PlatformToolset
-  - 'CALL "C:\Program Files (x86)\Microsoft Visual Studio %VisualStudioVersion%\VC\vcvarsall.bat" %vcvarsall_platform%'
-  - cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=On -G "Visual Studio 14" .
-  - dir
+  - ECHO Building %configuration% %platform% with MSVC %VisualStudio% (%VisualStudioGenerator%) using %PlatformToolset% PlatformToolset
+  - 'CALL "C:\Program Files (x86)\Microsoft Visual Studio %VisualStudio%\VC\vcvarsall.bat" %vcvarsall_platform%'
+  - cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=On -G %VisualStudioGenerator%" .
   - set _CL_=/WX
-  - msbuild "simplecpp.sln" /consoleloggerparameters:Verbosity=minimal /target:Build /property:Configuration="%configuration%";Platform=%platform% /p:PlatformToolset=%PlatformToolset% /maxcpucount /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "simplecpp.sln" /consoleloggerparameters:Verbosity=minimal /target:Build /property:Configuration="%configuration%";Platform=%ConfigurationPlatform% /p:PlatformToolset=%PlatformToolset% /maxcpucount /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 test_script:
   - debug\testrunner.exe
