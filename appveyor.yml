@@ -41,8 +41,8 @@ environment:
 
 build_script:
   - ECHO Building %configuration% %platform% with MSVC %VisualStudio% (%VisualStudioGenerator%) using %PlatformToolset% PlatformToolset
-  - cmake -G "Visual Studio %VisualStudioGenerator%" .
   - 'CALL "C:\Program Files (x86)\Microsoft Visual Studio %VisualStudio%\VC\vcvarsall.bat" %vcvarsall_platform%'
+  - cmake -G "Visual Studio %VisualStudioGenerator%" .
   - msbuild "simplecpp.sln" /consoleloggerparameters:Verbosity=minimal /target:Build /property:Configuration="%configuration%";Platform=%ConfigurationPlatform% /p:PlatformToolset=%PlatformToolset% /maxcpucount /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 test_script:
