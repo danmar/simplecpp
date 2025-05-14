@@ -3174,7 +3174,7 @@ static std::string getIncludePathFileName(const std::string &includePath, const 
     std::string basePath = toAbsolutePath(includePath);
     if (!basePath.empty() && basePath[basePath.size()-1U]!='/' && basePath[basePath.size()-1U]!='\\')
         basePath += '/';
-    std::string absolutesimplifiedHeaderPath = basePath + simplifiedHeader;
+    const std::string absolutesimplifiedHeaderPath = basePath + simplifiedHeader;
     return extractRelativePathFromAbsolute(absolutesimplifiedHeaderPath).first;
 }
 
