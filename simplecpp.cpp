@@ -3221,8 +3221,9 @@ static std::string findPathInMapBothRelativeAndAbsolute(const std::map<std::stri
         }
     } else {
         const std::string absolutePath = toAbsolutePath(path);
-        if (filedata.find(absolutePath) != filedata.end())
+        if (filedata.find(absolutePath) != filedata.end()) {
             return absolutePath;
+        }
     }
     // otherwise
     return "";
@@ -3235,7 +3236,10 @@ static std::string getFileIdPath(const std::map<std::string, simplecpp::TokenLis
     }
     if (isAbsolutePath(header)) {
         const std::string simplifiedHeaderPath = simplecpp::simplifyPath(header);
-        return (filedata.find(simplifiedHeaderPath) != filedata.end()) ? simplifiedHeaderPath : "";
+        const std::string match = findPathInMapBothRelativeAndAbsolute(filedata, simplifiedHeaderPath);
+        if (!match.empty()) {
+            return match;
+        }
     }
 
     if (!systemheader) {
