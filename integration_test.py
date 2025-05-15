@@ -63,7 +63,7 @@ def test_relative_header_2(tmpdir, inv, source_relative):
     if source_relative and not inv:
         assert '#line 8 "test.h"' in stdout
     else:
-        assert f'#line 8 "{pathlib.PurePosixPath(tmpdir)}/test.h"' in stdout
+        assert f'#line 8 "{pathlib.PurePath(tmpdir).as_posix()}/test.h"' in stdout
 
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
@@ -86,7 +86,7 @@ def test_relative_header_3(tmpdir, is_sys, inv, source_relative):
         if source_relative and not inv:
             assert '#line 8 "test_subdir/test.h"' in stdout
         else:
-            assert f'#line 8 "{pathlib.PurePosixPath(test_subdir)}/test.h"' in stdout
+            assert f'#line 8 "{pathlib.PurePath(test_subdir).as_posix()}/test.h"' in stdout
 
 @pytest.mark.parametrize("use_short_path", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
