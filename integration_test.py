@@ -1,6 +1,7 @@
 ## test with python -m pytest integration_test.py
 
 import os
+import pathlib
 import pytest
 from testutils import simplecpp, format_include_path_arg, format_include
 
@@ -62,7 +63,7 @@ def test_relative_header_2(tmpdir, inv, source_relative):
     if source_relative and not inv:
         assert '#line 8 "test.h"' in stdout
     else:
-        assert f'#line 8 "{tmpdir}/test.h"' in stdout
+        assert f'#line 8 "{pathlib.PosixPath(tmpdir)}/test.h"' in stdout
 
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
@@ -85,7 +86,7 @@ def test_relative_header_3(tmpdir, is_sys, inv, source_relative):
         if source_relative and not inv:
             assert '#line 8 "test_subdir/test.h"' in stdout
         else:
-            assert f'#line 8 "{test_subdir}/test.h"' in stdout
+            assert f'#line 8 "{pathlib.PosixPath(test_subdir)}/test.h"' in stdout
 
 @pytest.mark.parametrize("use_short_path", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
