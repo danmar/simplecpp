@@ -1,6 +1,7 @@
 ## test with python -m pytest integration_test.py
 
 import os
+import pathlib
 import pytest
 from testutils import simplecpp, format_include_path_arg, format_include
 
@@ -14,6 +15,7 @@ def __test_relative_header_create_header(dir, with_pragma_once=True):
                 #else
                 #error header_was_already_included
                 #endif
+                const int dummy = 1;
                 """)
     return header_file, "error: #error header_was_already_included"
 
@@ -48,33 +50,43 @@ def test_relative_header_1(tmpdir, with_pragma_once, is_sys):
         assert double_include_error in stderr
 
 @pytest.mark.parametrize("inv", (False, True))
-def test_relative_header_2(tmpdir, inv):
+@pytest.mark.parametrize("source_relative", (False, True))
+def test_relative_header_2(tmpdir, inv, source_relative):
     header_file, _ = __test_relative_header_create_header(tmpdir)
 
     test_file = __test_relative_header_create_source(tmpdir, "test.h", header_file, inv=inv)
 
-    args = [test_file]
+    args = ["test.c" if source_relative else test_file]
 
-    _, _, stderr = simplecpp(args, cwd=tmpdir)
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
     assert stderr == ''
+    if source_relative and not inv:
+        assert '#line 8 "test.h"' in stdout
+    else:
+        assert f'#line 8 "{pathlib.PurePath(tmpdir).as_posix()}/test.h"' in stdout
 
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
-def test_relative_header_3(tmpdir, is_sys, inv):
+@pytest.mark.parametrize("source_relative", (False, True))
+def test_relative_header_3(tmpdir, is_sys, inv, source_relative):
     test_subdir = os.path.join(tmpdir, "test_subdir")
     os.mkdir(test_subdir)
     header_file, _ = __test_relative_header_create_header(test_subdir)
 
     test_file = __test_relative_header_create_source(tmpdir, "test_subdir/test.h", header_file, is_include1_sys=is_sys, inv=inv)
 
-    args = [test_file]
+    args = ["test.c" if source_relative else test_file]
 
-    _, _, stderr = simplecpp(args, cwd=tmpdir)
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
 
     if is_sys:
         assert "missing header: Header not found" in stderr
     else:
         assert stderr == ''
+        if source_relative and not inv:
+            assert '#line 8 "test_subdir/test.h"' in stdout
+        else:
+            assert f'#line 8 "{pathlib.PurePath(test_subdir).as_posix()}/test.h"' in stdout
 
 @pytest.mark.parametrize("use_short_path", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
