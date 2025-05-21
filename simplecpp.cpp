@@ -3173,15 +3173,17 @@ static std::string openHeader(std::ifstream &f, const std::string &path)
 template <bool expandBaseWithAbsolutePath, bool exactRelative> 
 static std::string getRelativeFileName(const std::string &baseFile, const std::string &header)
 {
-    const std::string baseFileNormalized = (expandBaseWithAbsolutePath && !isAbsolutePath(baseFile)) ? (currentDirectory() + "/" + baseFile) : baseFile;
-    const std::string path = isAbsolutePath(header) ? header : (dirPath<true>(baseFileNormalized) + header);
-    const std::string simplifiedPath = simplecpp::simplifyPath(path);
+    const std::string baseFileSimplified = simplecpp::simplifyPath(baseFile);
+    const std::string baseFileNormalized = (expandBaseWithAbsolutePath && !isAbsolutePath(baseFileSimplified)) ? (currentDirectory() + "/" + baseFileSimplified) : baseFileSimplified;
+
+    const std::string headerSimplified = simplecpp::simplifyPath(header);
+    const std::string path = isAbsolutePath(headerSimplified) ? headerSimplified : (dirPath<true>(baseFileNormalized) + headerSimplified);
     if (exactRelative) {
-        const std::string absolutePath = expandBaseWithAbsolutePath ? simplifiedPath : toAbsolutePath(simplifiedPath);
+        const std::string absolutePath = expandBaseWithAbsolutePath ? path : toAbsolutePath(path);
         const std::string absoluteBaseFile = expandBaseWithAbsolutePath ? baseFileNormalized : toAbsolutePath(baseFileNormalized);
         return extractRelativePathFromAbsolute(absolutePath, dirPath<true>(absoluteBaseFile));
     }
-    return simplifiedPath;
+    return path;
 }
 
 static std::string openHeaderRelative(std::ifstream &f, const std::string &sourcefile, const std::string &header)
