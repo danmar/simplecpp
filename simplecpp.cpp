@@ -2725,30 +2725,28 @@ static std::string dirPath(const std::string& path) {
     const std::size_t firstSlash = path.find_last_of("\\/");
     if (firstSlash == std::string::npos) {
         return "";
-    } else {
-        return path.substr(0, firstSlash + (withTrailingSlash ? 1U : 0U));
     }
+    return path.substr(0, firstSlash + (withTrailingSlash ? 1U : 0U));
 }
 
 static std::string omitPathTrailingSlash(const std::string& path) {
     if (endsWith(path, "/")) {
         return path.substr(0, path.size() - 1U);
-    } else {
-        return path;
     }
+    return path;
 }
 
 static std::string extractRelativePathFromAbsolute(const std::string& absoluteSimplifiedPath, const std::string& prefixSimplifiedAbsoluteDir = currentDirectory()) {
     const std::string normalizedAbsolutePath = omitPathTrailingSlash(absoluteSimplifiedPath);
     std::string currentPrefix = omitPathTrailingSlash(prefixSimplifiedAbsoluteDir);
-    std::string leadingParenting = "";
+    std::string leadingParenting;
     while (!startsWith_(normalizedAbsolutePath, currentPrefix)) {
         leadingParenting = "../" + leadingParenting;
         currentPrefix = dirPath<false>(currentPrefix);
     }
     const std::size_t size = currentPrefix.size();
     std::string relativeFromMeetingPath = normalizedAbsolutePath.substr(size, normalizedAbsolutePath.size() - size);
-    if (startsWith_(relativeFromMeetingPath.c_str(), "/")) {
+    if (startsWith_(relativeFromMeetingPath, "/")) {
         // omit the leading slash
         relativeFromMeetingPath = relativeFromMeetingPath.substr(1, relativeFromMeetingPath.size());
     }
@@ -3182,9 +3180,8 @@ static std::string getRelativeFileName(const std::string &baseFile, const std::s
         const std::string absolutePath = expandBaseWithAbsolutePath ? simplifiedPath : toAbsolutePath(simplifiedPath);
         const std::string absoluteBaseFile = expandBaseWithAbsolutePath ? baseFileNormalized : toAbsolutePath(baseFileNormalized);
         return extractRelativePathFromAbsolute(absolutePath, dirPath<true>(absoluteBaseFile));
-    } else {
-        return simplifiedPath;
     }
+    return simplifiedPath;
 }
 
 static std::string openHeaderRelative(std::ifstream &f, const std::string &sourcefile, const std::string &header)
@@ -3253,9 +3250,8 @@ static std::string findPathInMapBothRelativeAndAbsolute(const std::map<std::stri
 
     if (filedata.find(alternativePath) != filedata.end()) {
         return alternativePath;
-    } else {
-        return "";
     }
+    return "";
 }
 
 static std::string getFileIdPath(const std::map<std::string, simplecpp::TokenList *> &filedata, const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
