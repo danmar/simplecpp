@@ -3249,6 +3249,8 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (!f.is_open())
             continue;
         f.close();
+        if (ret.find(header2) != ret.end())
+            continue;
 
         TokenList *tokens = new TokenList(header2, filenames, outputList);
         if (dui.removeComments)
