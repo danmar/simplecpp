@@ -3297,7 +3297,7 @@ static void safeInsertTokenListToMap(std::map<std::string, simplecpp::TokenList 
     if (!inserted) {
         std::cerr << "error in " << contextDesc << " - attempt to add a tokenized file to the file map, but this file is already in the map! Details:" <<
             "header: " << header << " header2: " << header2 << " source: " << sourcefile << " systemheader: " << systemheader << std::endl;
-        abort();
+        std::abort();
     }
 }
 
