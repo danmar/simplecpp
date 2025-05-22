@@ -2720,11 +2720,11 @@ static std::string toAbsolutePath(const std::string& path) {
 }
 
 static std::string dirPath(const std::string& path, bool withTrailingSlash=true) {
-    const std::size_t firstSlash = path.find_last_of("\\/");
-    if (firstSlash == std::string::npos) {
+    const std::size_t lastSlash = path.find_last_of("\\/");
+    if (lastSlash == std::string::npos) {
         return "";
     }
-    return path.substr(0, firstSlash + (withTrailingSlash ? 1U : 0U));
+    return path.substr(0, lastSlash + (withTrailingSlash ? 1U : 0U));
 }
 
 static std::string omitPathTrailingSlash(const std::string& path) {
