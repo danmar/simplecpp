@@ -2744,6 +2744,12 @@ static std::string extractRelativePathFromAbsolute(const std::string& absoluteSi
     }
     const std::size_t size = currentPrefix.size();
     std::string relativeFromMeetingPath = normalizedAbsolutePath.substr(size, normalizedAbsolutePath.size() - size);
+    if (currentPrefix.empty() && !(startsWith_(absoluteSimplifiedPath, "/") && startsWith_(prefixSimplifiedAbsoluteDir, "/"))) {
+        // In the case that there is no common prefix path,
+        //  and at not both of the paths start with `/` (can happen only in Windows paths on distinct partitions),
+        //  return the absolute simplified path as is because no relative path can match.
+        return absoluteSimplifiedPath;
+    }
     if (startsWith_(relativeFromMeetingPath, "/")) {
         // omit the leading slash
         relativeFromMeetingPath = relativeFromMeetingPath.substr(1, relativeFromMeetingPath.size());
