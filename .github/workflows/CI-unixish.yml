@@ -53,7 +53,7 @@ jobs:
 
     - name: integration test
       run: |
-        python3 -m pytest integration_test.py
+        python3 -m pytest integration_test.py -vv
 
     - name: Run CMake
       run: |

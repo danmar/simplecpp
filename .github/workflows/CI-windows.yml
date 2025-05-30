@@ -57,5 +57,5 @@ jobs:
       - name: integration test
         run: |
           set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
-          python -m pytest integration_test.py || exit /b !errorlevel!
+          python -m pytest integration_test.py -vv || exit /b !errorlevel!
         
