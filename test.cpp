@@ -434,7 +434,7 @@ static void comment_multiline()
     const char code[] = "#define ABC {// \\\n"
                         "}\n"
                         "void f() ABC\n";
-    ASSERT_EQUALS("\n\nvoid f ( ) { }", preprocess(code));
+    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code));
 }
 
 
