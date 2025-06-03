@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     const char *filename = nullptr;
     bool use_istream = false;
     bool fail_on_error = false;
+    bool keep_comments = false;
 
     // Settings..
     simplecpp::DUI dui;
@@ -75,6 +76,10 @@ int main(int argc, char **argv)
                 fail_on_error = true;
                 found = true;
                 break;
+            case 'C':
+                keep_comments = true;
+                found = true;
+                break;
             }
             if (!found) {
                 std::cout << "error: option '" << arg << "' is unknown." << std::endl;
@@ -107,10 +112,11 @@ int main(int argc, char **argv)
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::cout << "  -is             Use std::istream interface." << std::endl;
         std::cout << "  -e              Output errors only." << std::endl;
+        std::cout << "  -C              Keep comments." << std::endl;
         std::exit(0);
     }
 
-    dui.removeComments = true;
+    dui.removeComments = !keep_comments;
 
     // Perform preprocessing
     simplecpp::OutputList outputList;
@@ -126,7 +132,8 @@ int main(int argc, char **argv)
     } else {
         rawtokens = new simplecpp::TokenList(filename,files,&outputList);
     }
-    rawtokens->removeComments();
+    if (!keep_comments)
+        rawtokens->removeComments();
     simplecpp::TokenList outputTokens(files);
     std::map<std::string, simplecpp::TokenList*> filedata;
     simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);

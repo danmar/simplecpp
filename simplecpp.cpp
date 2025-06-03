@@ -153,7 +153,7 @@ static unsigned long long stringToULL(const std::string &s)
     return ret;
 }
 
-// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild 
+// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
 static bool startsWith_(const std::string &s, const std::string &p)
 {
     return (s.size() >= p.size()) && std::equal(p.begin(), p.end(), s.begin());
@@ -3398,7 +3398,7 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
     return ret;
 }
 
-static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
+static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList, const simplecpp::DUI &dui)
 {
     const simplecpp::Token * const tok = *tok1;
     const simplecpp::MacroMap::const_iterator it = macros.find(tok->str());
@@ -3418,7 +3418,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
         }
         output.takeTokens(value);
     } else {
-        if (!tok->comment)
+        if (!dui.removeComments || !tok->comment)
             output.push_back(new simplecpp::Token(*tok));
         *tok1 = tok->next;
     }
@@ -3631,7 +3631,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 TokenList inc2(files);
                 if (!inc1.empty() && inc1.cfront()->name) {
                     const Token *inctok = inc1.cfront();
-                    if (!preprocessToken(inc2, &inctok, macros, files, outputList)) {
+                    if (!preprocessToken(inc2, &inctok, macros, files, outputList, dui)) {
                         output.clear();
                         return;
                     }
@@ -3807,7 +3807,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
 
                         const Token *tmp = tok;
-                        if (!preprocessToken(expr, &tmp, macros, files, outputList)) {
+                        if (!preprocessToken(expr, &tmp, macros, files, outputList, dui)) {
                             output.clear();
                             return;
                         }
@@ -3892,7 +3892,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const Location loc(rawtok->location);
         TokenList tokens(files);
 
-        if (!preprocessToken(tokens, &rawtok, macros, files, outputList)) {
+        if (!preprocessToken(tokens, &rawtok, macros, files, outputList, dui)) {
             output.clear();
             return;
         }
