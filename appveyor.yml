@@ -10,7 +10,7 @@ environment:
       PlatformToolset: "v140"
     - VisualStudio: 14.0
       VisualStudioGenerator: "14 2015"
-      ConfigurationPlatform: "Win64"
+      ConfigurationPlatform: "x64"
       configuration: "Debug"
       vcvarsall_platform: "x64"
       PlatformToolset: "v140"
@@ -22,7 +22,7 @@ environment:
       PlatformToolset: "v141"
     - VisualStudio: 2017
       VisualStudioGenerator: "15 2017"
-      ConfigurationPlatform: "Win64"
+      ConfigurationPlatform: "x64"
       configuration: "Debug"
       vcvarsall_platform: "x64"
       PlatformToolset: "v141"
@@ -34,7 +34,7 @@ environment:
       PlatformToolset: "v142"
     - VisualStudio: 2019
       VisualStudioGenerator: "16 2019"
-      ConfigurationPlatform: "Win64"
+      ConfigurationPlatform: "x64"
       configuration: "Debug"
       vcvarsall_platform: "x64"
       PlatformToolset: "v142"
