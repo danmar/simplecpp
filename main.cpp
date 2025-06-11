@@ -114,18 +114,18 @@ int main(int argc, char **argv)
             }
         } else if (filename) {
             std::cout << "error: multiple filenames specified" << std::endl;
-            std::exit(1);
+            return 1;
         } else {
             filename = arg;
         }
     }
 
     if (error)
-        std::exit(1);
+        return 1;
 
     if (quiet && error_only) {
         std::cout << "error: -e cannot be used in conjunction with -q" << std::endl;
-        std::exit(1);
+        return 1;
     }
 
     if (!filename) {
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
         std::cout << "  -e              Output errors only." << std::endl;
         std::cout << "  -f              Fail when errors were encountered (exitcode 1)." << std::endl;
         std::cout << "  -l              Print lines numbers." << std::endl;
-        std::exit(0);
+        return 0;
     }
 
     dui.removeComments = true;
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
         std::ifstream f(filename);
         if (!f.is_open()) {
             std::cout << "error: could not open file '" << filename << "'" << std::endl;
-            std::exit(1);
+            return 1;
         }
         rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
     } else {
