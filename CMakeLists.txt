@@ -51,6 +51,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors -Wno-weak-vtables)
     add_compile_options_safe(-Wno-unsafe-buffer-usage)
+    add_compile_options_safe(-Wno-nrvo)
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # ignore C++11-specific warning
