@@ -91,6 +91,33 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // TODO: move this logic into simplecpp?
+    {
+        bool inc_missing = false;
+        for (const std::string& inc : dui.includes) {
+            std::ifstream f(inc);
+            if (!f.is_open()) {
+                inc_missing = true;
+                std::cout << "error: could not open include '" << inc << "'" << std::endl;
+            }
+        }
+        if (inc_missing)
+            return 1;
+    }
+    {
+            bool inc_missing = false;
+            for (const std::string& inc : dui.includePaths) {
+                // TODO: check if this is a directory
+                std::ifstream f(inc);
+                if (!f.is_open()) {
+                    inc_missing = true;
+                    std::cout << "error: could not find include path '" << inc << "'" << std::endl;
+                }
+            }
+            if (inc_missing)
+                return 1;
+        }
+
     if (!filename) {
         std::cout << "Syntax:" << std::endl;
         std::cout << "simplecpp [options] filename" << std::endl;
