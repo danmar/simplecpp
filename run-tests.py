@@ -16,7 +16,7 @@ def cleanup(out):
 commands = []
 
 for f in sorted(glob.glob(os.path.expanduser('testsuite/clang-preprocessor-tests/*.c*'))):
-  for line in open(f, 'rt'):
+  for line in open(f, 'rt', encoding='utf-8'):
     if line.startswith('// RUN: %clang_cc1 '):
       cmd = ''
       for arg in line[19:].split():
