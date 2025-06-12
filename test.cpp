@@ -2990,6 +2990,43 @@ static void fuzz_crash()
     }
 }
 
+static void same_name()
+{
+    const char code[] = "#include <header_a.h>\n"
+                        "#include <header_b.h>\n"
+                        "TEST\n";
+
+    simplecpp::DUI dui;
+    dui.includePaths.push_back("./testsuite/path-tests/include_a");
+    dui.includePaths.push_back("./testsuite/path-tests/include_b");
+
+    ASSERT_EQUALS("\n\nOK", preprocess(code, dui));
+}
+
+static void file_id()
+{
+    const char code[] = "#include \"once.h\"\n"
+                        "#include \"Once.h\"\n"
+
+                        "#include <once.h>\n"
+                        "#include <Once.h>\n"
+
+                        "#include \"../path-tests/once.h\"\n"
+                        "#include \"../path-tests/Once.h\"\n"
+                        "#include \"../Path-Tests/once.h\"\n"
+                        "#include \"../Path-Tests/Once.h\"\n"
+
+                        "#include \"include_a/../once.h\"\n"
+                        "#include \"include_a/../Once.h\"\n"
+                        "#include \"include_A/../once.h\"\n"
+                        "#include \"include_A/../Once.h\"\n";
+
+    simplecpp::DUI dui;
+    dui.includePaths.push_back("./testsuite/path-tests");
+
+    ASSERT_EQUALS("\n#line 2 \"testsuite/path-tests/once.h\"\nONCE", preprocess(code, dui));
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -3211,6 +3248,10 @@ int main(int argc, char **argv)
     TEST_CASE(unicode_invalid);
 
     TEST_CASE(warning);
+
+    // path resolution
+    TEST_CASE(same_name);
+    TEST_CASE(file_id);
 
     // utility functions.
     TEST_CASE(simplifyPath);
