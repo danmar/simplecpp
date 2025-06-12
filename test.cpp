@@ -279,9 +279,9 @@ static void characterLiteral()
 
 #ifdef __GNUC__
     // BEGIN Implementation-specific results
-    ASSERT_EQUALS(static_cast<int>('AB'), simplecpp::characterLiteralToLL("'AB'"));
-    ASSERT_EQUALS(static_cast<int>('ABC'), simplecpp::characterLiteralToLL("'ABC'"));
-    ASSERT_EQUALS(static_cast<int>('ABCD'), simplecpp::characterLiteralToLL("'ABCD'"));
+    ASSERT_EQUALS('AB', simplecpp::characterLiteralToLL("'AB'"));
+    ASSERT_EQUALS('ABC', simplecpp::characterLiteralToLL("'ABC'"));
+    ASSERT_EQUALS('ABCD', simplecpp::characterLiteralToLL("'ABCD'"));
     ASSERT_EQUALS('\134t', simplecpp::characterLiteralToLL("'\\134t'")); // cppcheck ticket #7452
     // END Implementation-specific results
 #endif
