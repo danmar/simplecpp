@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     bool error = false;
     const char *filename = nullptr;
     bool use_istream = false;
+    bool fail_on_error = false;
 
     // Settings..
     simplecpp::DUI dui;
@@ -68,6 +69,10 @@ int main(int argc, char **argv)
                 break;
             case 'e':
                 error_only = true;
+                found = true;
+                break;
+            case 'f':
+                fail_on_error = true;
                 found = true;
                 break;
             }
@@ -171,6 +176,9 @@ int main(int argc, char **argv)
             std::cerr << output.msg << std::endl;
         }
     }
+
+    if (fail_on_error && !outputList.empty())
+        return 1;
 
     return 0;
 }
