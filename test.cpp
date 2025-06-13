@@ -2261,6 +2261,7 @@ static void include9()
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
     dui.includePaths.push_back(".");
+    dui.removeComments = true;
     simplecpp::preprocess(out, rawtokens_c, files, filedata, dui);
 
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
