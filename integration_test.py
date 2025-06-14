@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import platform
 import pytest
 from testutils import simplecpp, format_include_path_arg, format_include
 
@@ -177,3 +178,113 @@ def test_relative_header_6(record_property, tmpdir, with_pragma_once, relative_i
             assert f'#line 8 "{pathlib.PurePath(tmpdir).as_posix()}/test.h"' in stdout
     else:
         assert double_include_error in stderr
+
+def test_same_name_header(record_property, tmpdir):
+    include_a = os.path.join(tmpdir, "include_a")
+    include_b = os.path.join(tmpdir, "include_b")
+
+    test_file = os.path.join(tmpdir, "test.c")
+    header_a = os.path.join(include_a, "header_a.h")
+    header_b = os.path.join(include_b, "header_b.h")
+    same_name_a = os.path.join(include_a, "same_name.h")
+    same_name_b = os.path.join(include_b, "same_name.h")
+
+    os.mkdir(include_a)
+    os.mkdir(include_b)
+
+    with open(test_file, "wt") as f:
+        f.write("""
+                #include <header_a.h>
+                #include <header_b.h>
+                TEST
+                """)
+
+    with open(header_a, "wt") as f:
+        f.write("""
+                #include "same_name.h"
+                """)
+
+    with open(header_b, "wt") as f:
+        f.write("""
+                #include "same_name.h"
+                """)
+
+    with open(same_name_a, "wt") as f:
+        f.write("""
+                #define TEST E
+                """)
+
+    with open(same_name_b, "wt") as f:
+        f.write("""
+                #define TEST OK
+                """)
+
+    args = [
+        format_include_path_arg(include_a),
+        format_include_path_arg(include_b),
+        test_file
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert "OK" in stdout
+    assert stderr == ""
+
+def test_pragma_once_matching(record_property, tmpdir):
+    if platform.system() == "win32":
+        names_to_test = [
+            '"once.h"',
+            '"Once.h"',
+            '<once.h>',
+            '<Once.h>',
+            '"../test_dir/once.h"',
+            '"../test_dir/Once.h"',
+            '"../Test_Dir/once.h"',
+            '"../Test_Dir/Once.h"',
+            '"test_subdir/../once.h"',
+            '"test_subdir/../Once.h"',
+            '"Test_Subdir/../once.h"',
+            '"Test_Subdir/../Once.h"',
+        ]
+    else:
+        names_to_test = [
+            '"once.h"',
+            '<once.h>',
+            '"../test_dir/once.h"',
+            '"test_subdir/../once.h"',
+        ]
+
+    test_dir = os.path.join(tmpdir, "test_dir")
+    test_subdir = os.path.join(test_dir, "test_subdir")
+
+    test_file = os.path.join(test_dir, "test.c")
+    once_header = os.path.join(test_dir, "once.h")
+
+    os.mkdir(test_dir)
+    os.mkdir(test_subdir)
+
+    with open(test_file, "wt") as f:
+        for n in names_to_test:
+            f.write(f"""
+                    #include {n}
+                    """);
+
+    with open(once_header, "wt") as f:
+        f.write(f"""
+                #pragma once
+                ONCE
+                """);
+
+    args = [
+        format_include_path_arg(test_dir),
+        test_file
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert stdout.count("ONCE") == 1
+    assert stderr == ""

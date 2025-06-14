@@ -105,6 +105,8 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
     tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, filedata, dui, outputList);
+    for (auto &i : filedata)
+        delete i.second;
     return tokens2.stringify();
 }
 
