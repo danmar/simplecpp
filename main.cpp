@@ -17,6 +17,7 @@ int main(int argc, char **argv)
 {
     bool error = false;
     const char *filename = nullptr;
+    bool precompile = false;
     bool use_istream = false;
     bool fail_on_error = false;
 
@@ -67,6 +68,12 @@ int main(int argc, char **argv)
                 quiet = true;
                 found = true;
                 break;
+            case 'p':
+                if (std::strcmp(arg, "-pc")==0) {
+                    precompile = true;
+                    found = true;
+                }
+                break;
             case 'e':
                 error_only = true;
                 found = true;
@@ -107,6 +114,7 @@ int main(int argc, char **argv)
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::cout << "  -is             Use std::istream interface." << std::endl;
         std::cout << "  -e              Output errors only." << std::endl;
+        std::cout << "  -pc             Precompile header." << std::endl;
         std::exit(0);
     }
 
@@ -128,15 +136,19 @@ int main(int argc, char **argv)
     }
     rawtokens->removeComments();
     simplecpp::TokenList outputTokens(files);
-    std::map<std::string, simplecpp::TokenList*> filedata;
-    simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
-    simplecpp::cleanup(filedata);
+    if (precompile) {
+        std::cout << simplecpp::precompileHeader(*rawtokens, files, dui, &outputList);
+    } else {
+        std::map<std::string, simplecpp::TokenList*> filedata;
+        simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
+        simplecpp::cleanup(filedata);
+    }
     delete rawtokens;
     rawtokens = nullptr;
 
     // Output
     if (!quiet) {
-        if (!error_only)
+        if (!error_only && !precompile)
             std::cout << outputTokens.stringify() << std::endl;
 
         for (const simplecpp::Output &output : outputList) {
