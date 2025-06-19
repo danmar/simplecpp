@@ -11,6 +11,7 @@
 #include <iosfwd>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -25,6 +26,10 @@
 #  endif
 #else
 #  define SIMPLECPP_LIB
+#endif
+
+#ifndef _WIN32
+#  include <sys/stat.h>
 #endif
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
@@ -47,6 +52,7 @@ namespace simplecpp {
 
     typedef std::string TokenString;
     class Macro;
+    class FileDataCache;
 
     /**
      * Location in source code
@@ -349,7 +355,7 @@ namespace simplecpp {
 
     SIMPLECPP_LIB long long characterLiteralToLL(const std::string& str);
 
-    SIMPLECPP_LIB std::map<std::string, TokenList*> load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = nullptr);
+    SIMPLECPP_LIB FileDataCache load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = nullptr);
 
     /**
      * Preprocess
@@ -363,12 +369,12 @@ namespace simplecpp {
      * @param macroUsage output: macro usage
      * @param ifCond output: #if/#elif expressions
      */
-    SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, std::map<std::string, TokenList*> &filedata, const DUI &dui, OutputList *outputList = nullptr, std::list<MacroUsage> *macroUsage = nullptr, std::list<IfCond> *ifCond = nullptr);
+    SIMPLECPP_LIB void preprocess(TokenList &output, const TokenList &rawtokens, std::vector<std::string> &files, FileDataCache &filedata, const DUI &dui, OutputList *outputList = nullptr, std::list<MacroUsage> *macroUsage = nullptr, std::list<IfCond> *ifCond = nullptr);
 
     /**
      * Deallocate data
      */
-    SIMPLECPP_LIB void cleanup(std::map<std::string, TokenList*> &filedata);
+    SIMPLECPP_LIB void cleanup(FileDataCache &filedata);
 
     /** Simplify path */
     SIMPLECPP_LIB std::string simplifyPath(std::string path);
@@ -389,6 +395,88 @@ namespace simplecpp {
     /** Returns the __cplusplus value for a given standard */
     SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
     SIMPLECPP_LIB std::string getCppStdString(cppstd_t std);
+
+    class SIMPLECPP_LIB FileDataCache
+    {
+    public:
+        FileDataCache() {}
+
+        TokenList *get(const std::string &sourcefile, const std::string &header, std::string *header2, const DUI &dui, bool systemheader);
+
+        TokenList *load(const std::string &sourcefile, const std::string &header, std::string *header2, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
+
+        TokenList *get_or_load(const std::string &sourcefile, const std::string &header, std::string *header2, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
+
+        void insert(const std::string &path, const TokenList &tokens)
+        {
+            mDataMap.insert(std::make_pair(path, std::make_shared<TokenList>(tokens)));
+        }
+
+        typedef std::map<std::string, std::shared_ptr<TokenList>>::iterator iterator;
+        typedef std::map<std::string, std::shared_ptr<TokenList>>::const_iterator const_iterator;
+        typedef std::map<std::string, std::shared_ptr<TokenList>>::size_type size_type;
+
+        size_type size() const
+        {
+            return mDataMap.size();
+        }
+
+        iterator begin()
+        {
+            return mDataMap.begin();
+        }
+
+        iterator end()
+        {
+            return mDataMap.end();
+        }
+
+        const_iterator begin() const
+        {
+            return mDataMap.begin();
+        }
+
+        const_iterator end() const
+        {
+            return mDataMap.end();
+        }
+
+        const_iterator cbegin() const
+        {
+            return mDataMap.cbegin();
+        }
+
+        const_iterator cend() const
+        {
+            return mDataMap.cend();
+        }
+
+    private:
+        struct FileID
+        {
+            bool operator< (const FileID &that) const;
+
+#ifdef SIMPLECPP_WINDOWS
+            struct
+            {
+                uint64_t VolumeSerialNumber;
+                struct
+                {
+                    uint8_t Identifier[16];
+                } FileId;
+            } fileIdInfo;
+#else
+            dev_t dev;
+            ino_t ino;
+#endif
+        };
+
+        static bool getFileId(const std::string &path, FileID &id);
+
+        std::map<std::string, std::shared_ptr<TokenList>> mDataMap;
+        std::map<FileID, std::string> mIdMap;
+        std::map<std::string, std::string> mAliasMap;
+    };
 }
 
 #if defined(_MSC_VER)
