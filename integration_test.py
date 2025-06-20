@@ -67,7 +67,7 @@ def test_relative_header_2(record_property, tmpdir, with_pragma_once, inv, sourc
     record_property("stderr", stderr)
     if with_pragma_once:
         assert stderr == ''
-        if inv:
+        if inv or not source_relative:
             assert f'#line 8 "{pathlib.PurePath(tmpdir).as_posix()}/test.h"' in stdout
         else:
             assert '#line 8 "test.h"' in stdout
@@ -94,16 +94,17 @@ def test_relative_header_3(record_property, tmpdir, is_sys, inv, source_relative
         assert "missing header: Header not found" in stderr
     else:
         assert stderr == ''
-        if inv:
-            assert f'#line 8 "{pathlib.PurePath(test_subdir).as_posix()}/test.h"' in stdout
-        else:
+        if source_relative and not inv:
             assert '#line 8 "test_subdir/test.h"' in stdout
+        else:
+            assert f'#line 8 "{pathlib.PurePath(test_subdir).as_posix()}/test.h"' in stdout
 
 @pytest.mark.parametrize("use_short_path", (False, True))
 @pytest.mark.parametrize("relative_include_dir", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
-def test_relative_header_4(record_property, tmpdir, use_short_path, relative_include_dir, is_sys, inv):
+@pytest.mark.parametrize("source_relative", (False, True))
+def test_relative_header_4(record_property, tmpdir, use_short_path, relative_include_dir, is_sys, inv, source_relative):
     test_subdir = os.path.join(tmpdir, "test_subdir")
     os.mkdir(test_subdir)
     header_file, _ = __test_relative_header_create_header(test_subdir)
@@ -112,13 +113,14 @@ def test_relative_header_4(record_property, tmpdir, use_short_path, relative_inc
 
     test_file = __test_relative_header_create_source(tmpdir, header_file, "test.h", is_include2_sys=is_sys, inv=inv)
 
-    args = [format_include_path_arg("test_subdir" if relative_include_dir else test_subdir), test_file]
+    args = [format_include_path_arg("test_subdir" if relative_include_dir else test_subdir), "test.c" if source_relative else test_file]
 
     _, stdout, stderr = simplecpp(args, cwd=tmpdir)
     record_property("stdout", stdout)
     record_property("stderr", stderr)
+
     assert stderr == ''
-    if (use_short_path and not inv) or (relative_include_dir and inv):
+    if (source_relative and use_short_path and not inv) or (relative_include_dir and inv):
         assert '#line 8 "test_subdir/test.h"' in stdout
     else:
         assert f'#line 8 "{pathlib.PurePath(test_subdir).as_posix()}/test.h"' in stdout
@@ -127,7 +129,8 @@ def test_relative_header_4(record_property, tmpdir, use_short_path, relative_inc
 @pytest.mark.parametrize("relative_include_dir", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
-def test_relative_header_5(record_property, tmpdir, with_pragma_once, relative_include_dir, is_sys, inv): # test relative paths with ..
+@pytest.mark.parametrize("source_relative", (False, True))
+def test_relative_header_5(record_property, tmpdir, with_pragma_once, relative_include_dir, is_sys, inv, source_relative): # test relative paths with ..
     ## in this test, the subdir role is the opposite then the previous - it contains the test.c file, while the parent tmpdir contains the header file
     header_file, double_include_error = __test_relative_header_create_header(tmpdir, with_pragma_once=with_pragma_once)
     if is_sys:
@@ -139,14 +142,14 @@ def test_relative_header_5(record_property, tmpdir, with_pragma_once, relative_i
     os.mkdir(test_subdir)
     test_file = __test_relative_header_create_source(test_subdir, header_file, header_file_second_path, is_include2_sys=is_sys, inv=inv)
 
-    args = ([format_include_path_arg(".." if relative_include_dir else tmpdir)] if is_sys else []) + ["test.c"]
+    args = ([format_include_path_arg(".." if relative_include_dir else tmpdir)] if is_sys else []) + ["test.c" if source_relative else test_file]
 
     _, stdout, stderr = simplecpp(args, cwd=test_subdir)
     record_property("stdout", stdout)
     record_property("stderr", stderr)
     if with_pragma_once:
         assert stderr == ''
-        if (relative_include_dir or not is_sys) and inv:
+        if (relative_include_dir if is_sys else source_relative) and inv:
             assert '#line 8 "../test.h"' in stdout
         else:
             assert f'#line 8 "{pathlib.PurePath(tmpdir).as_posix()}/test.h"' in stdout
@@ -157,7 +160,8 @@ def test_relative_header_5(record_property, tmpdir, with_pragma_once, relative_i
 @pytest.mark.parametrize("relative_include_dir", (False, True))
 @pytest.mark.parametrize("is_sys", (False, True))
 @pytest.mark.parametrize("inv", (False, True))
-def test_relative_header_6(record_property, tmpdir, with_pragma_once, relative_include_dir, is_sys, inv): # test relative paths with .. that is resolved only by an include dir
+@pytest.mark.parametrize("source_relative", (False, True))
+def test_relative_header_6(record_property, tmpdir, with_pragma_once, relative_include_dir, is_sys, inv, source_relative): # test relative paths with .. that is resolved only by an include dir
     ## in this test, both the header and the source file are at the same dir, but there is a dummy inclusion dir as a subdir
     header_file, double_include_error = __test_relative_header_create_header(tmpdir, with_pragma_once=with_pragma_once)
 
@@ -165,7 +169,7 @@ def test_relative_header_6(record_property, tmpdir, with_pragma_once, relative_i
     os.mkdir(test_subdir)
     test_file = __test_relative_header_create_source(tmpdir, header_file, "../test.h", is_include2_sys=is_sys, inv=inv)
 
-    args = [format_include_path_arg("test_subdir" if relative_include_dir else test_subdir), "test.c"]
+    args = [format_include_path_arg("test_subdir" if relative_include_dir else test_subdir), "test.c" if source_relative else test_file]
 
     _, stdout, stderr = simplecpp(args, cwd=tmpdir)
     record_property("stdout", stdout)
