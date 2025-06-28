@@ -31,12 +31,10 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
-#if __cplusplus >= 201103L
 #ifdef SIMPLECPP_WINDOWS
 #include <mutex>
 #endif
 #include <unordered_map>
-#endif
 #include <utility>
 #include <vector>
 
@@ -49,18 +47,6 @@
 #ifdef SIMPLECPP_WINDOWS
 #include <windows.h>
 #undef ERROR
-#endif
-
-#if __cplusplus >= 201103L
-#define OVERRIDE override
-#define EXPLICIT explicit
-#else
-#define OVERRIDE
-#define EXPLICIT
-#endif
-
-#if (__cplusplus < 201103L) && !defined(__APPLE__)
-#define nullptr NULL
 #endif
 
 static bool isHex(const std::string &s)
@@ -368,22 +354,22 @@ protected:
 class StdIStream : public simplecpp::TokenList::Stream {
 public:
     // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    EXPLICIT StdIStream(std::istream &istr)
+    explicit StdIStream(std::istream &istr)
         : istr(istr) {
         assert(istr.good());
         init();
     }
 
-    virtual int get() OVERRIDE {
+    virtual int get() override {
         return istr.get();
     }
-    virtual int peek() OVERRIDE {
+    virtual int peek() override {
         return istr.peek();
     }
-    virtual void unget() OVERRIDE {
+    virtual void unget() override {
         istr.unget();
     }
-    virtual bool good() OVERRIDE {
+    virtual bool good() override {
         return istr.good();
     }
 
@@ -402,20 +388,20 @@ public:
         init();
     }
 
-    virtual int get() OVERRIDE {
+    virtual int get() override {
         if (pos >= size)
             return lastStatus = EOF;
         return str[pos++];
     }
-    virtual int peek() OVERRIDE {
+    virtual int peek() override {
         if (pos >= size)
             return lastStatus = EOF;
         return str[pos];
     }
-    virtual void unget() OVERRIDE {
+    virtual void unget() override {
         --pos;
     }
-    virtual bool good() OVERRIDE {
+    virtual bool good() override {
         return lastStatus != EOF;
     }
 
@@ -429,7 +415,7 @@ private:
 class FileStream : public simplecpp::TokenList::Stream {
 public:
     // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    EXPLICIT FileStream(const std::string &filename, std::vector<std::string> &files)
+    explicit FileStream(const std::string &filename, std::vector<std::string> &files)
         : file(fopen(filename.c_str(), "rb"))
         , lastCh(0)
         , lastStatus(0) {
@@ -440,25 +426,25 @@ public:
         init();
     }
 
-    ~FileStream() OVERRIDE {
+    ~FileStream() override {
         fclose(file);
         file = nullptr;
     }
 
-    virtual int get() OVERRIDE {
+    virtual int get() override {
         lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
-    virtual int peek() OVERRIDE{
+    virtual int peek() override{
         // keep lastCh intact
         const int ch = fgetc(file);
         unget_internal(ch);
         return ch;
     }
-    virtual void unget() OVERRIDE {
+    virtual void unget() override {
         unget_internal(lastCh);
     }
-    virtual bool good() OVERRIDE {
+    virtual bool good() override {
         return lastStatus != EOF;
     }
 
@@ -519,12 +505,10 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), b
     *this = other;
 }
 
-#if __cplusplus >= 201103L
 simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(nullptr), backToken(nullptr), files(other.files)
 {
     *this = std::move(other);
 }
-#endif
 
 simplecpp::TokenList::~TokenList()
 {
@@ -543,7 +527,6 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(const TokenList &other)
     return *this;
 }
 
-#if __cplusplus >= 201103L
 simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
 {
     if (this != &other) {
@@ -557,7 +540,6 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
     }
     return *this;
 }
-#endif
 
 void simplecpp::TokenList::clear()
 {
@@ -1477,11 +1459,7 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 
 namespace simplecpp {
     class Macro;
-#if __cplusplus >= 201103L
     using MacroMap = std::unordered_map<TokenString,Macro>;
-#else
-    typedef std::map<TokenString,Macro> MacroMap;
-#endif
 
     class Macro {
     public:
@@ -2380,47 +2358,9 @@ namespace simplecpp {
 
 #ifdef SIMPLECPP_WINDOWS
 
-#if __cplusplus >= 201103L
 using MyMutex = std::mutex;
 template<class T>
 using MyLock = std::lock_guard<T>;
-#else
-class MyMutex {
-public:
-    MyMutex() {
-        InitializeCriticalSection(&m_criticalSection);
-    }
-
-    ~MyMutex() {
-        DeleteCriticalSection(&m_criticalSection);
-    }
-
-    CRITICAL_SECTION* lock() {
-        return &m_criticalSection;
-    }
-private:
-    CRITICAL_SECTION m_criticalSection;
-};
-
-template<typename T>
-class MyLock {
-public:
-    explicit MyLock(T& m)
-        : m_mutex(m) {
-        EnterCriticalSection(m_mutex.lock());
-    }
-
-    ~MyLock() {
-        LeaveCriticalSection(m_mutex.lock());
-    }
-
-private:
-    MyLock& operator=(const MyLock&);
-    MyLock(const MyLock&);
-
-    T& m_mutex;
-};
-#endif
 
 class RealFileNameMap {
 public:
@@ -4032,7 +3972,3 @@ std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
 }
-
-#if (__cplusplus < 201103L) && !defined(__APPLE__)
-#undef nullptr
-#endif
