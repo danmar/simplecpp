@@ -3067,7 +3067,7 @@ simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcef
         return nullptr;
 
     if (isAbsolutePath(header)) {
-        std::string path = simplecpp::simplifyPath(header);
+        const std::string path = simplecpp::simplifyPath(header);
         const auto name_it = mNameMap.find(path);
 
         if (name_it != mNameMap.end())
@@ -3075,7 +3075,7 @@ simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcef
     }
 
     if (!systemheader) {
-        std::string path = getRelativeFileName(sourcefile, header, true);
+        const std::string path = getRelativeFileName(sourcefile, header, true);
         const auto name_it = mNameMap.find(path);
 
         if (name_it != mNameMap.end())
@@ -3089,7 +3089,7 @@ simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcef
     }
 
     for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-        std::string path = getIncludePathFileName(*it, header);
+        const std::string path = getIncludePathFileName(*it, header);
         const auto name_it = mNameMap.find(path);
 
         if (name_it != mNameMap.end())
@@ -3117,23 +3117,23 @@ std::pair<bool, simplecpp::FileData *> simplecpp::FileDataCache::load(const std:
         mNameMap.insert(std::make_pair(std::move(path), id_it->second));
 
         return std::make_pair(false, id_it->second);
-    } else {
-        FileData *data = new FileData {path, TokenList(f, filenames, path, outputList)};
-
-        if (dui.removeComments)
-            data->tokens.removeComments();
-
-        mNameMap.insert(std::make_pair(std::move(path), data));
-        mIdMap.insert(std::make_pair(fileId, data));
-        mData.push_back(std::unique_ptr<FileData>(data));
-
-        return std::make_pair(true, data);
     }
+
+    FileData *const data = new FileData {path, TokenList(f, filenames, path, outputList)};
+
+    if (dui.removeComments)
+        data->tokens.removeComments();
+
+    mNameMap.insert(std::make_pair(std::move(path), data));
+    mIdMap.insert(std::make_pair(fileId, data));
+    mData.push_back(std::unique_ptr<FileData>(data));
+
+    return std::make_pair(true, data);
 }
 
 std::pair<bool, simplecpp::FileData *> simplecpp::FileDataCache::get(const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader, std::vector<std::string> &filenames, simplecpp::OutputList *outputList)
 {
-    FileData *data = lookup(sourcefile, header, dui, systemheader);
+    FileData *const data = lookup(sourcefile, header, dui, systemheader);
 
     if (data != nullptr)
         return std::make_pair(false, data);

@@ -1925,7 +1925,7 @@ static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens = makeTokenList(code,files,"test.h");
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files,"test.h");
     simplecpp::FileDataCache cache;
     cache.insert({"test.h", rawtokens});
 
@@ -1942,7 +1942,7 @@ static void systemInclude()
 {
     const char code[] = "#include <limits.h>\n";
     std::vector<std::string> files;
-    simplecpp::TokenList rawtokens = makeTokenList(code,files,"local/limits.h");
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files,"local/limits.h");
     simplecpp::FileDataCache cache;
     cache.insert({"include/limits.h", simplecpp::TokenList(files)});
     cache.insert({"local/limits.h", rawtokens});
@@ -2120,8 +2120,8 @@ static void include3()   // #16 - crash when expanding macro from header
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("A.c", files[0]);
@@ -2147,8 +2147,8 @@ static void include4()   // #27 - -include
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "27.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "27.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "27.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "27.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("27.c", files[0]);
@@ -2174,8 +2174,8 @@ static void include5()    // #3 - handle #include MACRO
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("3.c", files[0]);
@@ -2199,7 +2199,7 @@ static void include6()   // #57 - incomplete macro  #include MACRO(,)
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens = makeTokenList(code, files, "57.c");
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "57.c");
 
     ASSERT_EQUALS(1U, files.size());
     ASSERT_EQUALS("57.c", files[0]);
@@ -2220,8 +2220,8 @@ static void include7()    // #include MACRO
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "3.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "3.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("3.c", files[0]);
@@ -2258,8 +2258,8 @@ static void include9()
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "1.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "1.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "1.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "1.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("1.c", files[0]);
@@ -2440,8 +2440,8 @@ static void stringify1()
 
     std::vector<std::string> files;
 
-    simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
-    simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "A.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "A.h");
 
     ASSERT_EQUALS(2U, files.size());
     ASSERT_EQUALS("A.c", files[0]);

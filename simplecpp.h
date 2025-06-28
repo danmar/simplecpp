@@ -417,7 +417,7 @@ namespace simplecpp {
         std::pair<bool, FileData *> get(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
 
         void insert(FileData data) {
-            FileData *newdata = new FileData(std::move(data));
+            FileData *const newdata = new FileData(std::move(data));
 
             mData.push_back(std::unique_ptr<FileData>(newdata));
             mNameMap.insert(std::make_pair(newdata->filename, newdata));
