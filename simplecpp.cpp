@@ -3,18 +3,14 @@
  * Copyright (C) 2016-2023 simplecpp team
  */
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#define SIMPLECPP_WINDOWS
-#define NOMINMAX
-#endif
+#include "simplecpp.h"
 
 #ifdef SIMPLECPP_WINDOWS
-#define _WIN32_WINNT 0x0602
-#include <windows.h>
-#undef ERROR
+#  define _WIN32_WINNT 0x0602
+#  define NOMINMAX
+#  include <windows.h>
+#  undef ERROR
 #endif
-
-#include "simplecpp.h"
 
 #include <algorithm>
 #include <cassert>
@@ -39,17 +35,17 @@
 #include <stdexcept>
 #include <string>
 #ifdef SIMPLECPP_WINDOWS
-#include <mutex>
+#  include <mutex>
 #endif
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #ifdef _WIN32
-#include <direct.h>
+#  include <direct.h>
 #else
-#include <sys/stat.h>
-#include <unistd.h>
+#  include <sys/stat.h>
+#  include <unistd.h>
 #endif
 
 static bool isHex(const std::string &s)

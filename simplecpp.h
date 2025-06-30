@@ -6,6 +6,10 @@
 #ifndef simplecppH
 #define simplecppH
 
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#  define SIMPLECPP_WINDOWS
+#endif
+
 #include <cctype>
 #include <cstring>
 #include <iosfwd>
@@ -28,7 +32,7 @@
 #  define SIMPLECPP_LIB
 #endif
 
-#ifdef _WIN32
+#ifdef SIMPLECPP_WINDOWS
 #  include <cstdint>
 #else
 #  include <sys/stat.h>
