@@ -923,7 +923,7 @@ static void define_va_opt_3()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
-    ASSERT_EQUALS("file0,2,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
                   toString(outputList));
 
     outputList.clear();
