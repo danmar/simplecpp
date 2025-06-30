@@ -1956,7 +1956,7 @@ namespace simplecpp {
             const Token *endToken2;
 
             if (variadicOpt) {
-                if (parametertokens2.size() > args.size() && parametertokens2.front()->next->op != ')')
+                if (parametertokens2.size() > args.size() && parametertokens2[args.size() - 1]->next->op != ')')
                     valueToken2 = optExpandValue->cfront();
                 else
                     valueToken2 = optNoExpandValue->cfront();

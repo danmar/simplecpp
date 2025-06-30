@@ -6,4 +6,7 @@
 int main()
 {
     PF( "%s", "Hello" );
+    PF( a, );
+    PF( a );
+    PF( , );
 }
