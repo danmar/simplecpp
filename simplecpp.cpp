@@ -1781,8 +1781,10 @@ namespace simplecpp {
                             expandValue.push_back(new Token(*tok));
                             tok = tok->next;
                         }
-                        if (par != 0)
-                            throw Error(endToken->location, "Missing closing parenthesis for __VA_OPT__");
+                        if (par != 0) {
+                            const Token *const lastTok = expandValue.back() ? expandValue.back() : valueToken->next;
+                            throw Error(lastTok->location, "Missing closing parenthesis for __VA_OPT__");
+                        }
                     } else {
                         expandValue.push_back(new Token(*tok));
                         noExpandValue.push_back(new Token(*tok));
