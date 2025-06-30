@@ -2685,7 +2685,7 @@ static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::strin
 static bool isCpp17OrLater(const simplecpp::DUI &dui)
 {
     const std::string std_ver = simplecpp::getCppStdString(dui.std);
-    return !std_ver.empty() && (std_ver >= "201703L");
+    return std_ver.empty() || (std_ver >= "201703L");
 }
 
 
