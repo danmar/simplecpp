@@ -9,4 +9,5 @@ int main()
     PF( a, );
     PF( a );
     PF( , );
+    PF( );
 }
