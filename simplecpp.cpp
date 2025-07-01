@@ -2837,7 +2837,7 @@ static bool simplifyName(simplecpp::TokenList &expr, simplecpp::OutputList *outp
                     simplecpp::Output err(tok->location.files);
                     err.type = simplecpp::Output::SYNTAX_ERROR;
                     err.location = tok->location;
-                    err.msg = "Undefined function-like macro in directive";
+                    err.msg = "Undefined function-like macro in directive: " + tok->str() + "( ... )";
                     outputList->push_back(err);
                 }
                 return false;
