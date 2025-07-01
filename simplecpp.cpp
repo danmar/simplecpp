@@ -2391,7 +2391,7 @@ namespace simplecpp {
         /** does the macro expansion have __VA_OPT__? */
         bool variadicOpt;
 
-        /** Expansion value for varadic macros with __VA_OPT__ expanded and discarded respecively */
+        /** Expansion value for varadic macros with __VA_OPT__ expanded and discarded respectively */
         const TokenList *optExpandValue;
         const TokenList *optNoExpandValue;
 
