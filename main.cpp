@@ -60,6 +60,7 @@ int main(int argc, char **argv)
             case 's':
                 if (std::strncmp(arg, "-std=",5)==0) {
                     dui.std = arg + 5;
+                    dui.gnu = dui.std.rfind("gnu", 0) != std::string::npos;
                     found = true;
                 }
                 break;

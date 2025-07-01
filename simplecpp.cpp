@@ -2760,7 +2760,7 @@ static std::string extractRelativePathFromAbsolute(const std::string& absoluteSi
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
-    if (!isCpp17OrLater(dui))
+    if (!isCpp17OrLater(dui) && !dui.gnu)
         return;
 
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -3483,7 +3483,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     // use a dummy vector for the macros because as this is not part of the file and would add an empty entry - e.g. /usr/include/poll.h
     std::vector<std::string> dummy;
 
-    const bool hasInclude = isCpp17OrLater(dui);
+    const bool hasInclude = isCpp17OrLater(dui) || dui.gnu;
     MacroMap macros;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
