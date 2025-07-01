@@ -2818,7 +2818,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
 
 static const char * const altopData[] = {"and","or","bitand","bitor","compl","not","not_eq","xor"};
 static const std::set<std::string> altop(&altopData[0], &altopData[8]);
-static void simplifyName(simplecpp::TokenList &expr)
+static bool simplifyName(simplecpp::TokenList &expr, simplecpp::OutputList *outputList)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
         if (tok->name) {
@@ -2832,9 +2832,20 @@ static void simplifyName(simplecpp::TokenList &expr)
                 if (alt)
                     continue;
             }
+            if (tok->next && tok->next->str() == "(") {
+                if (outputList) {
+                    simplecpp::Output err(tok->location.files);
+                    err.type = simplecpp::Output::SYNTAX_ERROR;
+                    err.location = tok->location;
+                    err.msg = "Undefined function-like macro in directive";
+                    outputList->push_back(err);
+                }
+                return false;
+            }
             tok->setstr("0");
         }
     }
+    return true;
 }
 
 /*
@@ -3106,12 +3117,13 @@ static void simplifyComments(simplecpp::TokenList &expr)
     }
 }
 
-static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
+static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType, simplecpp::OutputList *outputList)
 {
     simplifyComments(expr);
     simplifySizeof(expr, sizeOfType);
     simplifyHasInclude(expr, dui);
-    simplifyName(expr);
+    if (!simplifyName(expr, outputList))
+        return 0;
     simplifyNumbers(expr);
     expr.constFold();
     // TODO: handle invalid expressions
@@ -3820,11 +3832,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             std::string E;
                             for (const simplecpp::Token *tok = expr.cfront(); tok; tok = tok->next)
                                 E += (E.empty() ? "" : " ") + tok->str();
-                            const long long result = evaluate(expr, dui, sizeOfType);
+                            const long long result = evaluate(expr, dui, sizeOfType, outputList);
                             conditionIsTrue = (result != 0);
                             ifCond->push_back(IfCond(rawtok->location, E, result));
                         } else {
-                            const long long result = evaluate(expr, dui, sizeOfType);
+                            const long long result = evaluate(expr, dui, sizeOfType, outputList);
                             conditionIsTrue = (result != 0);
                         }
                     } catch (const std::exception &e) {
