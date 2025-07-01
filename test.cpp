@@ -984,6 +984,33 @@ static void define_va_opt_6()
                   toString(outputList));
 }
 
+static void define_va_opt_7()
+{
+    // eof in __VA_OPT__
+    const char code1[] = "#define err(...) __VA_OPT__";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code1, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+                  toString(outputList));
+
+    outputList.clear();
+
+    const char code2[] = "#define err(...) __VA_OPT__(";
+
+    ASSERT_EQUALS("", preprocess(code2, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+                  toString(outputList));
+
+    outputList.clear();
+
+    const char code3[] = "#define err(...) __VA_OPT__(x";
+
+    ASSERT_EQUALS("", preprocess(code3, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+                  toString(outputList));
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -3076,6 +3103,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_4);
     TEST_CASE(define_va_opt_5);
     TEST_CASE(define_va_opt_6);
+    TEST_CASE(define_va_opt_7);
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
 
