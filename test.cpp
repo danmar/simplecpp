@@ -923,7 +923,7 @@ static void define_va_opt_3()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing closing parenthesis for __VA_OPT__\n",
                   toString(outputList));
 
     outputList.clear();
@@ -934,7 +934,7 @@ static void define_va_opt_3()
                          "err()";
 
     ASSERT_EQUALS("", preprocess(code2, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing opening parenthesis for __VA_OPT__\n",
                   toString(outputList));
 }
 
@@ -946,7 +946,7 @@ static void define_va_opt_4()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing opening parenthesis for __VA_OPT__\n",
                   toString(outputList));
 
     outputList.clear();
@@ -956,7 +956,7 @@ static void define_va_opt_4()
                          "err()";
 
     ASSERT_EQUALS("", preprocess(code2, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing opening parenthesis for __VA_OPT__\n",
                   toString(outputList));
 }
 
@@ -968,7 +968,7 @@ static void define_va_opt_5()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing opening parenthesis for __VA_OPT__\n",
                   toString(outputList));
 }
 
@@ -980,7 +980,7 @@ static void define_va_opt_6()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, __VA_OPT__ cannot be nested\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': __VA_OPT__ cannot be nested\n",
                   toString(outputList));
 }
 
@@ -991,7 +991,7 @@ static void define_va_opt_7()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code1, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing opening parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing opening parenthesis for __VA_OPT__\n",
                   toString(outputList));
 
     outputList.clear();
@@ -999,7 +999,7 @@ static void define_va_opt_7()
     const char code2[] = "#define err(...) __VA_OPT__(";
 
     ASSERT_EQUALS("", preprocess(code2, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing closing parenthesis for __VA_OPT__\n",
                   toString(outputList));
 
     outputList.clear();
@@ -1007,7 +1007,7 @@ static void define_va_opt_7()
     const char code3[] = "#define err(...) __VA_OPT__(x";
 
     ASSERT_EQUALS("", preprocess(code3, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, Missing closing parenthesis for __VA_OPT__\n",
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, In definition of 'err': Missing closing parenthesis for __VA_OPT__\n",
                   toString(outputList));
 }
 

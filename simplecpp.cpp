@@ -1764,7 +1764,7 @@ namespace simplecpp {
                 for (const Token *tok = valueToken; tok && tok != endToken;) {
                     if (tok->str() == "__VA_OPT__") {
                         if (!sameline(tok, tok->next) || tok->next->op != '(')
-                            throw Error(tok->location, "Missing opening parenthesis for __VA_OPT__");
+                            throw Error(tok->location, "In definition of '" + nameTokDef->str() + "': Missing opening parenthesis for __VA_OPT__");
                         tok = tok->next->next;
                         int par = 1;
                         while (tok && tok != endToken) {
@@ -1773,7 +1773,7 @@ namespace simplecpp {
                             else if (tok->op == ')')
                                 par--;
                             else if (tok->str() == "__VA_OPT__")
-                                throw Error(tok->location, "__VA_OPT__ cannot be nested");
+                                throw Error(tok->location, "In definition of '" + nameTokDef->str() + "': __VA_OPT__ cannot be nested");
                             if (par == 0) {
                                 tok = tok->next;
                                 break;
@@ -1783,7 +1783,7 @@ namespace simplecpp {
                         }
                         if (par != 0) {
                             const Token *const lastTok = expandValue.back() ? expandValue.back() : valueToken->next;
-                            throw Error(lastTok->location, "Missing closing parenthesis for __VA_OPT__");
+                            throw Error(lastTok->location, "In definition of '" + nameTokDef->str() + "': Missing closing parenthesis for __VA_OPT__");
                         }
                     } else {
                         expandValue.push_back(new Token(*tok));
