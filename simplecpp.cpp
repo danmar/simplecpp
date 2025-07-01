@@ -3117,12 +3117,13 @@ static void simplifyComments(simplecpp::TokenList &expr)
     }
 }
 
-static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType, simplecpp::OutputList *outputList)
+static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType, simplecpp::OutputList *outputList, bool &ok)
 {
     simplifyComments(expr);
     simplifySizeof(expr, sizeOfType);
     simplifyHasInclude(expr, dui);
-    if (!simplifyName(expr, outputList))
+    ok = simplifyName(expr, outputList);
+    if (!ok)
         return 0;
     simplifyNumbers(expr);
     expr.constFold();
@@ -3828,17 +3829,20 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         tok = tmp->previous;
                     }
                     try {
+                        bool ok = true;
                         if (ifCond) {
                             std::string E;
                             for (const simplecpp::Token *tok = expr.cfront(); tok; tok = tok->next)
                                 E += (E.empty() ? "" : " ") + tok->str();
-                            const long long result = evaluate(expr, dui, sizeOfType, outputList);
+                            const long long result = evaluate(expr, dui, sizeOfType, outputList, ok);
                             conditionIsTrue = (result != 0);
                             ifCond->push_back(IfCond(rawtok->location, E, result));
                         } else {
-                            const long long result = evaluate(expr, dui, sizeOfType, outputList);
+                            const long long result = evaluate(expr, dui, sizeOfType, outputList, ok);
                             conditionIsTrue = (result != 0);
                         }
+                        if (!ok)
+                            return;
                     } catch (const std::exception &e) {
                         if (outputList) {
                             Output out(rawtok->location.files);
