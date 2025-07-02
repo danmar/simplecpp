@@ -31,6 +31,7 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
+#include <sys/stat.h>
 #if __cplusplus >= 201103L
 #ifdef SIMPLECPP_WINDOWS
 #include <mutex>
@@ -42,8 +43,10 @@
 
 #ifdef _WIN32
 #include <direct.h>
+using mode_t = unsigned short;
 #else
 #include <unistd.h>
+#include <sys/types.h>
 #endif
 
 #ifdef SIMPLECPP_WINDOWS
@@ -153,7 +156,7 @@ static unsigned long long stringToULL(const std::string &s)
     return ret;
 }
 
-// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild 
+// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
 static bool startsWith_(const std::string &s, const std::string &p)
 {
     return (s.size() >= p.size()) && std::equal(p.begin(), p.end(), s.begin());
@@ -3221,9 +3224,11 @@ static std::string openHeader(std::ifstream &f, const std::string &path)
     if (nonExistingFilesCache.contains(simplePath))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
-    f.open(simplePath.c_str());
-    if (f.is_open())
-        return simplePath;
+    if (simplecpp::isFile(simplePath)) {
+        f.open(simplePath.c_str());
+        if (f.is_open())
+            return simplePath;
+    }
 #ifdef SIMPLECPP_WINDOWS
     nonExistingFilesCache.add(simplePath);
 #endif
@@ -3389,18 +3394,19 @@ std::map<std::string, simplecpp::TokenList*> simplecpp::load(const simplecpp::To
         if (ret.find(filename) != ret.end())
             continue;
 
-        std::ifstream fin(filename.c_str());
-        if (!fin.is_open()) {
-            if (outputList) {
-                simplecpp::Output err(filenames);
-                err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
-                err.location = Location(filenames);
-                err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
-                outputList->push_back(err);
+        {
+            std::ifstream fin(filename.c_str());
+            if (!fin.is_open() || !isFile(filename)) {
+                if (outputList) {
+                    simplecpp::Output err(filenames);
+                    err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
+                    err.location = Location(filenames);
+                    err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
+                    outputList->push_back(err);
+                }
+                continue;
             }
-            continue;
         }
-        fin.close();
 
         TokenList *tokenlist = new TokenList(filename, filenames, outputList);
         if (!tokenlist->front()) {
@@ -4098,6 +4104,24 @@ std::string simplecpp::getCppStdString(cppstd_t std)
 std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
+}
+
+static mode_t file_type(const std::string &path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return 0;
+    return file_stat.st_mode & S_IFMT;
+}
+
+bool simplecpp::isFile(const std::string &path)
+{
+    return file_type(path) == S_IFREG;
+}
+
+bool simplecpp::isDirectory(const std::string &path)
+{
+    return file_type(path) == S_IFDIR;
 }
 
 #if (__cplusplus < 201103L) && !defined(__APPLE__)
