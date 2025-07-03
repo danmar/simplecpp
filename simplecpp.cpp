@@ -1769,13 +1769,8 @@ namespace simplecpp {
                         tok = tok->next;
                     }
                 }
-#if __cplusplus >= 201103L
                 optExpandValue = new TokenList(std::move(expandValue));
                 optNoExpandValue = new TokenList(std::move(noExpandValue));
-#else
-                optExpandValue = new TokenList(expandValue);
-                optNoExpandValue = new TokenList(noExpandValue);
-#endif
             }
 
             return true;
