@@ -3,14 +3,14 @@
  * Copyright (C) 2016-2023 simplecpp team
  */
 
-#include "simplecpp.h"
-
-#ifdef SIMPLECPP_WINDOWS
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
 #  define _WIN32_WINNT 0x0602
 #  define NOMINMAX
 #  include <windows.h>
 #  undef ERROR
 #endif
+
+#include "simplecpp.h"
 
 #include <algorithm>
 #include <cassert>
