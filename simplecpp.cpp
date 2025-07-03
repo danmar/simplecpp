@@ -2408,10 +2408,6 @@ namespace simplecpp {
 }
 
 #ifdef SIMPLECPP_WINDOWS
-using MyMutex = std::mutex;
-template<class T>
-using MyLock = std::lock_guard<T>;
-
 static bool isAbsolutePath(const std::string &path)
 {
     if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
@@ -3004,23 +3000,23 @@ public:
     NonExistingFilesCache() {}
 
     bool contains(const std::string& path) {
-        MyLock<MyMutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         return (m_pathSet.find(path) != m_pathSet.end());
     }
 
     void add(const std::string& path) {
-        MyLock<MyMutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         m_pathSet.insert(path);
     }
 
     void clear() {
-        MyLock<MyMutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
         m_pathSet.clear();
     }
 
 private:
     std::set<std::string> m_pathSet;
-    MyMutex m_mutex;
+    std::mutex m_mutex;
 };
 
 static NonExistingFilesCache nonExistingFilesCache;
