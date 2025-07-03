@@ -1879,6 +1879,15 @@ static void ifexpr()
     ASSERT_EQUALS("\n\n1", preprocess(code));
 }
 
+static void ifUndefFuncStyleMacro()
+{
+    const char code[] = "#if A(<dir/file.h>)\n"
+                        "#endif\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, undefined function-like macro invocation: A( ... )\n", toString(outputList));
+}
+
 static void location1()
 {
     const char *code;
@@ -3202,6 +3211,7 @@ int main(int argc, char **argv)
     TEST_CASE(ifdiv0);
     TEST_CASE(ifalt); // using "and", "or", etc
     TEST_CASE(ifexpr);
+    TEST_CASE(ifUndefFuncStyleMacro);
 
     TEST_CASE(location1);
     TEST_CASE(location2);

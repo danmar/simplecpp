@@ -2827,6 +2827,8 @@ static void simplifyName(simplecpp::TokenList &expr)
                 if (alt)
                     continue;
             }
+            if (tok->next && tok->next->str() == "(")
+                throw std::runtime_error("undefined function-like macro invocation: " + tok->str() + "( ... )");
             tok->setstr("0");
         }
     }
