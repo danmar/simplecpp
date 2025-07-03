@@ -101,6 +101,8 @@ jobs:
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXFLAGS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDFLAGS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
+      env:
+        UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:report_error_type=1
 
     # TODO: requires instrumented libc++
     - name: Run MemorySanitizer
