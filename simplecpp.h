@@ -489,7 +489,7 @@ namespace simplecpp {
                     return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
                                                     id.fileIdInfo.VolumeSerialNumber);
 #else
-                    return static_cast<std::size_t>(id.dev << 32) | static_cast<std::size_t>(id.ino);
+                    return static_cast<std::size_t>(id.dev) ^ static_cast<std::size_t>(id.ino);
 #endif
                 }
             };
