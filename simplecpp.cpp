@@ -546,24 +546,33 @@ void simplecpp::TokenList::push_back(Token *tok)
     backToken = tok;
 }
 
-void simplecpp::TokenList::dump() const
+void simplecpp::TokenList::dump(bool linenrs) const
 {
-    std::cout << stringify() << std::endl;
+    std::cout << stringify(linenrs) << std::endl;
 }
 
-std::string simplecpp::TokenList::stringify() const
+std::string simplecpp::TokenList::stringify(bool linenrs) const
 {
     std::ostringstream ret;
     Location loc(files);
+    bool filechg = true;
     for (const Token *tok = cfront(); tok; tok = tok->next) {
         if (tok->location.line < loc.line || tok->location.fileIndex != loc.fileIndex) {
             ret << "\n#line " << tok->location.line << " \"" << tok->location.file() << "\"\n";
             loc = tok->location;
+            filechg = true;
+        }
+
+        if (linenrs && filechg) {
+            ret << loc.line << ": ";
+            filechg = false;
         }
 
         while (tok->location.line > loc.line) {
             ret << '\n';
             loc.line++;
+            if (linenrs)
+                ret << loc.line << ": ";
         }
 
         if (sameline(tok->previous, tok))
