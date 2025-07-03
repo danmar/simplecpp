@@ -138,12 +138,6 @@ static unsigned long long stringToULL(const std::string &s)
     return ret;
 }
 
-// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
-static bool startsWith_(const std::string &s, const std::string &p)
-{
-    return (s.size() >= p.size()) && std::equal(p.begin(), p.end(), s.begin());
-}
-
 static bool endsWith(const std::string &s, const std::string &e)
 {
     return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
@@ -2551,39 +2545,6 @@ static bool isCpp17OrLater(const simplecpp::DUI &dui)
 }
 
 
-static std::string currentDirectoryOSCalc()
-{
-    const std::size_t size = 4096;
-    char currentPath[size];
-
-#ifndef _WIN32
-    if (getcwd(currentPath, size) != nullptr)
-#else
-    if (_getcwd(currentPath, size) != nullptr)
-#endif
-        return std::string(currentPath);
-
-    return "";
-}
-
-static const std::string& currentDirectory()
-{
-    static const std::string curdir = simplecpp::simplifyPath(currentDirectoryOSCalc());
-    return curdir;
-}
-
-static std::string toAbsolutePath(const std::string& path)
-{
-    if (path.empty()) {
-        return path;// preserve error file path that is indicated by an empty string
-    }
-    if (!isAbsolutePath(path)) {
-        return simplecpp::simplifyPath(currentDirectory() + "/" + path);
-    }
-    // otherwise
-    return simplecpp::simplifyPath(path);
-}
-
 static std::string dirPath(const std::string& path, bool withTrailingSlash=true)
 {
     const std::size_t lastSlash = path.find_last_of("\\/");
@@ -2591,38 +2552,6 @@ static std::string dirPath(const std::string& path, bool withTrailingSlash=true)
         return "";
     }
     return path.substr(0, lastSlash + (withTrailingSlash ? 1U : 0U));
-}
-
-static std::string omitPathTrailingSlash(const std::string& path)
-{
-    if (endsWith(path, "/")) {
-        return path.substr(0, path.size() - 1U);
-    }
-    return path;
-}
-
-static std::string extractRelativePathFromAbsolute(const std::string& absoluteSimplifiedPath, const std::string& prefixSimplifiedAbsoluteDir = currentDirectory())
-{
-    const std::string normalizedAbsolutePath = omitPathTrailingSlash(absoluteSimplifiedPath);
-    std::string currentPrefix = omitPathTrailingSlash(prefixSimplifiedAbsoluteDir);
-    std::string leadingParenting;
-    while (!startsWith_(normalizedAbsolutePath, currentPrefix)) {
-        leadingParenting = "../" + leadingParenting;
-        currentPrefix = dirPath(currentPrefix, false);
-    }
-    const std::size_t size = currentPrefix.size();
-    std::string relativeFromMeetingPath = normalizedAbsolutePath.substr(size, normalizedAbsolutePath.size() - size);
-    if (currentPrefix.empty() && !(startsWith_(absoluteSimplifiedPath, "/") && startsWith_(prefixSimplifiedAbsoluteDir, "/"))) {
-        // In the case that there is no common prefix path,
-        //  and at not both of the paths start with `/` (can happen only in Windows paths on distinct partitions),
-        //  return the absolute simplified path as is because no relative path can match.
-        return absoluteSimplifiedPath;
-    }
-    if (startsWith_(relativeFromMeetingPath, "/")) {
-        // omit the leading slash
-        relativeFromMeetingPath = relativeFromMeetingPath.substr(1, relativeFromMeetingPath.size());
-    }
-    return leadingParenting + relativeFromMeetingPath;
 }
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
@@ -3023,86 +2952,41 @@ static NonExistingFilesCache nonExistingFilesCache;
 
 #endif
 
-static std::string openHeader(std::ifstream &f, const std::string &path)
+static std::string openHeaderDirect(std::ifstream &f, const std::string &path)
 {
-    std::string simplePath = simplecpp::simplifyPath(path);
 #ifdef SIMPLECPP_WINDOWS
-    if (nonExistingFilesCache.contains(simplePath))
+    if (nonExistingFilesCache.contains(path))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
-    f.open(simplePath.c_str());
+    f.open(path.c_str());
     if (f.is_open())
-        return simplePath;
+        return path;
 #ifdef SIMPLECPP_WINDOWS
-    nonExistingFilesCache.add(simplePath);
+    nonExistingFilesCache.add(path);
 #endif
-    return "";
-}
-
-static std::string getRelativeFileName(const std::string &baseFile, const std::string &header, bool returnAbsolutePath)
-{
-    const std::string baseFileSimplified = simplecpp::simplifyPath(baseFile);
-    const std::string baseFileAbsolute = isAbsolutePath(baseFileSimplified) ?
-                                         baseFileSimplified :
-                                         simplecpp::simplifyPath(currentDirectory() + "/" + baseFileSimplified);
-
-    const std::string headerSimplified = simplecpp::simplifyPath(header);
-    const std::string path = isAbsolutePath(headerSimplified) ?
-                             headerSimplified :
-                             simplecpp::simplifyPath(dirPath(baseFileAbsolute) + headerSimplified);
-
-    return returnAbsolutePath ? toAbsolutePath(path) : extractRelativePathFromAbsolute(path);
-}
-
-static std::string openHeaderRelative(std::ifstream &f, const std::string &sourcefile, const std::string &header)
-{
-    return openHeader(f, getRelativeFileName(sourcefile, header, isAbsolutePath(sourcefile)));
-}
-
-// returns the simplified header path:
-// * If the header path is absolute, returns it in absolute path
-// * Otherwise, returns it in relative path with respect to the current directory
-static std::string getIncludePathFileName(const std::string &includePath, const std::string &header)
-{
-    std::string simplifiedHeader = simplecpp::simplifyPath(header);
-
-    if (isAbsolutePath(simplifiedHeader)) {
-        return simplifiedHeader;
-    }
-
-    std::string basePath = toAbsolutePath(includePath);
-    if (!basePath.empty() && basePath[basePath.size()-1U]!='/' && basePath[basePath.size()-1U]!='\\')
-        basePath += '/';
-    const std::string absoluteSimplifiedHeaderPath = simplecpp::simplifyPath(basePath + simplifiedHeader);
-    // preserve absoluteness/relativieness of the including dir
-    return isAbsolutePath(includePath) ? absoluteSimplifiedHeaderPath : extractRelativePathFromAbsolute(absoluteSimplifiedHeaderPath);
-}
-
-static std::string openHeaderIncludePath(std::ifstream &f, const simplecpp::DUI &dui, const std::string &header)
-{
-    for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-        std::string path = openHeader(f, getIncludePathFileName(*it, header));
-        if (!path.empty())
-            return path;
-    }
     return "";
 }
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader)
 {
     if (isAbsolutePath(header))
-        return openHeader(f, header);
+        return openHeaderDirect(f, simplecpp::simplifyPath(header));
 
     // prefer first to search the header relatively to source file if found, when not a system header
     if (!systemheader) {
-        std::string relativeHeader = openHeaderRelative(f, sourcefile, header);
-        if (!relativeHeader.empty()) {
-            return relativeHeader;
+        std::string path = openHeaderDirect(f, simplecpp::simplifyPath(dirPath(sourcefile) + header));
+        if (!path.empty()) {
+            return path;
         }
     }
 
     // search the header on the include paths (provided by the flags "-I...")
-    return openHeaderIncludePath(f, dui, header);
+    for (const auto &includePath : dui.includePaths) {
+        std::string path = openHeaderDirect(f, simplecpp::simplifyPath(includePath + "/" + header));
+        if (!path.empty())
+            return path;
+    }
+    return "";
 }
 
 simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader)
@@ -3116,10 +3000,12 @@ simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcef
 
         if (name_it != mNameMap.end())
             return name_it->second;
+
+        return nullptr;
     }
 
     if (!systemheader) {
-        const std::string path = getRelativeFileName(sourcefile, header, true);
+        const std::string path = simplecpp::simplifyPath(dirPath(sourcefile) + header);
         const auto name_it = mNameMap.find(path);
 
         if (name_it != mNameMap.end())
@@ -3127,13 +3013,13 @@ simplecpp::FileData *simplecpp::FileDataCache::lookup(const std::string &sourcef
 
         // If the file exists but hasn't been loaded yet then we need to stop searching here or we could get a false match
         std::ifstream f;
-        openHeader(f, path);
+        openHeaderDirect(f, path);
         if (f.is_open())
             return nullptr;
     }
 
-    for (std::list<std::string>::const_iterator it = dui.includePaths.begin(); it != dui.includePaths.end(); ++it) {
-        const std::string path = getIncludePathFileName(*it, header);
+    for (const auto &includePath : dui.includePaths) {
+        const std::string path = simplecpp::simplifyPath(includePath + "/" + header);
         const auto name_it = mNameMap.find(path);
 
         if (name_it != mNameMap.end())
