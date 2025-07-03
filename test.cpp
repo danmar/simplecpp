@@ -1602,6 +1602,21 @@ static void has_include_5()
     ASSERT_EQUALS("", preprocess(code));
 }
 
+static void has_include_6()
+{
+    const char code[] = "#if defined( __has_include)\n"
+                        "  #if !__has_include(<testsuite/unrealFileName2.abcdef>)\n"
+                        "    A\n"
+                        "  #else\n"
+                        "    B\n"
+                        "  #endif\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "gnu99";
+    ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+    ASSERT_EQUALS("", preprocess(code));
+}
+
 static void ifdef1()
 {
     const char code[] = "#ifdef A\n"
@@ -3164,6 +3179,7 @@ int main(int argc, char **argv)
     TEST_CASE(has_include_3);
     TEST_CASE(has_include_4);
     TEST_CASE(has_include_5);
+    TEST_CASE(has_include_6);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);
