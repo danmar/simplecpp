@@ -45,7 +45,6 @@
 #  include <direct.h>
 #else
 #  include <sys/stat.h>
-#  include <unistd.h>
 #endif
 
 static bool isHex(const std::string &s)
