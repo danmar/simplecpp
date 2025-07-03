@@ -3021,9 +3021,9 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
         const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(header), nullptr));
 
         if (ins.second) {
-            const auto load = tryload(ins.first, dui, filenames, outputList);
-            if (load.first != nullptr)
-                return load;
+            const auto ret = tryload(ins.first, dui, filenames, outputList);
+            if (ret.first != nullptr)
+                return ret;
         }
         else {
             return std::make_pair(ins.first->second, false);
@@ -3036,9 +3036,9 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
         const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(dirPath(sourcefile) + header), nullptr));
 
         if (ins.second) {
-            const auto load = tryload(ins.first, dui, filenames, outputList);
-            if (load.first != nullptr)
-                return load;
+            const auto ret = tryload(ins.first, dui, filenames, outputList);
+            if (ret.first != nullptr)
+                return ret;
         }
         else if (ins.first->second != nullptr) {
             return std::make_pair(ins.first->second, false);
@@ -3049,9 +3049,9 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
         const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(includePath + "/" + header), nullptr));
 
         if (ins.second) {
-            const auto load = tryload(ins.first, dui, filenames, outputList);
-            if (load.first != nullptr)
-                return load;
+            const auto ret = tryload(ins.first, dui, filenames, outputList);
+            if (ret.first != nullptr)
+                return ret;
         }
         else if (ins.first->second != nullptr) {
             return std::make_pair(ins.first->second, false);
