@@ -3017,33 +3017,46 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::tryload(const F
 
 std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::string &sourcefile, const std::string &header, const simplecpp::DUI &dui, bool systemheader, std::vector<std::string> &filenames, simplecpp::OutputList *outputList)
 {
-#define TRYLOAD(path) \
-{ \
-    const auto ins = mNameMap.insert(std::make_pair(path, nullptr)); \
-    if (ins.second) { \
-        const auto load = tryload(ins.first, dui, filenames, outputList); \
-        if (load.first != nullptr) \
-            return load; \
-    } \
-    else { \
-        return std::make_pair(ins.first->second, false); \
-    } \
-}
-
     if (isAbsolutePath(header)) {
-        TRYLOAD(simplecpp::simplifyPath(header))
+        const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(header), nullptr));
+
+        if (ins.second) {
+            const auto load = tryload(ins.first, dui, filenames, outputList);
+            if (load.first != nullptr)
+                return load;
+        }
+        else {
+            return std::make_pair(ins.first->second, false);
+        }
+
         return std::make_pair(nullptr, false);
     }
 
     if (!systemheader) {
-        TRYLOAD(simplecpp::simplifyPath(dirPath(sourcefile) + header))
+        const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(dirPath(sourcefile) + header), nullptr));
+
+        if (ins.second) {
+            const auto load = tryload(ins.first, dui, filenames, outputList);
+            if (load.first != nullptr)
+                return load;
+        }
+        else if (ins.first->second != nullptr) {
+            return std::make_pair(ins.first->second, false);
+        }
     }
 
     for (const auto &includePath : dui.includePaths) {
-        TRYLOAD(simplecpp::simplifyPath(includePath + "/" + header))
-    }
+        const auto ins = mNameMap.insert(std::make_pair(simplecpp::simplifyPath(includePath + "/" + header), nullptr));
 
-#undef TRYLOAD
+        if (ins.second) {
+            const auto load = tryload(ins.first, dui, filenames, outputList);
+            if (load.first != nullptr)
+                return load;
+        }
+        else if (ins.first->second != nullptr) {
+            return std::make_pair(ins.first->second, false);
+        }
+    }
 
     return std::make_pair(nullptr, false);
 }
