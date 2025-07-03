@@ -1463,7 +1463,7 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), optExpandValue(nullptr), optNoExpandValue(nullptr), valueDefinedInCode_(false) {}
 
         Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
@@ -1491,6 +1491,11 @@ namespace simplecpp {
 
         Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
             *this = other;
+        }
+
+        ~Macro() {
+            delete optExpandValue;
+            delete optNoExpandValue;
         }
 
         Macro &operator=(const Macro &other) {
@@ -1685,6 +1690,9 @@ namespace simplecpp {
         bool parseDefine(const Token *nametoken) {
             nameTokDef = nametoken;
             variadic = false;
+            variadicOpt = false;
+            optExpandValue = nullptr;
+            optNoExpandValue = nullptr;
             if (!nameTokDef) {
                 valueToken = endToken = nullptr;
                 args.clear();
@@ -1722,8 +1730,54 @@ namespace simplecpp {
             if (!sameline(valueToken, nameTokDef))
                 valueToken = nullptr;
             endToken = valueToken;
-            while (sameline(endToken, nameTokDef))
+            while (sameline(endToken, nameTokDef)) {
+                if (variadic && endToken->str() == "__VA_OPT__")
+                    variadicOpt = true;
                 endToken = endToken->next;
+            }
+
+            if (variadicOpt) {
+                TokenList expandValue(files);
+                TokenList noExpandValue(files);
+                for (const Token *tok = valueToken; tok && tok != endToken;) {
+                    if (tok->str() == "__VA_OPT__") {
+                        if (!sameline(tok, tok->next) || tok->next->op != '(')
+                            throw Error(tok->location, "In definition of '" + nameTokDef->str() + "': Missing opening parenthesis for __VA_OPT__");
+                        tok = tok->next->next;
+                        int par = 1;
+                        while (tok && tok != endToken) {
+                            if (tok->op == '(')
+                                par++;
+                            else if (tok->op == ')')
+                                par--;
+                            else if (tok->str() == "__VA_OPT__")
+                                throw Error(tok->location, "In definition of '" + nameTokDef->str() + "': __VA_OPT__ cannot be nested");
+                            if (par == 0) {
+                                tok = tok->next;
+                                break;
+                            }
+                            expandValue.push_back(new Token(*tok));
+                            tok = tok->next;
+                        }
+                        if (par != 0) {
+                            const Token *const lastTok = expandValue.back() ? expandValue.back() : valueToken->next;
+                            throw Error(lastTok->location, "In definition of '" + nameTokDef->str() + "': Missing closing parenthesis for __VA_OPT__");
+                        }
+                    } else {
+                        expandValue.push_back(new Token(*tok));
+                        noExpandValue.push_back(new Token(*tok));
+                        tok = tok->next;
+                    }
+                }
+#if __cplusplus >= 201103L
+                optExpandValue = new TokenList(std::move(expandValue));
+                optNoExpandValue = new TokenList(std::move(noExpandValue));
+#else
+                optExpandValue = new TokenList(expandValue);
+                optNoExpandValue = new TokenList(noExpandValue);
+#endif
+            }
+
             return true;
         }
 
@@ -1878,8 +1932,22 @@ namespace simplecpp {
 
             Token * const output_end_1 = output->back();
 
+            const Token *valueToken2;
+            const Token *endToken2;
+
+            if (variadicOpt) {
+                if (parametertokens2.size() > args.size() && parametertokens2[args.size() - 1]->next->op != ')')
+                    valueToken2 = optExpandValue->cfront();
+                else
+                    valueToken2 = optNoExpandValue->cfront();
+                endToken2 = nullptr;
+            } else {
+                valueToken2 = valueToken;
+                endToken2 = endToken;
+            }
+
             // expand
-            for (const Token *tok = valueToken; tok != endToken;) {
+            for (const Token *tok = valueToken2; tok != endToken2;) {
                 if (tok->op != '#') {
                     // A##B => AB
                     if (sameline(tok, tok->next) && tok->next && tok->next->op == '#' && tok->next->next && tok->next->next->op == '#') {
@@ -1928,7 +1996,7 @@ namespace simplecpp {
                 }
 
                 tok = tok->next;
-                if (tok == endToken) {
+                if (tok == endToken2) {
                     output->push_back(new Token(*tok->previous));
                     break;
                 }
@@ -1998,24 +2066,6 @@ namespace simplecpp {
             // Macro parameter..
             {
                 TokenList temp(files);
-                if (tok->str() == "__VA_OPT__") {
-                    if (sameline(tok, tok->next) && tok->next->str() == "(") {
-                        tok = tok->next;
-                        int paren = 1;
-                        while (sameline(tok, tok->next)) {
-                            if (tok->next->str() == "(")
-                                ++paren;
-                            else if (tok->next->str() == ")")
-                                --paren;
-                            if (paren == 0)
-                                return tok->next->next;
-                            tok = tok->next;
-                            if (parametertokens.size() > args.size() && parametertokens.front()->next->str() != ")")
-                                tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens)->previous;
-                        }
-                    }
-                    throw Error(tok->location, "Missing parenthesis for __VA_OPT__(content)");
-                }
                 if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
                     if (tok->str() == "__VA_ARGS__" && temp.empty() && output->cback() && output->cback()->str() == "," &&
                         tok->nextSkipComments() && tok->nextSkipComments()->str() == ")")
@@ -2315,6 +2365,13 @@ namespace simplecpp {
 
         /** is macro variadic? */
         bool variadic;
+
+        /** does the macro expansion have __VA_OPT__? */
+        bool variadicOpt;
+
+        /** Expansion value for varadic macros with __VA_OPT__ expanded and discarded respectively */
+        const TokenList *optExpandValue;
+        const TokenList *optNoExpandValue;
 
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
@@ -3558,6 +3615,16 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         err.location = rawtok->location;
                         err.msg = "Failed to parse #define";
                         outputList->push_back(err);
+                    }
+                    output.clear();
+                    return;
+                } catch (simplecpp::Macro::Error &err) {
+                    if (outputList) {
+                        simplecpp::Output out(files);
+                        out.type = simplecpp::Output::SYNTAX_ERROR;
+                        out.location = err.location;
+                        out.msg = "Failed to parse #define, " + err.what;
+                        outputList->push_back(out);
                     }
                     output.clear();
                     return;
