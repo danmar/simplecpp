@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     const char *filename = nullptr;
     bool use_istream = false;
     bool fail_on_error = false;
+    bool linenrs = false;
 
     // Settings..
     simplecpp::DUI dui;
@@ -74,6 +75,10 @@ int main(int argc, char **argv)
                 fail_on_error = true;
                 found = true;
                 break;
+            case 'l':
+                linenrs = true;
+                found = true;
+                break;
             }
             if (!found) {
                 std::cout << "error: option '" << arg << "' is unknown." << std::endl;
@@ -106,6 +111,7 @@ int main(int argc, char **argv)
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::cout << "  -is             Use std::istream interface." << std::endl;
         std::cout << "  -e              Output errors only." << std::endl;
+        std::cout << "  -l              Print lines numbers." << std::endl;
         std::exit(0);
     }
 
@@ -136,7 +142,7 @@ int main(int argc, char **argv)
     // Output
     if (!quiet) {
         if (!error_only)
-            std::cout << outputTokens.stringify() << std::endl;
+            std::cout << outputTokens.stringify(linenrs) << std::endl;
 
         for (const simplecpp::Output &output : outputList) {
             std::cerr << output.location.file() << ':' << output.location.line << ": ";
