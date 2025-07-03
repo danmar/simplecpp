@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #ifdef _WIN32
@@ -411,14 +412,9 @@ namespace simplecpp {
         FileDataCache &operator=(const FileDataCache &) = delete;
         FileDataCache &operator=(FileDataCache &&) = default;
 
-        /** Fetch the data for a file if it exists in the cache */
-        FileData *lookup(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader);
-
-        /** Load a file into the cache and return the loaded data, or return the cached data if the file id is cached */
-        std::pair<bool, FileData *> load(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
-
-        /** Get the cached data for a file, or load and then return it if it isn't cached */
-        std::pair<bool, FileData *> get(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
+        /** Get the cached data for a file, or load and then return it if it isn't cached.
+         *  returns the file data and true if the file was loaded, false if it was cached. */
+        std::pair<FileData *, bool> get(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
 
         void insert(FileData data) {
             FileData *const newdata = new FileData(std::move(data));
@@ -462,26 +458,57 @@ namespace simplecpp {
 
     private:
         struct FileID {
-            bool operator< (const FileID &that) const;
+            struct Hasher;
+            friend class FileDataCache;
 
 #ifdef SIMPLECPP_WINDOWS
             struct {
                 std::uint64_t VolumeSerialNumber;
                 struct {
-                    std::uint8_t Identifier[16];
+                    std::uint64_t IdentifierHi;
+                    std::uint64_t IdentifierLo;
                 } FileId;
             } fileIdInfo;
+
+            bool operator==(const FileID &that) const noexcept
+            {
+                return fileIdInfo.VolumeSerialNumber == that.fileIdInfo.VolumeSerialNumber &&
+                    fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
+                    fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
+            }
 #else
             dev_t dev;
             ino_t ino;
+
+            bool operator==(const FileID& that) const noexcept
+            {
+                return dev == that.dev && ino == that.ino;
+            }
 #endif
-        };
+            struct Hasher {
+                std::size_t operator()(const FileID &id) const
+                {
+#ifdef SIMPLECPP_WINDOWS
+                    return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
+                        id.fileIdInfo.VolumeSerialNumber);
+#else
+                    return static_cast<std::size_t>(id.dev << 32) | static_cast<std::size_t>(id.ino);
+#endif
+                }
+            };
+       };
+
+        using name_map_type = std::unordered_map<std::string, FileData *>;
+        using id_map_type = std::unordered_map<FileID, FileData *, FileID::Hasher>;
 
         static bool getFileId(const std::string &path, FileID &id);
 
+        std::pair<FileData *, bool> tryload(const name_map_type::iterator &name_it, const DUI &dui, std::vector<std::string> &filenames, OutputList *outputList);
+
         container_type mData;
-        std::map<std::string, FileData *> mNameMap;
-        std::map<FileID, FileData *> mIdMap;
+        name_map_type mNameMap;
+        id_map_type mIdMap;
+
     };
 }
 
