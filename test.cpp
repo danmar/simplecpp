@@ -1831,7 +1831,7 @@ static void ifUndefFuncStyleMacro()
                         "#endif\n";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Undefined function-like macro in directive: A( ... )\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, undefined function-like macro invocation: A( ... )\n", toString(outputList));
 }
 
 static void location1()
