@@ -428,7 +428,7 @@ public:
         lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
-    virtual int peek() override{
+    virtual int peek() override {
         // keep lastCh intact
         const int ch = fgetc(file);
         unget_internal(ch);

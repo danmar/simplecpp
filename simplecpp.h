@@ -470,33 +470,30 @@ namespace simplecpp {
                 } FileId;
             } fileIdInfo;
 
-            bool operator==(const FileID &that) const noexcept
-            {
+            bool operator==(const FileID &that) const noexcept {
                 return fileIdInfo.VolumeSerialNumber == that.fileIdInfo.VolumeSerialNumber &&
-                    fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
-                    fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
+                       fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
+                       fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
             }
 #else
             dev_t dev;
             ino_t ino;
 
-            bool operator==(const FileID& that) const noexcept
-            {
+            bool operator==(const FileID& that) const noexcept {
                 return dev == that.dev && ino == that.ino;
             }
 #endif
             struct Hasher {
-                std::size_t operator()(const FileID &id) const
-                {
+                std::size_t operator()(const FileID &id) const {
 #ifdef SIMPLECPP_WINDOWS
                     return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
-                        id.fileIdInfo.VolumeSerialNumber);
+                                                    id.fileIdInfo.VolumeSerialNumber);
 #else
                     return static_cast<std::size_t>(id.dev << 32) | static_cast<std::size_t>(id.ino);
 #endif
                 }
             };
-       };
+        };
 
         using name_map_type = std::unordered_map<std::string, FileData *>;
         using id_map_type = std::unordered_map<FileID, FileData *, FileID::Hasher>;
