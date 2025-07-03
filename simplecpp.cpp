@@ -3024,8 +3024,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
             const auto ret = tryload(ins.first, dui, filenames, outputList);
             if (ret.first != nullptr)
                 return ret;
-        }
-        else {
+        } else {
             return std::make_pair(ins.first->second, false);
         }
 
@@ -3039,8 +3038,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
             const auto ret = tryload(ins.first, dui, filenames, outputList);
             if (ret.first != nullptr)
                 return ret;
-        }
-        else if (ins.first->second != nullptr) {
+        } else if (ins.first->second != nullptr) {
             return std::make_pair(ins.first->second, false);
         }
     }
@@ -3052,8 +3050,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
             const auto ret = tryload(ins.first, dui, filenames, outputList);
             if (ret.first != nullptr)
                 return ret;
-        }
-        else if (ins.first->second != nullptr) {
+        } else if (ins.first->second != nullptr) {
             return std::make_pair(ins.first->second, false);
         }
     }
