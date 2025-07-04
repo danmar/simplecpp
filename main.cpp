@@ -9,7 +9,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -128,7 +127,7 @@ int main(int argc, char **argv)
     }
     rawtokens->removeComments();
     simplecpp::TokenList outputTokens(files);
-    std::map<std::string, simplecpp::TokenList*> filedata;
+    simplecpp::FileDataCache filedata;
     simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
     simplecpp::cleanup(filedata);
     delete rawtokens;

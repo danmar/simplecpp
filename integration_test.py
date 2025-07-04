@@ -237,7 +237,13 @@ def test_same_name_header(record_property, tmpdir):
     assert stderr == ""
 
 def test_pragma_once_matching(record_property, tmpdir):
-    if platform.system() == "win32":
+    test_dir = os.path.join(tmpdir, "test_dir")
+    test_subdir = os.path.join(test_dir, "test_subdir")
+
+    test_file = os.path.join(test_dir, "test.c")
+    once_header = os.path.join(test_dir, "once.h")
+
+    if platform.system() == "Windows":
         names_to_test = [
             '"once.h"',
             '"Once.h"',
@@ -251,6 +257,10 @@ def test_pragma_once_matching(record_property, tmpdir):
             '"test_subdir/../Once.h"',
             '"Test_Subdir/../once.h"',
             '"Test_Subdir/../Once.h"',
+            f"\"{test_dir}/once.h\"",
+            f"\"{test_dir}/Once.h\"",
+            f"<{test_dir}/once.h>",
+            f"<{test_dir}/Once.h>",
         ]
     else:
         names_to_test = [
@@ -258,13 +268,9 @@ def test_pragma_once_matching(record_property, tmpdir):
             '<once.h>',
             '"../test_dir/once.h"',
             '"test_subdir/../once.h"',
+            f"\"{test_dir}/once.h\"",
+            f"<{test_dir}/once.h>",
         ]
-
-    test_dir = os.path.join(tmpdir, "test_dir")
-    test_subdir = os.path.join(test_dir, "test_subdir")
-
-    test_file = os.path.join(test_dir, "test.c")
-    once_header = os.path.join(test_dir, "once.h")
 
     os.mkdir(test_dir)
     os.mkdir(test_subdir)
