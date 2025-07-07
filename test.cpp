@@ -1617,6 +1617,48 @@ static void has_include_6()
     ASSERT_EQUALS("", preprocess(code));
 }
 
+static void strict_ansi_1()
+{
+    const char code[] = "#if __STRICT_ANSI__\n"
+                        " A\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "gnu99";
+    ASSERT_EQUALS("", preprocess(code, dui));
+}
+
+static void strict_ansi_2()
+{
+    const char code[] = "#if __STRICT_ANSI__\n"
+                        " A\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "c99";
+    ASSERT_EQUALS("\nA", preprocess(code, dui));
+}
+
+static void strict_ansi_3()
+{
+    const char code[] = "#if __STRICT_ANSI__\n"
+                        " A\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "c99";
+    dui.undefined.insert("__STRICT_ANSI__");
+    ASSERT_EQUALS("", preprocess(code, dui));
+}
+
+static void strict_ansi_4()
+{
+    const char code[] = "#if __STRICT_ANSI__\n"
+                        " A\n"
+                        "#endif";
+    simplecpp::DUI dui;
+    dui.std = "gnu99";
+    dui.defines.push_back("__STRICT_ANSI__");
+    ASSERT_EQUALS("\nA", preprocess(code, dui));
+}
+
 static void ifdef1()
 {
     const char code[] = "#ifdef A\n"
@@ -3189,6 +3231,11 @@ int main(int argc, char **argv)
     TEST_CASE(has_include_4);
     TEST_CASE(has_include_5);
     TEST_CASE(has_include_6);
+
+    TEST_CASE(strict_ansi_1);
+    TEST_CASE(strict_ansi_2);
+    TEST_CASE(strict_ansi_3);
+    TEST_CASE(strict_ansi_4);
 
     TEST_CASE(ifdef1);
     TEST_CASE(ifdef2);

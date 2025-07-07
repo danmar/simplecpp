@@ -3482,11 +3482,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
     const bool hasInclude = isCpp17OrLater(dui) || isGnu(dui);
     MacroMap macros;
+    bool strictAnsiDefined = false;
     for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
         const std::string &macrostr = *it;
         const std::string::size_type eq = macrostr.find('=');
         const std::string::size_type par = macrostr.find('(');
         const std::string macroname = macrostr.substr(0, std::min(eq,par));
+        if (macroname == "__STRICT_ANSI__")
+            strictAnsiDefined = true;
         if (dui.undefined.find(macroname) != dui.undefined.end())
             continue;
         const std::string lhs(macrostr.substr(0,eq));
@@ -3494,6 +3497,10 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const Macro macro(lhs, rhs, dummy);
         macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
     }
+
+    const bool strictAnsiUndefined = dui.undefined.find("__STRICT_ANSI__") != dui.undefined.cend();
+    if (!isGnu(dui) && !strictAnsiDefined && !strictAnsiUndefined)
+        macros.insert(std::pair<TokenString, Macro>("__STRICT_ANSI__", Macro("__STRICT_ANSI__", "1", dummy)));
 
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", dummy)));
     macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", dummy)));
