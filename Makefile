@@ -13,6 +13,7 @@ testrunner:	test.o	simplecpp.o
 test:	testrunner	simplecpp
 	./testrunner
 	python3 run-tests.py
+	python3 -m pytest integration_test.py -vv
 
 selfcheck:	simplecpp
 	./selfcheck.sh
