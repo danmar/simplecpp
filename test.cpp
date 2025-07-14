@@ -3106,6 +3106,11 @@ static void fuzz_crash()
                             "n\n";
         (void)preprocess(code, simplecpp::DUI()); // do not crash
     }
+    { // #346
+        const char code[] = "#define foo(intp)f##oo(intp\n"
+                            "foo(f##oo(intp))\n";
+        (void)preprocess(code, simplecpp::DUI()); // do not crash
+    }
 }
 
 int main(int argc, char **argv)
