@@ -758,17 +758,34 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
         // comment
         else if (ch == '/' && stream.peekChar() == '/') {
-            while (stream.good() && ch != '\r' && ch != '\n') {
+            while (stream.good() && ch != '\n') {
                 currentToken += ch;
                 ch = stream.readChar();
+                if(ch == '\\') {
+                    TokenString tmp;
+                    char tmp_ch = ch;
+                    while((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
+                        tmp += tmp_ch;
+                        tmp_ch = stream.readChar();
+                    }
+                    if(!stream.good()) {
+                        break;
+                    }
+
+                    if(tmp_ch != '\n') {
+                        currentToken += tmp;
+                    } else {
+                        TokenString check_portability = currentToken + tmp;
+                        const std::string::size_type pos = check_portability.find_last_not_of(" \t");
+                        if (pos < check_portability.size() - 1U && check_portability[pos] == '\\')
+                            portabilityBackslash(outputList, files, location);
+                        ++multiline;
+                        tmp_ch = stream.readChar();
+                    }
+                    ch = tmp_ch;
+                }
             }
-            const std::string::size_type pos = currentToken.find_last_not_of(" \t");
-            if (pos < currentToken.size() - 1U && currentToken[pos] == '\\')
-                portabilityBackslash(outputList, files, location);
-            if (currentToken[currentToken.size() - 1U] == '\\') {
-                ++multiline;
-                currentToken.erase(currentToken.size() - 1U);
-            } else {
+            if (ch == '\n') {
                 stream.ungetChar();
             }
         }

@@ -434,7 +434,30 @@ static void comment_multiline()
     const char code[] = "#define ABC {// \\\n"
                         "}\n"
                         "void f() ABC\n";
-    ASSERT_EQUALS("\n\nvoid f ( ) { }", preprocess(code));
+    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code));
+
+    const char code1[] = "#define ABC {// \\\r\n"
+                        "}\n"
+                        "void f() ABC\n";
+    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code1));
+
+    const char code2[] = "#define A 1// \\\r"
+                        "\r"
+                        "2\r"
+                        "A\r";
+    ASSERT_EQUALS("\n\n2\n1", preprocess(code2));
+
+    const char code3[] = "void f() {// \\ \n}\n";
+    ASSERT_EQUALS("void f ( ) {", preprocess(code3));
+
+    const char code4[] = "void f() {// \\\\\\\t\t\n}\n";
+    ASSERT_EQUALS("void f ( ) {", preprocess(code4));
+
+    const char code5[] = "void f() {// \\\\\\a\n}\n";
+    ASSERT_EQUALS("void f ( ) {\n}", preprocess(code5));
+
+    const char code6[] = "void f() {// \\\n\n\n}\n";
+    ASSERT_EQUALS("void f ( ) {\n\n\n}", preprocess(code6));
 }
 
 
