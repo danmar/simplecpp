@@ -50,6 +50,12 @@ def quoted_string(s):
 def format_include_path_arg(include_path):
     return f"-I{str(include_path)}"
 
+def format_framework_path_arg(framework_path):
+    return f"-F{str(framework_path)}"
+
+def format_iframework_path_arg(framework_path):
+    return f"-iframework{str(framework_path)}"
+
 def format_include(include, is_sys_header=False):
     if is_sys_header:
         return f"<{quoted_string(include)[1:-1]}>"

@@ -2141,6 +2141,66 @@ static void circularInclude()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void appleFrameworkIncludeTest()
+{
+    // This test checks Apple framework include handling.
+    //
+    // If -I /tmp/testFrameworks
+    // and we write:
+    //   #include <Foundation/Foundation.h>
+    //
+    // then simplecpp should find:
+    //   ./testsuite/Foundation.framework/Headers/Foundation.h
+    const char code[] = "#include <Foundation/Foundation.h>\n";
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "sourcecode.cpp");
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::DUI dui;
+#ifdef SIMPLECPP_TEST_SOURCE_DIR
+    dui.searchPaths.push_back({testSourceDir + "/testsuite",
+                               simplecpp::DUI::PathKind::Framework
+                              });
+#else
+    dui.searchPaths.push_back({"./testsuite", simplecpp::DUI::PathKind::Framework});
+#endif
+    simplecpp::OutputList outputList;
+    simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+
+static void appleFrameworkHasIncludeTest()
+{
+    const char code[] =
+        "#ifdef __has_include\n"
+        "#if __has_include(<Foundation/Foundation.h>)\n"
+        "A\n"
+        "#else\n"
+        "B\n"
+        "#endif\n"
+        "#endif\n";
+
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "sourcecode.cpp");
+
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::DUI dui;
+#ifdef SIMPLECPP_TEST_SOURCE_DIR
+    dui.searchPaths.push_back({testSourceDir + "/testsuite",
+                               simplecpp::DUI::PathKind::Framework
+                              });
+#else
+    dui.searchPaths.push_back({"./testsuite", simplecpp::DUI::PathKind::Framework});
+#endif
+    dui.std = "c++17"; // enable __has_include
+
+    simplecpp::OutputList outputList;
+    simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
+
+    ASSERT_EQUALS("\n\nA", tokens2.stringify()); // should take the "A" branch
+}
+
 static void multiline1()
 {
     const char code[] = "#define A \\\n"
@@ -3407,6 +3467,8 @@ int main(int argc, char **argv)
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
     TEST_CASE(circularInclude);
+    TEST_CASE(appleFrameworkIncludeTest);
+    TEST_CASE(appleFrameworkHasIncludeTest);
 
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);

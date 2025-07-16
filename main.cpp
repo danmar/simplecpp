@@ -43,7 +43,13 @@ int main(int argc, char **argv)
             }
             case 'I': { // include path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.includePaths.push_back(value);
+                dui.searchPaths.push_back({value, simplecpp::DUI::PathKind::Include});
+                found = true;
+                break;
+            }
+            case 'F': { // framework path
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
+                dui.searchPaths.push_back({value, simplecpp::DUI::PathKind::Framework});
                 found = true;
                 break;
             }
@@ -53,6 +59,9 @@ int main(int argc, char **argv)
                     found = true;
                 } else if (std::strncmp(arg, "-is",3)==0) {
                     use_istream = true;
+                    found = true;
+                } else if (std::strncmp(arg, "-iframework", 11) == 0) {
+                    dui.searchPaths.push_back({arg + 11, simplecpp::DUI::PathKind::SystemFramework});
                     found = true;
                 }
                 break;
@@ -100,6 +109,8 @@ int main(int argc, char **argv)
         std::cout << "simplecpp [options] filename" << std::endl;
         std::cout << "  -DNAME          Define NAME." << std::endl;
         std::cout << "  -IPATH          Include path." << std::endl;
+        std::cout << "  -FPATH          Framework path." << std::endl;
+        std::cout << "  -iframeworkPATH System framework path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;
         std::cout << "  -UNAME          Undefine NAME." << std::endl;
         std::cout << "  -std=STD        Specify standard." << std::endl;
