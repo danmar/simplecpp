@@ -2084,6 +2084,32 @@ static void systemInclude()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+#if 0 // Disabled until the test can be written properly
+#ifdef  __APPLE__
+static void appleFrameworkIncludeTest()
+{
+    // This test is for the Apple framework include handling.
+    // If -I /Library/Developer/CommandLineTools/SDKs/MacOSX14.5.sdk/System/Library/Frameworks
+    // then:
+    const char code[] = "#include <Foundation/Foundation.h>\n";
+    // should find the include file:
+    // /Library/Developer/CommandLineTools/SDKs/MacOSX14.5.sdk/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files,"sourcecode.cpp");
+    simplecpp::FileDataCache cache;
+    cache.insert({"Foundation/Foundation.h", simplecpp::TokenList(files)});
+
+    simplecpp::TokenList tokens2(files);
+    simplecpp::DUI dui;
+    dui.includePaths.push_back("/Library/Developer/CommandLineTools/SDKs/MacOSX14.5.sdk/System/Library/Frameworks");
+
+    simplecpp::OutputList outputList;
+    simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+#endif
+#endif
+
 static void multiline1()
 {
     const char code[] = "#define A \\\n"
@@ -3388,6 +3414,11 @@ int main(int argc, char **argv)
     TEST_CASE(preprocess_files);
 
     TEST_CASE(fuzz_crash);
-
+#if 0 // Disabled until the test can be written properly
+#ifdef __APPLE__
+    // Apple-specific test cases
+    TEST_CASE(appleFrameworkIncludeTest);
+#endif
+#endif
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
