@@ -458,6 +458,9 @@ static void comment_multiline()
 
     const char code6[] = "void f() {// \\\n\n\n}\n";
     ASSERT_EQUALS("void f ( ) {\n\n\n}", preprocess(code6));
+
+    // #471 ensure there is newline in comment so that line-splicing can be detected by tools
+    ASSERT_EQUALS("// abc\ndef", readfile("// abc\\\ndef"));
 }
 
 
