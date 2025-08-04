@@ -1,0 +1,114 @@
+name: CI-mingw
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: msys2 {0}
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+        msystem: [MSYS, MINGW32, MINGW64, CLANG64]
+        include:
+          - msystem: MSYS
+            pkg-prefix: ''
+          - msystem: MINGW32
+            pkg-prefix: 'mingw-w64-i686-'
+          - msystem: MINGW64
+            pkg-prefix: 'mingw-w64-x86_64-'
+          - msystem: CLANG64
+            pkg-prefix: 'mingw-w64-clang-x86_64-'
+          - compiler: g++
+            compiler-pkg: gcc
+          - compiler: clang++
+            compiler-pkg: clang
+        exclude:
+          - msystem: CLANG64
+            compiler: g++
+      fail-fast: false
+
+    runs-on: windows-2025
+
+    env:
+      CXX: ${{ matrix.compiler }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          release: false # use pre-installed
+          msystem: ${{ matrix.msystem }}
+          # TODO: install mingw-w64-x86_64-make and use mingw32.make instead - currently fails with "Windows Subsystem for Linux has no installed distributions."
+          # TODO: also run tests with non-prefixed Python?
+          install: >-
+            make
+            ${{ matrix.pkg-prefix }}cmake
+            ${{ matrix.pkg-prefix }}python
+            ${{ matrix.pkg-prefix }}python-pytest
+
+      - name: install compiler
+        run: |
+          pacman -S --noconfirm ${{ matrix.pkg-prefix }}${{ matrix.compiler-pkg }}
+          ${CXX} -v
+
+      - name: make simplecpp
+        run: |
+          make -j$(nproc) CXXOPTS="-Werror"
+
+      # gcc *and* clang are required to run-tests.py
+      # install it at this point since it has gcc as dependency which might interfere with the build
+      - name: install compiler (clang)
+        if: matrix.compiler == 'g++'
+        run: |
+          pacman -S --noconfirm clang
+
+      - name: install compiler (gcc)
+        if: matrix.compiler == 'clang++'
+        run: |
+          pacman -S --noconfirm gcc
+
+      - name: make test
+        run: make -j$(nproc) test
+
+      - name: selfcheck
+        run: |
+          make -j$(nproc) selfcheck
+
+      - name: Run CMake
+        run: |
+          cmake -S . -B cmake.output -DCMAKE_COMPILE_WARNING_AS_ERROR=On
+
+      - name: CMake simplecpp
+        run: |
+          cmake --build cmake.output --target simplecpp -- -j $(nproc)
+
+      - name: CMake testrunner
+        run: |
+          cmake --build cmake.output --target testrunner -- -j $(nproc)
+
+      - name: Run testrunner
+        run: |
+          ./cmake.output/testrunner
+
+      - name: Run with libstdc++ debug mode
+        if: matrix.compiler == 'g++'
+        run: |
+          make clean
+          make -j$(nproc) test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
+
+      - name: Run with libc++ hardening mode
+        if: matrix.compiler == 'clang++' && matrix.msystem == 'CLANG64'
+        run: |
+          make clean
+          make -j$(nproc) test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
