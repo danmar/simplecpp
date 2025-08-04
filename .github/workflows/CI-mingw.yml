@@ -32,6 +32,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-clang
             mingw-w64-x86_64-libc++
+            mingw-w64-x86_64-python
 
       - name: Install missing Python packages
         run: |
