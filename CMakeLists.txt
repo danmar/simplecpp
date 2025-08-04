@@ -40,6 +40,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options_safe(-Wuseless-cast)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    # TODO: bump warning level
+    #add_compile_options(/W4)  # Warning Level
     # TODO: enable warning
     add_compile_options(/wd4267)  # warning C4267: '...': conversion from 'size_t' to 'unsigned int', possible loss of data
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
