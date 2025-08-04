@@ -1,0 +1,78 @@
+name: CI-mingw
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: msys2 {0}
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        compiler: [clang++, g++]
+      fail-fast: false
+
+    runs-on: windows-2025
+
+    env:
+      CXX: ${{ matrix.compiler }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          release: false # use pre-installed
+          # TODO: install mingw-w64-x86_64-make and use mingw32.make instead - currently fails with "Windows Subsystem for Linux has no installed distributions."
+          install: >-
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-clang
+            mingw-w64-x86_64-libc++-dev
+
+      - name: Install missing Python packages
+        run: |
+          python3 -m pip config set global.break-system-packages true
+          python3 -m pip install pytest
+
+      - name: make simplecpp
+        run: make -j$(nproc)
+
+      - name: make test
+        run: make -j$(nproc) test
+
+      - name: selfcheck
+        run: |
+          make -j$(nproc) selfcheck
+
+      - name: integration test
+        run: |
+          python3 -m pytest integration_test.py -vv
+
+      - name: Run CMake
+        run: |
+          cmake -S . -B cmake.output
+
+      - name: CMake simplecpp
+        run: |
+          cmake --build cmake.output --target simplecpp -- -j $(nproc)
+
+      - name: CMake testrunner
+        run: |
+          cmake --build cmake.output --target testrunner -- -j $(nproc)
+          ./cmake.output/testrunner
+
+      - name: Run with libstdc++ debug mode
+        if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
+        run: |
+          make clean
+          make -j$(nproc) test selfcheck CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
+
+      - name: Run with libc++ hardening mode
+        if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
+        run: |
+          make clean
+          make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
