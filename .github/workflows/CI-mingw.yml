@@ -32,12 +32,9 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-clang
             mingw-w64-x86_64-libc++
-            mingw-w64-x86_64-python
-
-      - name: Install missing Python packages
-        run: |
-          python3 -m pip config set global.break-system-packages true
-          python3 -m pip install pytest
+            python
+            python-pip
+            python-pytest
 
       - name: make simplecpp
         run: make -j$(nproc)
