@@ -745,7 +745,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
         // number or name
         if (isNameChar(ch)) {
-            const bool num = std::isdigit(ch);
+            const bool num = !!std::isdigit(ch);
             while (stream.good() && isNameChar(ch)) {
                 currentToken += ch;
                 ch = stream.readChar();
@@ -886,7 +886,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
 
             if (prefix.empty())
-                push_back(new Token(s, location, std::isspace(stream.peekChar()))); // push string without newlines
+                push_back(new Token(s, location, !!std::isspace(stream.peekChar()))); // push string without newlines
             else
                 back()->setstr(prefix + s);
 
@@ -916,7 +916,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
         }
 
-        push_back(new Token(currentToken, location, std::isspace(stream.peekChar())));
+        push_back(new Token(currentToken, location, !!std::isspace(stream.peekChar())));
 
         if (multiline)
             location.col += currentToken.size();

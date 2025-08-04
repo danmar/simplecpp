@@ -30,7 +30,7 @@ jobs:
 
       - name: Prepare CMake
         run: |
-          cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         env:
           CXX: clang-20
 
