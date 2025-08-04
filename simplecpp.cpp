@@ -3236,7 +3236,7 @@ static std::string getDateDefine(const struct tm *timep)
 static std::string getTimeDefine(const struct tm *timep)
 {
     char buf[] = "??:??:??";
-    strftime(buf, sizeof(buf), "%T", timep);
+    strftime(buf, sizeof(buf), "%H:%M:%S", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
