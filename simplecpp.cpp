@@ -874,7 +874,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 back()->setstr(currentToken);
                 location.adjust(currentToken);
                 if (currentToken.find_first_of("\r\n") == std::string::npos)
-                    location.col += 2 + 2 * delim.size();
+                    location.col += 2 + (2 * delim.size());
                 else
                     location.col += 1 + delim.size();
 
