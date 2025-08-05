@@ -426,6 +426,7 @@ namespace simplecpp {
         std::pair<FileData *, bool> get(const std::string &sourcefile, const std::string &header, const DUI &dui, bool systemheader, std::vector<std::string> &filenames, OutputList *outputList);
 
         void insert(FileData data) {
+            // NOLINTNEXTLINE(misc-const-correctness) - FP
             FileData *const newdata = new FileData(std::move(data));
 
             mData.emplace_back(newdata);
