@@ -6,6 +6,9 @@ name: CI-windows
 
 on: [push,pull_request]
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: cmd
@@ -23,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup msbuild.exe
         uses: microsoft/setup-msbuild@v2
