@@ -7,8 +7,13 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [clang++, g++]
         os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, macos-15]
+        compiler: [clang++]
+        include:
+          - os: ubuntu-22.04
+            compiler: g++
+          - os: ubuntu-24.04
+            compiler: g++
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
