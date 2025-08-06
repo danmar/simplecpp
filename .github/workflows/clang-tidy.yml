@@ -4,6 +4,9 @@ name: clang-tidy
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   build:
 
@@ -11,6 +14,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install missing software
         run: |
