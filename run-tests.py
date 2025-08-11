@@ -6,11 +6,11 @@ import sys
 
 def cleanup(out):
   ret = ''
-  for s in out.decode('utf-8').split('\n'):
+  for s in out.decode('utf-8').splitlines():
     if len(s) > 1 and s[0] == '#':
       continue
     s = "".join(s.split())
-    ret = ret + s
+    ret = ret + '\n' + s
   return ret
 
 commands = []
