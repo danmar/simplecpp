@@ -11,7 +11,7 @@ def cleanup(out):
       continue
     s = "".join(s.split())
     ret = ret + '\n' + s
-  return ret
+  return ret.strip()
 
 commands = []
 
