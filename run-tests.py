@@ -91,32 +91,44 @@ for cmd in commands:
 
   clang_cmd = ['clang']
   clang_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  clang_output = cleanup(comm[0])
+  with subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+      stdout, _ = p.communicate()
+      clang_ec = p.returncode
+  clang_output = cleanup(stdout)
 
   gcc_cmd = ['gcc']
   gcc_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  gcc_output = cleanup(comm[0])
+  with subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+      stdout, _ = p.communicate()
+      gcc_ec = p.returncode
+  gcc_output = cleanup(stdout)
 
   simplecpp_cmd = ['./simplecpp']
   # -E is not supported and we bail out on unknown options
   simplecpp_cmd.extend(cmd.replace('-E ', '', 1).split(' '))
-  p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  simplecpp_ec = p.returncode
-  simplecpp_output = cleanup(comm[0])
-  simplecpp_err = comm[0].decode('utf-8').strip()
+  with subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+      stdout, _ = p.communicate()
+      simplecpp_ec = p.returncode
+  simplecpp_output = cleanup(stdout)
+  simplecpp_err = stdout.decode('utf-8').strip()
 
-  if simplecpp_output != clang_output and simplecpp_output != gcc_output:
+  clang_fail = simplecpp_output != clang_output
+  gcc_fail = simplecpp_output != gcc_output
+  if clang_fail or gcc_fail:
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
       usedTodos.append(filename)
     else:
-      print('FAILED ' + cmd)
+      if clang_fail:
+        print('FAILED (clang: {}) {}'.format(clang_ec, cmd))
+        print('expected:')
+        print(clang_output)
+      if gcc_fail:
+        print('FAILED (gcc: {}) {}'.format(gcc_ec, cmd))
+        print('expected:')
+        print(gcc_output)
+      print('actual:')
       if simplecpp_ec:
           print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
