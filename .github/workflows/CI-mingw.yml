@@ -36,10 +36,10 @@ jobs:
             python-pytest
 
       - name: make simplecpp
-        run: make -j$(nproc)
+        run: make -j$(nproc) CXXOPTS="-Werror"
 
       - name: make test
-        run: make -j$(nproc) test
+        run: make -j$(nproc) CXXOPTS="-Werror" test
 
       - name: selfcheck
         run: |
@@ -51,7 +51,7 @@ jobs:
 
       - name: Run CMake
         run: |
-          cmake -S . -B cmake.output
+          cmake -S . -B cmake.output -DCMAKE_COMPILE_WARNING_AS_ERROR=On
 
       - name: CMake simplecpp
         run: |
@@ -66,10 +66,10 @@ jobs:
         if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
         run: |
           make clean
-          make -j$(nproc) test selfcheck CXXFLAGS="-g3 -D_GLIBCXX_DEBUG"
+          make -j$(nproc) test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
 
       - name: Run with libc++ hardening mode
         if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
         run: |
           make clean
-          make -j$(nproc) test selfcheck CXXFLAGS="-stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDFLAGS="-lc++"
+          make -j$(nproc) test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
