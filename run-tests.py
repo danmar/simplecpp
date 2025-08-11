@@ -129,6 +129,7 @@ for cmd in commands:
         print('expected:')
         print(gcc_output)
       print('actual:')
+      print(simplecpp_output)
       if simplecpp_ec:
           print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
