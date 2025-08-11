@@ -43,6 +43,11 @@ int main(int argc, char **argv)
             }
             case 'I': { // include path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
+                std::ifstream f(value);
+                if (!f.is_open()) {
+                    std::cout << "error: include path '" << value << "' does not exist" << std::endl;
+                    std::exit(1);
+                }
                 dui.includePaths.push_back(value);
                 found = true;
                 break;

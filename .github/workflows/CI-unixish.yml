@@ -7,8 +7,13 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [clang++, g++]
         os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, macos-15]
+        compiler: [clang++]
+        include:
+          - os: ubuntu-22.04
+            compiler: g++
+          - os: ubuntu-24.04
+            compiler: g++
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -26,15 +31,16 @@ jobs:
           sudo apt-get install valgrind
 
     - name: Install missing software on ubuntu (clang++)
-      if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
+      if: contains(matrix.os, 'ubuntu') && matrix.compiler == 'clang++'
       run: |
         sudo apt-get update
-        sudo apt-get install libc++-18-dev
+        sudo apt-get install libc++-dev
 
+    # coreutils contains "nproc"
     - name: Install missing software on macos
       if: contains(matrix.os, 'macos')
       run: |
-        brew install python3
+        brew install coreutils
 
     - name: Install missing Python packages
       run: |
