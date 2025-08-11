@@ -3119,6 +3119,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     FileDataCache cache;
 
     std::list<const Token *> filelist;
+    std::set<const Token *> processed;
 
     // -include files
     for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
@@ -3154,6 +3155,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     for (const Token *rawtok = rawtokens.cfront(); rawtok || !filelist.empty(); rawtok = rawtok ? rawtok->next : nullptr) {
         if (rawtok == nullptr) {
             rawtok = filelist.back();
+            processed.emplace(rawtok);
             filelist.pop_back();
         }
 
@@ -3180,7 +3182,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
         if (dui.removeComments)
             filedata->tokens.removeComments();
 
-        if (filedata->tokens.front())
+        if (filedata->tokens.front() && processed.find(filedata->tokens.front()) == processed.end())
             filelist.push_back(filedata->tokens.front());
     }
 
