@@ -92,7 +92,7 @@ todo = [
          ]
 
 
-def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, str]:
+def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, str, str]:
   """Execute a compiler command and capture its exit code, stdout, and stderr."""
   compiler_cmd = [compiler_executable]
   compiler_cmd.extend(compiler_args)
@@ -103,7 +103,7 @@ def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, s
 
   output = cleanup(stdout)
   error = (stderr or "").strip()
-  return (exit_code, output, error)
+  return (exit_code, output, stdout, error)
 
 
 numberOfSkipped = 0
@@ -117,20 +117,32 @@ for cmd in commands:
     numberOfSkipped = numberOfSkipped + 1
     continue
 
-  _, clang_output, _ = run(CLANG_EXE, cmd.split(' '))
+  _, clang_output_c, clang_output, _ = run(CLANG_EXE, cmd.split(' '))
 
-  _, gcc_output, _ = run(GCC_EXE, cmd.split(' '))
+  _, gcc_output_c, gcc_output, _ = run(GCC_EXE, cmd.split(' '))
 
   # -E is not supported and we bail out on unknown options
-  simplecpp_ec, simplecpp_output, simplecpp_err = run(SIMPLECPP_EXE, cmd.replace('-E ', '', 1).split(' '))
+  simplecpp_ec, simplecpp_output_c, simplecpp_output, simplecpp_err = run(SIMPLECPP_EXE, cmd.replace('-E ', '', 1).split(' '))
 
-  if simplecpp_output != clang_output and simplecpp_output != gcc_output:
+  if simplecpp_output_c != clang_output_c and simplecpp_output_c != gcc_output_c:
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
       usedTodos.append(filename)
     else:
       print('FAILED ' + cmd)
+      print('---expected (clang):')
+      print(clang_output_c)
+      print('---expected (gcc):')
+      print(gcc_output_c)
+      print('---actual:')
+      print(simplecpp_output_c)
+      print('---output (clang):')
+      print(clang_output)
+      print('---output (gcc):')
+      print(gcc_output)
+      print('---output (simplecpp):')
+      print(simplecpp_output)
       if simplecpp_ec:
           print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
