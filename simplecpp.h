@@ -62,18 +62,7 @@ namespace simplecpp {
      */
     class SIMPLECPP_LIB Location {
     public:
-        explicit Location(const std::vector<std::string> &f) : files(f), fileIndex(0), line(1U), col(0U) {}
-
-        Location(const Location &loc) : files(loc.files), fileIndex(loc.fileIndex), line(loc.line), col(loc.col) {}
-
-        Location &operator=(const Location &other) {
-            if (this != &other) {
-                fileIndex = other.fileIndex;
-                line = other.line;
-                col  = other.col;
-            }
-            return *this;
-        }
+        explicit Location(const std::vector<std::string> &f) : files(&f), fileIndex(0), line(1U), col(0U) {}
 
         /** increment this location by string */
         void adjust(const std::string &str);
@@ -91,10 +80,10 @@ namespace simplecpp {
         }
 
         const std::string& file() const {
-            return fileIndex < files.size() ? files[fileIndex] : emptyFileName;
+            return fileIndex < files->size() ? (*files)[fileIndex] : emptyFileName;
         }
 
-        const std::vector<std::string> &files;
+        const std::vector<std::string> *files;
         unsigned int fileIndex;
         unsigned int line;
         unsigned int col;
@@ -116,6 +105,10 @@ namespace simplecpp {
         Token(const Token &tok) :
             macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), nextcond(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
         }
+        Token(Token &&tok) = delete;
+
+        Token &operator=(const Token &tok) = delete;
+        Token &operator=(Token &&tok) = delete;
 
         void flags() {
             name = (std::isalpha(static_cast<unsigned char>(string[0])) || string[0] == '_' || string[0] == '$')
@@ -182,9 +175,6 @@ namespace simplecpp {
         TokenString string;
 
         std::set<const Macro*> mExpandedFrom;
-
-        // Not implemented - prevent assignment
-        Token &operator=(const Token &tok);
     };
 
     /** Output from preprocessor */
@@ -292,7 +282,7 @@ namespace simplecpp {
         std::map<std::string, std::size_t> sizeOfType;
 
         const std::vector<std::string>& getFiles() const {
-            return files;
+            return *files;
         }
 
     private:
@@ -318,7 +308,7 @@ namespace simplecpp {
 
         Token *frontToken;
         Token *backToken;
-        std::vector<std::string> &files;
+        std::vector<std::string> *files;
     };
 
     /** Tracking how macros are used */
