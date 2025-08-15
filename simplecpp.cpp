@@ -697,22 +697,35 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
-                if (!isLastLinePreprocessor())
+                const Token * const llTok = isLastLinePreprocessor();
+                if (!llTok)
                     continue;
-                const std::string lastline(lastLine());
-                if (lastline == "# file %str%") {
+                const Token * const llNextToken = llTok->next;
+                if (!llTok->next)
+                    continue;
+                // #file "file.c"
+                if (llNextToken->str() == "file" &&
+                    llNextToken->next &&
+                    llNextToken->next->str()[0] == '\"')
+                {
                     const Token *strtok = cback();
                     while (strtok->comment)
                         strtok = strtok->previous;
                     loc.push(location);
                     location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
                     location.line = 1U;
-                } else if (lastline == "# line %num%") {
-                    const Token *numtok = cback();
-                    while (numtok->comment)
-                        numtok = numtok->previous;
-                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
-                } else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
+                }
+                // #3 "file.c"
+                // #line 3 "file.c"
+                else if ((llNextToken->number &&
+                          llNextToken->next &&
+                          llNextToken->next->str()[0] == '\"') ||
+                         (llNextToken->str() == "line" &&
+                          llNextToken->next &&
+                          llNextToken->next->number &&
+                          llNextToken->next->next &&
+                          llNextToken->next->next->str()[0] == '\"'))
+                {
                     const Token *strtok = cback();
                     while (strtok->comment)
                         strtok = strtok->previous;
@@ -722,8 +735,19 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
                                   std::atol(numtok->str().c_str()), &location);
                 }
+                // #line 3
+                else if (llNextToken->str() == "line" &&
+                         llNextToken->next &&
+                         llNextToken->next->number)
+                {
+                    const Token *numtok = cback();
+                    while (numtok->comment)
+                        numtok = numtok->previous;
+                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                }
                 // #endfile
-                else if (lastline == "# endfile" && !loc.empty()) {
+                else if (llNextToken->str() == "endfile" && !loc.empty())
+                {
                     location = loc.top();
                     loc.pop();
                 }
@@ -1418,34 +1442,6 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
     return ret;
 }
 
-std::string simplecpp::TokenList::lastLine(int maxsize) const
-{
-    std::string ret;
-    int count = 0;
-    for (const Token *tok = cback(); ; tok = tok->previous) {
-        if (!sameline(tok, cback())) {
-            break;
-        }
-        if (tok->comment)
-            continue;
-        if (++count > maxsize)
-            return "";
-        if (!ret.empty())
-            ret += ' ';
-        // add tokens in reverse for performance reasons
-        if (tok->str()[0] == '\"')
-            ret += "%rts%"; // %str%
-        else if (tok->number)
-            ret += "%mun%"; // %num%
-        else {
-            ret += tok->str();
-            std::reverse(ret.end() - tok->str().length(), ret.end());
-        }
-    }
-    std::reverse(ret.begin(), ret.end());
-    return ret;
-}
-
 const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
 {
     const Token* prevTok = nullptr;
@@ -1462,10 +1458,12 @@ const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
     return prevTok;
 }
 
-bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+const simplecpp::Token* simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
 {
     const Token * const prevTok = lastLineTok(maxsize);
-    return prevTok && prevTok->op == '#';
+    if (prevTok && prevTok->op == '#')
+        return prevTok;
+    return nullptr;
 }
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
