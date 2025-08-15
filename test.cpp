@@ -2087,6 +2087,47 @@ static void systemInclude()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void circularInclude()
+{
+    std::vector<std::string> files;
+    simplecpp::FileDataCache cache;
+
+    {
+        const char *path = "test.h";
+        const char code[] =
+            "#ifndef TEST_H\n"
+            "#define TEST_H\n"
+            "#include \"a/a.h\"\n"
+            "#endif\n"
+        ;
+        cache.insert({path, makeTokenList(code, files, path)});
+    }
+
+    {
+        const char *path = "a/a.h";
+        const char code[] =
+            "#ifndef A_H\n"
+            "#define A_H\n"
+            "#include \"../test.h\"\n"
+            "#endif\n"
+        ;
+        cache.insert({path, makeTokenList(code, files, path)});
+    }
+
+    simplecpp::OutputList outputList;
+    {
+        std::vector<std::string> filenames;
+        simplecpp::DUI dui;
+
+        const char code[] = "#include \"test.h\"\n";
+        const simplecpp::TokenList rawtokens = makeTokenList(code, files, "test.cpp");
+
+        simplecpp::load(rawtokens, filenames, dui, &outputList, std::move(cache));
+    }
+
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 static void multiline1()
 {
     const char code[] = "#define A \\\n"
@@ -3314,6 +3355,7 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader4);
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
+    TEST_CASE(circularInclude);
 
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);

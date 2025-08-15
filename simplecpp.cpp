@@ -3109,14 +3109,12 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 #endif
 }
 
-simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList)
+simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, FileDataCache cache)
 {
 #ifdef SIMPLECPP_WINDOWS
     if (dui.clearIncludeCache)
         nonExistingFilesCache.clear();
 #endif
-
-    FileDataCache cache;
 
     std::list<const Token *> filelist;
 
