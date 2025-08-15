@@ -3173,15 +3173,20 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
         const bool systemheader = (htok->str()[0] == '<');
         const std::string header(htok->str().substr(1U, htok->str().size() - 2U));
 
-        FileData *const filedata = cache.get(sourcefile, header, dui, systemheader, filenames, outputList).first;
-        if (!filedata)
+        const auto loadResult = cache.get(sourcefile, header, dui, systemheader, filenames, outputList);
+        const bool loaded = loadResult.second;
+        FileData *const filedata = loadResult.first;
+
+        if (!loaded)
+            continue;
+
+        if (!filedata->tokens.front())
             continue;
 
         if (dui.removeComments)
             filedata->tokens.removeComments();
 
-        if (filedata->tokens.front())
-            filelist.push_back(filedata->tokens.front());
+        filelist.push_back(filedata->tokens.front());
     }
 
     return cache;
