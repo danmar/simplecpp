@@ -21,6 +21,13 @@
 #include <unordered_map>
 #include <vector>
 
+#if (__cplusplus >= 201703L) && (__cplusplus < 202002L)
+#include <string_view>
+#endif
+#if __cplusplus >= 202002L
+#include <span>
+#endif
+
 #ifdef _WIN32
 #  ifdef SIMPLECPP_EXPORT
 #    define SIMPLECPP_LIB __declspec(dllexport)
@@ -44,6 +51,15 @@
 // suppress warnings about "conversion from 'type1' to 'type2', possible loss of data"
 #  pragma warning(disable : 4267)
 #  pragma warning(disable : 4244)
+#endif
+
+// provide unsafe (i.e. raw pointer) API for TokenList
+// note: std::istream has an overhead compared to raw pointers
+#ifndef SIMPLECPP_UNSAFE_API
+// still provide the unsafe API for standards which lack the performant wrappers
+#  if __cplusplus < 201703L
+#    define SIMPLECPP_UNSAFE_API
+#  endif
 #endif
 
 namespace simplecpp {
@@ -216,10 +232,34 @@ namespace simplecpp {
         explicit TokenList(std::vector<std::string> &filenames);
         /** generates a token list from the given std::istream parameter */
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+#ifdef SIMPLECPP_UNSAFE_API
         /** generates a token list from the given buffer */
-        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+            : TokenList(data, size, filenames, filename, outputList, 0)
+        {}
         /** generates a token list from the given buffer */
-        TokenList(const char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        TokenList(const char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+            : TokenList(reinterpret_cast<const unsigned char*>(data), size, filenames, filename, outputList, 0)
+        {}
+#endif
+#if (__cplusplus >= 201703L) && (__cplusplus < 202002L)
+        /** generates a token list from the given buffer */
+        TokenList(std::string_view data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+            : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
+        {}
+#endif
+#if __cplusplus >= 202002L
+        /** generates a token list from the given buffer */
+        TokenList(std::span<const char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+                : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
+        {}
+
+        /** generates a token list from the given buffer */
+        TokenList(std::span<const unsigned char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+                : TokenList(data.data(), data.size(), filenames, filename, outputList, 0)
+        {}
+#endif
+
         /** generates a token list from the given filename parameter */
         TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
@@ -295,6 +335,8 @@ namespace simplecpp {
         }
 
     private:
+        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int unused);
+
         void combineOperators();
 
         void constFoldUnaryNotPosNeg(Token *tok);
