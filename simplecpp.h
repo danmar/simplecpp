@@ -310,9 +310,8 @@ namespace simplecpp {
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
         void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
 
-        std::string lastLine(int maxsize=1000) const;
         const Token* lastLineTok(int maxsize=1000) const;
-        bool isLastLinePreprocessor(int maxsize=1000) const;
+        const Token* isLastLinePreprocessor(int maxsize=1000) const;
 
         unsigned int fileIndex(const std::string &filename);
 
@@ -395,6 +394,20 @@ namespace simplecpp {
     /** Returns the __cplusplus value for a given standard */
     SIMPLECPP_LIB std::string getCppStdString(const std::string &std);
     SIMPLECPP_LIB std::string getCppStdString(cppstd_t std);
+
+    /**
+     * @brief Checks if given path is a file
+     * @param path Path to be checked
+     * @return true if given path is a file
+     */
+    SIMPLECPP_LIB bool isFile(const std::string &path);
+
+    /**
+     * @brief Checks if a given path is a directory
+     * @param path Path to be checked
+     * @return true if given path is a directory
+     */
+    SIMPLECPP_LIB bool isDirectory(const std::string &path);
 
     struct SIMPLECPP_LIB FileData {
         /** The canonical filename associated with this data */
