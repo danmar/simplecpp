@@ -3173,10 +3173,11 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
 
         const auto loadResult = cache.get(sourcefile, header, dui, systemheader, filenames, outputList);
         const bool loaded = loadResult.second;
-        FileData *const filedata = loadResult.first;
 
         if (!loaded)
             continue;
+
+        FileData *const filedata = loadResult.first;
 
         if (!filedata->tokens.front())
             continue;
