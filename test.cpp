@@ -13,6 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define STRINGIZE_(x) #x
@@ -2093,7 +2094,7 @@ static void circularInclude()
     simplecpp::FileDataCache cache;
 
     {
-        const char *path = "test.h";
+        const char *const path = "test.h";
         const char code[] =
             "#ifndef TEST_H\n"
             "#define TEST_H\n"
@@ -2104,7 +2105,7 @@ static void circularInclude()
     }
 
     {
-        const char *path = "a/a.h";
+        const char *const path = "a/a.h";
         const char code[] =
             "#ifndef A_H\n"
             "#define A_H\n"
@@ -2117,7 +2118,7 @@ static void circularInclude()
     simplecpp::OutputList outputList;
     {
         std::vector<std::string> filenames;
-        simplecpp::DUI dui;
+        const simplecpp::DUI dui;
 
         const char code[] = "#include \"test.h\"\n";
         const simplecpp::TokenList rawtokens = makeTokenList(code, files, "test.cpp");
