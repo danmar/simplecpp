@@ -2116,6 +2116,7 @@ static void circularInclude()
     }
 
     simplecpp::OutputList outputList;
+    simplecpp::TokenList tokens2(files);
     {
         std::vector<std::string> filenames;
         const simplecpp::DUI dui;
@@ -2123,7 +2124,8 @@ static void circularInclude()
         const char code[] = "#include \"test.h\"\n";
         const simplecpp::TokenList rawtokens = makeTokenList(code, files, "test.cpp");
 
-        simplecpp::load(rawtokens, filenames, dui, &outputList, std::move(cache));
+        cache = simplecpp::load(rawtokens, filenames, dui, &outputList, std::move(cache));
+        simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
     }
 
     ASSERT_EQUALS("", toString(outputList));
