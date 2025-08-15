@@ -20,11 +20,14 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#if __cplusplus >= 202002L
+#  include <version>
+#endif
 
-#if (__cplusplus >= 201703L) && (__cplusplus < 202002L)
+#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
 #include <string_view>
 #endif
-#if __cplusplus >= 202002L
+#ifdef __cpp_lib_span
 #include <span>
 #endif
 
@@ -56,8 +59,8 @@
 // provide unsafe (i.e. raw pointer) API for TokenList
 // note: std::istream has an overhead compared to raw pointers
 #ifndef SIMPLECPP_UNSAFE_API
-// still provide the unsafe API for standards which lack the performant wrappers
-#  if __cplusplus < 201703L
+// still provide the unsafe API in case we lack the performant wrappers
+#  if !defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
 #    define SIMPLECPP_UNSAFE_API
 #  endif
 #endif
@@ -242,13 +245,13 @@ namespace simplecpp {
             : TokenList(reinterpret_cast<const unsigned char*>(data), size, filenames, filename, outputList, 0)
         {}
 #endif
-#if (__cplusplus >= 201703L) && (__cplusplus < 202002L)
+#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
         /** generates a token list from the given buffer */
         TokenList(std::string_view data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
         {}
 #endif
-#if __cplusplus >= 202002L
+#ifdef __cpp_lib_span
         /** generates a token list from the given buffer */
         TokenList(std::span<const char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
                 : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
