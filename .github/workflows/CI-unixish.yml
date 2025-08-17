@@ -111,3 +111,22 @@ jobs:
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -stdlib=libc++ -fsanitize=memory" LDOPTS="-lc++ -fsanitize=memory"
+
+    - name: Run callgrind
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        wget https://github.com/danmar/simplecpp/archive/refs/tags/1.5.1.tar.gz
+        tar xvf 1.5.1.tar.gz
+        make clean
+        make -j$(nproc) CXXOPTS="-O2 -g3"
+        valgrind --tool=callgrind ./simplecpp -e simplecpp-1.5.1/simplecpp.cpp 2>callgrind.log || (cat callgrind.log && false)
+        cat callgrind.log
+        callgrind_annotate --auto=no > callgrind.annotated.log
+        head -50 callgrind.annotated.log
+
+    - uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-24.04'
+      with:
+        name: Callgrind Output - ${{ matrix.compiler }}
+        path: |
+          ./callgrind.*
