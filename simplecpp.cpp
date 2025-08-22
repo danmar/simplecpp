@@ -138,7 +138,10 @@ static unsigned long long stringToULL(const std::string &s)
 
 static bool endsWith(const std::string &s, const std::string &e)
 {
-    return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
+    // TODO: std::equal() is much faster than std::string::compare() in a benchmark
+    // but in our case it leads to a big performance regression
+    //return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
+    return (s.size() >= e.size() && s.compare(s.size() - e.size(), e.size(), e) == 0);
 }
 
 static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
