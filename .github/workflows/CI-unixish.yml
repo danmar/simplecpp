@@ -47,10 +47,10 @@ jobs:
         python3 -m pip install pytest
 
     - name: make simplecpp
-      run: make -j$(nproc)
+      run: make -j$(nproc) CXXOPTS="-Werror"
 
     - name: make test
-      run: make -j$(nproc) test
+      run: make -j$(nproc) test CXXOPTS="-Werror"
 
     - name: selfcheck
       run: |
@@ -58,7 +58,7 @@ jobs:
 
     - name: Run CMake
       run: |
-        cmake -S . -B cmake.output
+        cmake -S . -B cmake.output -DCMAKE_COMPILE_WARNING_AS_ERROR=On
 
     - name: CMake simplecpp
       run: |
@@ -81,19 +81,19 @@ jobs:
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXOPTS="-g3 -D_GLIBCXX_DEBUG"
+        make -j$(nproc) test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
 
     - name: Run with libc++ hardening mode
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXOPTS="-stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
+        make -j$(nproc) test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
 
     - name: Run AddressSanitizer
       if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXOPTS="-O2 -g3 -fsanitize=address" LDOPTS="-fsanitize=address"
+        make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -fsanitize=address" LDOPTS="-fsanitize=address"
       env:
         ASAN_OPTIONS: detect_stack_use_after_return=1
 
@@ -101,7 +101,7 @@ jobs:
       if: matrix.os == 'ubuntu-24.04'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXOPTS="-O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDOPTS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
+        make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDOPTS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
       env:
         UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:report_error_type=1
 
@@ -110,4 +110,4 @@ jobs:
       if: false && matrix.os == 'ubuntu-24.04' && matrix.compiler == 'clang++'
       run: |
         make clean
-        make -j$(nproc) test selfcheck CXXOPTS="-O2 -g3 -stdlib=libc++ -fsanitize=memory" LDOPTS="-lc++ -fsanitize=memory"
+        make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -stdlib=libc++ -fsanitize=memory" LDOPTS="-lc++ -fsanitize=memory"
