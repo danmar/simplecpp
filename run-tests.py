@@ -10,8 +10,8 @@ def cleanup(out):
     if len(s) > 1 and s[0] == '#':
       continue
     s = "".join(s.split())
-    ret = ret + s
-  return ret
+    ret = ret + '\n' + s
+  return ret.strip()
 
 commands = []
 
@@ -93,12 +93,14 @@ for cmd in commands:
   clang_cmd.extend(cmd.split(' '))
   p = subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
+  clang_ec = p.returncode
   clang_output = cleanup(comm[0])
 
   gcc_cmd = ['gcc']
   gcc_cmd.extend(cmd.split(' '))
   p = subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   comm = p.communicate()
+  gcc_ec = p.returncode
   gcc_output = cleanup(comm[0])
 
   simplecpp_cmd = ['./simplecpp']
@@ -110,13 +112,24 @@ for cmd in commands:
   simplecpp_output = cleanup(comm[0])
   simplecpp_err = comm[0].decode('utf-8').strip()
 
-  if simplecpp_output != clang_output and simplecpp_output != gcc_output:
+  clang_fail = simplecpp_output != clang_output
+  gcc_fail = simplecpp_output != gcc_output
+  if clang_fail and gcc_fail:
     filename = cmd[cmd.rfind('/')+1:]
     if filename in todo:
       print('TODO ' + cmd)
       usedTodos.append(filename)
     else:
-      print('FAILED ' + cmd)
+      if clang_fail:
+        print('FAILED (clang: {}) {}'.format(clang_ec, cmd))
+        print('expected:')
+        print(clang_output)
+      if gcc_fail:
+        print('FAILED (gcc: {}) {}'.format(gcc_ec, cmd))
+        print('expected:')
+        print(gcc_output)
+      print('actual:')
+      print(simplecpp_output)
       if simplecpp_ec:
           print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
