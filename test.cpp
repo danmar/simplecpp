@@ -887,6 +887,14 @@ static void define_define_23() // #403 crash (infinite recursion)
     ASSERT_EQUALS("\n\n\n\nYdieZ ( void ) ;", preprocess(code));
 }
 
+static void define_define_24()
+{
+    const char code[] = "#define A0(a, b)  ((a) + (b))\n"
+                        "#define A1(a, b)  ((a) > (b)) ? A0((a) - (b), (b)) : A0((b) - (a), (a))\n"
+                        "	A1(a, b);";
+    ASSERT_EQUALS("\n\n( ( a ) > ( b ) ) ? ( ( ( a ) - ( b ) ) + ( ( b ) ) ) : ( ( ( b ) - ( a ) ) + ( ( a ) ) ) ;", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -3245,6 +3253,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_21);
     TEST_CASE(define_define_22); // #400
     TEST_CASE(define_define_23); // #403 - crash, infinite recursion
+    TEST_CASE(define_define_24);
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
