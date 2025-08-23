@@ -704,13 +704,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         location.line = 1U;
                     }
                     // #3 "file.c"
-                    // #line 3 "file.c"
-                    else if ((llNextToken->number &&
-                              llNextToken->next->str()[0] == '\"') ||
-                             (llNextToken->str() == "line" &&
-                              llNextToken->next->number &&
-                              llNextToken->next->next &&
-                              llNextToken->next->next->str()[0] == '\"'))
+                    else if (llNextToken->number &&
+                             llNextToken->next->str()[0] == '\"')
                     {
                         const Token *strtok = cback();
                         while (strtok->comment)
@@ -722,13 +717,22 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                                       std::atol(numtok->str().c_str()), &location);
                     }
                     // #line 3
+                    // #line 3 "file.c"
                     else if (llNextToken->str() == "line" &&
                              llNextToken->next->number)
                     {
-                        const Token *numtok = cback();
-                        while (numtok->comment)
-                            numtok = numtok->previous;
-                        lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                        const Token *backtok = cback();
+                        while (backtok->comment)
+                            backtok = backtok->previous;
+                        // TODO: skip comments?
+                        if (llNextToken->next->next && llNextToken->next->next->str()[0] == '\"')
+                        {
+                            lineDirective(fileIndex(replaceAll(backtok->str().substr(1U, backtok->str().size() - 2U),"\\\\","\\")),
+                                          std::atol(backtok->str().c_str()), &location);
+                        }
+                        else {
+                            lineDirective(location.fileIndex, std::atol(backtok->str().c_str()), &location);
+                        }
                     }
                 }
                 // #endfile
