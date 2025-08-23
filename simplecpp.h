@@ -176,8 +176,8 @@ namespace simplecpp {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
         }
 
-        void printAll() const;
-        void printOut() const;
+        void printAll(std::ostream& ostr) const;
+        void printOut(std::ostream& ostr) const;
     private:
         TokenString string;
 
@@ -235,7 +235,7 @@ namespace simplecpp {
         }
         void push_back(Token *tok);
 
-        void dump() const;
+        void dump(std::ostream& ostr) const;
         std::string stringify() const;
 
         void readfile(Stream &stream, const std::string &filename=std::string(), OutputList *outputList = nullptr);
