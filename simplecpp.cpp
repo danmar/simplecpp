@@ -703,47 +703,45 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 const Token * const llNextToken = llTok->next;
                 if (!llTok->next)
                     continue;
-                // #file "file.c"
-                if (llNextToken->str() == "file" &&
-                    llNextToken->next &&
-                    llNextToken->next->str()[0] == '\"')
-                {
-                    const Token *strtok = cback();
-                    while (strtok->comment)
-                        strtok = strtok->previous;
-                    loc.push(location);
-                    location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
-                    location.line = 1U;
-                }
-                // #3 "file.c"
-                // #line 3 "file.c"
-                else if ((llNextToken->number &&
-                          llNextToken->next &&
-                          llNextToken->next->str()[0] == '\"') ||
-                         (llNextToken->str() == "line" &&
-                          llNextToken->next &&
-                          llNextToken->next->number &&
-                          llNextToken->next->next &&
-                          llNextToken->next->next->str()[0] == '\"'))
-                {
-                    const Token *strtok = cback();
-                    while (strtok->comment)
-                        strtok = strtok->previous;
-                    const Token *numtok = strtok->previous;
-                    while (numtok->comment)
-                        numtok = numtok->previous;
-                    lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
-                                  std::atol(numtok->str().c_str()), &location);
-                }
-                // #line 3
-                else if (llNextToken->str() == "line" &&
-                         llNextToken->next &&
-                         llNextToken->next->number)
-                {
-                    const Token *numtok = cback();
-                    while (numtok->comment)
-                        numtok = numtok->previous;
-                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                if (llNextToken->next) {
+                    // #file "file.c"
+                    if (llNextToken->str() == "file" &&
+                        llNextToken->next->str()[0] == '\"')
+                    {
+                        const Token *strtok = cback();
+                        while (strtok->comment)
+                            strtok = strtok->previous;
+                        loc.push(location);
+                        location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
+                        location.line = 1U;
+                    }
+                    // #3 "file.c"
+                    // #line 3 "file.c"
+                    else if ((llNextToken->number &&
+                              llNextToken->next->str()[0] == '\"') ||
+                             (llNextToken->str() == "line" &&
+                              llNextToken->next->number &&
+                              llNextToken->next->next &&
+                              llNextToken->next->next->str()[0] == '\"'))
+                    {
+                        const Token *strtok = cback();
+                        while (strtok->comment)
+                            strtok = strtok->previous;
+                        const Token *numtok = strtok->previous;
+                        while (numtok->comment)
+                            numtok = numtok->previous;
+                        lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
+                                      std::atol(numtok->str().c_str()), &location);
+                    }
+                    // #line 3
+                    else if (llNextToken->str() == "line" &&
+                             llNextToken->next->number)
+                    {
+                        const Token *numtok = cback();
+                        while (numtok->comment)
+                            numtok = numtok->previous;
+                        lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                    }
                 }
                 // #endfile
                 else if (llNextToken->str() == "endfile" && !loc.empty())
