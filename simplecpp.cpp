@@ -715,6 +715,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
                         location.line = 1U;
                     }
+                    // TODO: add support for "# 3"
                     // #3 "file.c"
                     // #line 3 "file.c"
                     else if ((llNextToken->number &&
