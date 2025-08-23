@@ -417,10 +417,16 @@ public:
         init();
     }
 
+    FileStream(const FileStream &other) = delete;
+    FileStream(FileStream &&other) = delete;
+
     ~FileStream() override {
         fclose(file);
         file = nullptr;
     }
+
+    FileStream &operator=(const FileStream &other) = delete;
+    FileStream &operator=(FileStream &&other) = delete;
 
     virtual int get() override {
         lastStatus = lastCh = fgetc(file);
@@ -449,39 +455,36 @@ private:
             ungetc(ch, file);
     }
 
-    FileStream(const FileStream&);
-    FileStream &operator=(const FileStream&);
-
     FILE *file;
     int lastCh;
     int lastStatus;
 };
 
-simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
+simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(&filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : frontToken(nullptr), backToken(nullptr), files(filenames)
+    : frontToken(nullptr), backToken(nullptr), files(&filenames)
 {
     StdIStream stream(istr);
     readfile(stream,filename,outputList);
 }
 
 simplecpp::TokenList::TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : frontToken(nullptr), backToken(nullptr), files(filenames)
+    : frontToken(nullptr), backToken(nullptr), files(&filenames)
 {
     StdCharBufStream stream(data, size);
     readfile(stream,filename,outputList);
 }
 
 simplecpp::TokenList::TokenList(const char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
-    : frontToken(nullptr), backToken(nullptr), files(filenames)
+    : frontToken(nullptr), backToken(nullptr), files(&filenames)
 {
     StdCharBufStream stream(reinterpret_cast<const unsigned char*>(data), size);
     readfile(stream,filename,outputList);
 }
 
 simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList)
-    : frontToken(nullptr), backToken(nullptr), files(filenames)
+    : frontToken(nullptr), backToken(nullptr), files(&filenames)
 {
     try {
         FileStream stream(filename, filenames);
@@ -561,7 +564,7 @@ void simplecpp::TokenList::dump() const
 std::string simplecpp::TokenList::stringify() const
 {
     std::ostringstream ret;
-    Location loc(files);
+    Location loc(*files);
     for (const Token *tok = cfront(); tok; tok = tok->next) {
         if (tok->location.line < loc.line || tok->location.fileIndex != loc.fileIndex) {
             ret << "\n#line " << tok->location.line << " \"" << tok->location.file() << "\"\n";
@@ -647,7 +650,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
     const Token *oldLastToken = nullptr;
 
-    Location location(files);
+    Location location(*files);
     location.fileIndex = fileIndex(filename);
     location.line = 1U;
     location.col  = 1U;
@@ -658,7 +661,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
         if (ch >= 0x80) {
             if (outputList) {
-                simplecpp::Output err(files);
+                simplecpp::Output err(*files);
                 err.type = simplecpp::Output::UNHANDLED_CHAR_ERROR;
                 err.location = location;
                 std::ostringstream s;
@@ -673,7 +676,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         if (ch == '\n') {
             if (cback() && cback()->op == '\\') {
                 if (location.col > cback()->location.col + 1U)
-                    portabilityBackslash(outputList, files, cback()->location);
+                    portabilityBackslash(outputList, *files, cback()->location);
                 ++multiline;
                 deleteToken(back());
             } else {
@@ -778,7 +781,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         const TokenString check_portability = currentToken + tmp;
                         const std::string::size_type pos = check_portability.find_last_not_of(" \t");
                         if (pos < check_portability.size() - 1U && check_portability[pos] == '\\')
-                            portabilityBackslash(outputList, files, location);
+                            portabilityBackslash(outputList, *files, location);
                         ++multiline;
                         tmp_ch = stream.readChar();
                         currentToken += '\n';
@@ -838,7 +841,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 }
                 if (!stream.good() || ch == '\n') {
                     if (outputList) {
-                        Output err(files);
+                        Output err(*files);
                         err.type = Output::SYNTAX_ERROR;
                         err.location = location;
                         err.msg = "Invalid newline in raw string delimiter.";
@@ -851,7 +854,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     currentToken += stream.readChar();
                 if (!endsWith(currentToken, endOfRawString)) {
                     if (outputList) {
-                        Output err(files);
+                        Output err(*files);
                         err.type = Output::SYNTAX_ERROR;
                         err.location = location;
                         err.msg = "Raw string missing terminating delimiter.";
@@ -1393,7 +1396,7 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
     if (!stream.good() || ch != end) {
         clear();
         if (outputList) {
-            Output err(files);
+            Output err(*files);
             err.type = Output::SYNTAX_ERROR;
             err.location = location;
             err.msg = std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
@@ -1457,12 +1460,12 @@ bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
 {
-    for (unsigned int i = 0; i < files.size(); ++i) {
-        if (files[i] == filename)
+    for (unsigned int i = 0; i < files->size(); ++i) {
+        if ((*files)[i] == filename)
             return i;
     }
-    files.push_back(filename);
-    return files.size() - 1U;
+    files->push_back(filename);
+    return files->size() - 1U;
 }
 
 
@@ -1472,9 +1475,9 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), optExpandValue(nullptr), optNoExpandValue(nullptr), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(&f), tokenListDefine(f), variadic(false), variadicOpt(false), optExpandValue(f), optNoExpandValue(f), valueDefinedInCode_(false) {}
 
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(&f), tokenListDefine(f), optExpandValue(f), optNoExpandValue(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1490,7 +1493,7 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax");
         }
 
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(&f), tokenListDefine(f), optExpandValue(f), optNoExpandValue(f), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
             tokenListDefine.readfile(stream);
@@ -1498,14 +1501,10 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
+        Macro(const Macro &other) : tokenListDefine(*other.files), optExpandValue(*other.files), optNoExpandValue(*other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
             *this = other;
         }
-
-        ~Macro() {
-            delete optExpandValue;
-            delete optNoExpandValue;
-        }
+        Macro(Macro &&other) = default;
 
         Macro &operator=(const Macro &other) {
             if (this != &other) {
@@ -1521,6 +1520,7 @@ namespace simplecpp {
             }
             return *this;
         }
+        Macro &operator=(Macro &&other) = delete;
 
         bool valueDefinedInCode() const {
             return valueDefinedInCode_;
@@ -1700,8 +1700,9 @@ namespace simplecpp {
             nameTokDef = nametoken;
             variadic = false;
             variadicOpt = false;
-            optExpandValue = nullptr;
-            optNoExpandValue = nullptr;
+            optExpandValue.clear();
+            optNoExpandValue.clear();
+
             if (!nameTokDef) {
                 valueToken = endToken = nullptr;
                 args.clear();
@@ -1746,8 +1747,6 @@ namespace simplecpp {
             }
 
             if (variadicOpt) {
-                TokenList expandValue(files);
-                TokenList noExpandValue(files);
                 for (const Token *tok = valueToken; tok && tok != endToken;) {
                     if (tok->str() == "__VA_OPT__") {
                         if (!sameline(tok, tok->next) || tok->next->op != '(')
@@ -1765,21 +1764,19 @@ namespace simplecpp {
                                 tok = tok->next;
                                 break;
                             }
-                            expandValue.push_back(new Token(*tok));
+                            optExpandValue.push_back(new Token(*tok));
                             tok = tok->next;
                         }
                         if (par != 0) {
-                            const Token *const lastTok = expandValue.back() ? expandValue.back() : valueToken->next;
+                            const Token *const lastTok = optExpandValue.back() ? optExpandValue.back() : valueToken->next;
                             throw Error(lastTok->location, "In definition of '" + nameTokDef->str() + "': Missing closing parenthesis for __VA_OPT__");
                         }
                     } else {
-                        expandValue.push_back(new Token(*tok));
-                        noExpandValue.push_back(new Token(*tok));
+                        optExpandValue.push_back(new Token(*tok));
+                        optNoExpandValue.push_back(new Token(*tok));
                         tok = tok->next;
                     }
                 }
-                optExpandValue = new TokenList(std::move(expandValue));
-                optNoExpandValue = new TokenList(std::move(noExpandValue));
             }
 
             return true;
@@ -1901,7 +1898,7 @@ namespace simplecpp {
             }
 
             // If macro call uses __COUNTER__ then expand that first
-            TokenList tokensparams(files);
+            TokenList tokensparams(*files);
             std::vector<const Token *> parametertokens2;
             if (!parametertokens1.empty()) {
                 bool counter = false;
@@ -1941,9 +1938,9 @@ namespace simplecpp {
 
             if (variadicOpt) {
                 if (parametertokens2.size() > args.size() && parametertokens2[args.size() - 1]->next->op != ')')
-                    valueToken2 = optExpandValue->cfront();
+                    valueToken2 = optExpandValue.cfront();
                 else
-                    valueToken2 = optNoExpandValue->cfront();
+                    valueToken2 = optNoExpandValue.cfront();
                 endToken2 = nullptr;
             } else {
                 valueToken2 = valueToken;
@@ -1965,7 +1962,7 @@ namespace simplecpp {
                                 output->deleteToken(comma);
                             continue;
                         }
-                        TokenList new_output(files);
+                        TokenList new_output(*files);
                         if (!expandArg(&new_output, tok, parametertokens2))
                             output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
                         else if (new_output.empty()) // placemarker token
@@ -2048,7 +2045,7 @@ namespace simplecpp {
                 return tok->next;
             }
 
-            TokenList temp2(files);
+            TokenList temp2(*files);
             temp2.push_back(new Token(temp.cback()->str(), tok->location));
 
             const Token * const tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
@@ -2069,7 +2066,7 @@ namespace simplecpp {
 
             // Macro parameter..
             {
-                TokenList temp(files);
+                TokenList temp(*files);
                 if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
                     if (tok->str() == "__VA_ARGS__" && temp.empty() && output->cback() && output->cback()->str() == "," &&
                         tok->nextSkipComments() && tok->nextSkipComments()->str() == ")")
@@ -2086,7 +2083,7 @@ namespace simplecpp {
 
                 const Macro &calledMacro = it->second;
                 if (!calledMacro.functionLike()) {
-                    TokenList temp(files);
+                    TokenList temp(*files);
                     calledMacro.expand(&temp, loc, tok, macros, expandedmacros);
                     return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros2, parametertokens);
                 }
@@ -2094,7 +2091,7 @@ namespace simplecpp {
                     output->push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
                 }
-                TokenList tokens(files);
+                TokenList tokens(*files);
                 tokens.push_back(new Token(*tok));
                 const Token * tok2 = nullptr;
                 if (tok->next->op == '(')
@@ -2108,7 +2105,7 @@ namespace simplecpp {
                     output->push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
                 }
-                TokenList temp(files);
+                TokenList temp(*files);
                 calledMacro.expand(&temp, loc, tokens.cfront(), macros, expandedmacros);
                 return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros, parametertokens);
             }
@@ -2128,7 +2125,7 @@ namespace simplecpp {
                 if (defToken) {
                     std::string macroName = defToken->str();
                     if (defToken->next && defToken->next->op == '#' && defToken->next->next && defToken->next->next->op == '#' && defToken->next->next->next && defToken->next->next->next->name && sameline(defToken,defToken->next->next->next)) {
-                        TokenList temp(files);
+                        TokenList temp(*files);
                         if (expandArg(&temp, defToken, parametertokens))
                             macroName = temp.cback()->str();
                         if (expandArg(&temp, defToken->next->next->next, parametertokens))
@@ -2200,7 +2197,7 @@ namespace simplecpp {
          * @return token after the X
          */
         const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
-            TokenList tokenListHash(files);
+            TokenList tokenListHash(*files);
             const MacroMap macros2; // temporarily bypass macro expansion
             tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
             std::ostringstream ostr;
@@ -2251,7 +2248,7 @@ namespace simplecpp {
             if (canBeConcatenatedStringOrChar && (B->number || !B->name))
                 throw invalidHashHash::cannotCombine(tok->location, name(), A, B);
 
-            TokenList tokensB(files);
+            TokenList tokensB(*files);
             const Token *nextTok = B->next;
 
             if (canBeConcatenatedStringOrChar) {
@@ -2306,14 +2303,14 @@ namespace simplecpp {
                         b->location = loc;
                     output->takeTokens(tokensB);
                 } else if (sameline(B, nextTok) && sameline(B, nextTok->next) && nextTok->op == '#' && nextTok->next->op == '#') {
-                    TokenList output2(files);
+                    TokenList output2(*files);
                     output2.push_back(new Token(strAB, tok->location));
                     nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
                     output->deleteToken(A);
                     output->takeTokens(output2);
                 } else {
                     output->deleteToken(A);
-                    TokenList tokens(files);
+                    TokenList tokens(*files);
                     tokens.push_back(new Token(strAB, tok->location));
                     // for function like macros, push the (...)
                     if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
@@ -2359,7 +2356,7 @@ namespace simplecpp {
         const Token *endToken;
 
         /** files */
-        std::vector<std::string> &files;
+        std::vector<std::string> *files;
 
         /** this is used for -D where the definition is not seen anywhere in code */
         TokenList tokenListDefine;
@@ -2374,8 +2371,8 @@ namespace simplecpp {
         bool variadicOpt;
 
         /** Expansion value for varadic macros with __VA_OPT__ expanded and discarded respectively */
-        const TokenList *optExpandValue;
-        const TokenList *optNoExpandValue;
+        TokenList optExpandValue;
+        TokenList optNoExpandValue;
 
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
@@ -3383,7 +3380,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
             if (ifstates.top() == True && (rawtok->str() == ERROR || rawtok->str() == WARNING)) {
                 if (outputList) {
-                    simplecpp::Output err(rawtok->location.files);
+                    simplecpp::Output err(*rawtok->location.files);
                     err.type = rawtok->str() == ERROR ? Output::ERROR : Output::WARNING;
                     err.location = rawtok->location;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
@@ -3548,7 +3545,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 tok = tok ? tok->next : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
                                 if (outputList) {
-                                    Output out(rawtok->location.files);
+                                    Output out(*rawtok->location.files);
                                     out.type = Output::SYNTAX_ERROR;
                                     out.location = rawtok->location;
                                     out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
@@ -3588,7 +3585,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 tok = tok ? tok->next : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')') || (!closingAngularBracket)) {
                                 if (outputList) {
-                                    Output out(rawtok->location.files);
+                                    Output out(*rawtok->location.files);
                                     out.type = Output::SYNTAX_ERROR;
                                     out.location = rawtok->location;
                                     out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
@@ -3625,7 +3622,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         }
                     } catch (const std::exception &e) {
                         if (outputList) {
-                            Output out(rawtok->location.files);
+                            Output out(*rawtok->location.files);
                             out.type = Output::SYNTAX_ERROR;
                             out.location = rawtok->location;
                             out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
@@ -3727,7 +3724,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             const std::list<Location>& temp = maybeUsedMacros[macro.name()];
             usage.insert(usage.end(), temp.begin(), temp.end());
             for (std::list<Location>::const_iterator usageIt = usage.begin(); usageIt != usage.end(); ++usageIt) {
-                MacroUsage mu(usageIt->files, macro.valueDefinedInCode());
+                MacroUsage mu(*usageIt->files, macro.valueDefinedInCode());
                 mu.macroName = macro.name();
                 mu.macroLocation = macro.defineLocation();
                 mu.useLocation = *usageIt;
