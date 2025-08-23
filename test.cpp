@@ -2046,6 +2046,14 @@ static void location9()
     ASSERT_EQUALS("\n#line 3 \"file.c\"\n3 \"file.c\"", preprocess(code));
 }
 
+static void location10()
+{
+    const char code[] =
+            "#line 3 // adjust line\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n#line 3 \"file.c\"\n3 \"file.c\"", preprocess(code));
+}
+
 
 static void missingHeader1()
 {
@@ -3388,6 +3396,7 @@ int main(int argc, char **argv)
     TEST_CASE(location7);
     TEST_CASE(location8);
     TEST_CASE(location9);
+    TEST_CASE(location10);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
