@@ -2,6 +2,9 @@ name: CI-mingw
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: msys2 {0}
@@ -21,6 +24,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
