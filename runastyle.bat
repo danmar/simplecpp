@@ -14,7 +14,7 @@ CD /d %SCRIPT_DIR%
 REM To require a newer astyle version, update ASTYLE_VERSION below.
 REM ASTYLE_VERSION_STR is then constructed to match the beginning of the
 REM version string reported by "astyle --version".
-SET ASTYLE_VERSION="3.0.1"
+SET ASTYLE_VERSION="3.4.13"
 SET ASTYLE_VERSION_STR="Artistic Style Version %ASTYLE_VERSION%"
 SET ASTYLE="astyle"
 
@@ -28,8 +28,9 @@ ECHO %DETECTED_VERSION_STR% | FINDSTR /B /C:%ASTYLE_VERSION_STR% > nul && (
     GOTO EXIT_ERROR
 )
 
-%ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.cpp
-%ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.h
+REM Run astyle with the project config
+%ASTYLE% --project *.cpp
+%ASTYLE% --project *.h
 GOTO :EOF
 
 :EXIT_ERROR

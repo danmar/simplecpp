@@ -11,7 +11,7 @@ cd $SCRIPT_DIR
 # To require a newer astyle version, update ASTYLE_VERSION below.
 # ASTYLE_VERSION_STR is then constructed to match the beginning of the
 # version string reported by "astyle --version".
-ASTYLE_VERSION="3.0.1"
+ASTYLE_VERSION="3.4.13"
 ASTYLE_VERSION_STR="Artistic Style Version ${ASTYLE_VERSION}"
 ASTYLE="astyle"
 
@@ -22,5 +22,6 @@ if [[ "$DETECTED_VERSION_STR" != ${ASTYLE_VERSION_STR}* ]]; then
     exit 1;
 fi
 
-$ASTYLE --options="$SCRIPT_DIR/.astylerc" *.cpp
-$ASTYLE --options="$SCRIPT_DIR/.astylerc" *.h
+# Run astyle with the project config
+$ASTYLE --project *.cpp
+$ASTYLE --project *.h
