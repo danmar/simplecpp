@@ -438,14 +438,14 @@ static void comment_multiline()
     ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code));
 
     const char code1[] = "#define ABC {// \\\r\n"
-                        "}\n"
-                        "void f() ABC\n";
+                         "}\n"
+                         "void f() ABC\n";
     ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code1));
 
     const char code2[] = "#define A 1// \\\r"
-                        "\r"
-                        "2\r"
-                        "A\r";
+                         "\r"
+                         "2\r"
+                         "A\r";
     ASSERT_EQUALS("\n\n2\n1", preprocess(code2));
 
     const char code3[] = "void f() {// \\ \n}\n";
@@ -2100,7 +2100,7 @@ static void circularInclude()
             "#define TEST_H\n"
             "#include \"a/a.h\"\n"
             "#endif\n"
-        ;
+            ;
         cache.insert({path, makeTokenList(code, files, path)});
     }
 
@@ -2111,7 +2111,7 @@ static void circularInclude()
             "#define A_H\n"
             "#include \"../test.h\"\n"
             "#endif\n"
-        ;
+            ;
         cache.insert({path, makeTokenList(code, files, path)});
     }
 
@@ -3176,7 +3176,8 @@ static void fuzz_crash()
                             "n\n";
         (void)preprocess(code, simplecpp::DUI()); // do not crash
     }
-    { // #346
+    {
+        // #346
         const char code[] = "#define foo(intp)f##oo(intp\n"
                             "foo(f##oo(intp))\n";
         (void)preprocess(code, simplecpp::DUI()); // do not crash

@@ -761,18 +761,18 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             while (stream.good() && ch != '\n') {
                 currentToken += ch;
                 ch = stream.readChar();
-                if(ch == '\\') {
+                if (ch == '\\') {
                     TokenString tmp;
                     char tmp_ch = ch;
-                    while((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
+                    while ((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
                         tmp += tmp_ch;
                         tmp_ch = stream.readChar();
                     }
-                    if(!stream.good()) {
+                    if (!stream.good()) {
                         break;
                     }
 
-                    if(tmp_ch != '\n') {
+                    if (tmp_ch != '\n') {
                         currentToken += tmp;
                     } else {
                         const TokenString check_portability = currentToken + tmp;
