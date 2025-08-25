@@ -34,5 +34,4 @@ if [[ "$DETECTED_VERSION_STR" != ${ASTYLE_VERSION_STR}* ]]; then
 fi
 
 # Run astyle with the project config
-$ASTYLE --project *.cpp
-$ASTYLE --project *.h
+$ASTYLE --project *.h,*.cpp

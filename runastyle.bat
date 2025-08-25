@@ -46,8 +46,7 @@ ECHO %DETECTED_VERSION_STR% | FINDSTR /B /C:%ASTYLE_VERSION_STR% > nul && (
 )
 
 REM Run astyle with the project config
-%ASTYLE% --project *.cpp
-%ASTYLE% --project *.h
+%ASTYLE% --project *.h,*.cpp
 GOTO :EOF
 
 :EXIT_ERROR
