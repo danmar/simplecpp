@@ -10,18 +10,20 @@ SET SCRIPT_DIR=%~dp0
 @REM Change to that directory
 CD /d %SCRIPT_DIR%
 
-@REM If project management wishes to take a newer astyle version into use
-@REM just change this string to match the start of astyle version string.
-@SET ASTYLE_VERSION="Artistic Style Version 3.0.1"
+@REM To require a newer astyle version, update ASTYLE_VERSION below.
+@REM ASTYLE_VERSION_STR is then constructed to match the beginning of the
+@REM version string reported by "astyle --version".
+@SET ASTYLE_VERSION="3.0.1"
+@SET ASTYLE_VERSION_STR="Artistic Style Version %ASTYLE_VERSION%"
 @SET ASTYLE="astyle"
 
-@SET DETECTED_VERSION=""
-@FOR /F "tokens=*" %%i IN ('%ASTYLE% --version') DO SET DETECTED_VERSION=%%i
-@ECHO %DETECTED_VERSION% | FINDSTR /B /C:%ASTYLE_VERSION% > nul && (
-    ECHO "%DETECTED_VERSION%" matches %ASTYLE_VERSION%
+@SET DETECTED_VERSION_STR=""
+@FOR /F "tokens=*" %%i IN ('%ASTYLE% --version') DO SET DETECTED_VERSION_STR=%%i
+@ECHO %DETECTED_VERSION_STR% | FINDSTR /B /C:%ASTYLE_VERSION_STR% > nul && (
+    ECHO "%DETECTED_VERSION_STR%" matches %ASTYLE_VERSION_STR%
 ) || (
-    ECHO You should use: %ASTYLE_VERSION%
-    ECHO Detected: "%DETECTED_VERSION%"
+    ECHO You should use: %ASTYLE_VERSION_STR%
+    ECHO Detected: "%DETECTED_VERSION_STR%"
     GOTO EXIT_ERROR
 )
 
