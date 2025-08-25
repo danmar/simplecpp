@@ -30,3 +30,7 @@ ECHO %DETECTED_VERSION_STR% | FINDSTR /B /C:%ASTYLE_VERSION_STR% > nul && (
 
 %ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.cpp
 %ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.h
+GOTO :EOF
+
+:EXIT_ERROR
+EXIT /b 1
