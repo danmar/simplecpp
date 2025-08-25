@@ -16,7 +16,24 @@ REM ASTYLE_VERSION_STR is then constructed to match the beginning of the
 REM version string reported by "astyle --version".
 SET ASTYLE_VERSION="3.4.13"
 SET ASTYLE_VERSION_STR="Artistic Style Version %ASTYLE_VERSION%"
-SET ASTYLE="astyle"
+
+REM Prefer system astyle; else try uvx; else pipx
+SET "ASTYLE=astyle"
+where astyle >nul 2>nul
+IF %errorlevel% neq 0 (
+  where uvx >nul 2>nul
+  IF %errorlevel% eq 0 (
+    SET "ASTYLE=uvx --quiet astyle==%ASTYLE_VERSION%"
+  ) ELSE (
+    where pipx >nul 2>nul
+    IF %errorlevel% eq 0 (
+      SET "ASTYLE=pipx run --quiet astyle==%ASTYLE_VERSION%"
+    ) ELSE (
+      ECHO ERROR: Neither astyle, uvx, nor pipx found in PATH.
+      GOTO EXIT_ERROR
+    )
+  )
+)
 
 SET DETECTED_VERSION_STR=""
 FOR /F "tokens=*" %%i IN ('%ASTYLE% --version') DO SET DETECTED_VERSION_STR=%%i

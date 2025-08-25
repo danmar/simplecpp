@@ -15,6 +15,17 @@ ASTYLE_VERSION="3.4.13"
 ASTYLE_VERSION_STR="Artistic Style Version ${ASTYLE_VERSION}"
 ASTYLE="astyle"
 
+if command -v astyle &> /dev/null; then
+    ASTYLE="astyle"
+elif command -v uvx &> /dev/null; then
+    ASTYLE="uvx --quiet ${ASTYLE}==${ASTYLE_VERSION}"
+elif command -v pipx &> /dev/null; then
+    ASTYLE="pipx run --quiet ${ASTYLE}==${ASTYLE_VERSION}"
+else
+    echo "Neither astyle, uvx, nor pipx found in PATH"
+    exit 1
+fi
+
 DETECTED_VERSION_STR=`$ASTYLE --version 2>&1`
 if [[ "$DETECTED_VERSION_STR" != ${ASTYLE_VERSION_STR}* ]]; then
     echo "You should use: ${ASTYLE_VERSION_STR}";
