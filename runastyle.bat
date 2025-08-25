@@ -25,8 +25,5 @@ CD /d %SCRIPT_DIR%
     GOTO EXIT_ERROR
 )
 
-@SET STYLE=--style=kr --indent=spaces=4 --indent-namespaces --lineend=linux --min-conditional-indent=0
-@SET OPTIONS=--pad-header --unpad-paren --suffix=none --convert-tabs --attach-inlines --attach-classes --attach-namespaces
-
-%ASTYLE% %STYLE% %OPTIONS% *.cpp
-%ASTYLE% %STYLE% %OPTIONS% *.h
+%ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.cpp
+%ASTYLE% --options="%SCRIPT_DIR%/.astylerc" *.h
