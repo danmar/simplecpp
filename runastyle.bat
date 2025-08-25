@@ -4,6 +4,12 @@
 @REM different versions might have different output (this has happened in
 @REM the past).
 
+@REM Get the directory of the script
+SET SCRIPT_DIR=%~dp0
+
+@REM Change to that directory
+CD /d %SCRIPT_DIR%
+
 @REM If project management wishes to take a newer astyle version into use
 @REM just change this string to match the start of astyle version string.
 @SET ASTYLE_VERSION="Artistic Style Version 3.0.1"
