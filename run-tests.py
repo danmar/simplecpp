@@ -99,15 +99,9 @@ def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, s
   compiler_cmd = [compiler_executable]
   compiler_cmd.extend(compiler_args)
 
-  try:
-    with subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
-      stdout, stderr = process.communicate()
-      exit_code = process.returncode
-  except FileNotFoundError as e:
-    # Compiler not found
-    return (127, "", f"{e}")
-  except Exception as e:
-    return (1, "", f"{e}")
+  with subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
+    stdout, stderr = process.communicate()
+    exit_code = process.returncode
 
   output = cleanup(stdout)
   error = (stderr or "").strip()
