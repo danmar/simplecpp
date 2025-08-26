@@ -9,7 +9,7 @@ import sys
 
 def cleanup(out: str) -> str:
   parts = []
-  for line in out.decode('utf-8').splitlines():
+  for line in out.splitlines():
     if len(line) > 1 and line[0] == '#':
       continue
     parts.append("".join(line.split()))
@@ -100,7 +100,7 @@ def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, s
   compiler_cmd.extend(compiler_args)
 
   try:
-    with subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+    with subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
       stdout, stderr = process.communicate()
       exit_code = process.returncode
   except FileNotFoundError as e:
@@ -109,8 +109,8 @@ def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, s
   except Exception as e:
     return (1, "", f"{e}")
 
-  output = cleanup(stdout)  # bytes -> str via cleanup
-  error = (stderr or b"").decode("utf-8", errors="replace").strip()
+  output = cleanup(stdout)
+  error = (stderr or "").strip()
   return (exit_code, output, error)
 
 
