@@ -98,15 +98,9 @@ def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, s
   """Execute a compiler command and capture its exit code, stdout, and stderr."""
   cmd = [compiler_executable, *compiler_args]
 
-  try:
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
-      stdout, stderr = process.communicate()
-      exit_code = process.returncode
-  except FileNotFoundError as e:
-    # Compiler not found
-    return (127, "", f"{e}")
-  except Exception as e:
-    return (1, "", f"{e}")
+  with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
+    stdout, stderr = process.communicate()
+    exit_code = process.returncode
 
   output = cleanup(stdout)
   error = (stderr or "").strip()
