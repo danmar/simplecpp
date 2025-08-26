@@ -116,9 +116,9 @@ for cmd in commands:
     numberOfSkipped = numberOfSkipped + 1
     continue
 
-  clang_output = run(CLANG_EXE, cmd.split(' '))[1]
+  _, clang_output, _ = run(CLANG_EXE, cmd.split(' '))
 
-  gcc_output = run(GCC_EXE, cmd.split(' '))[1]
+  _, gcc_output, _ = run(GCC_EXE, cmd.split(' '))
 
   # -E is not supported and we bail out on unknown options
   simplecpp_ec, simplecpp_output, simplecpp_err = run(SIMPLECPP_EXE, cmd.replace('-E ', '', 1).split(' '))
