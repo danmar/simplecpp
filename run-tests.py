@@ -78,6 +78,19 @@ todo = [
          'pr57580.c',
          ]
 
+
+def run(compiler_executable, compiler_args):
+  """Execute a compiler command and capture its output."""
+  compiler_cmd = [compiler_executable]
+  compiler_cmd.extend(compiler_args)
+  p = subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  comm = p.communicate()
+  exit_code = p.returncode
+  output = cleanup(comm[0])
+  error = comm[0].decode('utf-8').strip()
+  return (exit_code, output, error)
+
+
 numberOfSkipped = 0
 numberOfFailed = 0
 numberOfFixed = 0
@@ -89,26 +102,12 @@ for cmd in commands:
     numberOfSkipped = numberOfSkipped + 1
     continue
 
-  clang_cmd = ['clang']
-  clang_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  clang_output = cleanup(comm[0])
+  clang_output = run('clang', cmd.split(' '))[1]
 
-  gcc_cmd = ['gcc']
-  gcc_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  gcc_output = cleanup(comm[0])
+  gcc_output = run('gcc', cmd.split(' '))[1]
 
-  simplecpp_cmd = ['./simplecpp']
   # -E is not supported and we bail out on unknown options
-  simplecpp_cmd.extend(cmd.replace('-E ', '', 1).split(' '))
-  p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  simplecpp_ec = p.returncode
-  simplecpp_output = cleanup(comm[0])
-  simplecpp_err = comm[0].decode('utf-8').strip()
+  simplecpp_ec, simplecpp_output, simplecpp_err = run('./simplecpp', cmd.replace('-E ', '', 1).split(' '))
 
   if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
