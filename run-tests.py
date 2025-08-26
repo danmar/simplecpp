@@ -1,6 +1,7 @@
 
 import glob
 import os
+import shutil
 import subprocess
 import sys
 
@@ -12,6 +13,19 @@ def cleanup(out):
     s = "".join(s.split())
     ret = ret + s
   return ret
+
+
+# Check for required compilers and exit if any are missing
+CLANG_EXE = shutil.which('clang')
+if not CLANG_EXE:
+  sys.exit('Failed to run tests: clang compiler not found')
+
+GCC_EXE = shutil.which('gcc')
+if not GCC_EXE:
+  sys.exit('Failed to run tests: gcc compiler not found')
+
+SIMPLECPP_EXE = './simplecpp'
+
 
 commands = []
 
@@ -102,12 +116,12 @@ for cmd in commands:
     numberOfSkipped = numberOfSkipped + 1
     continue
 
-  clang_output = run('clang', cmd.split(' '))[1]
+  clang_output = run(CLANG_EXE, cmd.split(' '))[1]
 
-  gcc_output = run('gcc', cmd.split(' '))[1]
+  gcc_output = run(GCC_EXE, cmd.split(' '))[1]
 
   # -E is not supported and we bail out on unknown options
-  simplecpp_ec, simplecpp_output, simplecpp_err = run('./simplecpp', cmd.replace('-E ', '', 1).split(' '))
+  simplecpp_ec, simplecpp_output, simplecpp_err = run(SIMPLECPP_EXE, cmd.replace('-E ', '', 1).split(' '))
 
   if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
