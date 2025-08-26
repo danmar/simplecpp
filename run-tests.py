@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import glob
 import os
@@ -5,14 +6,14 @@ import shutil
 import subprocess
 import sys
 
-def cleanup(out):
-  ret = ''
-  for s in out.decode('utf-8').split('\n'):
-    if len(s) > 1 and s[0] == '#':
+
+def cleanup(out: str) -> str:
+  parts = []
+  for line in out.decode('utf-8').splitlines():
+    if len(line) > 1 and line[0] == '#':
       continue
-    s = "".join(s.split())
-    ret = ret + s
-  return ret
+    parts.append("".join(line.split()))
+  return "".join(parts)
 
 
 # Check for required compilers and exit if any are missing
@@ -93,15 +94,22 @@ todo = [
          ]
 
 
-def run(compiler_executable, compiler_args):
-  """Execute a compiler command and capture its output."""
-  compiler_cmd = [compiler_executable]
-  compiler_cmd.extend(compiler_args)
-  p = subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  exit_code = p.returncode
-  output = cleanup(comm[0])
-  error = comm[0].decode('utf-8').strip()
+def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, str]:
+  """Execute a compiler command and capture its exit code, stdout, and stderr."""
+  cmd = [compiler_executable, *compiler_args]
+
+  try:
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+      stdout, stderr = process.communicate()
+      exit_code = process.returncode
+  except FileNotFoundError as e:
+    # Compiler not found
+    return (127, "", f"{e}")
+  except Exception as e:
+    return (1, "", f"{e}")
+
+  output = cleanup(stdout)  # bytes -> str via cleanup
+  error = (stderr or b"").decode("utf-8", errors="replace").strip()
   return (exit_code, output, error)
 
 
