@@ -73,6 +73,9 @@ jobs:
       run: |
         cmake --build cmake.output --target testrunner -- -j $(nproc)
         ./cmake.output/testrunner
+        # Re-run tests from within the build directory to validate that
+        # SIMPLECPP_TEST_SOURCE_DIR is correctly defined and resolved
+        (cd cmake.output && ./testrunner)
 
     - name: Run valgrind
       if: matrix.os == 'ubuntu-24.04'
