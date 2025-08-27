@@ -23,6 +23,7 @@
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
 
+static const std::string testSourceDir = SIMPLECPP_TEST_SOURCE_DIR;
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -1560,7 +1561,7 @@ static void has_include_1()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(SIMPLECPP_TEST_SOURCE_DIR);
+    dui.includePaths.push_back(testSourceDir);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     dui.std = "c++14";
@@ -1578,7 +1579,7 @@ static void has_include_2()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(SIMPLECPP_TEST_SOURCE_DIR);
+    dui.includePaths.push_back(testSourceDir);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
@@ -1598,7 +1599,7 @@ static void has_include_3()
     // Test file not found...
     ASSERT_EQUALS("\n\n\n\nB", preprocess(code, dui));
     // Unless -I is set (preferably, we should differentiate -I and -isystem...)
-    dui.includePaths.push_back(std::string(SIMPLECPP_TEST_SOURCE_DIR) + "/testsuite");
+    dui.includePaths.push_back(testSourceDir + "/testsuite");
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1614,7 +1615,7 @@ static void has_include_4()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(SIMPLECPP_TEST_SOURCE_DIR);
+    dui.includePaths.push_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1630,7 +1631,7 @@ static void has_include_5()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(SIMPLECPP_TEST_SOURCE_DIR);
+    dui.includePaths.push_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1646,7 +1647,7 @@ static void has_include_6()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "gnu99";
-    dui.includePaths.push_back(SIMPLECPP_TEST_SOURCE_DIR);
+    dui.includePaths.push_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
