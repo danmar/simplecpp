@@ -56,12 +56,12 @@
 #  pragma warning(disable : 4244)
 #endif
 
-// provide unsafe (i.e. raw pointer) API for TokenList
+// provide legacy (i.e. raw pointer) API for TokenList
 // note: std::istream has an overhead compared to raw pointers
-#ifndef SIMPLECPP_UNSAFE_API
-// still provide the unsafe API in case we lack the performant wrappers
+#ifndef SIMPLECPP_TOKENLIST_ALLOW_PTR
+// still provide the legacy API in case we lack the performant wrappers
 #  if !defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
-#    define SIMPLECPP_UNSAFE_API
+#    define SIMPLECPP_TOKENLIST_ALLOW_PTR
 #  endif
 #endif
 
@@ -235,7 +235,7 @@ namespace simplecpp {
         explicit TokenList(std::vector<std::string> &filenames);
         /** generates a token list from the given std::istream parameter */
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
-#ifdef SIMPLECPP_UNSAFE_API
+#ifdef SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
         template<size_t size>
         TokenList(const char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
