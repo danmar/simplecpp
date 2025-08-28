@@ -4,37 +4,101 @@
 #
 # Usage:
 #   ./runformat             # format using the configured Uncrustify
+#   ./runformat --install   # download, build, and use Uncrustify locally
 #
 # Requirements:
 #   - All developers must use the *exact* same Uncrustify version to avoid format churn.
 #   - Either:
 #       * Have `uncrustify` in PATH, or
-#       * Set env var UNCRUSTIFY=/absolute/path/to/uncrustify
+#       * Set env var UNCRUSTIFY=/absolute/path/to/uncrustify, or
+#       * Run `./runformat --install` to fetch & build the pinned version locally.
 #
 # Notes:
+#   - The local install lives under: ./.runformat-uncrustify/uncrustify-<version>-install
 #   - The config file is expected at: ./.uncrustify.cfg
 #
+
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 UNCRUSTIFY_VERSION="0.80.1"
-UNCRUSTIFY="${UNCRUSTIFY-uncrustify}"
+UNCRUSTIFY_HASH="6bf662e05c4140dd4df5e45d6690cad96b4ef23c293b85813f5c725bbf1894d0"
+
+UNCRUSTIFY_LOCAL_DIR="${SCRIPT_DIR}/.runformat-uncrustify"
+UNCRUSTIFY_LOCAL_INSTALL_DIR="${UNCRUSTIFY_LOCAL_DIR}/uncrustify-${UNCRUSTIFY_VERSION}-install"
+UNCRUSTIFY_LOCAL_INSTALL_EXECUTABLE="${UNCRUSTIFY_LOCAL_INSTALL_DIR}/bin/uncrustify"
+
+# Allow override via env; default to local pinned build path.
+UNCRUSTIFY="${UNCRUSTIFY:-$UNCRUSTIFY_LOCAL_INSTALL_EXECUTABLE}"
 UNCRUSTIFY_CONFIG="${SCRIPT_DIR}/.uncrustify.cfg"
 
 err() { echo -e >&2 "ERROR: $@\n"; }
 die() { err $@; exit 1; }
 
+install_uncrustify() {
+  local root="uncrustify-${UNCRUSTIFY_VERSION}"
+  local file="${root}.tar.gz"
+  local url="https://github.com/uncrustify/uncrustify/releases/download/${root}/${file}"
+
+  mkdir -p "${UNCRUSTIFY_LOCAL_DIR}"
+
+  echo "Downloading ${file}..."
+  curl -fsSL -o "${UNCRUSTIFY_LOCAL_DIR}/${file}" "${url}"
+
+  ( cd "${UNCRUSTIFY_LOCAL_DIR}" && {
+      echo "${UNCRUSTIFY_HASH}  ${file}" > "${file}.sha256"
+      sha256sum -c "${file}.sha256"
+      rm -f "${file}.sha256"
+
+      command -v cmake >/dev/null 2>&1 || die "cmake executable not found."
+
+      echo "Extracting archive..."
+      rm -rf "${root}" "${root}-build" "${root}-install"
+      mkdir -p "${root}"
+      tar -xzf "${file}" --strip-components=1 -C "${root}"
+
+      echo "Configuring..."
+      cmake \
+        -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DCMAKE_INSTALL_PREFIX:PATH="${UNCRUSTIFY_LOCAL_DIR}/${root}-install" \
+        -S "${root}" -B "${root}-build"
+
+      echo "Building & installing..."
+      cmake --build "${root}-build" --config Release --target install --parallel
+    }
+  )
+  echo "Installed Uncrustify to: ${UNCRUSTIFY_LOCAL_INSTALL_DIR}"
+}
+
+print_usage_and_exit() {
+  sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+}
+
+# Argument handling
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  print_usage_and_exit
+fi
+
+if [[ "${1:-}" == "--install" ]]; then
+  install_uncrustify
+  # Ensure we use the freshly installed binary for this run
+  UNCRUSTIFY="$UNCRUSTIFY_LOCAL_INSTALL_EXECUTABLE"
+fi
+
 # Check Uncrustify availability
 if ! command -v "$UNCRUSTIFY" >/dev/null 2>&1; then
   err "Uncrustify executable not found: $UNCRUSTIFY"
-  die "Add it to PATH or set UNCRUSTIFY=/path/to/uncrustify"
+  die "Add it to PATH, set UNCRUSTIFY=/path/to/uncrustify, or run: $0 --install"
 fi
 
 # Version check
 DETECTED_VERSION="$("$UNCRUSTIFY" --version 2>&1 | grep -oE '[0-9]+(\.[0-9]+)*' | head -n1 || true)"
 echo "Detected Uncrustify: ${DETECTED_VERSION:-unknown}"
 if [[ "$DETECTED_VERSION" != "${UNCRUSTIFY_VERSION}" ]]; then
-  die "Expected Uncrustify ${UNCRUSTIFY_VERSION}."
+  die "Expected Uncrustify ${UNCRUSTIFY_VERSION}. Re-run with --install or adjust UNCRUSTIFY."
 fi
 
 # Config check

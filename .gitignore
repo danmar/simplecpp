@@ -28,6 +28,7 @@
 *.app
 simplecpp
 testrunner
+/.runformat-uncrustify
 
 # CLion
 /.idea
