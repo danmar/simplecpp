@@ -36,4 +36,16 @@ if [[ "$DETECTED_VERSION" != "${UNCRUSTIFY_VERSION}" ]]; then
   die "Expected Uncrustify ${UNCRUSTIFY_VERSION}."
 fi
 
-$UNCRUSTIFY -c .uncrustify.cfg --no-backup *.cpp *.h
+# Run formatter
+echo "Running formatter..."
+$UNCRUSTIFY -c .uncrustify.cfg -l CPP --no-backup --replace *.cpp *.h
+
+# Show diff and fail if changes exist
+echo "Checking for formatting changes..."
+git diff --exit-code || {
+  echo
+  echo "Formatting changes were applied. Please review and commit."
+  exit 1
+}
+
+echo "Formatting is clean."
