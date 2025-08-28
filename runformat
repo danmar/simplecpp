@@ -19,6 +19,7 @@ cd "$SCRIPT_DIR"
 
 UNCRUSTIFY_VERSION="0.80.1"
 UNCRUSTIFY="${UNCRUSTIFY-uncrustify}"
+UNCRUSTIFY_CONFIG="${SCRIPT_DIR}/.uncrustify.cfg"
 
 err() { echo -e >&2 "ERROR: $@\n"; }
 die() { err $@; exit 1; }
@@ -36,9 +37,12 @@ if [[ "$DETECTED_VERSION" != "${UNCRUSTIFY_VERSION}" ]]; then
   die "Expected Uncrustify ${UNCRUSTIFY_VERSION}."
 fi
 
+# Config check
+[[ -f "$UNCRUSTIFY_CONFIG" ]] || die "Uncrustify config not found at: $UNCRUSTIFY_CONFIG"
+
 # Run formatter
 echo "Running formatter..."
-$UNCRUSTIFY -c .uncrustify.cfg -l CPP --no-backup --replace *.cpp *.h
+$UNCRUSTIFY -c "$UNCRUSTIFY_CONFIG" -l CPP --no-backup --replace *.cpp *.h
 
 # Show diff and fail if changes exist
 echo "Checking for formatting changes..."
