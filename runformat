@@ -21,19 +21,4 @@ if [ "$DETECTED_VERSION" != "${UNCRUSTIFY_VERSION}" ]; then
   exit 1
 fi
 
-# OS variables
-[ $(uname -s) = "Darwin" ] && export OSX=1 && export UNIX=1
-[ $(uname -s) = "Linux" ] && export LINUX=1 && export UNIX=1
-uname -s | grep -q "_NT-" && export WINDOWS=1
-
-if [ $OSX ]
-then
-  export CPUCOUNT=$(sysctl -n hw.ncpu)
-elif [ $LINUX ]
-then
-  export CPUCOUNT=$(nproc)
-else
-  export CPUCOUNT="1"
-fi
-
 $UNCRUSTIFY -c .uncrustify.cfg --no-backup *.cpp *.h
