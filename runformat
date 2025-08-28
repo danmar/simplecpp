@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# uncrustify-0.72 is used to format simplecpp and cppcheck source code.
+#
+# 1. Download source code: https://github.com/uncrustify/uncrustify/archive/refs/tags/uncrustify-0.72.0.zip
+#    It's important that all developers use the exact same version so we don't get a "format battle".
+# 2. Building:
+#    - Linux: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
+#    - Windows: mkdir build && cd build && cmake -G"NMake Makefiles" -DCMAKE_BUILD_TYPE=Release .. && nmake
+# 3. Ensure that the binary "uncrustify" is found by runformat. Either:
+#    - you can put uncrustify in your PATH
+#    - you can create an environment variable UNCRUSTIFY that has the full path of the binary
+
+UNCRUSTIFY_VERSION="0.72.0"
+UNCRUSTIFY="${UNCRUSTIFY-uncrustify}"
+
+DETECTED_VERSION=$("$UNCRUSTIFY" --version 2>&1 | grep -o -E '[0-9.]+')
+if [ "$DETECTED_VERSION" != "${UNCRUSTIFY_VERSION}" ]; then
+  echo "You should use version: ${UNCRUSTIFY_VERSION}"
+  echo "Detected version: ${DETECTED_VERSION}"
+  exit 1
+fi
+
+# OS variables
+[ $(uname -s) = "Darwin" ] && export OSX=1 && export UNIX=1
+[ $(uname -s) = "Linux" ] && export LINUX=1 && export UNIX=1
+uname -s | grep -q "_NT-" && export WINDOWS=1
+
+if [ $OSX ]
+then
+  export CPUCOUNT=$(sysctl -n hw.ncpu)
+elif [ $LINUX ]
+then
+  export CPUCOUNT=$(nproc)
+else
+  export CPUCOUNT="1"
+fi
+
+$UNCRUSTIFY -c .uncrustify.cfg --no-backup *.cpp *.h

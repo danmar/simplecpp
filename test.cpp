@@ -22,7 +22,7 @@
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
-#define ASSERT_THROW_EQUALS(stmt, e, expected) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e& ex) { assertEquals((expected), (ex.what()), __LINE__); } } while(false)
+#define ASSERT_THROW_EQUALS(stmt, e, expected) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e& ex) { assertEquals((expected), (ex.what()), __LINE__); } } while (false)
 
 static std::string pprint(const std::string &in)
 {
@@ -250,10 +250,10 @@ static void characterLiteral()
     ASSERT_EQUALS('\u0012',     simplecpp::characterLiteralToLL("'\\u0012'"));
     ASSERT_EQUALS('\U00000012', simplecpp::characterLiteralToLL("'\\U00000012'"));
 
-    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('b'))    << 8) | static_cast<unsigned char>('c'),    simplecpp::characterLiteralToLL("'bc'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('b')) << 8) | static_cast<unsigned char>('c'),    simplecpp::characterLiteralToLL("'bc'"));
     ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\x23')) << 8) | static_cast<unsigned char>('\x45'), simplecpp::characterLiteralToLL("'\\x23\\x45'"));
-    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\11'))  << 8) | static_cast<unsigned char>('\222'), simplecpp::characterLiteralToLL("'\\11\\222'"));
-    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\a'))   << 8) | static_cast<unsigned char>('\b'),   simplecpp::characterLiteralToLL("'\\a\\b'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\11')) << 8) | static_cast<unsigned char>('\222'), simplecpp::characterLiteralToLL("'\\11\\222'"));
+    ASSERT_EQUALS((static_cast<unsigned int>(static_cast<unsigned char>('\a')) << 8) | static_cast<unsigned char>('\b'),   simplecpp::characterLiteralToLL("'\\a\\b'"));
     if (sizeof(int) <= 4)
         ASSERT_EQUALS(-1, simplecpp::characterLiteralToLL("'\\xff\\xff\\xff\\xff'"));
     else
@@ -438,14 +438,14 @@ static void comment_multiline()
     ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code));
 
     const char code1[] = "#define ABC {// \\\r\n"
-                        "}\n"
-                        "void f() ABC\n";
+                         "}\n"
+                         "void f() ABC\n";
     ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code1));
 
     const char code2[] = "#define A 1// \\\r"
-                        "\r"
-                        "2\r"
-                        "A\r";
+                         "\r"
+                         "2\r"
+                         "A\r";
     ASSERT_EQUALS("\n\n2\n1", preprocess(code2));
 
     const char code3[] = "void f() {// \\ \n}\n";
@@ -1960,7 +1960,7 @@ static void location1()
     const char *code;
 
     code =  "# 1 \"main.c\"\n\n\n"
-            "x";
+           "x";
     ASSERT_EQUALS("\n#line 3 \"main.c\"\nx", preprocess(code));
 }
 
@@ -2290,7 +2290,7 @@ static void include2()
 static void include3()   // #16 - crash when expanding macro from header
 {
     const char code_c[] = "#include \"A.h\"\n"
-                          "glue(1,2,3,4)\n" ;
+                          "glue(1,2,3,4)\n";
     const char code_h[] = "#define glue(a,b,c,d) a##b##c##d\n";
 
     std::vector<std::string> files;
@@ -2317,7 +2317,7 @@ static void include3()   // #16 - crash when expanding macro from header
 
 static void include4()   // #27 - -include
 {
-    const char code_c[] = "X\n" ;
+    const char code_c[] = "X\n";
     const char code_h[] = "#define X 123\n";
 
     std::vector<std::string> files;

@@ -114,8 +114,7 @@ namespace simplecpp {
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), nextcond(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {
-        }
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), nextcond(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
 
         void flags() {
             name = (std::isalpha(static_cast<unsigned char>(string[0])) || string[0] == '_' || string[0] == '$')
@@ -325,9 +324,9 @@ namespace simplecpp {
     struct SIMPLECPP_LIB MacroUsage {
         explicit MacroUsage(const std::vector<std::string> &f, bool macroValueKnown_) : macroLocation(f), useLocation(f), macroValueKnown(macroValueKnown_) {}
         std::string macroName;
-        Location    macroLocation;
-        Location    useLocation;
-        bool        macroValueKnown;
+        Location macroLocation;
+        Location useLocation;
+        bool macroValueKnown;
     };
 
     /** Tracking #if/#elif expressions */
