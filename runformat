@@ -11,6 +11,9 @@
 #    - you can put uncrustify in your PATH
 #    - you can create an environment variable UNCRUSTIFY that has the full path of the binary
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 UNCRUSTIFY_VERSION="0.72.0"
 UNCRUSTIFY="${UNCRUSTIFY-uncrustify}"
 
