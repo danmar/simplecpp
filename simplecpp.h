@@ -561,6 +561,8 @@ namespace simplecpp {
     SIMPLECPP_LIB std::string getCppStdString(cppstd_t std);
 }
 
+#undef SIMPLECPP_TOKENLIST_ALLOW_PTR
+
 #if defined(_MSC_VER)
 #  pragma warning(pop)
 #endif
