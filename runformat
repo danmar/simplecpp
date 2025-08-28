@@ -1,20 +1,23 @@
 #!/bin/bash
 #
-# uncrustify-0.72 is used to format simplecpp and cppcheck source code.
+# runformat - format this project's C++ sources with Uncrustify.
 #
-# 1. Download source code: https://github.com/uncrustify/uncrustify/archive/refs/tags/uncrustify-0.72.0.zip
-#    It's important that all developers use the exact same version so we don't get a "format battle".
-# 2. Building:
-#    - Linux: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
-#    - Windows: mkdir build && cd build && cmake -G"NMake Makefiles" -DCMAKE_BUILD_TYPE=Release .. && nmake
-# 3. Ensure that the binary "uncrustify" is found by runformat. Either:
-#    - you can put uncrustify in your PATH
-#    - you can create an environment variable UNCRUSTIFY that has the full path of the binary
-
+# Usage:
+#   ./runformat             # format using the configured Uncrustify
+#
+# Requirements:
+#   - All developers must use the *exact* same Uncrustify version to avoid format churn.
+#   - Either:
+#       * Have `uncrustify` in PATH, or
+#       * Set env var UNCRUSTIFY=/absolute/path/to/uncrustify
+#
+# Notes:
+#   - The config file is expected at: ./.uncrustify.cfg
+#
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-UNCRUSTIFY_VERSION="0.72.0"
+UNCRUSTIFY_VERSION="0.80.1"
 UNCRUSTIFY="${UNCRUSTIFY-uncrustify}"
 
 err() { echo -e >&2 "ERROR: $@\n"; }
