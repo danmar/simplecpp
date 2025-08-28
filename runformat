@@ -3,9 +3,10 @@
 # runformat - format this project's C++ sources with Uncrustify.
 #
 # Usage:
-#   ./runformat                      # format using the configured Uncrustify
-#   ./runformat --install            # download, build, and use Uncrustify locally
+#   ./runformat                                # format using the configured Uncrustify
+#   ./runformat --install                      # download, build, and use Uncrustify locally
 #   ./runformat --install --install-dir /abs/path
+#   ./runformat --expected-uncrustify-version  # print ONLY the expected Uncrustify version
 #
 # You may also set:
 #   UNCRUSTIFY=/abs/path/to/uncrustify          # use a specific binary
@@ -83,7 +84,13 @@ install_uncrustify() {
 }
 
 print_usage_and_exit() {
-  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+}
+
+# Print ONLY expected Uncrustify version (no extra text).
+print_expected_uncrustify_version_and_exit() {
+  printf '%s\n' "$UNCRUSTIFY_VERSION"
   exit 0
 }
 
@@ -91,6 +98,7 @@ print_usage_and_exit() {
 # Argument parsing
 # --------------------------
 DO_INSTALL=0
+PRINT_EXPECTED_UNCRUSTIFY_VERSION=0
 # Accept: --install, --install-dir <dir>, -h/--help
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -111,6 +119,10 @@ while [[ $# -gt 0 ]]; do
       fi
       shift 2
       ;;
+    --expected-uncrustify-version)
+      PRINT_EXPECTED_UNCRUSTIFY_VERSION=1
+      shift
+      ;;
     *)
       # ignore unrecognized positional args for now
       shift
@@ -122,6 +134,11 @@ if [[ "$DO_INSTALL" -eq 1 ]]; then
   install_uncrustify
   # Ensure we use the freshly installed binary for this run
   UNCRUSTIFY="$UNCRUSTIFY_BIN"
+fi
+
+# If requested, print ONLY the expected Uncrustify version and exit.
+if [[ "$PRINT_EXPECTED_UNCRUSTIFY_VERSION" -eq 1 ]]; then
+  print_expected_uncrustify_version_and_exit
 fi
 
 # --------------------------
