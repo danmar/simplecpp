@@ -2014,6 +2014,47 @@ static void location5()
                   "int x ;", preprocess(code));
 }
 
+static void location6()
+{
+    const char code[] =
+            "#line 3\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n\n3 \"\"", preprocess(code));
+}
+
+static void location7()
+{
+    const char code[] =
+            "#line 3 \"file.c\"\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n#line 3 \"file.c\"\n3 \"file.c\"", preprocess(code));
+}
+
+static void location8()
+{
+    const char code[] =
+            "# 3\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n\n3 \"\"", preprocess(code)); // TODO
+}
+
+static void location9()
+{
+    const char code[] =
+            "# 3 \"file.c\"\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n#line 3 \"file.c\"\n3 \"file.c\"", preprocess(code));
+}
+
+static void location10()
+{
+    const char code[] =
+            "#line 3 // adjust line\n"
+            "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n#line 3 \"file.c\"\n3 \"file.c\"", preprocess(code));
+}
+
+
 static void missingHeader1()
 {
     const char code[] = "#include \"notexist.h\"\n";
@@ -3351,6 +3392,11 @@ int main(int argc, char **argv)
     TEST_CASE(location3);
     TEST_CASE(location4);
     TEST_CASE(location5);
+    TEST_CASE(location6);
+    TEST_CASE(location7);
+    TEST_CASE(location8);
+    TEST_CASE(location9);
+    TEST_CASE(location10);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
