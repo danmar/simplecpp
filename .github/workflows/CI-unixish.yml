@@ -41,10 +41,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install libc++-18-dev
 
+      # coreutils contains "nproc"
     - name: Install missing software on macos
       if: contains(matrix.os, 'macos')
       run: |
-        brew install python3
+        brew install coreutils
 
     - name: Install missing Python packages
       run: |
