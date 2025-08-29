@@ -3022,8 +3022,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::tryload(FileDat
         return {id_it->second, false};
     }
 
-    std::ifstream f(path);
-    FileData *const data = new FileData {path, TokenList(f, filenames, path, outputList)};
+    FileData *const data = new FileData {path, TokenList(path, filenames, outputList)};
 
     if (dui.removeComments)
         data->tokens.removeComments();
