@@ -611,7 +611,7 @@ static void portabilityBackslash(simplecpp::OutputList *outputList, const std::v
     err.type = simplecpp::Output::PORTABILITY_BACKSLASH;
     err.location = location;
     err.msg = "Combination 'backslash space newline' is not portable.";
-    outputList->push_back(err);
+    outputList->push_back(std::move(err));
 }
 
 static bool isStringLiteralPrefix(const std::string &str)
@@ -855,7 +855,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         err.type = Output::SYNTAX_ERROR;
                         err.location = location;
                         err.msg = "Raw string missing terminating delimiter.";
-                        outputList->push_back(err);
+                        outputList->push_back(std::move(err));
                     }
                     return;
                 }
@@ -1397,7 +1397,7 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
             err.type = Output::SYNTAX_ERROR;
             err.location = location;
             err.msg = std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
-            outputList->push_back(err);
+            outputList->push_back(std::move(err));
         }
         return "";
     }
@@ -2178,7 +2178,7 @@ namespace simplecpp {
                 if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
                     std::set<TokenString> expandedmacros2(expandedmacros); // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
                     expandedmacros2.erase(name());
-                    partok = it->second.expand(output, loc, partok, macros, expandedmacros2);
+                    partok = it->second.expand(output, loc, partok, macros, std::move(expandedmacros2));
                 } else {
                     output->push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));
                     output->back()->macro = partok->macro;
@@ -3137,7 +3137,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
                 err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
                 err.location = Location(filenames);
                 err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
-                outputList->push_back(err);
+                outputList->push_back(std::move(err));
             }
             continue;
         }
@@ -3210,7 +3210,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
                 out.type = simplecpp::Output::SYNTAX_ERROR;
                 out.location = err.location;
                 out.msg = "failed to expand \'" + tok->str() + "\', " + err.what;
-                outputList->push_back(out);
+                outputList->push_back(std::move(out));
             }
             return false;
         }
@@ -3397,7 +3397,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         err.msg += tok->str();
                     }
                     err.msg = '#' + rawtok->str() + ' ' + err.msg;
-                    outputList->push_back(err);
+                    outputList->push_back(std::move(err));
                 }
                 if (rawtok->str() == ERROR) {
                     output.clear();
@@ -3557,7 +3557,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                     out.type = Output::SYNTAX_ERROR;
                                     out.location = rawtok->location;
                                     out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
-                                    outputList->push_back(out);
+                                    outputList->push_back(std::move(out));
                                 }
                                 output.clear();
                                 return;
@@ -3736,7 +3736,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 mu.macroName = macro.name();
                 mu.macroLocation = macro.defineLocation();
                 mu.useLocation = *usageIt;
-                macroUsage->push_back(mu);
+                macroUsage->push_back(std::move(mu));
             }
         }
     }
