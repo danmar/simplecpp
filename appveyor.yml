@@ -7,37 +7,37 @@ environment:
       ConfigurationPlatform: "Win32"
       configuration: "Debug"
       PlatformToolset: "v140"
-      vcvars_call: "\"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat\" x86"
+      vcvars_call: "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" x86"
     - VisualStudio: 14.0
       VisualStudioGenerator: "14 2015"
       ConfigurationPlatform: "x64"
       configuration: "Debug"
       PlatformToolset: "v140"
-      vcvars_call: "\"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat\" x64"
+      vcvars_call: "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" x64"
     - VisualStudio: 2017
       VisualStudioGenerator: "15 2017"
       ConfigurationPlatform: "Win32"
       configuration: "Debug"
       PlatformToolset: "v141"
-      vcvars_call: "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+      vcvars_call: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat"
     - VisualStudio: 2017
       VisualStudioGenerator: "15 2017"
       ConfigurationPlatform: "x64"
       configuration: "Debug"
       PlatformToolset: "v141"
-      vcvars_call: "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+      vcvars_call: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
     - VisualStudio: 2019
       VisualStudioGenerator: "16 2019"
       ConfigurationPlatform: "Win32"
       configuration: "Debug"
       PlatformToolset: "v142"
-      vcvars_call: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+      vcvars_call: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat"
     - VisualStudio: 2019
       VisualStudioGenerator: "16 2019"
       ConfigurationPlatform: "x64"
       configuration: "Debug"
       PlatformToolset: "v142"
-      vcvars_call: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+      vcvars_call: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
 
 build_script:
   - ECHO Building %configuration% %platform% with MSVC %VisualStudio% (Visual Studio %VisualStudioGenerator%) using %PlatformToolset% PlatformToolset
