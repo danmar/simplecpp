@@ -10,8 +10,8 @@ def cleanup(out):
     if len(s) > 1 and s[0] == '#':
       continue
     s = "".join(s.split())
-    ret = ret + s
-  return ret
+    ret = ret + '\n' + s
+  return ret.strip()
 
 commands = []
 
@@ -117,6 +117,10 @@ for cmd in commands:
       usedTodos.append(filename)
     else:
       print('FAILED ' + cmd)
+      print('expected:')
+      print(clang_output)
+      print('actual:')
+      print(simplecpp_output)
       if simplecpp_ec:
           print('simplecpp failed - ' + simplecpp_err)
       numberOfFailed = numberOfFailed + 1
