@@ -40,7 +40,7 @@ environment:
       PlatformToolset: "v142"
 
 build_script:
-  - ECHO Building %configuration% %platform% with MSVC %VisualStudio% (%VisualStudioGenerator%) using %PlatformToolset% PlatformToolset
+  - ECHO Building %configuration% %platform% with MSVC %VisualStudio% (Visual Studio %VisualStudioGenerator%) using %PlatformToolset% PlatformToolset
   - 'CALL "C:\Program Files (x86)\Microsoft Visual Studio %VisualStudio%\VC\vcvarsall.bat" %vcvarsall_platform%'
   - cmake -DCMAKE_COMPILE_WARNING_AS_ERROR=On -G "Visual Studio %VisualStudioGenerator%" -A %ConfigurationPlatform% .
   - set _CL_=/WX
