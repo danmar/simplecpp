@@ -40,10 +40,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS -Wno-multichar)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    # TODO: bump warning level
-    #add_compile_options(/W4)  # Warning Level
-    # TODO: enable warning
+
+    add_compile_options(/W4)  # Warning Level
+
+    add_compile_options(/wd4127)  # warning C4127: conditional expression is constant
+    add_compile_options(/wd4244)  # warning C4244: 'x': conversion from 'int' to 'char', possible loss of data
     add_compile_options(/wd4267)  # warning C4267: '...': conversion from 'size_t' to 'unsigned int', possible loss of data
+    add_compile_options(/wd4706)  # warning C4706: assignment within conditional expression
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Weverything)
 
