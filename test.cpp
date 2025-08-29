@@ -3179,6 +3179,44 @@ static void preprocess_files()
     }
 }
 
+static void safe_api()
+{
+    // this test is to make sure the safe APIs are compiling
+#if defined(__cpp_lib_string_view) || defined(__cpp_lib_span)
+    std::vector<std::string> filenames;
+#  if defined(__cpp_lib_string_view)
+    {
+        const char input[] = "code";
+        const std::string_view sv = input;
+        // std::string_view can be implicitly converted into a std::span
+        simplecpp::TokenList(sv,filenames,"");
+    }
+#  endif
+#  ifdef __cpp_lib_span
+    {
+        char input[] = "code";
+        const std::span sp = input;
+        simplecpp::TokenList(sp,filenames,"");
+    }
+    {
+        const char input[] = "code";
+        const std::span sp = input;
+        simplecpp::TokenList(sp,filenames,"");
+    }
+    {
+        unsigned char input[] = "code";
+        const std::span sp = input;
+        simplecpp::TokenList(sp,filenames,"");
+    }
+    {
+        const unsigned char input[] = "code";
+        const std::span sp = input;
+        simplecpp::TokenList(sp,filenames,"");
+    }
+#  endif
+#endif
+}
+
 static void fuzz_crash()
 {
     {
@@ -3444,6 +3482,8 @@ int main(int argc, char **argv)
     TEST_CASE(token);
 
     TEST_CASE(preprocess_files);
+
+    TEST_CASE(safe_api);
 
     TEST_CASE(fuzz_crash);
 
