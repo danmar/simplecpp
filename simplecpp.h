@@ -244,7 +244,7 @@ namespace simplecpp {
         /** generates a token list from the given buffer */
         template<size_t size>
         TokenList(const unsigned char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
-                : TokenList(data, size-1, filenames, filename, outputList, 0)
+            : TokenList(data, size-1, filenames, filename, outputList, 0)
         {}
 
         /** generates a token list from the given buffer */
@@ -265,12 +265,12 @@ namespace simplecpp {
 #ifdef __cpp_lib_span
         /** generates a token list from the given buffer */
         TokenList(std::span<const char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
-                : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
+            : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
         {}
 
         /** generates a token list from the given buffer */
         TokenList(std::span<const unsigned char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
-                : TokenList(data.data(), data.size(), filenames, filename, outputList, 0)
+            : TokenList(data.data(), data.size(), filenames, filename, outputList, 0)
         {}
 #endif
 
