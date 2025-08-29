@@ -76,6 +76,10 @@ add_library(simplecpp_obj OBJECT simplecpp.cpp)
 
 add_executable(simplecpp $<TARGET_OBJECTS:simplecpp_obj> main.cpp)
 add_executable(testrunner $<TARGET_OBJECTS:simplecpp_obj> test.cpp)
+target_compile_definitions(testrunner
+    PRIVATE
+        SIMPLECPP_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
 enable_testing()
 add_test(NAME testrunner COMMAND testrunner)
