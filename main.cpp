@@ -43,13 +43,13 @@ int main(int argc, char **argv)
             }
             case 'I': { // include path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.searchPaths.push_back({value, simplecpp::DUI::PathKind::Include});
+                dui.addIncludePath(value);
                 found = true;
                 break;
             }
             case 'F': { // framework path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.searchPaths.push_back({value, simplecpp::DUI::PathKind::Framework});
+                dui.addFrameworkPath(value);
                 found = true;
                 break;
             }
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
                     use_istream = true;
                     found = true;
                 } else if (std::strncmp(arg, "-iframework", 11) == 0) {
-                    dui.searchPaths.push_back({arg + 11, simplecpp::DUI::PathKind::SystemFramework});
+                    dui.addSystemFrameworkPath(arg + 11);
                     found = true;
                 }
                 break;

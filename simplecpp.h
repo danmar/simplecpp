@@ -423,6 +423,19 @@ namespace simplecpp {
             PathKind kind;
         };
 
+        /** Mirrors compiler option -I<dir> */
+        void addIncludePath(const std::string& path) {
+            searchPaths.push_back({path, PathKind::Include});
+        }
+        // Mirrors compiler option -F<dir>
+        void addFrameworkPath(const std::string& path) {
+            searchPaths.push_back({path, PathKind::Framework});
+        }
+        // Mirrors compiler option -iframework<dir>
+        void addSystemFrameworkPath(const std::string& path) {
+            searchPaths.push_back({path, PathKind::SystemFramework});
+        }
+
         std::list<std::string> defines;
         std::set<std::string> undefined;
 
