@@ -400,6 +400,7 @@ namespace simplecpp {
      *   -D <name>=<value>       Add macro definition
      *   -U <name>               Undefine macro
      *   -I <dir>                Add include search directory
+     *   -isystem <dir>          Add system include search directory
      *   -F <dir>                Add framework search directory (Darwin)
      *   -iframework <dir>       Add system framework search directory (Darwin)
      *   --include <file>        Force inclusion of a header
@@ -416,8 +417,8 @@ namespace simplecpp {
     struct SIMPLECPP_LIB DUI {
         DUI() : clearIncludeCache(false), removeComments(false) {}
 
-        // Typed search path entry. Mirrors GCC behavior for -I, -F, -iframework.
-        enum class PathKind { Include, Framework, SystemFramework };
+        // Typed search path entry. Mirrors GCC behavior for -I, -isystem, -F, -iframework.
+        enum class PathKind { Include, SystemInclude, Framework, SystemFramework };
         struct SearchPath {
             std::string path;
             PathKind kind;
@@ -426,6 +427,10 @@ namespace simplecpp {
         /** Mirrors compiler option -I<dir> */
         void addIncludePath(const std::string& path) {
             searchPaths.push_back({path, PathKind::Include});
+        }
+        /** Mirrors compiler option -I<dir> */
+        void addSystemIncludePath(const std::string& path) {
+            searchPaths.push_back({path, PathKind::SystemInclude});
         }
         // Mirrors compiler option -F<dir>
         void addFrameworkPath(const std::string& path) {

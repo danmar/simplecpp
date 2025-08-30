@@ -7,6 +7,7 @@ import pytest
 from testutils import (
     simplecpp,
     format_include_path_arg,
+    format_isystem_path_arg,
     format_framework_path_arg,
     format_iframework_path_arg,
     format_include,
@@ -346,15 +347,16 @@ def test_framework_lookup(record_property, tmpdir, is_sys, is_iframework, is_pri
     "order,expected",
     [
         # Note:
-        # - `I1` / `F1` / `IFW1` point to distinct directories and contain `Component_1.h` (a decoy).
-        # - `I` / `F` / `IFW` point to directories that contain `Component.h`, which the
+        # - `I1` / `ISYS1` / `F1` / `IFW1` point to distinct directories and contain `Component_1.h` (a decoy).
+        # - `I` / `ISYS` / `F` / `IFW` point to directories that contain `Component.h`, which the
         #   translation unit (TU) includes via `#include "MyKit/Component.h"`.
         #
-        # This makes the winning flag (-I, -F, or -iframework) uniquely identifiable
+        # This makes the winning flag (-I, -isystem, -F, or -iframework) uniquely identifiable
         # in the preprocessor `#line` output.
 
         # Sanity checks
         (("I",), "I"),
+        (("ISYS",), "ISYS"),
         (("F",), "F"),
         (("IFW",), "IFW"),
 
@@ -364,6 +366,13 @@ def test_framework_lookup(record_property, tmpdir, is_sys, is_iframework, is_pri
         # Includes (-I) duplicates
         (("I1", "I", "I1"), "I"),
         (("I", "I1", "I"), "I"),
+
+        # System includes (-isystem)
+        (("ISYS1", "ISYS"), "ISYS"),
+        (("ISYS", "ISYS1"), "ISYS"),
+        # System includes (-isystem) duplicates
+        (("ISYS1", "ISYS", "ISYS1"), "ISYS"),
+        (("ISYS", "ISYS1", "ISYS"), "ISYS"),
 
         # Framework (-F)
         (("F1", "F"), "F"),
@@ -385,6 +394,16 @@ def test_framework_lookup(record_property, tmpdir, is_sys, is_iframework, is_pri
         (("F", "I"), "F"),
         (("F1", "F", "I"), "F"),
 
+        # -I and -F takes precedence over -isystem
+        (("I", "ISYS"), "I"),
+        (("F", "ISYS"), "F"),
+        (("ISYS", "F"), "F"),
+        (("ISYS", "I", "F"), "I"),
+        (("ISYS", "I1", "F1", "I", "F"), "I"),
+        (("ISYS", "I"), "I"),
+        (("ISYS", "F", "I"), "F"),
+        (("ISYS", "F1", "I1", "F", "I"), "F"),
+
         # -I and -F beat system framework (-iframework)
         (("I", "IFW"), "I"),
         (("F", "IFW"), "F"),
@@ -394,16 +413,24 @@ def test_framework_lookup(record_property, tmpdir, is_sys, is_iframework, is_pri
         (("IFW", "I"), "I"),
         (("IFW", "F", "I"), "F"),
         (("IFW", "F1", "I1", "F", "I"), "F"),
+
+        # system include (-isystem) beats system framework (-iframework)
+        (("ISYS", "IFW"), "ISYS"),
+        (("IFW", "ISYS"), "ISYS"),
+        (("IFW1", "ISYS1", "IFW", "ISYS"), "ISYS"),
+        (("I1", "F1", "IFW1", "ISYS1", "IFW", "ISYS"), "ISYS"),
     ],
 )
 def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
     """
-    Validate include resolution order across -I (user include), -F (user framework),
-    and -iframework (system framework) using a minimal file layout, asserting which
-    physical header path appears in the preprocessor #line output.
+    Validate include resolution order across -I (user include),
+    -isystem (system include), -F (user framework), and
+    -iframework (system framework) using a minimal file layout,
+    asserting which physical header path appears in the preprocessor #line output.
 
-    The test constructs three parallel trees (two entries per kind):
+    The test constructs four parallel trees (two entries per kind):
     - inc{,_1}/MyKit/Component{,_1}.h                     # for -I
+    - isys{,_1}/MyKit/Component{,_1}.h                    # for -isystem
     - Fw{,_1}/MyKit.framework/Headers/Component{,_1}.h    # for -F
     - SysFw{,_1}/MyKit.framework/Headers/Component{,_1}.h # for -iframework
 
@@ -418,7 +445,7 @@ def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
     """
 
     # Create two include dirs, two user framework dirs, and two system framework dirs
-    inc_dirs, fw_dirs, sysfw_dirs = [], [], []
+    inc_dirs, isys_dirs, fw_dirs, sysfw_dirs = [], [], [], []
 
     def _suffix(idx: int) -> str:
         return f"_{idx}" if idx > 0 else ""
@@ -428,6 +455,11 @@ def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
         inc_dir = os.path.join(tmpdir, f"inc{_suffix(idx)}")
         __test_create_header(inc_dir, hdr_relpath=f"MyKit/Component{_suffix(idx)}.h")
         inc_dirs.append(inc_dir)
+
+        # -isystem paths (system includes)
+        isys_dir = os.path.join(tmpdir, f"isys{_suffix(idx)}")
+        __test_create_header(isys_dir, hdr_relpath=f"MyKit/Component{_suffix(idx)}.h")
+        isys_dirs.append(isys_dir)
 
         # -F paths (user frameworks)
         fw_dir = os.path.join(tmpdir, f"Fw{_suffix(idx)}")
@@ -443,8 +475,8 @@ def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
     test_file = __test_create_source(tmpdir, "MyKit/Component.h", is_include_sys=is_sys)
 
     def idx_from_flag(prefix: str, flag: str) -> int:
-        """Extract numeric suffix from tokens like 'I1', 'F1', 'IFW1'.
-        Returns 0 when no suffix is present (e.g., 'I', 'F', 'IFW')."""
+        """Extract numeric suffix from tokens like 'I1', 'ISYS1', 'F1', 'IFW1'.
+        Returns 0 when no suffix is present (e.g., 'I', 'ISYS', 'F', 'IFW')."""
         return int(flag[len(prefix):]) if len(flag) > len(prefix) else 0
 
     # Build argv in the exact order requested by `order`
@@ -452,6 +484,8 @@ def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
     for flag in order:
         if flag in ["I", "I1"]:
             args.append(format_include_path_arg(inc_dirs[idx_from_flag("I", flag)]))
+        elif flag in ["ISYS", "ISYS1"]:
+            args.append(format_isystem_path_arg(isys_dirs[idx_from_flag("ISYS", flag)]))
         elif flag in ["F", "F1"]:
             args.append(format_framework_path_arg(fw_dirs[idx_from_flag("F", flag)]))
         elif flag in ["IFW", "IFW1"]:
@@ -469,14 +503,17 @@ def test_searchpath_order(record_property, tmpdir, is_sys, order, expected):
     root = pathlib.PurePath(tmpdir).as_posix()
 
     inc_paths = [f"{root}/inc{_suffix(idx)}/MyKit/Component{_suffix(idx)}.h" for idx in range(2)]
+    isys_paths = [f"{root}/isys{_suffix(idx)}/MyKit/Component{_suffix(idx)}.h" for idx in range(2)]
     fw_paths = [f"{root}/Fw{_suffix(idx)}/MyKit.framework/Headers/Component{_suffix(idx)}.h" for idx in range(2)]
     ifw_paths = [f"{root}/SysFw{_suffix(idx)}/MyKit.framework/Headers/Component{_suffix(idx)}.h" for idx in range(2)]
-    all_candidate_paths = [*inc_paths, *fw_paths, *ifw_paths]
+    all_candidate_paths = [*inc_paths, *isys_paths, *fw_paths, *ifw_paths]
 
     # Compute the single path we expect to appear
     expected_path = None
     if expected in ["I", "I1"]:
         expected_path = inc_paths[idx_from_flag("I", expected)]
+    elif expected in ["ISYS", "ISYS1"]:
+        expected_path = isys_paths[idx_from_flag("ISYS", expected)]
     elif expected in ["F", "F1"]:
         expected_path = fw_paths[idx_from_flag("F", expected)]
     elif expected in ["IFW", "IFW1"]:

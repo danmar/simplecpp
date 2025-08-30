@@ -57,6 +57,9 @@ int main(int argc, char **argv)
                 if (std::strncmp(arg, "-include=",9)==0) {
                     dui.includes.push_back(arg+9);
                     found = true;
+                } else if (std::strncmp(arg, "-isystem", 8) == 0) {
+                    dui.searchPaths.push_back({arg + 8, simplecpp::DUI::PathKind::SystemInclude});
+                    found = true;
                 } else if (std::strncmp(arg, "-is",3)==0) {
                     use_istream = true;
                     found = true;
@@ -109,6 +112,7 @@ int main(int argc, char **argv)
         std::cout << "simplecpp [options] filename" << std::endl;
         std::cout << "  -DNAME          Define NAME." << std::endl;
         std::cout << "  -IPATH          Include path." << std::endl;
+        std::cout << "  -isystemPATH    System include path." << std::endl;
         std::cout << "  -FPATH          Framework path." << std::endl;
         std::cout << "  -iframeworkPATH System framework path." << std::endl;
         std::cout << "  -include=FILE   Include FILE." << std::endl;

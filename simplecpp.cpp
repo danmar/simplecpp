@@ -3052,6 +3052,15 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
         }
     }
 
+    // -isystem
+    for (const auto &searchPath : searchPaths) {
+        if (searchPath.kind == simplecpp::DUI::PathKind::SystemInclude) {
+            std::string path = openHeaderDirect(f, simplecpp::simplifyPath(searchPath.path + "/" + header));
+            if (!path.empty())
+                return path;
+        }
+    }
+
     // -iframework
     for (const auto &searchPath : searchPaths) {
         if (searchPath.kind == simplecpp::DUI::PathKind::SystemFramework) {
@@ -3145,6 +3154,13 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
                 push_unique(candidates, simplecpp::simplifyPath(searchPath.path + "/" + relatives[0]));
                 push_unique(candidates, simplecpp::simplifyPath(searchPath.path + "/" + relatives[1]));
             }
+        }
+    }
+
+    // -isystem
+    for (const auto &searchPath : searchPaths) {
+        if (searchPath.kind == DUI::PathKind::SystemInclude) {
+            push_unique(candidates, simplecpp::simplifyPath(searchPath.path + "/" + header));
         }
     }
 

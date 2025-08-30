@@ -42,6 +42,7 @@ def simplecpp(args = [], cwd = None):
         simplecpp_path = os.environ['SIMPLECPP_EXE_PATH']
     else:
         simplecpp_path = os.path.join(dir_path, "simplecpp")
+
     return __run_subprocess([simplecpp_path] + args, cwd = cwd)
 
 def quoted_string(s):
@@ -49,6 +50,9 @@ def quoted_string(s):
 
 def format_include_path_arg(include_path):
     return f"-I{str(include_path)}"
+
+def format_isystem_path_arg(include_path):
+    return f"-isystem{str(include_path)}"
 
 def format_framework_path_arg(framework_path):
     return f"-F{str(framework_path)}"
