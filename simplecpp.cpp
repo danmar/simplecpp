@@ -12,6 +12,10 @@
 
 #include "simplecpp.h"
 
+#if defined(_WIN32_WINNT)
+#  define SIMPLECPP_WINDOWS
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cctype>
