@@ -7,6 +7,17 @@ import pytest
 from testutils import simplecpp, format_include_path_arg, format_include
 
 def __test_relative_header_create_header(dir, with_pragma_once=True):
+    """
+    Creates a local `test.h` header with both `#pragma once` (optional)
+    and a macro guard.
+
+    The header emits `#error header_was_already_included` if it is
+    re-included past the guard.
+
+    Returns tuple of:
+    - absolute path to the created header file
+    - expected compiler error substring for duplicate inclusion
+    """
     header_file = os.path.join(dir, 'test.h')
     with open(header_file, 'wt') as f:
         f.write(f"""
@@ -21,6 +32,17 @@ def __test_relative_header_create_header(dir, with_pragma_once=True):
     return header_file, "error: #error header_was_already_included"
 
 def __test_relative_header_create_source(dir, include1, include2, is_include1_sys=False, is_include2_sys=False, inv=False):
+    """
+    Creates a C source file that includes two headers in order.
+
+    The generated `<dir>/test.c`:
+    - `#undef TEST_H_INCLUDED` to reset the guard in `test.h`
+    - includes `include1` then `include2`
+    - if `inv=True`, the order is swapped (`include2` then `include1`)
+    - each include can be written as `<...>` or `"..."`
+
+    Returns absolute path to the created source file.
+    """
     if inv:
         return __test_relative_header_create_source(dir, include1=include2, include2=include1, is_include1_sys=is_include2_sys, is_include2_sys=is_include1_sys)
     ## otherwise
