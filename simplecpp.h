@@ -567,4 +567,7 @@ namespace simplecpp {
 #  pragma warning(pop)
 #endif
 
+#undef SIMPLECPP_LIB
+#undef SIMPLECPP_WINDOWS
+
 #endif
