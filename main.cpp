@@ -106,6 +106,7 @@ int main(int argc, char **argv)
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
         std::cout << "  -is             Use std::istream interface." << std::endl;
         std::cout << "  -e              Output errors only." << std::endl;
+        std::cout << "  -f              Fail when errors were encountered (exitcode 1)." << std::endl;
         std::exit(0);
     }
 
