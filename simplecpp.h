@@ -135,14 +135,6 @@ namespace simplecpp {
         Token(const Token &tok) :
             macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), nextcond(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
 
-        void flags() {
-            name = (std::isalpha(static_cast<unsigned char>(string[0])) || string[0] == '_' || string[0] == '$')
-                   && (std::memchr(string.c_str(), '\'', string.size()) == nullptr);
-            comment = string.size() > 1U && string[0] == '/' && (string[1] == '/' || string[1] == '*');
-            number = isNumberLike(string);
-            op = (string.size() == 1U && !name && !comment && !number) ? string[0] : '\0';
-        }
-
         const TokenString& str() const {
             return string;
         }
@@ -197,6 +189,14 @@ namespace simplecpp {
         void printAll() const;
         void printOut() const;
     private:
+        void flags() {
+            name = (std::isalpha(static_cast<unsigned char>(string[0])) || string[0] == '_' || string[0] == '$')
+                   && (std::memchr(string.c_str(), '\'', string.size()) == nullptr);
+            comment = string.size() > 1U && string[0] == '/' && (string[1] == '/' || string[1] == '*');
+            number = isNumberLike(string);
+            op = (string.size() == 1U && !name && !comment && !number) ? string[0] : '\0';
+        }
+
         TokenString string;
 
         std::set<const Macro*> mExpandedFrom;
