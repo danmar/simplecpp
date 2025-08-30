@@ -430,7 +430,7 @@ namespace simplecpp {
          *  If 'legacy' is true, the path is added to the 'includePaths' vector;
          *  otherwise, it is added to 'searchPaths' with 'PathKind::Include'.
          */
-        void addIncludePath(const std::string& path, bool legacy) {
+        void addIncludePath(const std::string& path, bool legacy=false) {
             if (legacy) {
                 includePaths.push_back(path);
             } else {
