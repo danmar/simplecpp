@@ -3231,6 +3231,15 @@ static void fuzz_crash()
     }
 }
 
+static void leak()
+{
+    {
+        const char code[] = "#define e(...)__VA_OPT__()\n"
+                            "#define e\n";
+        (void)preprocess(code, simplecpp::DUI());
+    }
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -3486,6 +3495,8 @@ int main(int argc, char **argv)
     TEST_CASE(safe_api);
 
     TEST_CASE(fuzz_crash);
+
+    TEST_CASE(leak);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
