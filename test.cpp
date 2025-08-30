@@ -1551,7 +1551,7 @@ static void hashhash_universal_character()
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '\\u01' and '04' yields universal character '\\u0104'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.\n", toString(outputList));
 }
 
-static void has_include_1()
+static void has_include_1(bool legacy)
 {
     const char code[] = "#ifdef __has_include\n"
                         "  #if __has_include(\"simplecpp.h\")\n"
@@ -1561,15 +1561,21 @@ static void has_include_1()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, legacy);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
+static void has_include_1() {
+    has_include_1(false);
+}
+static void has_include_1_legacy() {
+    has_include_1(true);
+}
 
-static void has_include_2()
+static void has_include_2(bool legacy)
 {
     const char code[] = "#if defined( __has_include)\n"
                         "  #if /*comment*/ __has_include /*comment*/(\"simplecpp.h\") // comment\n"
@@ -1579,13 +1585,19 @@ static void has_include_2()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, legacy);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
+static void has_include_2() {
+    has_include_2(false);
+}
+static void has_include_2_legacy() {
+    has_include_2(true);
+}
 
-static void has_include_3()
+static void has_include_3(bool legacy)
 {
     const char code[] = "#ifdef __has_include\n"
                         "  #if __has_include(<realFileName1.cpp>)\n"
@@ -1599,12 +1611,18 @@ static void has_include_3()
     // Test file not found...
     ASSERT_EQUALS("\n\n\n\nB", preprocess(code, dui));
     // Unless -I is set (preferably, we should differentiate -I and -isystem...)
-    dui.includePaths.push_back(testSourceDir + "/testsuite");
+    dui.addIncludePath(testSourceDir + "/testsuite", legacy);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
+static void has_include_3() {
+    has_include_3(false);
+}
+static void has_include_3_legacy() {
+    has_include_3(true);
+}
 
-static void has_include_4()
+static void has_include_4(bool legacy)
 {
     const char code[] = "#ifdef __has_include\n"
                         "  #if __has_include(\"testsuite/realFileName1.cpp\")\n"
@@ -1615,12 +1633,18 @@ static void has_include_4()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, legacy);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
+static void has_include_4() {
+    has_include_4(false);
+}
+static void has_include_4_legacy() {
+    has_include_4(true);
+}
 
-static void has_include_5()
+static void has_include_5(bool legacy)
 {
     const char code[] = "#if defined( __has_include)\n"
                         "  #if !__has_include(<testsuite/unrealFileName2.abcdef>)\n"
@@ -1631,12 +1655,18 @@ static void has_include_5()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, legacy);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
+static void has_include_5() {
+    has_include_5(false);
+}
+static void has_include_5_legacy() {
+    has_include_5(true);
+}
 
-static void has_include_6()
+static void has_include_6(bool legacy)
 {
     const char code[] = "#if defined( __has_include)\n"
                         "  #if !__has_include(<testsuite/unrealFileName2.abcdef>)\n"
@@ -1647,9 +1677,15 @@ static void has_include_6()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "gnu99";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, legacy);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
+}
+static void has_include_6() {
+    has_include_6(false);
+}
+static void has_include_6_legacy() {
+    has_include_6(true);
 }
 
 static void strict_ansi_1()
@@ -2032,7 +2068,7 @@ static void missingHeader1()
     ASSERT_EQUALS("file0,1,missing_header,Header not found: \"notexist.h\"\n", toString(outputList));
 }
 
-static void missingHeader2()
+static void missingHeader2(bool legacy)
 {
     const char code[] = "#include \"foo.h\"\n"; // this file exists
     std::vector<std::string> files;
@@ -2042,9 +2078,15 @@ static void missingHeader2()
     simplecpp::TokenList tokens2(files);
     const simplecpp::TokenList rawtokens = makeTokenList(code,files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
     ASSERT_EQUALS("", toString(outputList));
+}
+static void missingHeader2() {
+    missingHeader2(false);
+}
+static void missingHeader2_legacy() {
+    missingHeader2(true);
 }
 
 static void missingHeader3()
@@ -2063,7 +2105,7 @@ static void missingHeader4()
     ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
 
-static void nestedInclude()
+static void nestedInclude(bool legacy)
 {
     const char code[] = "#include \"test.h\"\n";
     std::vector<std::string> files;
@@ -2074,13 +2116,19 @@ static void nestedInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
 }
+static void nestedInclude() {
+    nestedInclude(false);
+}
+static void nestedInclude_legacy() {
+    nestedInclude(true);
+}
 
-static void systemInclude()
+static void systemInclude(bool legacy)
 {
     const char code[] = "#include <limits.h>\n";
     std::vector<std::string> files;
@@ -2092,10 +2140,16 @@ static void systemInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back("include");
+    dui.addIncludePath("include", legacy);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("", toString(outputList));
+}
+static void systemInclude() {
+    systemInclude(false);
+}
+static void systemInclude_legacy() {
+    systemInclude(true);
 }
 
 static void circularInclude()
@@ -2139,6 +2193,62 @@ static void circularInclude()
     }
 
     ASSERT_EQUALS("", toString(outputList));
+}
+
+static void appleFrameworkIncludeTest()
+{
+    // This test checks Apple framework include handling.
+    //
+    // If -I /tmp/testFrameworks
+    // and we write:
+    //   #include <Foundation/Foundation.h>
+    //
+    // then simplecpp should find:
+    //   ./testsuite/Foundation.framework/Headers/Foundation.h
+    const char code[] = "#include <Foundation/Foundation.h>\n";
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "sourcecode.cpp");
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::DUI dui;
+#ifdef SIMPLECPP_TEST_SOURCE_DIR
+    dui.addFrameworkPath(testSourceDir + "/testsuite");
+#else
+    dui.addFrameworkPath("./testsuite");
+#endif
+    simplecpp::OutputList outputList;
+    simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
+    ASSERT_EQUALS("", toString(outputList));
+}
+
+static void appleFrameworkHasIncludeTest()
+{
+    const char code[] =
+        "#ifdef __has_include\n"
+        "#if __has_include(<Foundation/Foundation.h>)\n"
+        "A\n"
+        "#else\n"
+        "B\n"
+        "#endif\n"
+        "#endif\n";
+
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens = makeTokenList(code, files, "sourcecode.cpp");
+
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList tokens2(files);
+    simplecpp::DUI dui;
+#ifdef SIMPLECPP_TEST_SOURCE_DIR
+    dui.addFrameworkPath(testSourceDir + "/testsuite");
+#else
+    dui.addFrameworkPath("./testsuite");
+#endif
+    dui.std = "c++17"; // enable __has_include
+
+    simplecpp::OutputList outputList;
+    simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
+
+    ASSERT_EQUALS("\n\nA", tokens2.stringify()); // should take the "A" branch
 }
 
 static void multiline1()
@@ -2297,7 +2407,7 @@ static void include2()
     ASSERT_EQUALS("# include <A.h>", readfile(code));
 }
 
-static void include3()   // #16 - crash when expanding macro from header
+static void include3(bool legacy)   // #16 - crash when expanding macro from header
 {
     const char code_c[] = "#include \"A.h\"\n"
                           "glue(1,2,3,4)\n";
@@ -2318,14 +2428,19 @@ static void include3()   // #16 - crash when expanding macro from header
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n1234", out.stringify());
 }
+static void include3() {
+    include3(false);
+}
+static void include3_legacy() {
+    include3(true);
+}
 
-
-static void include4()   // #27 - -include
+static void include4(bool legacy)   // #27 - -include
 {
     const char code_c[] = "X\n";
     const char code_h[] = "#define X 123\n";
@@ -2345,14 +2460,20 @@ static void include4()   // #27 - -include
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     dui.includes.push_back("27.h");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("123", out.stringify());
 }
+static void include4() {
+    include4(false);
+}
+static void include4_legacy() {
+    include4(true);
+}
 
-static void include5()    // #3 - handle #include MACRO
+static void include5(bool legacy)    // #3 - handle #include MACRO
 {
     const char code_c[] = "#define A \"3.h\"\n#include A\n";
     const char code_h[] = "123\n";
@@ -2372,10 +2493,16 @@ static void include5()    // #3 - handle #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
+}
+static void include5() {
+    include5(false);
+}
+static void include5_legacy() {
+    include5(true);
 }
 
 static void include6()   // #57 - incomplete macro  #include MACRO(,)
@@ -2397,7 +2524,7 @@ static void include6()   // #57 - incomplete macro  #include MACRO(,)
 }
 
 
-static void include7()    // #include MACRO
+static void include7(bool legacy)    // #include MACRO
 {
     const char code_c[] = "#define HDR  <3.h>\n"
                           "#include HDR\n";
@@ -2418,10 +2545,16 @@ static void include7()    // #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
+}
+static void include7() {
+    include7(false);
+}
+static void include7_legacy() {
+    include7(true);
 }
 
 static void include8()    // #include MACRO(X)
@@ -2434,7 +2567,7 @@ static void include8()    // #include MACRO(X)
     ASSERT_EQUALS("file0,3,missing_header,Header not found: <../somewhere/header.h>\n", toString(outputList));
 }
 
-static void include9()
+static void include9(bool legacy)
 {
     const char code_c[] = "#define HDR \"1.h\"\n"
                           "#include HDR\n";
@@ -2456,10 +2589,16 @@ static void include9()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
+}
+static void include9_legacy() {
+    include9(true);
+}
+static void include9() {
+    include9(false);
 }
 
 static void readfile_nullbyte()
@@ -2617,7 +2756,7 @@ static void readfile_file_not_found()
     ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
 }
 
-static void stringify1()
+static void stringify1(bool legacy)
 {
     const char code_c[] = "#include \"A.h\"\n"
                           "#include \"A.h\"\n";
@@ -2638,10 +2777,16 @@ static void stringify1()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", legacy);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.h\"\n1\n2", out.stringify());
+}
+static void stringify1() {
+    stringify1(false);
+}
+static void stringify1_legacy() {
+    stringify1(true);
 }
 
 static void tokenMacro1()
@@ -3365,6 +3510,12 @@ int main(int argc, char **argv)
     TEST_CASE(has_include_4);
     TEST_CASE(has_include_5);
     TEST_CASE(has_include_6);
+    TEST_CASE(has_include_1_legacy);
+    TEST_CASE(has_include_2_legacy);
+    TEST_CASE(has_include_3_legacy);
+    TEST_CASE(has_include_4_legacy);
+    TEST_CASE(has_include_5_legacy);
+    TEST_CASE(has_include_6_legacy);
 
     TEST_CASE(strict_ansi_1);
     TEST_CASE(strict_ansi_2);
@@ -3402,11 +3553,16 @@ int main(int argc, char **argv)
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
+    TEST_CASE(missingHeader2_legacy);
     TEST_CASE(missingHeader3);
     TEST_CASE(missingHeader4);
     TEST_CASE(nestedInclude);
+    TEST_CASE(nestedInclude_legacy);
     TEST_CASE(systemInclude);
+    TEST_CASE(systemInclude_legacy);
     TEST_CASE(circularInclude);
+    TEST_CASE(appleFrameworkIncludeTest);
+    TEST_CASE(appleFrameworkHasIncludeTest);
 
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);
@@ -3421,6 +3577,12 @@ int main(int argc, char **argv)
     TEST_CASE(include7); // #include MACRO
     TEST_CASE(include8); // #include MACRO(X)
     TEST_CASE(include9); // #include MACRO
+
+    TEST_CASE(include3_legacy);
+    TEST_CASE(include4_legacy); // -include
+    TEST_CASE(include5_legacy); // #include MACRO
+    TEST_CASE(include7_legacy); // #include MACRO
+    TEST_CASE(include9_legacy); // #include MACRO
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
@@ -3444,6 +3606,7 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_file_not_found);
 
     TEST_CASE(stringify1);
+    TEST_CASE(stringify1_legacy);
 
     TEST_CASE(tokenMacro1);
     TEST_CASE(tokenMacro2);
