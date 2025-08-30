@@ -67,7 +67,7 @@
 
 namespace simplecpp {
     /** C code standard */
-    enum cstd_t { CUnknown=-1, C89, C99, C11, C17, C23 };
+    enum cstd_t { CUnknown=-1, C89, C99, C11, C17, C23, C2Y };
 
     /** C++ code standard */
     enum cppstd_t { CPPUnknown=-1, CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26 };
