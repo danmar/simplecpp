@@ -43,7 +43,7 @@ int main(int argc, char **argv)
             }
             case 'I': { // include path
                 const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.addIncludePath(value);
+                dui.addIncludePath(value, /* legacy= */ false);
                 found = true;
                 break;
             }

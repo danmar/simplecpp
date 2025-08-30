@@ -1561,7 +1561,7 @@ static void has_include_1()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, /* legacy= */ true);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     dui.std = "c++14";
@@ -1579,7 +1579,7 @@ static void has_include_2()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, /* legacy= */ true);
     dui.std = "c++17";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
@@ -1599,7 +1599,7 @@ static void has_include_3()
     // Test file not found...
     ASSERT_EQUALS("\n\n\n\nB", preprocess(code, dui));
     // Unless -I is set (preferably, we should differentiate -I and -isystem...)
-    dui.includePaths.push_back(testSourceDir + "/testsuite");
+    dui.addIncludePath(testSourceDir + "/testsuite", /* legacy= */ true);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1615,7 +1615,7 @@ static void has_include_4()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, /* legacy= */ true);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1631,7 +1631,7 @@ static void has_include_5()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c++17";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, /* legacy= */ true);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -1647,7 +1647,7 @@ static void has_include_6()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "gnu99";
-    dui.includePaths.push_back(testSourceDir);
+    dui.addIncludePath(testSourceDir, /* legacy= */ true);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     ASSERT_EQUALS("", preprocess(code));
 }
@@ -2042,7 +2042,7 @@ static void missingHeader2()
     simplecpp::TokenList tokens2(files);
     const simplecpp::TokenList rawtokens = makeTokenList(code,files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
@@ -2074,7 +2074,7 @@ static void nestedInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
@@ -2092,7 +2092,7 @@ static void systemInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back("include");
+    dui.addIncludePath("include", /* legacy= */ true);
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("", toString(outputList));
@@ -2374,7 +2374,7 @@ static void include3()   // #16 - crash when expanding macro from header
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n1234", out.stringify());
@@ -2401,7 +2401,7 @@ static void include4()   // #27 - -include
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     dui.includes.push_back("27.h");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
@@ -2428,7 +2428,7 @@ static void include5()    // #3 - handle #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
@@ -2474,7 +2474,7 @@ static void include7()    // #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
@@ -2512,7 +2512,7 @@ static void include9()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
@@ -2694,7 +2694,7 @@ static void stringify1()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.addIncludePath(".", /* legacy= */ true);
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.h\"\n1\n2", out.stringify());

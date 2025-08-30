@@ -424,19 +424,28 @@ namespace simplecpp {
             PathKind kind;
         };
 
-        /** Mirrors compiler option -I<dir> */
-        void addIncludePath(const std::string& path) {
-            searchPaths.push_back({path, PathKind::Include});
+        /**
+         *  Mirrors compiler option -I<dir>
+         *
+         *  If 'legacy' is true, the path is added to the 'includePaths' vector;
+         *  otherwise, it is added to 'searchPaths' with 'PathKind::Include'.
+         */
+        void addIncludePath(const std::string& path, bool legacy) {
+            if (legacy) {
+                includePaths.push_back(path);
+            } else {
+                searchPaths.push_back({path, PathKind::Include});
+            }
         }
         /** Mirrors compiler option -I<dir> */
         void addSystemIncludePath(const std::string& path) {
             searchPaths.push_back({path, PathKind::SystemInclude});
         }
-        // Mirrors compiler option -F<dir>
+        /** Mirrors compiler option -F<dir> */
         void addFrameworkPath(const std::string& path) {
             searchPaths.push_back({path, PathKind::Framework});
         }
-        // Mirrors compiler option -iframework<dir>
+        /** Mirrors compiler option -iframework<dir> */
         void addSystemFrameworkPath(const std::string& path) {
             searchPaths.push_back({path, PathKind::SystemFramework});
         }
