@@ -1,17 +1,30 @@
-
 import glob
 import os
+import shutil
 import subprocess
 import sys
 
-def cleanup(out):
-  ret = ''
-  for s in out.decode('utf-8').split('\n'):
-    if len(s) > 1 and s[0] == '#':
+
+def cleanup(out: str) -> str:
+  parts = []
+  for line in out.splitlines():
+    if len(line) > 1 and line[0] == '#':
       continue
-    s = "".join(s.split())
-    ret = ret + s
-  return ret
+    parts.append("".join(line.split()))
+  return "".join(parts)
+
+
+# Check for required compilers and exit if any are missing
+CLANG_EXE = shutil.which('clang')
+if not CLANG_EXE:
+  sys.exit('Failed to run tests: clang compiler not found')
+
+GCC_EXE = shutil.which('gcc')
+if not GCC_EXE:
+  sys.exit('Failed to run tests: gcc compiler not found')
+
+SIMPLECPP_EXE = './simplecpp'
+
 
 commands = []
 
@@ -78,6 +91,21 @@ todo = [
          'pr57580.c',
          ]
 
+
+def run(compiler_executable: str, compiler_args: list[str]) -> tuple[int, str, str]:
+  """Execute a compiler command and capture its exit code, stdout, and stderr."""
+  compiler_cmd = [compiler_executable]
+  compiler_cmd.extend(compiler_args)
+
+  with subprocess.Popen(compiler_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8") as process:
+    stdout, stderr = process.communicate()
+    exit_code = process.returncode
+
+  output = cleanup(stdout)
+  error = (stderr or "").strip()
+  return (exit_code, output, error)
+
+
 numberOfSkipped = 0
 numberOfFailed = 0
 numberOfFixed = 0
@@ -89,26 +117,12 @@ for cmd in commands:
     numberOfSkipped = numberOfSkipped + 1
     continue
 
-  clang_cmd = ['clang']
-  clang_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(clang_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  clang_output = cleanup(comm[0])
+  _, clang_output, _ = run(CLANG_EXE, cmd.split(' '))
 
-  gcc_cmd = ['gcc']
-  gcc_cmd.extend(cmd.split(' '))
-  p = subprocess.Popen(gcc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  gcc_output = cleanup(comm[0])
+  _, gcc_output, _ = run(GCC_EXE, cmd.split(' '))
 
-  simplecpp_cmd = ['./simplecpp']
   # -E is not supported and we bail out on unknown options
-  simplecpp_cmd.extend(cmd.replace('-E ', '', 1).split(' '))
-  p = subprocess.Popen(simplecpp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  comm = p.communicate()
-  simplecpp_ec = p.returncode
-  simplecpp_output = cleanup(comm[0])
-  simplecpp_err = comm[0].decode('utf-8').strip()
+  simplecpp_ec, simplecpp_output, simplecpp_err = run(SIMPLECPP_EXE, cmd.replace('-E ', '', 1).split(' '))
 
   if simplecpp_output != clang_output and simplecpp_output != gcc_output:
     filename = cmd[cmd.rfind('/')+1:]
