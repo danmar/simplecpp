@@ -3083,11 +3083,11 @@ static void stdValid()
     outputList.clear();
 }
 
-static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
+static void assertToken(std::string s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
     const simplecpp::Location l(f);
-    const simplecpp::Token t(s, l);
+    const simplecpp::Token t(std::move(s), l);
     assertEquals(name, t.name, line);
     assertEquals(number, t.number, line);
     assertEquals(comment, t.comment, line);
