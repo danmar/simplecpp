@@ -358,16 +358,16 @@ public:
         init();
     }
 
-    virtual int get() override {
+    int get() override {
         return istr.get();
     }
-    virtual int peek() override {
+    int peek() override {
         return istr.peek();
     }
-    virtual void unget() override {
+    void unget() override {
         istr.unget();
     }
-    virtual bool good() override {
+    bool good() override {
         return istr.good();
     }
 
@@ -386,20 +386,20 @@ public:
         init();
     }
 
-    virtual int get() override {
+    int get() override {
         if (pos >= size)
             return lastStatus = EOF;
         return str[pos++];
     }
-    virtual int peek() override {
+    int peek() override {
         if (pos >= size)
             return lastStatus = EOF;
         return str[pos];
     }
-    virtual void unget() override {
+    void unget() override {
         --pos;
     }
-    virtual bool good() override {
+    bool good() override {
         return lastStatus != EOF;
     }
 
@@ -429,20 +429,20 @@ public:
         file = nullptr;
     }
 
-    virtual int get() override {
+    int get() override {
         lastStatus = lastCh = fgetc(file);
         return lastCh;
     }
-    virtual int peek() override {
+    int peek() override {
         // keep lastCh intact
         const int ch = fgetc(file);
         unget_internal(ch);
         return ch;
     }
-    virtual void unget() override {
+    void unget() override {
         unget_internal(lastCh);
     }
-    virtual bool good() override {
+    bool good() override {
         return lastStatus != EOF;
     }
 

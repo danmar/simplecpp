@@ -36,7 +36,6 @@ Checks: >
         -modernize-use-equals-delete,
         -modernize-use-default-member-init,
         -modernize-use-nodiscard,
-        -modernize-use-override,
         -modernize-use-trailing-return-type,
         -modernize-use-using,
         -readability-avoid-nested-conditional-operator,
