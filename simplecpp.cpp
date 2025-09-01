@@ -1734,7 +1734,7 @@ namespace simplecpp {
                         argtok->next && argtok->next->op == ')') {
                         variadic = true;
                         if (!argtok->previous->name)
-                            args.push_back("__VA_ARGS__");
+                            args.emplace_back("__VA_ARGS__");
                         argtok = argtok->next; // goto ')'
                         break;
                     }
@@ -3647,7 +3647,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 E += (E.empty() ? "" : " ") + tok->str();
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
-                            ifCond->push_back(IfCond(rawtok->location, E, result));
+                            ifCond->emplace_back(rawtok->location, E, result);
                         } else {
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);

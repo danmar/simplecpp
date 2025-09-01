@@ -50,7 +50,7 @@ int main(int argc, char **argv)
                     error = true;
                     break;
                 }
-                dui.defines.push_back(value);
+                dui.defines.emplace_back(value);
                 break;
             }
             case 'U': { // undefine symbol
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
                     error = true;
                     break;
                 }
-                dui.includePaths.push_back(value);
+                dui.includePaths.emplace_back(value);
                 break;
             }
             case 'i':
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
                         error = true;
                         break;
                     }
-                    dui.includes.push_back(std::move(value));
+                    dui.includes.emplace_back(std::move(value));
                 } else if (std::strncmp(arg, "-is",3)==0) {
                     found = true;
                     use_istream = true;
