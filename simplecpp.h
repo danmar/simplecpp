@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <unordered_map>
 #include <vector>
 #if __cplusplus >= 202002L
@@ -127,8 +128,8 @@ namespace simplecpp {
      */
     class SIMPLECPP_LIB Token {
     public:
-        Token(const TokenString &s, const Location &loc, bool wsahead = false) :
-            whitespaceahead(wsahead), location(loc), previous(nullptr), next(nullptr), nextcond(nullptr), string(s) {
+        Token(TokenString s, const Location &loc, bool wsahead = false) :
+            whitespaceahead(wsahead), location(loc), previous(nullptr), next(nullptr), nextcond(nullptr), string(std::move(s)) {
             flags();
         }
 
@@ -220,7 +221,7 @@ namespace simplecpp {
             FILE_NOT_FOUND,
             DUI_ERROR
         } type;
-        explicit Output(const std::vector<std::string>& files, Type type, const std::string& msg) : type(type), location(files), msg(msg) {}
+        explicit Output(const std::vector<std::string>& files, Type type, std::string msg) : type(type), location(files), msg(std::move(msg)) {}
         Location location;
         std::string msg;
     };
@@ -387,7 +388,7 @@ namespace simplecpp {
 
     /** Tracking #if/#elif expressions */
     struct SIMPLECPP_LIB IfCond {
-        explicit IfCond(const Location& location, const std::string &E, long long result) : location(location), E(E), result(result) {}
+        explicit IfCond(const Location& location, std::string E, long long result) : location(location), E(std::move(E)), result(result) {}
         Location location; // location of #if/#elif
         std::string E; // preprocessed condition
         long long result; // condition result

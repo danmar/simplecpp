@@ -1643,7 +1643,7 @@ namespace simplecpp {
 
         /** base class for errors */
         struct Error {
-            Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
+            Error(const Location &loc, std::string s) : location(loc), what(std::move(s)) {}
             const Location location;
             const std::string what;
         };
