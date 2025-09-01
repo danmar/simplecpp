@@ -240,7 +240,7 @@ void simplecpp::Token::printOut() const
 // cppcheck-suppress noConstructor - we call init() in the inherited to initialize the private members
 class simplecpp::TokenList::Stream {
 public:
-    virtual ~Stream() {}
+    virtual ~Stream() = default;
 
     virtual int get() = 0;
     virtual int peek() = 0;

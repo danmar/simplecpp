@@ -79,7 +79,7 @@ namespace simplecpp {
     public:
         explicit Location(const std::vector<std::string> &f) : files(f), fileIndex(0), line(1U), col(0U) {}
 
-        Location(const Location &loc) : files(loc.files), fileIndex(loc.fileIndex), line(loc.line), col(loc.col) {}
+        Location(const Location &loc) = default;
 
         Location &operator=(const Location &other) {
             if (this != &other) {
