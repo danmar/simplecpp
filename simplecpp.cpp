@@ -386,8 +386,7 @@ public:
     StdCharBufStream(const unsigned char* str, std::size_t size)
         : str(str)
         , size(size)
-        , pos(0)
-        , lastStatus(0) {
+    {
         init();
     }
 
@@ -411,8 +410,8 @@ public:
 private:
     const unsigned char *str;
     const std::size_t size;
-    std::size_t pos;
-    int lastStatus;
+    std::size_t pos{};
+    int lastStatus{};
 };
 
 class FileStream : public simplecpp::TokenList::Stream {
@@ -420,8 +419,7 @@ public:
     // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
     explicit FileStream(const std::string &filename, std::vector<std::string> &files)
         : file(fopen(filename.c_str(), "rb"))
-        , lastCh(0)
-        , lastStatus(0) {
+    {
         if (!file) {
             files.push_back(filename);
             throw simplecpp::Output(files, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
@@ -465,8 +463,8 @@ private:
     FileStream &operator=(const FileStream&);
 
     FILE *file;
-    int lastCh;
-    int lastStatus;
+    int lastCh{};
+    int lastStatus{};
 };
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
@@ -1487,7 +1485,7 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), optExpandValue(nullptr), optNoExpandValue(nullptr), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
