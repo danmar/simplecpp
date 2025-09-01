@@ -1528,7 +1528,7 @@ namespace simplecpp {
          * @return token after macro
          * @throw Can throw wrongNumberOfParameters or invalidHashHash
          */
-        const Token * expand(TokenList * const output,
+        const Token * expand(TokenList & output,
                              const Token * rawtok,
                              const MacroMap &macros,
                              std::vector<std::string> &inputFiles) const {
@@ -1559,10 +1559,10 @@ namespace simplecpp {
                     rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                     rawtok = rawtok->next;
                 }
-                if (expand(&output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
+                if (expand(output2, rawtok1->location, rawtokens2.cfront(), macros, expandedmacros))
                     rawtok = rawtok1->next;
             } else {
-                rawtok = expand(&output2, rawtok->location, rawtok, macros, expandedmacros);
+                rawtok = expand(output2, rawtok->location, rawtok, macros, expandedmacros);
             }
             while (output2.cback() && rawtok) {
                 unsigned int par = 0;
@@ -1610,11 +1610,11 @@ namespace simplecpp {
                 }
                 if (!rawtok2 || par != 1U)
                     break;
-                if (macro->second.expand(&output2, rawtok->location, rawtokens2.cfront(), macros, expandedmacros) != nullptr)
+                if (macro->second.expand(output2, rawtok->location, rawtokens2.cfront(), macros, expandedmacros) != nullptr)
                     break;
                 rawtok = rawtok2->next;
             }
-            output->takeTokens(output2);
+            output.takeTokens(output2);
             return rawtok;
         }
 
@@ -1810,7 +1810,7 @@ namespace simplecpp {
             return parametertokens;
         }
 
-        const Token *appendTokens(TokenList *tokens,
+        const Token *appendTokens(TokenList &tokens,
                                   const Location &rawloc,
                                   const Token * const lpar,
                                   const MacroMap &macros,
@@ -1828,9 +1828,9 @@ namespace simplecpp {
                     tok = expandHash(tokens, rawloc, tok, expandedmacros, parametertokens);
                 } else {
                     if (!expandArg(tokens, tok, rawloc, macros, expandedmacros, parametertokens)) {
-                        tokens->push_back(new Token(*tok));
+                        tokens.push_back(new Token(*tok));
                         if (tok->macro.empty() && (par > 0 || tok->str() != "("))
-                            tokens->back()->macro = name();
+                            tokens.back()->macro = name();
                     }
 
                     if (tok->op == '(')
@@ -1843,12 +1843,12 @@ namespace simplecpp {
                     tok = tok->next;
                 }
             }
-            for (Token *tok2 = tokens->front(); tok2; tok2 = tok2->next)
+            for (Token *tok2 = tokens.front(); tok2; tok2 = tok2->next)
                 tok2->location = lpar->location;
             return sameline(lpar,tok) ? tok : nullptr;
         }
 
-        const Token * expand(TokenList * const output, const Location &loc, const Token * const nameTokInst, const MacroMap &macros, std::set<TokenString> expandedmacros) const {
+        const Token * expand(TokenList & output, const Location &loc, const Token * const nameTokInst, const MacroMap &macros, std::set<TokenString> expandedmacros) const {
             expandedmacros.insert(nameTokInst->str());
 
 #ifdef SIMPLECPP_DEBUG_MACRO_EXPANSION
@@ -1858,15 +1858,15 @@ namespace simplecpp {
             usageList.push_back(loc);
 
             if (nameTokInst->str() == "__FILE__") {
-                output->push_back(new Token('\"'+loc.file()+'\"', loc));
+                output.push_back(new Token('\"'+loc.file()+'\"', loc));
                 return nameTokInst->next;
             }
             if (nameTokInst->str() == "__LINE__") {
-                output->push_back(new Token(toString(loc.line), loc));
+                output.push_back(new Token(toString(loc.line), loc));
                 return nameTokInst->next;
             }
             if (nameTokInst->str() == "__COUNTER__") {
-                output->push_back(new Token(toString(usageList.size()-1U), loc));
+                output.push_back(new Token(toString(usageList.size()-1U), loc));
                 return nameTokInst->next;
             }
 
@@ -1878,7 +1878,7 @@ namespace simplecpp {
             if (functionLike()) {
                 // No arguments => not macro expansion
                 if (nameTokInst->next && nameTokInst->next->op != '(') {
-                    output->push_back(new Token(nameTokInst->str(), loc));
+                    output.push_back(new Token(nameTokInst->str(), loc));
                     return nameTokInst->next;
                 }
 
@@ -1927,7 +1927,7 @@ namespace simplecpp {
                 }
             }
 
-            Token * const output_end_1 = output->back();
+            Token * const output_end_1 = output.back();
 
             const Token *valueToken2;
             const Token *endToken2;
@@ -1952,20 +1952,20 @@ namespace simplecpp {
                             throw invalidHashHash::unexpectedNewline(tok->location, name());
                         if (variadic && tok->op == ',' && tok->next->next->next->str() == args.back()) {
                             Token *const comma = newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok);
-                            output->push_back(comma);
+                            output.push_back(comma);
                             tok = expandToken(output, loc, tok->next->next->next, macros, expandedmacros, parametertokens2);
-                            if (output->back() == comma)
-                                output->deleteToken(comma);
+                            if (output.back() == comma)
+                                output.deleteToken(comma);
                             continue;
                         }
                         TokenList new_output(files);
-                        if (!expandArg(&new_output, tok, parametertokens2))
-                            output->push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
+                        if (!expandArg(new_output, tok, parametertokens2))
+                            output.push_back(newMacroToken(tok->str(), loc, isReplaced(expandedmacros), tok));
                         else if (new_output.empty()) // placemarker token
-                            output->push_back(newMacroToken("", loc, isReplaced(expandedmacros)));
+                            output.push_back(newMacroToken("", loc, isReplaced(expandedmacros)));
                         else
                             for (const Token *tok2 = new_output.cfront(); tok2; tok2 = tok2->next)
-                                output->push_back(newMacroToken(tok2->str(), loc, isReplaced(expandedmacros), tok2));
+                                output.push_back(newMacroToken(tok2->str(), loc, isReplaced(expandedmacros), tok2));
                         tok = tok->next;
                     } else {
                         tok = expandToken(output, loc, tok, macros, expandedmacros, parametertokens2);
@@ -1981,20 +1981,20 @@ namespace simplecpp {
                 }
                 if (numberOfHash == 4 && tok->next->location.col + 1 == tok->next->next->location.col) {
                     // # ## #  => ##
-                    output->push_back(newMacroToken("##", loc, isReplaced(expandedmacros)));
+                    output.push_back(newMacroToken("##", loc, isReplaced(expandedmacros)));
                     tok = hashToken;
                     continue;
                 }
 
                 if (numberOfHash >= 2 && tok->location.col + 1 < tok->next->location.col) {
-                    output->push_back(new Token(*tok));
+                    output.push_back(new Token(*tok));
                     tok = tok->next;
                     continue;
                 }
 
                 tok = tok->next;
                 if (tok == endToken2) {
-                    output->push_back(new Token(*tok->previous));
+                    output.push_back(new Token(*tok->previous));
                     break;
                 }
                 if (tok->op == '#') {
@@ -2007,7 +2007,7 @@ namespace simplecpp {
             }
 
             if (!functionLike()) {
-                for (Token *tok = output_end_1 ? output_end_1->next : output->front(); tok; tok = tok->next) {
+                for (Token *tok = output_end_1 ? output_end_1->next : output.front(); tok; tok = tok->next) {
                     tok->macro = nameTokInst->str();
                 }
             }
@@ -2018,55 +2018,55 @@ namespace simplecpp {
             return functionLike() ? parametertokens2.back()->next : nameTokInst->next;
         }
 
-        const Token *recursiveExpandToken(TokenList *output, TokenList &temp, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        const Token *recursiveExpandToken(TokenList &output, TokenList &temp, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             if (!(temp.cback() && temp.cback()->name && tok->next && tok->next->op == '(')) {
-                output->takeTokens(temp);
+                output.takeTokens(temp);
                 return tok->next;
             }
 
             if (!sameline(tok, tok->next)) {
-                output->takeTokens(temp);
+                output.takeTokens(temp);
                 return tok->next;
             }
 
             const MacroMap::const_iterator it = macros.find(temp.cback()->str());
             if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end()) {
-                output->takeTokens(temp);
+                output.takeTokens(temp);
                 return tok->next;
             }
 
             const Macro &calledMacro = it->second;
             if (!calledMacro.functionLike()) {
-                output->takeTokens(temp);
+                output.takeTokens(temp);
                 return tok->next;
             }
 
             TokenList temp2(files);
             temp2.push_back(new Token(temp.cback()->str(), tok->location));
 
-            const Token * const tok2 = appendTokens(&temp2, loc, tok->next, macros, expandedmacros, parametertokens);
+            const Token * const tok2 = appendTokens(temp2, loc, tok->next, macros, expandedmacros, parametertokens);
             if (!tok2)
                 return tok->next;
-            output->takeTokens(temp);
-            output->deleteToken(output->back());
+            output.takeTokens(temp);
+            output.deleteToken(output.back());
             calledMacro.expand(output, loc, temp2.cfront(), macros, expandedmacros);
             return tok2->next;
         }
 
-        const Token *expandToken(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        const Token *expandToken(TokenList &output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             // Not name..
             if (!tok->name) {
-                output->push_back(newMacroToken(tok->str(), loc, true, tok));
+                output.push_back(newMacroToken(tok->str(), loc, true, tok));
                 return tok->next;
             }
 
             // Macro parameter..
             {
                 TokenList temp(files);
-                if (expandArg(&temp, tok, loc, macros, expandedmacros, parametertokens)) {
-                    if (tok->str() == "__VA_ARGS__" && temp.empty() && output->cback() && output->cback()->str() == "," &&
+                if (expandArg(temp, tok, loc, macros, expandedmacros, parametertokens)) {
+                    if (tok->str() == "__VA_ARGS__" && temp.empty() && output.cback() && output.cback()->str() == "," &&
                         tok->nextSkipComments() && tok->nextSkipComments()->str() == ")")
-                        output->deleteToken(output->back());
+                        output.deleteToken(output.back());
                     return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros, parametertokens);
                 }
             }
@@ -2080,29 +2080,29 @@ namespace simplecpp {
                 const Macro &calledMacro = it->second;
                 if (!calledMacro.functionLike()) {
                     TokenList temp(files);
-                    calledMacro.expand(&temp, loc, tok, macros, expandedmacros);
+                    calledMacro.expand(temp, loc, tok, macros, expandedmacros);
                     return recursiveExpandToken(output, temp, loc, tok, macros, expandedmacros2, parametertokens);
                 }
                 if (!sameline(tok, tok->next)) {
-                    output->push_back(newMacroToken(tok->str(), loc, true, tok));
+                    output.push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
                 }
                 TokenList tokens(files);
                 tokens.push_back(new Token(*tok));
                 const Token * tok2 = nullptr;
                 if (tok->next->op == '(')
-                    tok2 = appendTokens(&tokens, loc, tok->next, macros, expandedmacros, parametertokens);
-                else if (expandArg(&tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
+                    tok2 = appendTokens(tokens, loc, tok->next, macros, expandedmacros, parametertokens);
+                else if (expandArg(tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
                     tokens.front()->location = loc;
                     if (tokens.cfront()->next && tokens.cfront()->next->op == '(')
                         tok2 = tok->next;
                 }
                 if (!tok2) {
-                    output->push_back(newMacroToken(tok->str(), loc, true, tok));
+                    output.push_back(newMacroToken(tok->str(), loc, true, tok));
                     return tok->next;
                 }
                 TokenList temp(files);
-                calledMacro.expand(&temp, loc, tokens.cfront(), macros, expandedmacros);
+                calledMacro.expand(temp, loc, tokens.cfront(), macros, expandedmacros);
                 return recursiveExpandToken(output, temp, loc, tok2, macros, expandedmacros, parametertokens);
             }
 
@@ -2122,25 +2122,25 @@ namespace simplecpp {
                     std::string macroName = defToken->str();
                     if (defToken->next && defToken->next->op == '#' && defToken->next->next && defToken->next->next->op == '#' && defToken->next->next->next && defToken->next->next->next->name && sameline(defToken,defToken->next->next->next)) {
                         TokenList temp(files);
-                        if (expandArg(&temp, defToken, parametertokens))
+                        if (expandArg(temp, defToken, parametertokens))
                             macroName = temp.cback()->str();
-                        if (expandArg(&temp, defToken->next->next->next, parametertokens))
+                        if (expandArg(temp, defToken->next->next->next, parametertokens))
                             macroName += temp.cback() ? temp.cback()->str() : "";
                         else
                             macroName += defToken->next->next->next->str();
                         lastToken = defToken->next->next->next;
                     }
                     const bool def = (macros.find(macroName) != macros.end());
-                    output->push_back(newMacroToken(def ? "1" : "0", loc, true));
+                    output.push_back(newMacroToken(def ? "1" : "0", loc, true));
                     return lastToken->next;
                 }
             }
 
-            output->push_back(newMacroToken(tok->str(), loc, true, tok));
+            output.push_back(newMacroToken(tok->str(), loc, true, tok));
             return tok->next;
         }
 
-        bool expandArg(TokenList *output, const Token *tok, const std::vector<const Token*> &parametertokens) const {
+        bool expandArg(TokenList &output, const Token *tok, const std::vector<const Token*> &parametertokens) const {
             if (!tok->name)
                 return false;
 
@@ -2153,12 +2153,12 @@ namespace simplecpp {
                 return true;
 
             for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U]; partok = partok->next)
-                output->push_back(new Token(*partok));
+                output.push_back(new Token(*partok));
 
             return true;
         }
 
-        bool expandArg(TokenList *output, const Token *tok, const Location &loc, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        bool expandArg(TokenList &output, const Token *tok, const Location &loc, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             if (!tok->name)
                 return false;
             const unsigned int argnr = getArgNum(tok->str());
@@ -2173,13 +2173,13 @@ namespace simplecpp {
                     expandedmacros2.erase(name());
                     partok = it->second.expand(output, loc, partok, macros, std::move(expandedmacros2));
                 } else {
-                    output->push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));
-                    output->back()->macro = partok->macro;
+                    output.push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));
+                    output.back()->macro = partok->macro;
                     partok = partok->next;
                 }
             }
-            if (tok->whitespaceahead && output->back())
-                output->back()->whitespaceahead = true;
+            if (tok->whitespaceahead && output.back())
+                output.back()->whitespaceahead = true;
             return true;
         }
 
@@ -2192,10 +2192,10 @@ namespace simplecpp {
          * @param parametertokens  parameters given when expanding this macro
          * @return token after the X
          */
-        const Token *expandHash(TokenList *output, const Location &loc, const Token *tok, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
+        const Token *expandHash(TokenList &output, const Location &loc, const Token *tok, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
             TokenList tokenListHash(files);
             const MacroMap macros2; // temporarily bypass macro expansion
-            tok = expandToken(&tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
+            tok = expandToken(tokenListHash, loc, tok->next, macros2, expandedmacros, parametertokens);
             std::ostringstream ostr;
             ostr << '\"';
             for (const Token *hashtok = tokenListHash.cfront(), *next; hashtok; hashtok = next) {
@@ -2205,7 +2205,7 @@ namespace simplecpp {
                     ostr << ' ';
             }
             ostr << '\"';
-            output->push_back(newMacroToken(escapeString(ostr.str()), loc, isReplaced(expandedmacros)));
+            output.push_back(newMacroToken(escapeString(ostr.str()), loc, isReplaced(expandedmacros)));
             return tok;
         }
 
@@ -2221,8 +2221,8 @@ namespace simplecpp {
          * @param expandResult     expand ## result i.e. "AB"?
          * @return token after B
          */
-        const Token *expandHashHash(TokenList *output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens, bool expandResult=true) const {
-            Token *A = output->back();
+        const Token *expandHashHash(TokenList &output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens, bool expandResult=true) const {
+            Token *A = output.back();
             if (!A)
                 throw invalidHashHash(tok->location, name(), "Missing first argument");
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
@@ -2253,20 +2253,20 @@ namespace simplecpp {
 
                 // It seems clearer to handle this case separately even though the code is similar-ish, but we don't want to merge here.
                 // TODO The question is whether the ## or varargs may still apply, and how to provoke?
-                if (expandArg(&tokensB, B, parametertokens)) {
+                if (expandArg(tokensB, B, parametertokens)) {
                     for (Token *b = tokensB.front(); b; b = b->next)
                         b->location = loc;
                 } else {
                     tokensB.push_back(new Token(*B));
                     tokensB.back()->location = loc;
                 }
-                output->takeTokens(tokensB);
+                output.takeTokens(tokensB);
             } else {
                 std::string strAB;
 
                 const bool varargs = variadic && !args.empty() && B->str() == args[args.size()-1U];
 
-                if (expandArg(&tokensB, B, parametertokens)) {
+                if (expandArg(tokensB, B, parametertokens)) {
                     if (tokensB.empty())
                         strAB = A->str();
                     else if (varargs && A->op == ',')
@@ -2292,27 +2292,27 @@ namespace simplecpp {
                 }
 
                 if (varargs && tokensB.empty() && tok->previous->str() == ",")
-                    output->deleteToken(A);
+                    output.deleteToken(A);
                 else if (strAB != "," && macros.find(strAB) == macros.end()) {
                     A->setstr(strAB);
                     for (Token *b = tokensB.front(); b; b = b->next)
                         b->location = loc;
-                    output->takeTokens(tokensB);
+                    output.takeTokens(tokensB);
                 } else if (sameline(B, nextTok) && sameline(B, nextTok->next) && nextTok->op == '#' && nextTok->next->op == '#') {
                     TokenList output2(files);
                     output2.push_back(new Token(strAB, tok->location));
-                    nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
-                    output->deleteToken(A);
-                    output->takeTokens(output2);
+                    nextTok = expandHashHash(output2, loc, nextTok, macros, expandedmacros, parametertokens);
+                    output.deleteToken(A);
+                    output.takeTokens(output2);
                 } else {
-                    output->deleteToken(A);
+                    output.deleteToken(A);
                     TokenList tokens(files);
                     tokens.push_back(new Token(strAB, tok->location));
                     // for function like macros, push the (...)
                     if (tokensB.empty() && sameline(B,B->next) && B->next->op=='(') {
                         const MacroMap::const_iterator it = macros.find(strAB);
                         if (it != macros.end() && expandedmacros.find(strAB) == expandedmacros.end() && it->second.functionLike()) {
-                            const Token * const tok2 = appendTokens(&tokens, loc, B->next, macros, expandedmacros, parametertokens);
+                            const Token * const tok2 = appendTokens(tokens, loc, B->next, macros, expandedmacros, parametertokens);
                             if (tok2)
                                 nextTok = tok2->next;
                         }
@@ -2320,10 +2320,10 @@ namespace simplecpp {
                     if (expandResult)
                         expandToken(output, loc, tokens.cfront(), macros, expandedmacros, parametertokens);
                     else
-                        output->takeTokens(tokens);
+                        output.takeTokens(tokens);
                     for (Token *b = tokensB.front(); b; b = b->next)
                         b->location = loc;
-                    output->takeTokens(tokensB);
+                    output.takeTokens(tokensB);
                 }
             }
 
@@ -3195,7 +3195,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     if (it != macros.end()) {
         simplecpp::TokenList value(files);
         try {
-            *tok1 = it->second.expand(&value, tok, macros, files);
+            *tok1 = it->second.expand(value, tok, macros, files);
         } catch (simplecpp::Macro::Error &err) {
             if (outputList) {
                 simplecpp::Output out(files);
