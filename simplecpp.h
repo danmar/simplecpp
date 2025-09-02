@@ -6,10 +6,6 @@
 #ifndef simplecppH
 #define simplecppH
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#  define SIMPLECPP_WINDOWS
-#endif
-
 #include <cctype>
 #include <cstring>
 #include <iosfwd>
@@ -43,7 +39,7 @@
 #  define SIMPLECPP_LIB
 #endif
 
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
 #  include <cstdint>
 #else
 #  include <sys/stat.h>
@@ -471,7 +467,7 @@ namespace simplecpp {
 
     private:
         struct FileID {
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
             struct {
                 std::uint64_t VolumeSerialNumber;
                 struct {
@@ -495,7 +491,7 @@ namespace simplecpp {
 #endif
             struct Hasher {
                 std::size_t operator()(const FileID &id) const {
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
                     return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
                                                     id.fileIdInfo.VolumeSerialNumber);
 #else
