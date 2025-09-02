@@ -37,7 +37,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
     add_compile_options(-Wsuggest-attribute=noreturn)
-    add_compile_options_safe(-Wuseless-cast)
+    #add_compile_options_safe(-Wuseless-cast)  # triggered by _WIN32 code
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # TODO: bump warning level
@@ -51,14 +51,19 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # these are not really fixable
     add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors -Wno-weak-vtables)
     add_compile_options_safe(-Wno-unsafe-buffer-usage)
+    add_compile_options_safe(-Wno-nrvo)
     # we are not interested in these
     add_compile_options(-Wno-multichar -Wno-four-char-constants)
     # ignore C++11-specific warning
     add_compile_options(-Wno-suggest-override -Wno-suggest-destructor-override)
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
+    # for _WIN32
+    add_compile_options(-Wno-reserved-macro-identifier)
+    add_compile_options(-Wno-unused-macros)
     # TODO: fix these?
     add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
+
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
