@@ -37,7 +37,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
     add_compile_options(-Wsuggest-attribute=noreturn)
-    add_compile_options_safe(-Wuseless-cast)
+    if (NOT MINGW)
+        add_compile_options_safe(-Wuseless-cast)  # triggered by _WIN32 code
+    endif()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # TODO: bump warning level
@@ -62,6 +64,13 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-suggest-destructor-override)
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
+    if (MINGW)
+        add_compile_options(-Wno-reserved-macro-identifier)
+        add_compile_options(-Wno-unused-macros)
+    endif()
+    # these are experimental warning which might produce false positives
+    add_compile_options_safe(-Wno-thread-safety-negative)
+    add_compile_options_safe(-Wno-thread-safety-beta)
     # TODO: fix these?
     add_compile_options(-Wno-padded)
     add_compile_options(-Wno-sign-conversion)
