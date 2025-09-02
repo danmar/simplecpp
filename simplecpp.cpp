@@ -3,9 +3,12 @@
  * Copyright (C) 2016-2023 simplecpp team
  */
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#  define _WIN32_WINNT 0x0602
+#if defined(_WIN32)
+#  ifndef _WIN32_WINNT
+#    define _WIN32_WINNT 0x0602
+#  endif
 #  define NOMINMAX
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  undef ERROR
 #endif
@@ -33,7 +36,7 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
 #  include <mutex>
 #endif
 #include <unordered_map>
@@ -2415,7 +2418,7 @@ namespace simplecpp {
 #endif
 }
 
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
 static bool isAbsolutePath(const std::string &path)
 {
     if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
@@ -2941,7 +2944,7 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
     return tok;
 }
 
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
 
 class NonExistingFilesCache {
 public:
@@ -2973,14 +2976,14 @@ static NonExistingFilesCache nonExistingFilesCache;
 
 static std::string openHeaderDirect(std::ifstream &f, const std::string &path)
 {
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
     if (nonExistingFilesCache.contains(path))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
     f.open(path.c_str());
     if (f.is_open())
         return path;
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
     nonExistingFilesCache.add(path);
 #endif
     return "";
@@ -3082,8 +3085,8 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
 
 bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 {
-#ifdef SIMPLECPP_WINDOWS
-    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+#ifdef _WIN32
+    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile == INVALID_HANDLE_VALUE)
         return false;
@@ -3108,7 +3111,7 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 
 simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, FileDataCache cache)
 {
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
     if (dui.clearIncludeCache)
         nonExistingFilesCache.clear();
 #endif
@@ -3243,7 +3246,7 @@ static std::string getTimeDefine(const struct tm *timep)
 
 void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, simplecpp::FileDataCache &cache, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
 {
-#ifdef SIMPLECPP_WINDOWS
+#ifdef _WIN32
     if (dui.clearIncludeCache)
         nonExistingFilesCache.clear();
 #endif
