@@ -3083,7 +3083,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
 bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 {
 #ifdef SIMPLECPP_WINDOWS
-    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile == INVALID_HANDLE_VALUE)
         return false;
