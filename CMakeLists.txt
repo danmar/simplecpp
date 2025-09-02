@@ -49,16 +49,25 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # no need for c++98 compatibility
     add_compile_options(-Wno-c++98-compat-pedantic)
     # these are not really fixable
-    add_compile_options(-Wno-exit-time-destructors -Wno-global-constructors -Wno-weak-vtables)
+    add_compile_options(-Wno-exit-time-destructors)
+    add_compile_options(-Wno-global-constructors)
+    add_compile_options(-Wno-weak-vtables)
     add_compile_options_safe(-Wno-unsafe-buffer-usage)
+    add_compile_options_safe(-Wno-nrvo)
     # we are not interested in these
-    add_compile_options(-Wno-multichar -Wno-four-char-constants)
+    add_compile_options(-Wno-multichar)
+    add_compile_options(-Wno-four-char-constants)
     # ignore C++11-specific warning
-    add_compile_options(-Wno-suggest-override -Wno-suggest-destructor-override)
+    add_compile_options(-Wno-suggest-override)
+    add_compile_options(-Wno-suggest-destructor-override)
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
     # TODO: fix these?
-    add_compile_options(-Wno-padded -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-shorten-64-to-32 -Wno-shadow-field-in-constructor)
+    add_compile_options(-Wno-padded)
+    add_compile_options(-Wno-sign-conversion)
+    add_compile_options(-Wno-implicit-int-conversion)
+    add_compile_options(-Wno-shorten-64-to-32)
+    add_compile_options(-Wno-shadow-field-in-constructor)
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
