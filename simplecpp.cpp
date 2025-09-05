@@ -58,6 +58,12 @@
 #  include <sys/stat.h>
 #endif
 
+#ifdef __GNUC__
+#  define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#  define unlikely(x) (x)
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -505,14 +511,14 @@ public:
 private:
     void read_internal() {
         // check if we are in the last chunk
-        if (buf_idx >= buf_len) {
+        if (unlikely(buf_idx >= buf_len)) {
             if (buf_len != sizeof(buf)) {
                 lastStatus = EOF;
                 return;
             }
         }
 
-        if (buf_idx == -1 || buf_idx == buf_len)
+        if (unlikely(buf_idx == -1 || buf_idx == buf_len))
         {
             buf_idx = 0;
             buf_len = fread(buf, 1, sizeof(buf), file);
