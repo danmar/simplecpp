@@ -3191,7 +3191,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
 static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
 {
     const simplecpp::Token * const tok = *tok1;
-    const simplecpp::MacroMap::const_iterator it = macros.find(tok->str());
+    const simplecpp::MacroMap::const_iterator it = tok->name ? macros.find(tok->str()) : macros.end();
     if (it != macros.end()) {
         simplecpp::TokenList value(files);
         try {
