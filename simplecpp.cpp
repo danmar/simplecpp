@@ -3751,6 +3751,8 @@ simplecpp::cstd_t simplecpp::getCStd(const std::string &std)
         return C17;
     if (std == "c23" || std == "gnu23" || std == "c2x" || std == "gnu2x")
         return C23;
+    if (std == "c2y" || std == "gnu2y")
+        return C2Y;
     return CUnknown;
 }
 
@@ -3772,6 +3774,10 @@ std::string simplecpp::getCStdString(cstd_t std)
         // Clang 14, 15, 16, 17 return "202000L"
         // Clang 9, 10, 11, 12, 13, 14, 15, 16, 17 do not support "c23" and "gnu23"
         return "202311L";
+    case C2Y:
+        // supported by GCC 15+ and Clang 19+
+        // Clang 19, 20, 21, 22 return "202400L"
+        return "202500L";
     case CUnknown:
         return "";
     }
@@ -3823,7 +3829,7 @@ std::string simplecpp::getCppStdString(cppstd_t std)
         // Clang 17, 18 return "202302L"
         return "202302L";
     case CPP26:
-        // supported by Clang 17+
+        // supported by GCC 14+ and Clang 17+
         return "202400L";
     case CPPUnknown:
         return "";
