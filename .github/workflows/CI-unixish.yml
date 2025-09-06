@@ -53,7 +53,7 @@ jobs:
     - name: Install missing software on macos
       if: contains(matrix.os, 'macos')
       run: |
-        brew install coreutils
+        brew install coreutils diffutils
 
     - name: Install missing Python packages
       run: |
