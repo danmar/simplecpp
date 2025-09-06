@@ -54,7 +54,7 @@ jobs:
     - name: Install missing software on macos
       if: contains(matrix.os, 'macos')
       run: |
-        brew install coreutils
+        brew install coreutils diffutils
 
     - name: Install missing Python packages
       run: |
@@ -161,7 +161,7 @@ jobs:
         
         make clean
         make -j$(nproc) CXXOPTS="-O2 -g3" simplecpp
-        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 STRICT=1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
         
         # PGO - start
@@ -192,3 +192,11 @@ jobs:
         name: Callgrind Output - ${{ matrix.compiler }}
         path: |
           ./callgrind.*
+
+    # TODO: how to store this
+    - uses: actions/upload-artifact@v4
+      if: false #  (matrix.os == 'ubuntu-24.04') && (success() || failure())
+      with:
+        name: Actual selfcheck result - ${{ matrix.compiler }}
+        path: |
+          ./selfcheck.exp
