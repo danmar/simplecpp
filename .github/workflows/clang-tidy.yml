@@ -48,4 +48,4 @@ jobs:
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-22 -q -j $(nproc) -p=cmake.output
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output
