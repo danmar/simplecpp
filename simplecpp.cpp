@@ -1509,7 +1509,12 @@ namespace simplecpp {
         }
 
         Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
-            *this = other;
+            // TODO: remove the try-catch - see #537
+            // avoid bugprone-exception-escape clang-tidy warning
+            try {
+                *this = other;
+            }
+            catch (const Error&) {} // NOLINT(bugprone-empty-catch)
         }
 
         ~Macro() {
