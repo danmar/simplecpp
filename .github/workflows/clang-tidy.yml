@@ -19,6 +19,10 @@ jobs:
 
       - name: Install missing software
         run: |
+          sudo apt-get remove -y man-db
+
+      - name: Install missing software
+        run: |
           sudo apt-get update
           sudo apt-get install -y cmake make
 
