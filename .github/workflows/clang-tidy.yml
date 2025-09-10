@@ -19,6 +19,10 @@ jobs:
 
       - name: Install missing software
         run: |
+          sudo apt-get remove -y man-db
+
+      - name: Install missing software
+        run: |
           sudo apt-get update
           sudo apt-get install -y cmake make
 
@@ -26,19 +30,19 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 20
-          sudo apt-get install clang-tidy-20
+          sudo ./llvm.sh 22
+          sudo apt-get install clang-tidy-22
 
       - name: Verify clang-tidy configuration
         run: |
-          clang-tidy-20 --verify-config
+          clang-tidy-22 --verify-config
 
       - name: Prepare CMake
         run: |
           cmake -S . -B cmake.output -G "Unix Makefiles" -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         env:
-          CXX: clang-20
+          CXX: clang-22
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-20 -q -j $(nproc) -p=cmake.output
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output
