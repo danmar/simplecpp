@@ -34,6 +34,18 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 22
 
+      - name: Generate corpus
+        run: |
+          mkdir corpus_test
+          make testrunner CXXOPTS="-DSTORE_INPUT_DIR=\"\\\"$(pwd)/corpus_test\\\"\""
+          ./testrunner
+
+      - name: Upload corpus (testrunner)
+        uses: actions/upload-artifact@v6
+        with:
+          name: corpus_test
+          path: ./corpus_test
+
       - name: Build fuzzer
         id: build
         run: |
@@ -48,7 +60,7 @@ jobs:
         run: |
           mkdir corpus
           mkdir artifacts
-          ./fuzz -only_ascii=1 -timeout=5 -fork=$(nproc) -use_value_profile=1 -reduce_inputs=1 -timeout_exitcode=0 -max_total_time=60 -artifact_prefix=./artifacts/ corpus
+          ./fuzz -only_ascii=1 -timeout=5 -fork=$(nproc) -use_value_profile=1 -reduce_inputs=1 -timeout_exitcode=0 -max_total_time=60 -artifact_prefix=./artifacts/ corpus corpus_test
           # if a crash happens with a file from the corpus the fuzzer will not fail - so fail if any artifacts have been written
           test $(find ./artifacts -type f | wc -l) -eq 0
         env:
