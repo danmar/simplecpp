@@ -57,9 +57,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # we are not interested in these
     add_compile_options(-Wno-multichar)
     add_compile_options(-Wno-four-char-constants)
-    # ignore C++11-specific warning
-    add_compile_options(-Wno-suggest-override)
-    add_compile_options(-Wno-suggest-destructor-override)
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
     # TODO: fix these?
