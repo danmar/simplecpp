@@ -45,7 +45,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     if (expected != actual) {
         numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
-        std::cerr << "line " << line << std::endl;
+        std::cerr << "line test.cpp:" << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
     }
