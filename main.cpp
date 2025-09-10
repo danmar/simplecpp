@@ -9,8 +9,9 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
+#include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <utility>
 #include <vector>
 
@@ -27,7 +28,12 @@ int main(int argc, char **argv)
 {
     bool error = false;
     const char *filename = nullptr;
-    bool use_istream = false;
+    enum {
+        File,
+        Fstream,
+        Sstream,
+        CharBuffer
+    } toklist_inf = File;
     bool fail_on_error = false;
     bool linenrs = false;
 
@@ -85,9 +91,6 @@ int main(int argc, char **argv)
                         break;
                     }
                     dui.includes.emplace_back(std::move(value));
-                } else if (std::strncmp(arg, "-is",3)==0) {
-                    found = true;
-                    use_istream = true;
                 }
                 break;
             case 's':
@@ -101,6 +104,10 @@ int main(int argc, char **argv)
                     }
                     dui.std = std::move(value);
                 }
+                else if (std::strncmp(arg, "-ss",3)==0) {
+                    toklist_inf = Sstream;
+                    found = true;
+                }
                 break;
             case 'q':
                 found = true;
@@ -111,12 +118,28 @@ int main(int argc, char **argv)
                 error_only = true;
                 break;
             case 'f':
-                found = true;
-                fail_on_error = true;
+                if (std::strncmp(arg, "-file",5)==0) {
+                    toklist_inf = File;
+                    found = true;
+                }
+                else if (std::strncmp(arg, "-fs",3)==0) {
+                    toklist_inf = Fstream;
+                    found = true;
+                }
+                else {
+                    fail_on_error = true;
+                    found = true;
+                }
                 break;
             case 'l':
                 linenrs = true;
                 found = true;
+                break;
+            case 'b':
+                if (std::strncmp(arg, "-buf",4)==0) {
+                    toklist_inf = CharBuffer;
+                    found = true;
+                }
                 break;
             }
             if (!found) {
@@ -148,7 +171,10 @@ int main(int argc, char **argv)
         std::cout << "  -UNAME          Undefine NAME." << std::endl;
         std::cout << "  -std=STD        Specify standard." << std::endl;
         std::cout << "  -q              Quiet mode (no output)." << std::endl;
-        std::cout << "  -is             Use std::istream interface." << std::endl;
+        std::cout << "  -file           Consume input as file pointer (default)." << std::endl;
+        std::cout << "  -fs             Consume input as file stream." << std::endl;
+        std::cout << "  -ss             Consume input as string string." << std::endl;
+        std::cout << "  -buf            Consume input as char buffer." << std::endl;
         std::cout << "  -e              Output errors only." << std::endl;
         std::cout << "  -f              Fail when errors were encountered (exitcode 1)." << std::endl;
         std::cout << "  -l              Print lines numbers." << std::endl;
@@ -188,8 +214,21 @@ int main(int argc, char **argv)
     simplecpp::TokenList outputTokens(files);
     {
         simplecpp::TokenList *rawtokens;
-        if (use_istream) {
-            rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
+        if (toklist_inf == Fstream) {
+            rawtokens = new simplecpp::TokenList(f,files,filename,&outputList);
+        }
+        else if (toklist_inf == Sstream || toklist_inf == CharBuffer) {
+            std::ostringstream oss;
+            oss << f.rdbuf();
+            f.close();
+            const std::string s = oss.str();
+            if (toklist_inf == Sstream) {
+                std::istringstream iss(s);
+                rawtokens = new simplecpp::TokenList(iss,files,filename,&outputList);
+            }
+            else {
+                rawtokens = new simplecpp::TokenList(s.data(),s.size(),files,filename,&outputList);
+            }
         } else {
             f.close();
             rawtokens = new simplecpp::TokenList(filename,files,&outputList);
