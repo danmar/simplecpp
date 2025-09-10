@@ -3227,14 +3227,14 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     return cache;
 }
 
-static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
+static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token *&tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
 {
-    const simplecpp::Token * const tok = *tok1;
+    const simplecpp::Token * const tok = tok1;
     const simplecpp::MacroMap::const_iterator it = tok->name ? macros.find(tok->str()) : macros.end();
     if (it != macros.end()) {
         simplecpp::TokenList value(files);
         try {
-            *tok1 = it->second.expand(value, tok, macros, files);
+            tok1 = it->second.expand(value, tok, macros, files);
         } catch (const simplecpp::Macro::Error &err) {
             if (outputList) {
                 simplecpp::Output out = {
@@ -3250,7 +3250,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     } else {
         if (!tok->comment)
             output.push_back(new simplecpp::Token(*tok));
-        *tok1 = tok->next;
+        tok1 = tok->next;
     }
     return true;
 }
@@ -3488,7 +3488,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 TokenList inc2(files);
                 if (!inc1.empty() && inc1.cfront()->name) {
                     const Token *inctok = inc1.cfront();
-                    if (!preprocessToken(inc2, &inctok, macros, files, outputList)) {
+                    if (!preprocessToken(inc2, inctok, macros, files, outputList)) {
                         output.clear();
                         return;
                     }
@@ -3657,7 +3657,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
 
                         const Token *tmp = tok;
-                        if (!preprocessToken(expr, &tmp, macros, files, outputList)) {
+                        if (!preprocessToken(expr, tmp, macros, files, outputList)) {
                             output.clear();
                             return;
                         }
@@ -3755,7 +3755,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const Location loc(rawtok->location);
         TokenList tokens(files);
 
-        if (!preprocessToken(tokens, &rawtok, macros, files, outputList)) {
+        if (!preprocessToken(tokens, rawtok, macros, files, outputList)) {
             output.clear();
             return;
         }
