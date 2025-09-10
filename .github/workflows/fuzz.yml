@@ -34,6 +34,18 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 21
 
+      - name: Generate corpus
+        run: |
+          mkdir corpus_test
+          make testrunner CXXOPTS="-DSTORE_INPUT_DIR=\"\\\"$(pwd)/corpus_test\\\"\""
+          ./testrunner
+
+      - name: Upload corpus (testrunner)
+        uses: actions/upload-artifact@v6
+        with:
+          name: corpus_test
+          path: ./corpus_test
+
       - name: Build fuzzer
         id: build
         run: |
