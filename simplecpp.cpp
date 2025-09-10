@@ -730,8 +730,9 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     ch = stream.readChar();
                 }
                 stream.ungetChar();
-                push_back(new Token(currentToken, location));
+                const Location l = location;
                 location.adjust(currentToken);
+                push_back(new Token(std::move(currentToken), l));
                 continue;
             }
         }
@@ -878,21 +879,26 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 newlines++;
             }
 
-            if (prefix.empty())
-                push_back(new Token(s, location, !!std::isspace(stream.peekChar()))); // push string without newlines
-            else
-                back()->setstr(prefix + s);
+            const Location l = location;
 
+            bool adjust = true;
             if (newlines > 0) {
                 const Token * const llTok = lastLineTok();
                 if (llTok && llTok->op == '#' && llTok->next && (llTok->next->str() == "define" || llTok->next->str() == "pragma") && llTok->next->next) {
                     multiline += newlines;
                     location.adjust(s);
-                    continue;
+                    adjust = false;
                 }
             }
 
-            location.adjust(currentToken);
+            if (adjust)
+                location.adjust(currentToken);
+
+            if (prefix.empty())
+                push_back(new Token(std::move(s), l, !!std::isspace(stream.peekChar()))); // push string without newlines
+            else
+                back()->setstr(prefix + s);
+
             continue;
         }
 
@@ -909,12 +915,12 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             }
         }
 
-        push_back(new Token(currentToken, location, !!std::isspace(stream.peekChar())));
-
+        const Location l = location;
         if (multiline)
             location.col += currentToken.size();
         else
             location.adjust(currentToken);
+        push_back(new Token(std::move(currentToken), l, !!std::isspace(stream.peekChar())));
     }
 
     combineOperators();
@@ -1643,7 +1649,7 @@ namespace simplecpp {
 
         /** base class for errors */
         struct Error {
-            Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
+            Error(const Location &loc, std::string s) : location(loc), what(std::move(s)) {}
             const Location location;
             const std::string what;
         };
@@ -1680,8 +1686,8 @@ namespace simplecpp {
         };
     private:
         /** Create new token where Token::macro is set for replaced tokens */
-        Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
-            Token *tok = new Token(str,loc);
+        Token *newMacroToken(TokenString str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
+            Token *tok = new Token(std::move(str),loc);
             if (replaced)
                 tok->macro = nameTokDef->str();
             if (expandedFromToken)
@@ -2300,7 +2306,7 @@ namespace simplecpp {
                     output->takeTokens(tokensB);
                 } else if (sameline(B, nextTok) && sameline(B, nextTok->next) && nextTok->op == '#' && nextTok->next->op == '#') {
                     TokenList output2(files);
-                    output2.push_back(new Token(strAB, tok->location));
+                    output2.push_back(new Token(std::move(strAB), tok->location));
                     nextTok = expandHashHash(&output2, loc, nextTok, macros, expandedmacros, parametertokens);
                     output->deleteToken(A);
                     output->takeTokens(output2);
@@ -3455,7 +3461,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         hdr += tok->str();
                     }
                     inc2.clear();
-                    inc2.push_back(new Token(hdr, inc1.cfront()->location));
+                    inc2.push_back(new Token(std::move(hdr), inc1.cfront()->location));
                     inc2.front()->op = '<';
                 }
 
@@ -3615,7 +3621,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 E += (E.empty() ? "" : " ") + tok->str();
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
-                            ifCond->push_back(IfCond(rawtok->location, E, result));
+                            ifCond->push_back(IfCond(rawtok->location, std::move(E), result));
                         } else {
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
@@ -3711,7 +3717,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             else if (output.back())
                 output.back()->setstr(output.cback()->str() + s);
             else
-                output.push_back(new Token(s, loc));
+                output.push_back(new Token(std::move(s), loc));
         } else {
             output.takeTokens(tokens);
         }
