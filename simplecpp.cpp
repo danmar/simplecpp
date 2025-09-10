@@ -2442,11 +2442,19 @@ namespace simplecpp {
     bool isAbsolutePath(const std::string &path)
     {
 #ifdef SIMPLECPP_WINDOWS
-        if (path.length() >= 3 && path[0] > 0 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+        // C:\\path\\file
+        // C:/path/file
+        if (path.length() >= 3 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
             return true;
-        return path.length() > 1U && (path[0] == '/' || path[0] == '\\');
+
+        // \\host\path\file
+        // //host/path/file
+        if (path.length() >= 2 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/'))
+            return true;
+
+        return false;
 #else
-        return path.length() > 1U && path[0] == '/';
+        return !path.empty() && path[0] == '/';
 #endif
     }
 }

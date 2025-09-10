@@ -3261,14 +3261,14 @@ static void isAbsolutePath() {
     //ASSERT_EQUALS(true, simplecpp::isAbsolutePath("\\")); // TODO
     ASSERT_EQUALS(false, simplecpp::isAbsolutePath("0:\\foo\\bar"));
     ASSERT_EQUALS(false, simplecpp::isAbsolutePath("0:/foo/bar"));
-    //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\foo\\bar")); // TODO
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\foo\\bar"));
     //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\\\")); // TODO
     //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("//")); // TODO
-    //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("/foo/bar")); // TODO
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("/foo/bar"));
     ASSERT_EQUALS(false, simplecpp::isAbsolutePath("/"));
 #else
     ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/foo/bar"));
-    //ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/")); // TODO
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/"));
     ASSERT_EQUALS(true, simplecpp::isAbsolutePath("//host/foo/bar"));
 
     ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo/bar"));
