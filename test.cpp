@@ -3246,6 +3246,26 @@ static void safe_api()
 #endif
 }
 
+static void isAbsolutePath() {
+#ifdef _WIN32
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:\\foo\\bar"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:/foo/bar"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("\\\\foo\\bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo\\bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:foo.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:foo\\bar.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("bar.cpp"));
+    //ASSERT_EQUALS(true, simplecpp::isAbsolutePath("\\")); // TODO
+#else
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/foo/bar"));
+    //ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/")); // TODO
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo.cpp"));
+#endif
+}
+
 // crashes detected by fuzzer
 static void fuzz_crash()
 {
@@ -3524,6 +3544,8 @@ int main(int argc, char **argv)
     TEST_CASE(preprocess_files);
 
     TEST_CASE(safe_api);
+
+    TEST_CASE(isAbsolutePath);
 
     TEST_CASE(fuzz_crash);
 
