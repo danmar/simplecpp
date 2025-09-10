@@ -3694,16 +3694,13 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         tok = tmp->previous;
                     }
                     try {
+                        const long long result = evaluate(expr, dui, sizeOfType);
+                        conditionIsTrue = (result != 0);
                         if (ifCond) {
                             std::string E;
                             for (const simplecpp::Token *tok = expr.cfront(); tok; tok = tok->next)
                                 E += (E.empty() ? "" : " ") + tok->str();
-                            const long long result = evaluate(expr, dui, sizeOfType);
-                            conditionIsTrue = (result != 0);
                             ifCond->emplace_back(rawtok->location, E, result);
-                        } else {
-                            const long long result = evaluate(expr, dui, sizeOfType);
-                            conditionIsTrue = (result != 0);
                         }
                     } catch (const std::runtime_error &e) {
                         if (outputList) {
