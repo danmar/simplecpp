@@ -31,7 +31,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
   defs="$defs -D__x86_64__"
-  defs="$defs -D__INTPTR_TYPE__=long int"  # MSYS
+  defs="$defs -D__INTPTR_TYPE__='long int'"  # MSYS
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
