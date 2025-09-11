@@ -33,6 +33,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
+
   find /usr -name cctype
   find /usr/include -name cctype
   find /usr -name stddef.h
@@ -56,6 +57,9 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   fi
   if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++" ]; then  # MSYS
     inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++"
+  fi
+  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++/$gcc_target" ]; then  # MSYS
+    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++/$gcc_target"
   fi
   if [ -d "/usr/include/$gcc_target" ]; then
     inc="$inc -I/usr/include/$gcc_target"
