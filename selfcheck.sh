@@ -19,7 +19,7 @@ if [ "$cxx_type" = "Ubuntu" ]; then
   cxx_type=$($CXX --version | head -1 | cut -d' ' -f2)
 fi
 # TODO: how to get built-in include paths from compiler?
-if [ "$cxx_type" = "g++" ]; then
+if [ [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ] ]; then
   gcc_ver=$($CXX -dumpversion)
   defs=
   defs="$defs -D__GNUC__"
