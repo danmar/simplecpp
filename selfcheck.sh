@@ -20,7 +20,19 @@ cxx_type=$($CXX --version | head -1 | cut -d' ' -f1)
 if [ "$cxx_type" = "Ubuntu" ]; then
   cxx_type=$($CXX --version | head -1 | cut -d' ' -f2)
 fi
-# TODO: how to get built-in include paths from compiler?
+# TODO: get built-in include paths from compiler
+# $CXX -x c++ -v -c - < /dev/null
+# ...
+# include <...> search starts here:
+#  /usr/include/c++/14
+#  /usr/include/x86_64-linux-gnu/c++/14
+#  /usr/include/c++/14/backward
+#  /usr/lib/gcc/x86_64-linux-gnu/14/include
+#  /usr/local/include
+#  /usr/include/x86_64-linux-gnu
+#  /usr/include
+# End of search list.
+#
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   gcc_ver=$($CXX -dumpversion)
   gcc_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
@@ -39,7 +51,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   find /usr -name stddef.h
   find /usr/include -name stddef.h
   find /usr -name c++config.h
-  cat /usr/lib/gcc/x86_64-pc-cygwin/15.2.0/include/c++/bits/requires_hosted.h
+  cat /usr/include/sys/_intsup.h
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
