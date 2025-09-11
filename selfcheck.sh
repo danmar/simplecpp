@@ -56,6 +56,12 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
     inc="$inc -I/usr/include/x86_64-linux-gnu"
     inc="$inc -I/usr/include/x86_64-linux-gnu/c++/$gcc_ver"
   fi
+  if [ -d "/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include" ]; then  # MSYS
+    inc="$inc -I/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include"
+  fi
+  if [ -d "/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include/c++" ]; then  # MSYS
+    inc="$inc -I/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include/c++"
+  fi
 elif [ "$cxx_type" = "clang" ]; then
   clang_ver=$($CXX -dumpversion)
   clang_ver=${clang_ver%%.*}
