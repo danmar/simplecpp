@@ -30,7 +30,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
-  find -name cctype /usr/include
+  find /usr/include -name cctype
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
@@ -68,6 +68,7 @@ elif [ "$cxx_type" = "clang" ]; then
   defs="$defs -D__has_include_next(x)=(0)"
   defs="$defs -D__building_module(x)=(0)"  # MSYS
 
+  find /usr/include -name cctype
   # some required include paths might differ per distro
   inc=
   if [ -d "/usr/include/c++/v1" ]; then
