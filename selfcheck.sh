@@ -33,8 +33,12 @@ if [ "$cxx_type" = "g++" ]; then
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
-  inc="$inc -I/usr/include/linux"
-  inc="$inc -I/usr/include/c++/$gcc_ver"
+  if [ -d "/usr/include/linux" ]; then  # Manjaro, ubuntu
+    inc="$inc -I/usr/include/linux"
+  fi
+  if [ -d "/usr/include/c++/$gcc_ver" ]; then  # Manjaro, ubuntu
+    inc="$inc -I/usr/include/c++/$gcc_ver"
+  fi
   if [ -d "/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu" ]; then
     inc="$inc -I/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu"
   fi
@@ -61,7 +65,8 @@ elif [ "$cxx_type" = "clang" ]; then
   defs="$defs -D__has_attribute(x)=(0)"
   defs="$defs -D__has_cpp_attribute(x)=(0)"
   defs="$defs -D__has_include_next(x)=(0)"
-  defs="$defs -D__has_builtin(x)=(1)"
+  defs="$defs -D__building_module(x)=(ß)"  # MSYS
+
   # some required include paths might differ per distro
   inc=
   if [ -d "/usr/include/c++/v1" ]; then
