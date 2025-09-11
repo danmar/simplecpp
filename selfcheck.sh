@@ -21,6 +21,7 @@ fi
 # TODO: how to get built-in include paths from compiler?
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   gcc_ver=$($CXX -dumpversion)
+  gcc_target=$(gcc -v 2>&1 | grep Target: | cut -d' ' -f2)
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
@@ -43,24 +44,18 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   if [ -d "/usr/include/c++/$gcc_ver" ]; then  # Manjaro, ubuntu
     inc="$inc -I/usr/include/c++/$gcc_ver"
   fi
-  if [ -d "/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu" ]; then
-    inc="$inc -I/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu"
+  if [ -d "/usr/include/c++/$gcc_ver/$gcc_target" ]; then
+    inc="$inc -I/usr/include/c++/$gcc_ver/$gcc_target"
   fi
-  if [ -d "/usr/lib/gcc/x86_64-pc-linux-gnu/$gcc_ver/include" ]; then
-    inc="$inc -I/usr/lib/gcc/x86_64-pc-linux-gnu/$gcc_ver/include"
+  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include" ]; then
+    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include"
   fi
-  if [ -d "/usr/lib/gcc/x86_64-linux-gnu/$gcc_ver/include" ]; then
-    inc="$inc -I/usr/lib/gcc/x86_64-linux-gnu/$gcc_ver/include"
+  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++" ]; then  # MSYS
+    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++"
   fi
-  if [ -d "/usr/include/x86_64-linux-gnu" ]; then
-    inc="$inc -I/usr/include/x86_64-linux-gnu"
-    inc="$inc -I/usr/include/x86_64-linux-gnu/c++/$gcc_ver"
-  fi
-  if [ -d "/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include" ]; then  # MSYS
-    inc="$inc -I/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include"
-  fi
-  if [ -d "/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include/c++" ]; then  # MSYS
-    inc="$inc -I/usr/lib/gcc/x86_64-pc-cygwin/$gcc_ver/include/c++"
+  if [ -d "/usr/include/$gcc_target" ]; then
+    inc="$inc -I/usr/include/$gcc_target"
+    inc="$inc -I/usr/include/$gcc_target/c++/$gcc_ver"
   fi
 elif [ "$cxx_type" = "clang" ]; then
   clang_ver=$($CXX -dumpversion)
