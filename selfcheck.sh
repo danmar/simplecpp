@@ -30,6 +30,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
+  find -name cctype /usr/include
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
@@ -65,7 +66,7 @@ elif [ "$cxx_type" = "clang" ]; then
   defs="$defs -D__has_attribute(x)=(0)"
   defs="$defs -D__has_cpp_attribute(x)=(0)"
   defs="$defs -D__has_include_next(x)=(0)"
-  defs="$defs -D__building_module(x)=(ß)"  # MSYS
+  defs="$defs -D__building_module(x)=(0)"  # MSYS
 
   # some required include paths might differ per distro
   inc=
@@ -76,7 +77,9 @@ elif [ "$cxx_type" = "clang" ]; then
     inc="$inc -I/usr/lib/llvm-$clang_ver/include/c++/v1"
   fi
   inc="$inc -I/usr/include"
-  inc="$inc -I/usr/lib/clang/$clang_ver/include"
+  if [ -d "/usr/lib/clang/$clang_ver/include" ]; then  # Manjaro, ubuntu
+    inc="$inc -I/usr/lib/clang/$clang_ver/include"
+  fi
   if [ -d "/usr/include/x86_64-linux-gnu" ]; then
     inc="$inc -I/usr/include/x86_64-linux-gnu"
   fi
