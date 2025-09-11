@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 output=$(./simplecpp simplecpp.cpp -e -f 2>&1)
 ec=$?
 errors=$(echo "$output" | grep -v 'Header not found: <')
@@ -21,7 +23,7 @@ fi
 # TODO: how to get built-in include paths from compiler?
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   gcc_ver=$($CXX -dumpversion)
-  gcc_target=$(gcc -v 2>&1 | grep Target: | cut -d' ' -f2)
+  gcc_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
@@ -35,6 +37,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   find /usr/include -name cctype
   find /usr -name stddef.h
   find /usr/include -name stddef.h
+  find /usr -name c++config.h
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
@@ -60,6 +63,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
 elif [ "$cxx_type" = "clang" ]; then
   clang_ver=$($CXX -dumpversion)
   clang_ver=${clang_ver%%.*}
+  clang_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
   defs=
   defs="$defs -D__BYTE_ORDER__"
   defs="$defs -D__linux__"
@@ -88,8 +92,8 @@ elif [ "$cxx_type" = "clang" ]; then
   if [ -d "/usr/lib/clang/$clang_ver/include" ]; then  # Manjaro, ubuntu
     inc="$inc -I/usr/lib/clang/$clang_ver/include"
   fi
-  if [ -d "/usr/include/x86_64-linux-gnu" ]; then
-    inc="$inc -I/usr/include/x86_64-linux-gnu"
+  if [ -d "/usr/include/$clang_target" ]; then
+    inc="$inc -I/usr/include/$clang_target"
   fi
 elif [ "$cxx_type" = "Apple" ]; then
   appleclang_ver=$($CXX -dumpversion)
