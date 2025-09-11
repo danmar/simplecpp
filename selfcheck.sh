@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 output=$(./simplecpp simplecpp.cpp -e -f 2>&1)
 ec=$?
 errors=$(echo "$output" | grep -v 'Header not found: <')
@@ -20,28 +18,20 @@ cxx_type=$($CXX --version | head -1 | cut -d' ' -f1)
 if [ "$cxx_type" = "Ubuntu" ]; then
   cxx_type=$($CXX --version | head -1 | cut -d' ' -f2)
 fi
-# TODO: get built-in include paths from compiler
-# $CXX -x c++ -v -c - < /dev/null
-# ...
-# include <...> search starts here:
-#  /usr/include/c++/14
-#  /usr/include/x86_64-linux-gnu/c++/14
-#  /usr/include/c++/14/backward
-#  /usr/lib/gcc/x86_64-linux-gnu/14/include
-#  /usr/local/include
-#  /usr/include/x86_64-linux-gnu
-#  /usr/include
-# End of search list.
-#
+
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   gcc_ver=$($CXX -dumpversion)
   gcc_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
+  # TODO: get built-in include paths from compiler
+  $CXX -x c++ -v -c - < /dev/null
+
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
   defs="$defs -D__x86_64__"
+  defs="$defs -D__INTPTR_TYPE__=long int"  # MSYS
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
@@ -81,6 +71,9 @@ elif [ "$cxx_type" = "clang" ]; then
   clang_ver=$($CXX -dumpversion)
   clang_ver=${clang_ver%%.*}
   clang_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
+  # TODO: get built-in include paths from compiler
+  $CXX -x c++ -v -c - < /dev/null
+
   defs=
   defs="$defs -D__BYTE_ORDER__"
   defs="$defs -D__linux__"
@@ -115,6 +108,7 @@ elif [ "$cxx_type" = "clang" ]; then
 elif [ "$cxx_type" = "Apple" ]; then
   appleclang_ver=$($CXX -dumpversion)
   appleclang_ver=${appleclang_ver%%.*}
+  # TODO: get include paths from compiler
   xcode_path="/Applications/Xcode_16.4.app"
   if [ ! -d "$xcode_path" ]; then
     xcode_path="/Applications/Xcode_15.2.app"
