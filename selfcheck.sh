@@ -38,6 +38,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   find /usr -name stddef.h
   find /usr/include -name stddef.h
   find /usr -name c++config.h
+  cat /usr/lib/gcc/x86_64-pc-cygwin/15.2.0/include/c++/bits/requires_hosted.h
   # some required include paths might differ per distro
   inc=
   inc="$inc -I/usr/include"
