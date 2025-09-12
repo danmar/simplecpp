@@ -15,7 +15,7 @@ if [ -z "$CXX" ]; then
 fi
 
 cxx_type=$($CXX --version | head -1 | cut -d' ' -f1)
-if [ "$cxx_type" = "Ubuntu" ]; then
+if [ "$cxx_type" = "Ubuntu" ] || [ "$cxx_type" = "Debian" ]; then
   cxx_type=$($CXX --version | head -1 | cut -d' ' -f2)
 fi
 
