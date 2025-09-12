@@ -70,6 +70,7 @@ elif [ "$cxx_type" = "clang" ]; then
   #  inc="$inc -I$line"
   #done <<< "$($CXX -x c++ -stdlib=libc++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]')"
 elif [ "$cxx_type" = "Apple" ]; then
+  find /Applications/Xcode_15.4.app -name endian.h
   defs=
   defs="$defs -D__BYTE_ORDER__"
   defs="$defs -D__APPLE__"
