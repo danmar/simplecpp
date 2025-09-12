@@ -3,11 +3,18 @@
  * Copyright (C) 2016-2023 simplecpp team
  */
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
-#  define _WIN32_WINNT 0x0602
+#if defined(_WIN32)
+#  ifndef _WIN32_WINNT
+#    define _WIN32_WINNT 0x0602
+#  endif
 #  define NOMINMAX
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  undef ERROR
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
+#  define SIMPLECPP_WINDOWS
 #endif
 
 #include "simplecpp.h"
@@ -3082,8 +3089,8 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
 
 bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 {
-#ifdef SIMPLECPP_WINDOWS
-    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+#ifdef _WIN32
+    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile == INVALID_HANDLE_VALUE)
         return false;
