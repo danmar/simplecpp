@@ -92,8 +92,10 @@ elif [ "$cxx_type" = "Apple" ]; then
   inc=
   while read line
   do
+    echo $line
     inc="$inc -I$line"
-  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | grep -v '(framework directory)')"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | cut -d' ' -f1)"
+  echo $inc
 else
   echo "unknown compiler '$cxx_type'"
   exit 1
