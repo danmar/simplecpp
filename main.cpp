@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 int main(int argc, char **argv)
@@ -30,49 +31,76 @@ int main(int argc, char **argv)
             const char c = arg[1];
             switch (c) {
             case 'D': { // define symbol
-                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.defines.push_back(value);
                 found = true;
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
+                if (!value) {
+                    std::cout << "error: option -D with no value." << std::endl;
+                    error = true;
+                    break;
+                }
+                dui.defines.push_back(value);
                 break;
             }
             case 'U': { // undefine symbol
-                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.undefined.insert(value);
                 found = true;
+                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
+                if (!value) {
+                    std::cout << "error: option -U with no value." << std::endl;
+                    error = true;
+                    break;
+                }
+                dui.undefined.insert(value);
                 break;
             }
             case 'I': { // include path
-                const char * const value = arg[2] ? (argv[i] + 2) : argv[++i];
-                dui.includePaths.push_back(value);
                 found = true;
+                const char * const value = arg[2] ? (arg + 2) : argv[++i];
+                if (!value) {
+                    std::cout << "error: option -I with no value." << std::endl;
+                    error = true;
+                    break;
+                }
+                dui.includePaths.push_back(value);
                 break;
             }
             case 'i':
                 if (std::strncmp(arg, "-include=",9)==0) {
-                    dui.includes.push_back(arg+9);
                     found = true;
+                    std::string value = arg + 9;
+                    if (value.empty()) {
+                        std::cout << "error: option -include with no value." << std::endl;
+                        error = true;
+                        break;
+                    }
+                    dui.includes.push_back(std::move(value));
                 } else if (std::strncmp(arg, "-is",3)==0) {
-                    use_istream = true;
                     found = true;
+                    use_istream = true;
                 }
                 break;
             case 's':
                 if (std::strncmp(arg, "-std=",5)==0) {
-                    dui.std = arg + 5;
                     found = true;
+                    std::string value = arg + 5;
+                    if (value.empty()) {
+                        std::cout << "error: option -std with no value." << std::endl;
+                        error = true;
+                        break;
+                    }
+                    dui.std = std::move(value);
                 }
                 break;
             case 'q':
-                quiet = true;
                 found = true;
+                quiet = true;
                 break;
             case 'e':
-                error_only = true;
                 found = true;
+                error_only = true;
                 break;
             case 'f':
-                fail_on_error = true;
                 found = true;
+                fail_on_error = true;
                 break;
             }
             if (!found) {
