@@ -96,6 +96,7 @@ else
   exit 1
 fi
 
+# run with -std=gnuc++* so __has_include(...) is available
 ./simplecpp simplecpp.cpp -e -f -std=gnu++11 $defs $inc
 ec=$?
 if [ $ec -ne 0 ]; then
