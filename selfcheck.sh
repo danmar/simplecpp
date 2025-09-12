@@ -20,91 +20,43 @@ if [ "$cxx_type" = "Ubuntu" ]; then
 fi
 
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
-  gcc_ver=$($CXX -dumpversion)
-  gcc_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
-  # TODO: get built-in include paths from compiler
-  $CXX -x c++ -v -c - < /dev/null
-
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
   defs="$defs -D__x86_64__"
-  defs="$defs -D__INTPTR_TYPE__='long int'"  # MSYS
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
 
-  find /usr -name cctype
-  find /usr/include -name cctype
-  find /usr -name stddef.h
-  find /usr/include -name stddef.h
-  find /usr -name c++config.h
-  cat /usr/include/sys/_intsup.h
-  # some required include paths might differ per distro
   inc=
-  inc="$inc -I/usr/include"
-  if [ -d "/usr/include/linux" ]; then  # Manjaro, ubuntu
-    inc="$inc -I/usr/include/linux"
-  fi
-  if [ -d "/usr/include/c++/$gcc_ver" ]; then  # Manjaro, ubuntu
-    inc="$inc -I/usr/include/c++/$gcc_ver"
-  fi
-  if [ -d "/usr/include/c++/$gcc_ver/$gcc_target" ]; then
-    inc="$inc -I/usr/include/c++/$gcc_ver/$gcc_target"
-  fi
-  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include" ]; then
-    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include"
-  fi
-  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++" ]; then  # MSYS
-    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++"
-  fi
-  if [ -d "/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++/$gcc_target" ]; then  # MSYS
-    inc="$inc -I/usr/lib/gcc/$gcc_target/$gcc_ver/include/c++/$gcc_target"
-  fi
-  if [ -d "/usr/include/$gcc_target" ]; then
-    inc="$inc -I/usr/include/$gcc_target"
-    inc="$inc -I/usr/include/$gcc_target/c++/$gcc_ver"
-  fi
+  while read line
+  do
+    inc="$inc -I$line"
+  done <<< "$($CXX -x c++ -v -c - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | grep -v /cc1plus | grep -v /as)"
 elif [ "$cxx_type" = "clang" ]; then
-  clang_ver=$($CXX -dumpversion)
-  clang_ver=${clang_ver%%.*}
-  clang_target=$($CXX -v 2>&1 | grep Target: | cut -d' ' -f2)
-  # TODO: get built-in include paths from compiler
-  $CXX -x c++ -v -c - < /dev/null
-
   defs=
   defs="$defs -D__BYTE_ORDER__"
   defs="$defs -D__linux__"
   defs="$defs -D__x86_64__"
   defs="$defs -D__SIZEOF_SIZE_T__=8"
+  defs="$defs -D__STDC_HOSTED__"
+  defs="$defs -D__CHAR_BIT__=8"
   defs="$defs -D__has_feature(x)=(1)"
   defs="$defs -D__has_extension(x)=(1)"
   defs="$defs -D__has_attribute(x)=(0)"
   defs="$defs -D__has_cpp_attribute(x)=(0)"
   defs="$defs -D__has_include_next(x)=(0)"
-  defs="$defs -D__building_module(x)=(0)"  # MSYS
+  defs="$defs -D__building_module(x)=(0)"
+  defs="$defs -D__has_builtin(x)=(1)"
 
-  find /usr -name cctype
-  find /usr/include -name cctype
-  find /usr -name stddef.h
-  find /usr/include -name stddef.h
-  # some required include paths might differ per distro
+  # TODO: use libc++
   inc=
-  if [ -d "/usr/include/c++/v1" ]; then
-    inc="$inc -I/usr/include/c++/v1"
-  fi
-  if [ -d "/usr/lib/llvm-$clang_ver/include/c++/v1" ]; then
-    inc="$inc -I/usr/lib/llvm-$clang_ver/include/c++/v1"
-  fi
-  inc="$inc -I/usr/include"
-  if [ -d "/usr/lib/clang/$clang_ver/include" ]; then  # Manjaro, ubuntu
-    inc="$inc -I/usr/lib/clang/$clang_ver/include"
-  fi
-  if [ -d "/usr/include/$clang_target" ]; then
-    inc="$inc -I/usr/include/$clang_target"
-  fi
+  while read line
+  do
+    inc="$inc -I$line"
+  done <<< "$($CXX -x c++ -v -c - 2>&1 < /dev/null | grep -e'^ [/A-Z]')"
 elif [ "$cxx_type" = "Apple" ]; then
   appleclang_ver=$($CXX -dumpversion)
   appleclang_ver=${appleclang_ver%%.*}
