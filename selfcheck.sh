@@ -96,7 +96,7 @@ elif [ "$cxx_type" = "Apple" ]; then
   do
     echo $line
     inc="$inc -I$line"
-  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | sed 's/ (framework directory)/g')"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | sed 's/ (framework directory)//g')"
   echo $inc
 else
   echo "unknown compiler '$cxx_type'"
