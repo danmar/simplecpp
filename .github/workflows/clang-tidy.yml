@@ -17,6 +17,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # the man-db trigger causes package installations to stall for several minutes at times. so just drop the package.
+      # see https://github.com/actions/runner/issues/4030
+      - name: Remove man-db package
+        run: |
+          sudo apt-get update
+          sudo apt-get remove man-db
+
       - name: Install missing software
         run: |
           sudo apt-get update
