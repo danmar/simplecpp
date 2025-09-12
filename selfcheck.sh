@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 output=$(./simplecpp simplecpp.cpp -e -f 2>&1)
 ec=$?
@@ -15,66 +15,43 @@ if [ -z "$CXX" ]; then
 fi
 
 cxx_type=$($CXX --version | head -1 | cut -d' ' -f1)
-if [ "$cxx_type" = "Ubuntu" ]; then
+if [ "$cxx_type" = "Ubuntu" ] || [ "$cxx_type" = "Debian" ]; then
   cxx_type=$($CXX --version | head -1 | cut -d' ' -f2)
 fi
-# TODO: how to get built-in include paths from compiler?
+
 if [ "$cxx_type" = "g++" ]; then
-  gcc_ver=$($CXX -dumpversion)
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
+  defs="$defs -D__x86_64__"
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
-  defs="$defs -D__x86_64__"
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
-  # some required include paths might differ per distro
+
   inc=
-  inc="$inc -I/usr/include"
-  inc="$inc -I/usr/include/linux"
-  inc="$inc -I/usr/include/c++/$gcc_ver"
-  if [ -d "/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu" ]; then
-    inc="$inc -I/usr/include/c++/$gcc_ver/x86_64-pc-linux-gnu"
-  fi
-  if [ -d "/usr/lib/gcc/x86_64-pc-linux-gnu/$gcc_ver/include" ]; then
-    inc="$inc -I/usr/lib/gcc/x86_64-pc-linux-gnu/$gcc_ver/include"
-  fi
-  if [ -d "/usr/lib/gcc/x86_64-linux-gnu/$gcc_ver/include" ]; then
-    inc="$inc -I/usr/lib/gcc/x86_64-linux-gnu/$gcc_ver/include"
-  fi
-  if [ -d "/usr/include/x86_64-linux-gnu" ]; then
-    inc="$inc -I/usr/include/x86_64-linux-gnu"
-    inc="$inc -I/usr/include/x86_64-linux-gnu/c++/$gcc_ver"
-  fi
+  while read line
+  do
+    inc="$inc -I$line"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | grep -v /cc1plus)"
 elif [ "$cxx_type" = "clang" ]; then
-  clang_ver=$($CXX -dumpversion)
-  clang_ver=${clang_ver%%.*}
   defs=
-  defs="$defs -D__BYTE_ORDER__"
-  defs="$defs -D__linux__"
   defs="$defs -D__x86_64__"
-  defs="$defs -D__SIZEOF_SIZE_T__=8"
-  defs="$defs -D__has_feature(x)=(1)"
-  defs="$defs -D__has_extension(x)=(1)"
-  defs="$defs -D__has_attribute(x)=(0)"
-  defs="$defs -D__has_cpp_attribute(x)=(0)"
-  defs="$defs -D__has_include_next(x)=(0)"
+  defs="$defs -D__STDC_HOSTED__"
+  defs="$defs -D__CHAR_BIT__=8"
   defs="$defs -D__has_builtin(x)=(1)"
-  # some required include paths might differ per distro
+  defs="$defs -D__has_cpp_attribute(x)=(1)"
+  defs="$defs -D__has_feature(x)=(1)"
+  defs="$defs -D__has_include_next(x)=(0)"
+  defs="$defs -D__has_attribute(x)=(0)"
+
+  # TODO: use libc++
   inc=
-  if [ -d "/usr/include/c++/v1" ]; then
-    inc="$inc -I/usr/include/c++/v1"
-  fi
-  if [ -d "/usr/lib/llvm-$clang_ver/include/c++/v1" ]; then
-    inc="$inc -I/usr/lib/llvm-$clang_ver/include/c++/v1"
-  fi
-  inc="$inc -I/usr/include"
-  inc="$inc -I/usr/lib/clang/$clang_ver/include"
-  if [ -d "/usr/include/x86_64-linux-gnu" ]; then
-    inc="$inc -I/usr/include/x86_64-linux-gnu"
-  fi
+  while read line
+  do
+    inc="$inc -I$line"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]')"
 elif [ "$cxx_type" = "Apple" ]; then
   appleclang_ver=$($CXX -dumpversion)
   appleclang_ver=${appleclang_ver%%.*}
@@ -113,6 +90,7 @@ else
   exit 1
 fi
 
+# run with -std=gnuc++* so __has_include(...) is available
 ./simplecpp simplecpp.cpp -e -f -std=gnu++11 $defs $inc
 ec=$?
 if [ $ec -ne 0 ]; then
