@@ -89,6 +89,8 @@ elif [ "$cxx_type" = "Apple" ]; then
   defs="$defs -D__is_target_variant_os(x)=(0)"
   defs="$defs -D__is_target_variant_environment(x)=(0)"
 
+  $CXX -x c++ -v -c -S - 2>&1 < /dev/null
+
   inc=
   while read line
   do
