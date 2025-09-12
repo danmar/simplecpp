@@ -70,6 +70,11 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # use force DWARF 4 debug format since not all tools might be able to handle DWARF 5 yet - e.g. valgrind on ubuntu 20.04
         add_compile_options(-gdwarf-4)
     endif()
+    if (APPLE)
+        # CMake is sometimes chosing the wrong compiler on macos-* runners
+        # see https://github.com/actions/runner/issues/4034
+        add_compile_options(-Wno-poison-system-directories)
+    endif()
 endif()
 
 add_library(simplecpp_obj OBJECT simplecpp.cpp)
