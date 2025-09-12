@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 output=$(./simplecpp simplecpp.cpp -e -f 2>&1)
 ec=$?
@@ -34,7 +34,7 @@ if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   while read line
   do
     inc="$inc -I$line"
-  done <<< "$($CXX -x c++ -v -c - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | grep -v /cc1plus | grep -v /as)"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]' | grep -v /cc1plus)"
 elif [ "$cxx_type" = "clang" ]; then
   defs=
   defs="$defs -D__BYTE_ORDER__"
@@ -56,7 +56,7 @@ elif [ "$cxx_type" = "clang" ]; then
   while read line
   do
     inc="$inc -I$line"
-  done <<< "$($CXX -x c++ -v -c - 2>&1 < /dev/null | grep -e'^ [/A-Z]')"
+  done <<< "$($CXX -x c++ -v -c -S - 2>&1 < /dev/null | grep -e'^ [/A-Z]')"
 elif [ "$cxx_type" = "Apple" ]; then
   appleclang_ver=$($CXX -dumpversion)
   appleclang_ver=${appleclang_ver%%.*}
