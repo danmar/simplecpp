@@ -20,6 +20,7 @@ if [ "$cxx_type" = "Ubuntu" ] || [ "$cxx_type" = "Debian" ]; then
 fi
 
 if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
+  cat C:/msys64/mingw32/include/_mingw.h
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
