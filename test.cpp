@@ -3246,6 +3246,7 @@ static void safe_api()
 #endif
 }
 
+// crashes detected by fuzzer
 static void fuzz_crash()
 {
     {
@@ -3257,6 +3258,16 @@ static void fuzz_crash()
         const char code[] = "#define foo(intp)f##oo(intp\n"
                             "foo(f##oo(intp))\n";
         (void)preprocess(code, simplecpp::DUI()); // do not crash
+    }
+}
+
+// memory leaks detected by LSAN/valgrind
+static void leak()
+{
+    { // #498
+        const char code[] = "#define e(...)__VA_OPT__()\n"
+                            "#define e\n";
+        (void)preprocess(code, simplecpp::DUI());
     }
 }
 
@@ -3515,6 +3526,8 @@ int main(int argc, char **argv)
     TEST_CASE(safe_api);
 
     TEST_CASE(fuzz_crash);
+
+    TEST_CASE(leak);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
