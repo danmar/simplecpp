@@ -41,16 +41,20 @@ if [ "$cxx_type" = "Ubuntu" ] || [ "$cxx_type" = "Debian" ]; then
 fi
 
 # TODO: generate defines from compiler
-if [ "$cxx_type" = "g++" ]; then
+if [ "$cxx_type" = "g++" ] || [ "$cxx_type" = "g++.exe" ]; then
   defs=
   defs="$defs -D__GNUC__"
   defs="$defs -D__STDC__"
   defs="$defs -D__x86_64__"
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
+  if [ "${MSYSTEM}" = "MINGW32" ] || [ "${MSYSTEM}" = "MINGW64" ]; then
+    defs="$defs -D_WIN32"
+  fi
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_attribute(x)=(1)"
+  defs="$defs -Ddefined(x)=(0)"
 
   inc=
   while read line
@@ -63,12 +67,19 @@ elif [ "$cxx_type" = "clang" ]; then
   defs="$defs -D__x86_64__"
   defs="$defs -D__STDC_HOSTED__"
   defs="$defs -D__CHAR_BIT__=8"
+  defs="$defs -D__BYTE_ORDER__=1234"
+  defs="$defs -D__SIZEOF_SIZE_T__=8"
+  if [ "${MSYSTEM}" = "MINGW32" ] || [ "${MSYSTEM}" = "MINGW64" ] || [ "${MSYSTEM}" = "CLANG64" ]; then
+    defs="$defs -D_WIN32"
+  fi
   defs="$defs -D__has_builtin(x)=(1)"
   defs="$defs -D__has_cpp_attribute(x)=(1)"
   defs="$defs -D__has_feature(x)=(1)"
-  defs="$defs -D__has_include_next(x)=(0)"
+  defs="$defs -D__has_include_next(x)=(1)"
   defs="$defs -D__has_attribute(x)=(0)"
   defs="$defs -D__building_module(x)=(0)"
+  defs="$defs -D__has_extension(x)=(1)"
+  defs="$defs -Ddefined(x)=(0)"
 
   inc=
   while read line
