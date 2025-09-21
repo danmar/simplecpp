@@ -41,10 +41,6 @@
 #  define SIMPLECPP_LIB
 #endif
 
-#ifndef _WIN32
-#  include <sys/types.h>
-#endif
-
 #if defined(_MSC_VER)
 #  pragma warning(push)
 // suppress warnings about "conversion from 'type1' to 'type2', possible loss of data"
@@ -452,13 +448,14 @@ namespace simplecpp {
 
     class SIMPLECPP_LIB FileDataCache {
     public:
-        FileDataCache() = default;
+        FileDataCache();
+        ~FileDataCache();
 
         FileDataCache(const FileDataCache &) = delete;
-        FileDataCache(FileDataCache &&) = default;
+        FileDataCache(FileDataCache &&) noexcept;
 
         FileDataCache &operator=(const FileDataCache &) = delete;
-        FileDataCache &operator=(FileDataCache &&) = default;
+        FileDataCache &operator=(FileDataCache &&) noexcept;
 
         /** Get the cached data for a file, or load and then return it if it isn't cached.
          *  returns the file data and true if the file was loaded, false if it was cached. */
@@ -472,11 +469,7 @@ namespace simplecpp {
             mNameMap.emplace(newdata->filename, newdata);
         }
 
-        void clear() {
-            mNameMap.clear();
-            mIdMap.clear();
-            mData.clear();
-        }
+        void clear();
 
         using container_type = std::vector<std::unique_ptr<FileData>>;
         using iterator = container_type::iterator;
@@ -506,51 +499,15 @@ namespace simplecpp {
         }
 
     private:
-        struct FileID {
-#ifdef _WIN32
-            struct {
-                std::uint64_t VolumeSerialNumber;
-                struct {
-                    std::uint64_t IdentifierHi;
-                    std::uint64_t IdentifierLo;
-                } FileId;
-            } fileIdInfo;
-
-            bool operator==(const FileID &that) const noexcept {
-                return fileIdInfo.VolumeSerialNumber == that.fileIdInfo.VolumeSerialNumber &&
-                       fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
-                       fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
-            }
-#else
-            dev_t dev;
-            ino_t ino;
-
-            bool operator==(const FileID& that) const noexcept {
-                return dev == that.dev && ino == that.ino;
-            }
-#endif
-            struct Hasher {
-                std::size_t operator()(const FileID &id) const {
-#ifdef _WIN32
-                    return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
-                                                    id.fileIdInfo.VolumeSerialNumber);
-#else
-                    return static_cast<std::size_t>(id.dev) ^ static_cast<std::size_t>(id.ino);
-#endif
-                }
-            };
-        };
+        struct Impl;
+        std::unique_ptr<Impl> mImpl;
 
         using name_map_type = std::unordered_map<std::string, FileData *>;
-        using id_map_type = std::unordered_map<FileID, FileData *, FileID::Hasher>;
-
-        static bool getFileId(const std::string &path, FileID &id);
 
         std::pair<FileData *, bool> tryload(name_map_type::iterator &name_it, const DUI &dui, std::vector<std::string> &filenames, OutputList *outputList);
 
         container_type mData;
         name_map_type mNameMap;
-        id_map_type mIdMap;
     };
 
     /** Converts character literal (including prefix, but not ud-suffix) to long long value.
