@@ -182,8 +182,8 @@ namespace simplecpp {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
         }
 
-        void printAll() const;
-        void printOut() const;
+        void printAll(std::ostream& ostr) const;
+        void printOut(std::ostream& ostr) const;
     private:
         void flags() {
             name = (std::isalpha(static_cast<unsigned char>(string[0])) || string[0] == '_' || string[0] == '$')
@@ -284,7 +284,7 @@ namespace simplecpp {
         }
         void push_back(Token *tok);
 
-        void dump() const;
+        void dump(std::ostream& ostr) const;
         std::string stringify() const;
 
         void readfile(Stream &stream, const std::string &filename=std::string(), OutputList *outputList = nullptr);

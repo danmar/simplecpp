@@ -35,6 +35,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <ostream>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -212,29 +213,29 @@ bool simplecpp::Token::endsWithOneOf(const char c[]) const
     return std::strchr(c, string[string.size() - 1U]) != nullptr;
 }
 
-void simplecpp::Token::printAll() const
+void simplecpp::Token::printAll(std::ostream& ostr) const
 {
     const Token *tok = this;
     while (tok->previous)
         tok = tok->previous;
     for (; tok; tok = tok->next) {
         if (tok->previous) {
-            std::cout << (sameline(tok, tok->previous) ? ' ' : '\n');
+            ostr << (sameline(tok, tok->previous) ? ' ' : '\n');
         }
-        std::cout << tok->str();
+        ostr << tok->str();
     }
-    std::cout << std::endl;
+    ostr << std::endl;
 }
 
-void simplecpp::Token::printOut() const
+void simplecpp::Token::printOut(std::ostream& ostr) const
 {
     for (const Token *tok = this; tok; tok = tok->next) {
         if (tok != this) {
-            std::cout << (sameline(tok, tok->previous) ? ' ' : '\n');
+            ostr << (sameline(tok, tok->previous) ? ' ' : '\n');
         }
-        std::cout << tok->str();
+        ostr << tok->str();
     }
-    std::cout << std::endl;
+    ostr << std::endl;
 }
 
 // cppcheck-suppress noConstructor - we call init() in the inherited to initialize the private members
@@ -553,9 +554,9 @@ void simplecpp::TokenList::push_back(Token *tok)
     backToken = tok;
 }
 
-void simplecpp::TokenList::dump() const
+void simplecpp::TokenList::dump(std::ostream& ostr) const
 {
-    std::cout << stringify() << std::endl;
+    ostr << stringify() << std::endl;
 }
 
 std::string simplecpp::TokenList::stringify() const
