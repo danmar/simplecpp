@@ -762,8 +762,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         TokenString currentToken;
 
         if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#') {
-            const Token* const llTok = lastLineTok();
-            if (llTok && llTok->op == '#' && llTok->next && (llTok->next->str() == "error" || llTok->next->str() == "warning")) {
+            const Token* const ppTok = cback()->previous;
+            if (ppTok->next && (ppTok->next->str() == "error" || ppTok->next->str() == "warning")) {
                 char prev = ' ';
                 while (stream.good() && (prev == '\\' || (ch != '\r' && ch != '\n'))) {
                     currentToken += ch;
