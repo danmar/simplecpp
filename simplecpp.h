@@ -284,8 +284,8 @@ namespace simplecpp {
         }
         void push_back(Token *tok);
 
-        void dump() const;
-        std::string stringify() const;
+        void dump(bool linenrs = false) const;
+        std::string stringify(bool linenrs = false) const;
 
         void readfile(Stream &stream, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         void constFold();
