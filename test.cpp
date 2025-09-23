@@ -45,7 +45,7 @@ static int assertEquals(const std::string &expected, const std::string &actual, 
     if (expected != actual) {
         numberOfFailedAssertions++;
         std::cerr << "------ assertion failed ---------" << std::endl;
-        std::cerr << "line " << line << std::endl;
+        std::cerr << "line test.cpp:" << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
     }
@@ -3260,6 +3260,39 @@ static void fuzz_crash()
     }
 }
 
+static void isAbsolutePath() {
+#ifdef _WIN32
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:\\foo\\bar"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:/foo/bar"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("\\\\foo\\bar"));
+
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo\\bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:foo.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:foo\\bar.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("bar.cpp"));
+    //ASSERT_EQUALS(true, simplecpp::isAbsolutePath("\\")); // TODO
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("0:\\foo\\bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("0:/foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\foo\\bar"));
+    //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\\\")); // TODO
+    //ASSERT_EQUALS(false, simplecpp::isAbsolutePath("//")); // TODO
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("/foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("/"));
+#else
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/foo/bar"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("/"));
+    ASSERT_EQUALS(true, simplecpp::isAbsolutePath("//host/foo/bar"));
+
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("foo.cpp"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:\\foo\\bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("C:/foo/bar"));
+    ASSERT_EQUALS(false, simplecpp::isAbsolutePath("\\\\foo\\bar"));
+#endif
+}
+
 int main(int argc, char **argv)
 {
     TEST_CASE(backslash);
@@ -3515,6 +3548,8 @@ int main(int argc, char **argv)
     TEST_CASE(safe_api);
 
     TEST_CASE(fuzz_crash);
+
+    TEST_CASE(isAbsolutePath);
 
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
