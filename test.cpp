@@ -1706,7 +1706,7 @@ static void strict_ansi_3()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "c99";
-    dui.undefined.insert("__STRICT_ANSI__");
+    dui.defines.emplace_back("__STRICT_ANSI__", simplecpp::Define::Undef);
     ASSERT_EQUALS("", preprocess(code, dui));
 }
 
@@ -1717,7 +1717,7 @@ static void strict_ansi_4()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "gnu99";
-    dui.defines.push_back("__STRICT_ANSI__");
+    dui.defines.emplace_back("__STRICT_ANSI__");
     ASSERT_EQUALS("\nA", preprocess(code, dui));
 }
 
@@ -1764,7 +1764,7 @@ static void ifA()
     ASSERT_EQUALS("", preprocess(code));
 
     simplecpp::DUI dui;
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1783,7 +1783,7 @@ static void ifDefined()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1794,7 +1794,7 @@ static void ifDefinedNoPar()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1806,7 +1806,7 @@ static void ifDefinedNested()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("FOO=1");
+    dui.defines.emplace_back("FOO=1");
     ASSERT_EQUALS("\n\nX", preprocess(code, dui));
 }
 
@@ -1818,7 +1818,7 @@ static void ifDefinedNestedNoPar()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("FOO=1");
+    dui.defines.emplace_back("FOO=1");
     ASSERT_EQUALS("\n\nX", preprocess(code, dui));
 }
 
@@ -1871,10 +1871,10 @@ static void ifLogical()
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
     dui.defines.clear();
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
     dui.defines.clear();
-    dui.defines.push_back("B=1");
+    dui.defines.emplace_back("B=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -2768,7 +2768,7 @@ static void userdef()
 {
     const char code[] = "#ifdef A\n123\n#endif\n";
     simplecpp::DUI dui;
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\n123", preprocess(code, dui));
 }
 
@@ -3246,6 +3246,54 @@ static void safe_api()
 #endif
 }
 
+static void define_parse()
+{
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("-DDEF");
+        ASSERT_EQUALS("DEF", define.name);
+        ASSERT_EQUALS("", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("-DDEF=1");
+        ASSERT_EQUALS("DEF", define.name);
+        ASSERT_EQUALS("1", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("-UDEF");
+        ASSERT_EQUALS("DEF", define.name);
+        ASSERT_EQUALS("", define.value);
+        ASSERT_EQUALS(true, define.undef);
+    }
+
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("DEF", false);
+        ASSERT_EQUALS("DEF", define.name);
+        ASSERT_EQUALS("", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("DEF=1", false);
+        ASSERT_EQUALS("DEF", define.name);
+        ASSERT_EQUALS("1", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("-D__has_builtin(x)=(1)", true);
+        ASSERT_EQUALS("__has_builtin(x)", define.name);
+        ASSERT_EQUALS("(1)", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    {
+        const simplecpp::Define define = simplecpp::Define::parse("__has_builtin(x)=(1)", false);
+        ASSERT_EQUALS("__has_builtin(x)", define.name);
+        ASSERT_EQUALS("(1)", define.value);
+        ASSERT_EQUALS(false, define.undef);
+    }
+    // -UDEF=0
+}
+
 static void fuzz_crash()
 {
     {
@@ -3513,6 +3561,8 @@ int main(int argc, char **argv)
     TEST_CASE(preprocess_files);
 
     TEST_CASE(safe_api);
+
+    TEST_CASE(define_parse);
 
     TEST_CASE(fuzz_crash);
 
