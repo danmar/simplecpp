@@ -540,7 +540,7 @@ void simplecpp::TokenList::clear()
     backToken = nullptr;
     while (frontToken) {
         Token * const next = frontToken->next;
-        delete frontToken;
+        delete frontToken.get();
         frontToken = next;
     }
     sizeOfType.clear();

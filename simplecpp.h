@@ -71,6 +71,65 @@ namespace simplecpp {
     using TokenString = std::string;
     class Macro;
 
+    // as std::optional behaves similarly we could use that instead if we ever move to C++17.
+    // it is not a simple drop-in as our "operator bool()" indicates if the pointer is non-null
+    // whereas std::optional indicates if a value is set.
+    //
+    // This is similar to std::experimental::propagate_const
+    // see https://en.cppreference.com/w/cpp/experimental/propagate_const
+    template<typename T>
+    class constness_ptr
+    {
+    public:
+        explicit constness_ptr(T* p)
+            : mPtr(p)
+        {}
+
+        constness_ptr<T> &operator=(T* p) {
+            mPtr = p;
+            return *this;
+        }
+
+        T* get() noexcept {
+            return mPtr;
+        }
+
+        const T* get() const noexcept {
+            return mPtr;
+        }
+
+        operator T*() noexcept {
+            return mPtr;
+        }
+
+        operator const T*() const noexcept {
+            return mPtr;
+        }
+
+        T* operator->() noexcept {
+            return mPtr;
+        }
+
+        const T* operator->() const noexcept {
+            return mPtr;
+        }
+
+        T& operator*() noexcept {
+            return *mPtr;
+        }
+
+        const T& operator*() const noexcept {
+            return *mPtr;
+        }
+
+        explicit operator bool() const noexcept {
+            return mPtr != nullptr;
+        }
+
+    private:
+        T* mPtr;
+    };
+
     /**
      * Location in source code
      */
@@ -155,8 +214,8 @@ namespace simplecpp {
         bool number;
         bool whitespaceahead;
         Location location;
-        Token *previous{};
-        Token *next{};
+        constness_ptr<Token> previous;
+        constness_ptr<Token> next;
         mutable const Token *nextcond{};
 
         const Token *previousSkipComments() const {
@@ -363,8 +422,8 @@ namespace simplecpp {
 
         unsigned int fileIndex(const std::string &filename);
 
-        Token *frontToken;
-        Token *backToken;
+        constness_ptr<Token> frontToken;
+        constness_ptr<Token> backToken;
         std::vector<std::string> &files;
     };
 
