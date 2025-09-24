@@ -537,7 +537,7 @@ void simplecpp::TokenList::clear()
     backToken = nullptr;
     while (frontToken) {
         Token * const next = frontToken->next;
-        delete frontToken;
+        delete frontToken.get();
         frontToken = next;
     }
     sizeOfType.clear();
@@ -2250,7 +2250,7 @@ namespace simplecpp {
             const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
             const bool unexpectedA = (!A->name && !A->number && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar);
 
-            Token * const B = tok->next->next;
+            const Token * const B = tok->next->next;
             if (!B->name && !B->number && B->op && !B->isOneOf("#="))
                 throw invalidHashHash::unexpectedToken(tok->location, name(), B);
 
