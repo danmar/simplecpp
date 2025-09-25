@@ -81,7 +81,10 @@ namespace simplecpp {
     class constness_ptr
     {
     public:
-        explicit constness_ptr(T* p)
+#ifndef _MSC_VER
+        explicit
+#endif
+        constness_ptr(T* p)
             : mPtr(p)
         {}
 
