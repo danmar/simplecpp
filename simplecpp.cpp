@@ -1709,7 +1709,9 @@ namespace simplecpp {
             nameTokDef = nametoken;
             variadic = false;
             variadicOpt = false;
+            delete optExpandValue;
             optExpandValue = nullptr;
+            delete optNoExpandValue;
             optNoExpandValue = nullptr;
             if (!nameTokDef) {
                 valueToken = endToken = nullptr;
@@ -2383,8 +2385,8 @@ namespace simplecpp {
         bool variadicOpt;
 
         /** Expansion value for varadic macros with __VA_OPT__ expanded and discarded respectively */
-        const TokenList *optExpandValue;
-        const TokenList *optNoExpandValue;
+        const TokenList *optExpandValue{};
+        const TokenList *optNoExpandValue{};
 
         /** was the value of this macro actually defined in the code? */
         bool valueDefinedInCode_;
