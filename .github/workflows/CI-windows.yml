@@ -45,7 +45,7 @@ jobs:
 
       - name: Run CMake
         run: |
-          cmake -G "Visual Studio 17 2022" -A x64 --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On . || exit /b !errorlevel!
+          cmake -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On . || exit /b !errorlevel!
 
       - name: Build
         run: |
