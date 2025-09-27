@@ -82,7 +82,7 @@ jobs:
 
     - name: Run CMake
       run: |
-        cmake -S . -B cmake.output -DCMAKE_COMPILE_WARNING_AS_ERROR=On
+        cmake -S . -B cmake.output --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On
 
     - name: CMake simplecpp
       run: |
