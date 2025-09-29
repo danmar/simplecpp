@@ -49,6 +49,7 @@ Checks: >
         -readability-magic-numbers,
         -readability-redundant-inline-specifier,
         -readability-simplify-boolean-expr,
+        -readability-use-concise-preprocessor-directives,
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
         -performance-enum-size,
