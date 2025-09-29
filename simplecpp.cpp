@@ -3602,9 +3602,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                     header = tok->str().substr(1U, tok->str().size() - 2U);
                                     closingAngularBracket = true;
                                 }
-                                std::ifstream f;
-                                const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
-                                expr.push_back(new Token(header2.empty() ? "0" : "1", tok->location));
+                                if (tok) {
+                                    std::ifstream f;
+                                    const std::string header2 = openHeader(f,dui,sourcefile,header,systemheader);
+                                    expr.push_back(new Token(header2.empty() ? "0" : "1", tok->location));
+                                }
                             }
                             if (par)
                                 tok = tok ? tok->next : nullptr;
