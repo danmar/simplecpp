@@ -3259,6 +3259,12 @@ static void fuzz_crash()
                             "foo(f##oo(intp))\n";
         (void)preprocess(code, simplecpp::DUI()); // do not crash
     }
+    { // #546
+        const char code[] = "#if __has_include<\n";
+        simplecpp::OutputList outputList;
+        ASSERT_EQUALS("", preprocess(code, &outputList)); // do not crash
+        ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition\n", toString(outputList));
+    }
 }
 
 // memory leaks detected by LSAN/valgrind
