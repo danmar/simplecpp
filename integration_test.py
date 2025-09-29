@@ -298,3 +298,151 @@ def test_pragma_once_matching(record_property, tmpdir):
 
     assert stdout.count("ONCE") == 1
     assert stderr == ""
+
+
+def test_input_multiple(record_property, tmpdir):
+    test_file = os.path.join(tmpdir, "test.c")
+    with open(test_file, 'w'):
+        pass
+
+    test_file_1 = os.path.join(tmpdir, "test1.c")
+    with open(test_file_1, 'w'):
+        pass
+
+    args = [
+        'test.c',
+        'test1.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: multiple filenames specified\n" == stdout
+
+
+def test_input_missing(record_property, tmpdir):
+    args = [
+        'missing.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not open file 'missing.c'\n" == stdout
+
+
+def test_input_dir(record_property, tmpdir):
+    test_dir = os.path.join(tmpdir, "test")
+    os.mkdir(test_dir)
+
+    args = [
+        'test'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not open file 'test'\n" == stdout
+
+
+def test_incpath_missing(record_property, tmpdir):
+    test_file = os.path.join(tmpdir, "test.c")
+    with open(test_file, 'w'):
+        pass
+
+    test_dir = os.path.join(tmpdir, "test")
+    os.mkdir(test_dir)
+
+    args = [
+        '-Itest',
+        '-Imissing',
+        'test.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not find include path 'missing'\n" == stdout
+
+
+def test_incpath_file(record_property, tmpdir):
+    test_file = os.path.join(tmpdir, "test.c")
+    with open(test_file, 'w'):
+        pass
+
+    inc_dir = os.path.join(tmpdir, "inc")
+    os.mkdir(inc_dir)
+
+    inc_file = os.path.join(tmpdir, "inc.h")
+    with open(test_file, 'w'):
+        pass
+
+    args = [
+        '-Iinc',
+        '-Iinc.h',
+        'test.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not find include path 'inc.h'\n" == stdout
+
+
+def test_incfile_missing(record_property, tmpdir):
+    test_file = os.path.join(tmpdir, "test.c")
+    with open(test_file, 'w'):
+        pass
+
+    inc_file = os.path.join(tmpdir, "inc.h")
+    with open(inc_file, 'w'):
+        pass
+
+    args = [
+        '-include=inc.h',
+        '-include=missing.h',
+        'test.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not open include 'missing.h'\n" == stdout
+
+
+def test_incpath_dir(record_property, tmpdir):
+    test_file = os.path.join(tmpdir, "test.c")
+    with open(test_file, 'w'):
+        pass
+
+    inc_file = os.path.join(tmpdir, "inc.h")
+    with open(inc_file, 'w'):
+        pass
+
+    inc_dir = os.path.join(tmpdir, "inc")
+    os.mkdir(inc_dir)
+
+    args = [
+        '-include=inc.h',
+        '-include=inc',
+        'test.c'
+    ]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert '' == stderr
+    assert "error: could not open include 'inc'\n" == stdout
