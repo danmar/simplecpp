@@ -21,23 +21,23 @@ endfunction()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-pedantic)
+
     add_compile_options(-Wall)
     add_compile_options(-Wextra)
     add_compile_options(-Wcast-qual)                # Cast for removing type qualifiers
     add_compile_options(-Wfloat-equal)              # Floating values used in equality comparisons
     add_compile_options(-Wmissing-declarations)     # If a global function is defined without a previous declaration
     add_compile_options(-Wmissing-format-attribute) #
-    add_compile_options(-Wno-long-long)
     add_compile_options(-Wpacked)                   #
     add_compile_options(-Wredundant-decls)          # if anything is declared more than once in the same scope
     add_compile_options(-Wundef)
-    add_compile_options(-Wno-missing-braces)
-    add_compile_options(-Wno-sign-compare)
-    add_compile_options(-Wno-multichar)
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
     add_compile_options(-Wsuggest-attribute=noreturn)
     add_compile_options_safe(-Wuseless-cast)
+
+    # we are not interested in these
+    set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS -Wno-multichar)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # TODO: bump warning level
@@ -46,25 +46,29 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_options(/wd4267)  # warning C4267: '...': conversion from 'size_t' to 'unsigned int', possible loss of data
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Weverything)
+
     # no need for c++98 compatibility
     add_compile_options(-Wno-c++98-compat-pedantic)
-    # these are not really fixable
+
+    # these are not really fixable until newer standards
     add_compile_options(-Wno-exit-time-destructors)
     add_compile_options(-Wno-global-constructors)
     add_compile_options(-Wno-weak-vtables)
     add_compile_options_safe(-Wno-unsafe-buffer-usage)
     add_compile_options_safe(-Wno-nrvo)
-    # we are not interested in these
-    add_compile_options(-Wno-multichar)
-    add_compile_options(-Wno-four-char-constants)
+
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
+
     # TODO: fix these?
     add_compile_options(-Wno-padded)
     add_compile_options(-Wno-sign-conversion)
     add_compile_options(-Wno-implicit-int-conversion)
     add_compile_options(-Wno-shorten-64-to-32)
     add_compile_options(-Wno-shadow-field-in-constructor)
+
+    # we are not interested in these
+    set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS "-Wno-multichar -Wno-four-char-constants")
 
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
