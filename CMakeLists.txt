@@ -27,12 +27,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wfloat-equal)              # Floating values used in equality comparisons
     add_compile_options(-Wmissing-declarations)     # If a global function is defined without a previous declaration
     add_compile_options(-Wmissing-format-attribute) #
-    add_compile_options(-Wno-long-long)
     add_compile_options(-Wpacked)                   #
     add_compile_options(-Wredundant-decls)          # if anything is declared more than once in the same scope
     add_compile_options(-Wundef)
-    add_compile_options(-Wno-missing-braces)
-    add_compile_options(-Wno-sign-compare)
     add_compile_options(-Wno-multichar)
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
