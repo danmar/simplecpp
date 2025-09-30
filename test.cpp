@@ -1041,6 +1041,16 @@ static void define_va_opt_7()
                   toString(outputList));
 }
 
+static void define_va_opt_8()
+{
+    const char code[] = "#define f(...) #__VA_OPT__(x)\n"
+                        "const char* v1 = f();";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("\nconst char * v1 = \"\" ;", preprocess(code, &outputList));
+    ASSERT_EQUALS("", toString(outputList));
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -3350,6 +3360,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_5);
     TEST_CASE(define_va_opt_6);
     TEST_CASE(define_va_opt_7);
+    TEST_CASE(define_va_opt_8);
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
 
