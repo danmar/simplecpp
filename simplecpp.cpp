@@ -2094,7 +2094,13 @@ namespace simplecpp {
 
                 tok = tok->next;
                 if (tok == endToken2) {
-                    output.push_back(new Token(*tok->previous));
+                    if (tok) {
+                        output.push_back(new Token(*tok->previous));
+                    }
+                    else {
+                        output.push_back(new Token(*nameTokInst));
+                        output.back()->setstr("\"\"");
+                    }
                     break;
                 }
                 if (tok->op == '#') {
