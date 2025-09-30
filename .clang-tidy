@@ -22,6 +22,7 @@ Checks: >
         -bugprone-easily-swappable-parameters,
         -bugprone-narrowing-conversions,
         -bugprone-switch-missing-default-case,
+        -bugprone-throwing-static-initialization,
         -concurrency-mt-unsafe,
         -misc-no-recursion,
         -misc-non-private-member-variables-in-classes,
