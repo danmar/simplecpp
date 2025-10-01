@@ -9,9 +9,19 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <sys/stat.h>
 #include <string>
 #include <utility>
 #include <vector>
+
+static bool isDir(const std::string& path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return false;
+
+    return (file_stat.st_mode & S_IFMT) == S_IFDIR;
+}
 
 int main(int argc, char **argv)
 {
@@ -23,6 +33,7 @@ int main(int argc, char **argv)
 
     // Settings..
     simplecpp::DUI dui;
+    dui.removeComments = true;
     bool quiet = false;
     bool error_only = false;
     for (int i = 1; i < argc; i++) {
@@ -114,18 +125,18 @@ int main(int argc, char **argv)
             }
         } else if (filename) {
             std::cout << "error: multiple filenames specified" << std::endl;
-            std::exit(1);
+            return 1;
         } else {
             filename = arg;
         }
     }
 
     if (error)
-        std::exit(1);
+        return 1;
 
     if (quiet && error_only) {
         std::cout << "error: -e cannot be used in conjunction with -q" << std::endl;
-        std::exit(1);
+        return 1;
     }
 
     if (!filename) {
@@ -141,32 +152,54 @@ int main(int argc, char **argv)
         std::cout << "  -e              Output errors only." << std::endl;
         std::cout << "  -f              Fail when errors were encountered (exitcode 1)." << std::endl;
         std::cout << "  -l              Print lines numbers." << std::endl;
-        std::exit(0);
+        return 0;
     }
 
-    dui.removeComments = true;
+    // TODO: move this logic into simplecpp
+    bool inp_missing = false;
+
+    for (const std::string& inc : dui.includes) {
+        std::ifstream f(inc);
+        if (!f.is_open() || isDir(inc)) {
+            inp_missing = true;
+            std::cout << "error: could not open include '" << inc << "'" << std::endl;
+        }
+    }
+
+    for (const std::string& inc : dui.includePaths) {
+        if (!isDir(inc)) {
+            inp_missing = true;
+            std::cout << "error: could not find include path '" << inc << "'" << std::endl;
+        }
+    }
+
+    std::ifstream f(filename);
+    if (!f.is_open() || isDir(filename)) {
+        inp_missing = true;
+        std::cout << "error: could not open file '" << filename << "'" << std::endl;
+    }
+
+    if (inp_missing)
+        return 1;
 
     // Perform preprocessing
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
-    simplecpp::TokenList *rawtokens;
-    if (use_istream) {
-        std::ifstream f(filename);
-        if (!f.is_open()) {
-            std::cout << "error: could not open file '" << filename << "'" << std::endl;
-            std::exit(1);
-        }
-        rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
-    } else {
-        rawtokens = new simplecpp::TokenList(filename,files,&outputList);
-    }
-    rawtokens->removeComments();
     simplecpp::TokenList outputTokens(files);
-    simplecpp::FileDataCache filedata;
-    simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
-    simplecpp::cleanup(filedata);
-    delete rawtokens;
-    rawtokens = nullptr;
+    {
+        simplecpp::TokenList *rawtokens;
+        if (use_istream) {
+            rawtokens = new simplecpp::TokenList(f, files,filename,&outputList);
+        } else {
+            f.close();
+            rawtokens = new simplecpp::TokenList(filename,files,&outputList);
+        }
+        rawtokens->removeComments();
+        simplecpp::FileDataCache filedata;
+        simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
+        simplecpp::cleanup(filedata);
+        delete rawtokens;
+    }
 
     // Output
     if (!quiet) {
