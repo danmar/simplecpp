@@ -68,7 +68,7 @@ namespace simplecpp {
     /** C++ code standard */
     enum cppstd_t { CPPUnknown=-1, CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26 };
 
-    typedef std::string TokenString;
+    using TokenString = std::string;
     class Macro;
     class FileDataCache;
 
@@ -221,7 +221,7 @@ namespace simplecpp {
         std::string msg;
     };
 
-    typedef std::list<Output> OutputList;
+    using OutputList = std::list<Output>;
 
     /** List of tokens. */
     class SIMPLECPP_LIB TokenList {
@@ -439,10 +439,10 @@ namespace simplecpp {
             mData.clear();
         }
 
-        typedef std::vector<std::unique_ptr<FileData>> container_type;
-        typedef container_type::iterator iterator;
-        typedef container_type::const_iterator const_iterator;
-        typedef container_type::size_type size_type;
+        using container_type = std::vector<std::unique_ptr<FileData>>;
+        using iterator = container_type::iterator;
+        using const_iterator = container_type::const_iterator;
+        using size_type = container_type::size_type;
 
         size_type size() const {
             return mData.size();
