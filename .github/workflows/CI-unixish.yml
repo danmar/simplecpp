@@ -159,10 +159,33 @@ jobs:
         tar xvf 1.5.1.tar.gz
         rm -f 1.5.1.tar.gz
         
+        # O2 - start
         make clean
         make -j$(nproc) CXXOPTS="-O2 -g3" simplecpp
-        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
-        cat callgrind.log
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_o2.log || (cat callgrind_o2.log && false)
+        cat callgrind_o2.log
+        # O2 - end
+        
+        # O3 - start
+        make clean
+        make -j$(nproc) CXXOPTS="-O3 -g3" simplecpp
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_o3.log || (cat callgrind_o3.log && false)
+        cat callgrind_o3.log
+        # O3 - end
+        
+        # O2+LTO - start
+        make clean
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto" LDOPTS="-flto" simplecpp
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_o2_lto.log || (cat callgrind_o2_lto.log && false)
+        cat callgrind_o2_lto.log
+        # O2+LTO - end
+        
+        # O3+LTO - start
+        make clean
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto" LDOPTS="-flto" simplecpp
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_o3_lto.log || (cat callgrind_o3_lto.log && false)
+        cat callgrind_o3_lto.log
+        # O3+LTO - end
         
         # PGO - start
         make clean
@@ -178,6 +201,9 @@ jobs:
         VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_pgo.log || (cat callgrind_pgo.log && false)
         cat callgrind_pgo.log
         # PGO - end
+        
+        # TODO: PGO+O3
+        # TODO: PGO+LTO
         
         for f in callgrind.out.*;
         do
