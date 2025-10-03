@@ -1,7 +1,28 @@
 #!/bin/bash
 
-output=$(./simplecpp simplecpp.cpp -e -f 2>&1)
+if [ -z "$SIMPLECPP_PATH" ]; then
+  SIMPLECPP_PATH=.
+fi
+
+if [ -n "$VALGRIND_TOOL" ]; then
+  if [ "$VALGRIND_TOOL" = "memcheck" ]; then
+    VALGRIND_OPTS="--error-limit=yes --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42"
+  elif [ "$VALGRIND_TOOL" = "callgrind" ]; then
+    VALGRIND_OPTS="--tool=callgrind"
+  else
+    echo "unsupported valgrind tool '$VALGRIND_TOOL'"
+    exit 1
+  fi
+  VALGRIND_CMD="valgrind --tool=$VALGRIND_TOOL --log-fd=9 $VALGRIND_OPTS"
+  VALGRIND_REDIRECT="valgrind_$VALGRIND_TOOL.log"
+else
+  VALGRIND_CMD=
+  VALGRIND_REDIRECT="/dev/null"
+fi
+
+output=$($VALGRIND_CMD ./simplecpp "$SIMPLECPP_PATH/simplecpp.cpp" -e -f 2>&1 9> "$VALGRIND_REDIRECT")
 ec=$?
+cat "$VALGRIND_REDIRECT"
 errors=$(echo "$output" | grep -v 'Header not found: <')
 if [ $ec -ne 0 ]; then
   # only fail if we got errors which do not refer to missing system includes
@@ -104,8 +125,9 @@ else
 fi
 
 # run with -std=gnuc++* so __has_include(...) is available
-./simplecpp simplecpp.cpp -e -f -std=gnu++11 $defs $inc
+$VALGRIND_CMD ./simplecpp "$SIMPLECPP_PATH/simplecpp.cpp" -e -f -std=gnu++11 $defs $inc 9> "$VALGRIND_REDIRECT"
 ec=$?
+cat "$VALGRIND_REDIRECT"
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
