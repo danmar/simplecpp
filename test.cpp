@@ -1727,7 +1727,7 @@ static void strict_ansi_4()
                         "#endif";
     simplecpp::DUI dui;
     dui.std = "gnu99";
-    dui.defines.push_back("__STRICT_ANSI__");
+    dui.defines.emplace_back("__STRICT_ANSI__");
     ASSERT_EQUALS("\nA", preprocess(code, dui));
 }
 
@@ -1774,7 +1774,7 @@ static void ifA()
     ASSERT_EQUALS("", preprocess(code));
 
     simplecpp::DUI dui;
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1793,7 +1793,7 @@ static void ifDefined()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1804,7 +1804,7 @@ static void ifDefinedNoPar()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -1816,7 +1816,7 @@ static void ifDefinedNested()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("FOO=1");
+    dui.defines.emplace_back("FOO=1");
     ASSERT_EQUALS("\n\nX", preprocess(code, dui));
 }
 
@@ -1828,7 +1828,7 @@ static void ifDefinedNestedNoPar()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
-    dui.defines.push_back("FOO=1");
+    dui.defines.emplace_back("FOO=1");
     ASSERT_EQUALS("\n\nX", preprocess(code, dui));
 }
 
@@ -1881,10 +1881,10 @@ static void ifLogical()
     simplecpp::DUI dui;
     ASSERT_EQUALS("", preprocess(code, dui));
     dui.defines.clear();
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
     dui.defines.clear();
-    dui.defines.push_back("B=1");
+    dui.defines.emplace_back("B=1");
     ASSERT_EQUALS("\nX", preprocess(code, dui));
 }
 
@@ -2079,7 +2079,7 @@ static void missingHeader2()
     simplecpp::TokenList tokens2(files);
     const simplecpp::TokenList rawtokens = makeTokenList(code,files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
     ASSERT_EQUALS("", toString(outputList));
 }
@@ -2111,7 +2111,7 @@ static void nestedInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("file0,1,include_nested_too_deeply,#include nested too deeply\n", toString(outputList));
@@ -2129,7 +2129,7 @@ static void systemInclude()
     simplecpp::OutputList outputList;
     simplecpp::TokenList tokens2(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back("include");
+    dui.includePaths.emplace_back("include");
     simplecpp::preprocess(tokens2, rawtokens, files, cache, dui, &outputList);
 
     ASSERT_EQUALS("", toString(outputList));
@@ -2355,7 +2355,7 @@ static void include3()   // #16 - crash when expanding macro from header
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n1234", out.stringify());
@@ -2382,8 +2382,8 @@ static void include4()   // #27 - -include
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
-    dui.includes.push_back("27.h");
+    dui.includePaths.emplace_back(".");
+    dui.includes.emplace_back("27.h");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("123", out.stringify());
@@ -2409,7 +2409,7 @@ static void include5()    // #3 - handle #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
@@ -2455,7 +2455,7 @@ static void include7()    // #include MACRO
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"3.h\"\n123", out.stringify());
@@ -2493,7 +2493,7 @@ static void include9()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
@@ -2675,7 +2675,7 @@ static void stringify1()
 
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
-    dui.includePaths.push_back(".");
+    dui.includePaths.emplace_back(".");
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 1 \"A.h\"\n1\n2\n#line 1 \"A.h\"\n1\n2", out.stringify());
@@ -2778,7 +2778,7 @@ static void userdef()
 {
     const char code[] = "#ifdef A\n123\n#endif\n";
     simplecpp::DUI dui;
-    dui.defines.push_back("A=1");
+    dui.defines.emplace_back("A=1");
     ASSERT_EQUALS("\n123", preprocess(code, dui));
 }
 
