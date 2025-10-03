@@ -22,7 +22,8 @@ static void doProcess(const uint8_t *data, size_t dataSize)
 
     simplecpp::TokenList outputTokens(files);
     simplecpp::FileDataCache filedata;
-    const simplecpp::DUI dui;
+    simplecpp::DUI dui;
+    dui.includePaths = { "/usr/include" };
     std::list<simplecpp::MacroUsage> macroUsage;
     std::list<simplecpp::IfCond> ifCond;
     simplecpp::preprocess(outputTokens, rawtokens, files, filedata, dui, &outputList, &macroUsage, &ifCond);
