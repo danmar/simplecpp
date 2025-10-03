@@ -27,7 +27,7 @@ test:	testrunner	simplecpp
 
 fuzz:	fuzz.o simplecpp.o
 	# TODO: use -stdlib=libc++ -lc++
-	# make fuzz CXX=clang++ CXXOPTS="-O2 -fno-omit-frame-pointer -g -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize=integer -fno-sanitize-recover=undefined" LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
+	# make fuzz CXX=clang++ CXXOPTS="-O2 -flto -fno-omit-frame-pointer -g -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize=integer -fno-sanitize-recover=undefined" LDOPTS="-flto" LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^ $(LIB_FUZZING_ENGINE)
 
 no-fuzz:	fuzz_no.o simplecpp.o

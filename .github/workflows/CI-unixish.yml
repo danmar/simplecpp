@@ -149,7 +149,7 @@ jobs:
         rm -f 1.5.1.tar.gz
         
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3" simplecpp
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto" LDOPTS="-flto" simplecpp
         VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
         
