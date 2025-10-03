@@ -49,8 +49,16 @@
 
 #ifdef _WIN32
 #  include <direct.h>
+using mode_t = unsigned short;
 #else
 #  include <sys/stat.h>
+#  include <sys/types.h>
+#endif
+
+#ifdef __GNUC__
+#  define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#  define unlikely(x) (x)
 #endif
 
 static bool isHex(const std::string &s)
@@ -464,6 +472,77 @@ private:
     int lastStatus;
 };
 
+class FileStreamBuffered : public simplecpp::TokenList::Stream {
+public:
+    FileStreamBuffered(const std::string &filename, std::vector<std::string> &files)
+        : file(fopen(filename.c_str(), "rb"))
+        , lastStatus(0)
+        , buf_len(0)
+        , buf_idx(-1)
+    {
+        if (!file) {
+            files.push_back(filename);
+            throw simplecpp::Output(files, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
+        }
+        init();
+    }
+
+    ~FileStreamBuffered() {
+        fclose(file);
+        file = nullptr;
+    }
+
+    virtual int get() {
+        read_internal();
+        return buf[buf_idx++];
+    }
+    virtual int peek() {
+        read_internal();
+        return buf[buf_idx];
+    }
+    virtual void unget() {
+        --buf_idx;
+    }
+    virtual bool good() {
+        return lastStatus != EOF;
+    }
+
+private:
+    void read_internal() {
+        // check if we are in the last chunk
+        if (unlikely(buf_idx >= buf_len)) {
+            if (buf_len != sizeof(buf)) {
+                lastStatus = EOF;
+                return;
+            }
+        }
+
+        if (unlikely(buf_idx == -1 || buf_idx == buf_len))
+        {
+            buf_idx = 0;
+            buf_len = fread(buf, 1, sizeof(buf), file);
+            if (buf_len == 0) {
+                lastStatus = EOF;
+            }
+            else if (buf_len != sizeof(buf)) {
+                if (ferror(file)) {
+                    // TODO: is this correct?
+                    lastStatus = EOF;
+                }
+            }
+        }
+    }
+
+    FileStreamBuffered(const FileStreamBuffered&);
+    FileStreamBuffered &operator=(const FileStreamBuffered&);
+
+    FILE *file;
+    int lastStatus;
+    unsigned char buf[8192];
+    int buf_len;
+    int buf_idx;
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
@@ -484,7 +563,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     try {
-        FileStream stream(filename, filenames);
+        FileStreamBuffered stream(filename, filenames);
         readfile(stream,filename,outputList);
     } catch (const simplecpp::Output & e) { // TODO handle extra type of errors
         outputList->push_back(e);
@@ -694,33 +773,55 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
-                if (!isLastLinePreprocessor())
+                const Token * const llTok = isLastLinePreprocessor();
+                if (!llTok)
                     continue;
-                const std::string lastline(lastLine());
-                if (lastline == "# file %str%") {
-                    const Token *strtok = cback();
-                    while (strtok->comment)
-                        strtok = strtok->previous;
-                    loc.push(location);
-                    location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
-                    location.line = 1U;
-                } else if (lastline == "# line %num%") {
-                    const Token *numtok = cback();
-                    while (numtok->comment)
-                        numtok = numtok->previous;
-                    lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
-                } else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
-                    const Token *strtok = cback();
-                    while (strtok->comment)
-                        strtok = strtok->previous;
-                    const Token *numtok = strtok->previous;
-                    while (numtok->comment)
-                        numtok = numtok->previous;
-                    lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
-                                  std::atol(numtok->str().c_str()), &location);
+                const Token * const llNextToken = llTok->next;
+                if (!llTok->next)
+                    continue;
+                if (llNextToken->next) {
+                    // #file "file.c"
+                    if (llNextToken->str() == "file" &&
+                        llNextToken->next->str()[0] == '\"')
+                    {
+                        const Token *strtok = cback();
+                        while (strtok->comment)
+                            strtok = strtok->previous;
+                        loc.push(location);
+                        location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
+                        location.line = 1U;
+                    }
+                    // #3 "file.c"
+                    // #line 3 "file.c"
+                    else if ((llNextToken->number &&
+                              llNextToken->next->str()[0] == '\"') ||
+                             (llNextToken->str() == "line" &&
+                              llNextToken->next->number &&
+                              llNextToken->next->next &&
+                              llNextToken->next->next->str()[0] == '\"'))
+                    {
+                        const Token *strtok = cback();
+                        while (strtok->comment)
+                            strtok = strtok->previous;
+                        const Token *numtok = strtok->previous;
+                        while (numtok->comment)
+                            numtok = numtok->previous;
+                        lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
+                                      std::atol(numtok->str().c_str()), &location);
+                    }
+                    // #line 3
+                    else if (llNextToken->str() == "line" &&
+                             llNextToken->next->number)
+                    {
+                        const Token *numtok = cback();
+                        while (numtok->comment)
+                            numtok = numtok->previous;
+                        lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
+                    }
                 }
                 // #endfile
-                else if (lastline == "# endfile" && !loc.empty()) {
+                else if (llNextToken->str() == "endfile" && !loc.empty())
+                {
                     location = loc.top();
                     loc.pop();
                 }
@@ -737,8 +838,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         TokenString currentToken;
 
         if (cback() && cback()->location.line == location.line && cback()->previous && cback()->previous->op == '#') {
-            const Token* const llTok = lastLineTok();
-            if (llTok && llTok->op == '#' && llTok->next && (llTok->next->str() == "error" || llTok->next->str() == "warning")) {
+            const Token* const ppTok = cback()->previous;
+            if (ppTok->next && (ppTok->next->str() == "error" || ppTok->next->str() == "warning")) {
                 char prev = ' ';
                 while (stream.good() && (prev == '\\' || (ch != '\r' && ch != '\n'))) {
                     currentToken += ch;
@@ -1415,34 +1516,6 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
     return ret;
 }
 
-std::string simplecpp::TokenList::lastLine(int maxsize) const
-{
-    std::string ret;
-    int count = 0;
-    for (const Token *tok = cback(); ; tok = tok->previous) {
-        if (!sameline(tok, cback())) {
-            break;
-        }
-        if (tok->comment)
-            continue;
-        if (++count > maxsize)
-            return "";
-        if (!ret.empty())
-            ret += ' ';
-        // add tokens in reverse for performance reasons
-        if (tok->str()[0] == '\"')
-            ret += "%rts%"; // %str%
-        else if (tok->number)
-            ret += "%mun%"; // %num%
-        else {
-            ret += tok->str();
-            std::reverse(ret.end() - tok->str().length(), ret.end());
-        }
-    }
-    std::reverse(ret.begin(), ret.end());
-    return ret;
-}
-
 const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
 {
     const Token* prevTok = nullptr;
@@ -1459,10 +1532,12 @@ const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
     return prevTok;
 }
 
-bool simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
+const simplecpp::Token* simplecpp::TokenList::isLastLinePreprocessor(int maxsize) const
 {
     const Token * const prevTok = lastLineTok(maxsize);
-    return prevTok && prevTok->op == '#';
+    if (prevTok && prevTok->op == '#')
+        return prevTok;
+    return nullptr;
 }
 
 unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
@@ -3013,9 +3088,11 @@ static std::string openHeaderDirect(std::ifstream &f, const std::string &path)
     if (nonExistingFilesCache.contains(path))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
-    f.open(path.c_str());
-    if (f.is_open())
-        return path;
+    if (simplecpp::isFile(path)) {
+        f.open(path.c_str());
+        if (f.is_open())
+            return path;
+    }
 #ifdef SIMPLECPP_WINDOWS
     nonExistingFilesCache.add(path);
 #endif
@@ -3133,6 +3210,9 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
     struct stat statbuf;
 
     if (stat(path.c_str(), &statbuf) != 0)
+        return false;
+
+    if ((statbuf.st_mode & S_IFMT) != S_IFREG)
         return false;
 
     id.dev = statbuf.st_dev;
@@ -3878,4 +3958,22 @@ std::string simplecpp::getCppStdString(cppstd_t std)
 std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
+}
+
+static mode_t file_type(const std::string &path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return 0;
+    return file_stat.st_mode & S_IFMT;
+}
+
+bool simplecpp::isFile(const std::string &path)
+{
+    return file_type(path) == S_IFREG;
+}
+
+bool simplecpp::isDirectory(const std::string &path)
+{
+    return file_type(path) == S_IFDIR;
 }
