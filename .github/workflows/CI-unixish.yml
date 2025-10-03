@@ -145,7 +145,7 @@ jobs:
         wget https://github.com/danmar/simplecpp/archive/refs/tags/1.5.1.tar.gz
         tar xvf 1.5.1.tar.gz
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3 -flto" LDOPTS="-flto"
+        make -j$(nproc) CXXOPTS="-O3 -g3 -flto" LDOPTS="-flto"
         valgrind --tool=callgrind ./simplecpp -e simplecpp-1.5.1/simplecpp.cpp 2>callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
         callgrind_annotate --auto=no > callgrind.annotated.log
