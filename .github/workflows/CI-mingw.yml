@@ -79,10 +79,13 @@ jobs:
           pacman -S --noconfirm gcc
 
       - name: make test
-        run: make -j$(nproc) test
+        run: |
+          # TODO: run tests with Windows paths
+          make -j$(nproc) test
 
       - name: selfcheck
         run: |
+          # TODO: run tests with Windows paths
           make -j$(nproc) selfcheck
 
       - name: Run CMake
