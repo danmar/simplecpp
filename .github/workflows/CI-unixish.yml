@@ -100,9 +100,10 @@ jobs:
       if: matrix.os == 'ubuntu-24.04'
       run: |
           make clean
-          make -j$(nproc)
+          make -j$(nproc) CXXOPTS="-O1"
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
-          valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./simplecpp simplecpp.cpp -e
+          # TODO: run Python tests with valgrind
+          VALGRIND_TOOL=memcheck ./selfcheck.sh
 
     - name: Run with libstdc++ debug mode
       if: matrix.os == 'ubuntu-24.04' && matrix.compiler == 'g++'
@@ -146,10 +147,13 @@ jobs:
         tar xvf 1.5.1.tar.gz
         make clean
         make -j$(nproc) CXXOPTS="-O2 -g3"
-        valgrind --tool=callgrind ./simplecpp -e simplecpp-1.5.1/simplecpp.cpp 2>callgrind.log || (cat callgrind.log && false)
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
-        callgrind_annotate --auto=no > callgrind.annotated.log
-        head -50 callgrind.annotated.log
+        for f in callgrind.out.*;
+        do
+          callgrind_annotate --auto=no $f > $f.annotated.log
+          head -50 $f.annotated.log
+        done
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-24.04'
