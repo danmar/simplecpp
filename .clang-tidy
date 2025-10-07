@@ -49,7 +49,6 @@ Checks: >
         -readability-use-concise-preprocessor-directives,
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
-        -performance-enum-size,
         -performance-inefficient-string-concatenation,
         -performance-no-automatic-move,
         -performance-noexcept-move-constructor
