@@ -1,0 +1,77 @@
+name: CI-cygwin
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        compiler: [g++]
+      fail-fast: false
+
+    runs-on: windows-2025
+
+    env:
+      CXX: ${{ matrix.compiler }}
+
+    steps:
+      - run: git config --global core.autocrlf input
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Cygwin
+        uses: cygwin/cygwin-install-action@v6
+        with:
+          platform: 'x86_64'
+          packages: |
+            gcc-g++
+            python3
+            cmake
+
+      - name: make simplecpp
+        run: make -j4 CXXOPTS="-Werror"
+
+      - name: make test
+        run: make -j4 test
+
+      - name: selfcheck
+        run: |
+          make -j4 selfcheck
+
+      - name: Run CMake
+        run: |
+          cmake -S . -B cmake.output -DCMAKE_COMPILE_WARNING_AS_ERROR=On
+
+      - name: CMake simplecpp
+        run: |
+          cmake --build cmake.output --target simplecpp -- -j 4
+
+      - name: CMake testrunner
+        run: |
+          cmake --build cmake.output --target testrunner -- -j 4
+
+      - name: Run testrunner
+        run: |
+          ./cmake.output/testrunner
+
+      - name: Run with libstdc++ debug mode
+        if: matrix.compiler == 'g++'
+        run: |
+          make clean
+          make -j4 test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
+
+      - name: Run with libc++ hardening mode
+        if: matrix.compiler == 'clang++' && matrix.msystem == 'CLANG64'
+        run: |
+          make clean
+          make -j4 test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
