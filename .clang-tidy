@@ -31,7 +31,6 @@ Checks: >
         -modernize-pass-by-value,
         -modernize-return-braced-init-list,
         -modernize-use-auto,
-        -modernize-use-equals-default,
         -modernize-use-equals-delete,
         -modernize-use-default-member-init,
         -modernize-use-nodiscard,
