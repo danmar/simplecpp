@@ -425,7 +425,7 @@ namespace simplecpp {
 
         void insert(FileData data) {
             // NOLINTNEXTLINE(misc-const-correctness) - FP
-            FileData *const newdata = new FileData(std::move(data));
+            auto *const newdata = new FileData(std::move(data));
 
             mData.emplace_back(newdata);
             mNameMap.emplace(newdata->filename, newdata);
