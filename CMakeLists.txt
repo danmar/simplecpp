@@ -27,12 +27,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wfloat-equal)              # Floating values used in equality comparisons
     add_compile_options(-Wmissing-declarations)     # If a global function is defined without a previous declaration
     add_compile_options(-Wmissing-format-attribute) #
-    add_compile_options(-Wno-long-long)
     add_compile_options(-Wpacked)                   #
     add_compile_options(-Wredundant-decls)          # if anything is declared more than once in the same scope
     add_compile_options(-Wundef)
-    add_compile_options(-Wno-missing-braces)
-    add_compile_options(-Wno-sign-compare)
     add_compile_options(-Wno-multichar)
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
@@ -40,9 +37,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options_safe(-Wuseless-cast)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    # TODO: bump warning level
-    #add_compile_options(/W4)  # Warning Level
-    # TODO: enable warning
+    add_compile_options(/W4)  # Warning Level
+    add_compile_options(/wd4244)  # warning C4244: 'x': conversion from 'int' to 'char', possible loss of data
     add_compile_options(/wd4267)  # warning C4267: '...': conversion from 'size_t' to 'unsigned int', possible loss of data
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Weverything)
@@ -57,9 +53,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # we are not interested in these
     add_compile_options(-Wno-multichar)
     add_compile_options(-Wno-four-char-constants)
-    # ignore C++11-specific warning
-    add_compile_options(-Wno-suggest-override)
-    add_compile_options(-Wno-suggest-destructor-override)
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
     # TODO: fix these?
