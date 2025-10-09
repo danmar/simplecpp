@@ -76,7 +76,7 @@ namespace simplecpp {
      */
     class SIMPLECPP_LIB Location {
     public:
-        explicit Location(const std::vector<std::string> &f) : files(f), fileIndex(0), line(1U), col(0U) {}
+        explicit Location(const std::vector<std::string> &f) : files(f) {}
 
         Location(const Location &loc) = default;
 
@@ -109,9 +109,9 @@ namespace simplecpp {
         }
 
         const std::vector<std::string> &files;
-        unsigned int fileIndex;
-        unsigned int line;
-        unsigned int col;
+        unsigned int fileIndex{};
+        unsigned int line{1};
+        unsigned int col{};
     private:
         static const std::string emptyFileName;
     };
@@ -123,12 +123,12 @@ namespace simplecpp {
     class SIMPLECPP_LIB Token {
     public:
         Token(const TokenString &s, const Location &loc, bool wsahead = false) :
-            whitespaceahead(wsahead), location(loc), previous(nullptr), next(nullptr), nextcond(nullptr), string(s) {
+            whitespaceahead(wsahead), location(loc), string(s) {
             flags();
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), previous(nullptr), next(nullptr), nextcond(nullptr), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
 
         const TokenString& str() const {
             return string;
@@ -153,9 +153,9 @@ namespace simplecpp {
         bool number;
         bool whitespaceahead;
         Location location;
-        Token *previous;
-        Token *next;
-        mutable const Token *nextcond;
+        Token *previous{};
+        Token *next{};
+        mutable const Token *nextcond{};
 
         const Token *previousSkipComments() const {
             const Token *tok = this->previous;
@@ -393,14 +393,14 @@ namespace simplecpp {
      * On the command line these are configured by -D, -U, -I, --include, -std
      */
     struct SIMPLECPP_LIB DUI {
-        DUI() : clearIncludeCache(false), removeComments(false) {}
+        DUI() = default;
         std::list<std::string> defines;
         std::set<std::string> undefined;
         std::list<std::string> includePaths;
         std::list<std::string> includes;
         std::string std;
-        bool clearIncludeCache;
-        bool removeComments; /** remove comment tokens from included files */
+        bool clearIncludeCache{};
+        bool removeComments{}; /** remove comment tokens from included files */
     };
 
     struct SIMPLECPP_LIB FileData {
