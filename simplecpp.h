@@ -130,6 +130,8 @@ namespace simplecpp {
         Token(const Token &tok) :
             macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
 
+        Token &operator=(const Token &tok) = delete;
+
         const TokenString& str() const {
             return string;
         }
@@ -195,9 +197,6 @@ namespace simplecpp {
         TokenString string;
 
         std::set<const Macro*> mExpandedFrom;
-
-        // Not implemented - prevent assignment
-        Token &operator=(const Token &tok);
     };
 
     /** Output from preprocessor */
