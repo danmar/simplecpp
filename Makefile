@@ -22,7 +22,7 @@ test:	testrunner	simplecpp
 	python3 -m pytest integration_test.py -vv
 
 selfcheck:	simplecpp
-	CXX=$(CXX) ./selfcheck.sh
+	CXX=$(CXX) STRICT=1 ./selfcheck.sh
 
 simplecpp:	main.o simplecpp.o
 	$(CXX) $(LDFLAGS) main.o simplecpp.o -o simplecpp
