@@ -700,6 +700,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!isLastLinePreprocessor())
                     continue;
                 const std::string lastline(lastLine());
+                // #file "file.c"
                 if (lastline == "# file %str%") {
                     const Token *strtok = cback();
                     while (strtok->comment)
@@ -707,12 +708,18 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     loc.push(location);
                     location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
                     location.line = 1U;
-                } else if (lastline == "# line %num%") {
+                }
+                // #line 3
+                // TODO: add support for "# 3"
+                else if (lastline == "# line %num%") {
                     const Token *numtok = cback();
                     while (numtok->comment)
                         numtok = numtok->previous;
                     lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
-                } else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
+                }
+                // # 3 "file.c" - not supported by Visual Studio
+                // #line 3 "file.c"
+                else if (lastline == "# %num% %str%" || lastline == "# line %num% %str%") {
                     const Token *strtok = cback();
                     while (strtok->comment)
                         strtok = strtok->previous;
@@ -722,7 +729,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
                                   std::atol(numtok->str().c_str()), &location);
                 }
-                // #endfile
+                // #endfile - only supported by Visual Studio(?)
                 else if (lastline == "# endfile" && !loc.empty()) {
                     location = loc.top();
                     loc.pop();
