@@ -259,12 +259,12 @@ public:
     virtual bool good() = 0;
 
     unsigned char readChar() {
-        unsigned char ch = static_cast<unsigned char>(get());
+        unsigned char ch = static_cast<unsigned char>(get()); // TODO: check EOF?
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
-            const unsigned char ch2 = static_cast<unsigned char>(get());
+            const unsigned char ch2 = static_cast<unsigned char>(get()); // TODO: check EOF?
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
@@ -287,13 +287,13 @@ public:
     }
 
     unsigned char peekChar() {
-        unsigned char ch = static_cast<unsigned char>(peek());
+        unsigned char ch = static_cast<unsigned char>(peek()); // TODO: check EOF?
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             (void)get();
-            const unsigned char ch2 = static_cast<unsigned char>(peek());
+            const unsigned char ch2 = static_cast<unsigned char>(peek()); // TODO: check EOF?
             unget();
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
