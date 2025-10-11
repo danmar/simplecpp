@@ -101,7 +101,7 @@ jobs:
       if: matrix.os == 'ubuntu-24.04'
       run: |
           make clean
-          make -j$(nproc) CXXOPTS="-O1"
+          make -j$(nproc) CXXOPTS="-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
           valgrind --leak-check=full --num-callers=50 --show-reachable=yes --track-origins=yes --gen-suppressions=all --error-exitcode=42 ./testrunner
           # TODO: run Python tests with valgrind
           VALGRIND_TOOL=memcheck ./selfcheck.sh
