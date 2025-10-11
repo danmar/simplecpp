@@ -43,7 +43,7 @@ jobs:
         run: |
           make -j1 CXXOPTS="-Werror"
 
-      - name: make test
+      - name: run test
         run: |
           make -j1 test
 
