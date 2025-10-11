@@ -23,7 +23,8 @@ jobs:
       CXX: ${{ matrix.compiler }}
 
     steps:
-      - run: git config --global core.autocrlf input
+      - run: |
+          git config --global core.autocrlf input
 
       - uses: actions/checkout@v4
         with:
@@ -39,10 +40,12 @@ jobs:
             cmake
 
       - name: make simplecpp
-        run: make -j1 CXXOPTS="-Werror"
+        run: |
+          make -j1 CXXOPTS="-Werror"
 
       - name: make test
-        run: make -j1 test
+        run: |
+          make -j1 test
 
       - name: selfcheck
         run: |
