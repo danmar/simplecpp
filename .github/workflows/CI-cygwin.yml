@@ -41,6 +41,7 @@ jobs:
 
       - name: make simplecpp
         run: |
+          ls -l
           make -j1 CXXOPTS="-Werror"
 
       - name: run test
