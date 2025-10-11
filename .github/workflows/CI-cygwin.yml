@@ -40,7 +40,15 @@ jobs:
             cmake
 
       - name: make simplecpp
+        shell: cmd
         run: |
+          pwd
+          ls -l
+          make -j1 CXXOPTS="-Werror"
+
+      - name: make simplecpp
+        run: |
+          pwd
           ls -l
           make -j1 CXXOPTS="-Werror"
 
