@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Cygwin
-        uses: cygwin/cygwin-install-action@v5
+        uses: cygwin/cygwin-install-action@v6
         with:
           platform: 'x86_64'
           packages: |
@@ -44,7 +44,7 @@ jobs:
         run: |
           pwd
           ls -l
-          make -j1 CXXOPTS="-Werror"
+          C:\cygwin\bin\bash.exe -c make -j1 CXXOPTS="-Werror"
 
       - name: make simplecpp
         run: |
