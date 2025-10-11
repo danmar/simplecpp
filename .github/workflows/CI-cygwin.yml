@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Cygwin
-        uses: cygwin/cygwin-install-action@v6
+        uses: cygwin/cygwin-install-action@v5
         with:
           platform: 'x86_64'
           packages: |
