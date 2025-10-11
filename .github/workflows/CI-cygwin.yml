@@ -44,7 +44,7 @@ jobs:
         run: |
           pwd
           ls -l
-          C:\cygwin\bin\bash.exe -c make -j1 CXXOPTS="-Werror"
+          make -j1 CXXOPTS="-Werror"
 
       - name: make simplecpp
         run: |
