@@ -39,14 +39,14 @@ jobs:
             cmake
 
       - name: make simplecpp
-        run: make -j4 CXXOPTS="-Werror"
+        run: make -j1 CXXOPTS="-Werror"
 
       - name: make test
-        run: make -j4 test
+        run: make -j1 test
 
       - name: selfcheck
         run: |
-          make -j4 selfcheck
+          make -j1 selfcheck
 
       - name: Run CMake
         run: |
@@ -68,10 +68,10 @@ jobs:
         if: matrix.compiler == 'g++'
         run: |
           make clean
-          make -j4 test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
+          make -j1 test selfcheck CXXOPTS="-Werror -g3 -D_GLIBCXX_DEBUG"
 
       - name: Run with libc++ hardening mode
         if: matrix.compiler == 'clang++' && matrix.msystem == 'CLANG64'
         run: |
           make clean
-          make -j4 test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
+          make -j1 test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
