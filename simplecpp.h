@@ -76,18 +76,15 @@ namespace simplecpp {
      */
     class SIMPLECPP_LIB Location {
     public:
-        explicit Location(const std::vector<std::string> &f) : files(f) {}
+        Location() = default;
+        Location(unsigned int fileIndex, unsigned int line, unsigned int col)
+            : fileIndex(fileIndex)
+            , line(line)
+            , col(col)
+        {}
 
         Location(const Location &loc) = default;
-
-        Location &operator=(const Location &other) {
-            if (this != &other) {
-                fileIndex = other.fileIndex;
-                line = other.line;
-                col  = other.col;
-            }
-            return *this;
-        }
+        Location &operator=(const Location &other) = default;
 
         /** increment this location by string */
         void adjust(const std::string &str);
@@ -104,11 +101,10 @@ namespace simplecpp {
             return fileIndex == other.fileIndex && line == other.line;
         }
 
-        const std::string& file() const {
-            return fileIndex < files.size() ? files[fileIndex] : emptyFileName;
+        const std::string& file(const std::vector<std::string> &f) const {
+            return fileIndex < f.size() ? f[fileIndex] : emptyFileName;
         }
 
-        const std::vector<std::string> &files;
         unsigned int fileIndex{};
         unsigned int line{1};
         unsigned int col{};
@@ -356,7 +352,7 @@ namespace simplecpp {
         void constFoldQuestionOp(Token *&tok1);
 
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
-        void lineDirective(unsigned int fileIndex, unsigned int line, Location *location);
+        void lineDirective(unsigned int fileIndex, unsigned int line, Location &location);
 
         const Token* lastLineTok(int maxsize=1000) const;
         const Token* isLastLinePreprocessor(int maxsize=1000) const;
@@ -370,7 +366,7 @@ namespace simplecpp {
 
     /** Tracking how macros are used */
     struct SIMPLECPP_LIB MacroUsage {
-        explicit MacroUsage(const std::vector<std::string> &f, bool macroValueKnown_) : macroLocation(f), useLocation(f), macroValueKnown(macroValueKnown_) {}
+        explicit MacroUsage(bool macroValueKnown_) : macroValueKnown(macroValueKnown_) {}
         std::string macroName;
         Location macroLocation;
         Location useLocation;
