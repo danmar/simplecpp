@@ -19,7 +19,7 @@ function(add_compile_options_safe FLAG)
     endif()
 endfunction()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-pedantic)
 
     add_compile_options(-Wall)
@@ -38,7 +38,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 
     # we are not interested in these
     set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS -Wno-multichar)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 
     add_compile_options(/W4)  # Warning Level
