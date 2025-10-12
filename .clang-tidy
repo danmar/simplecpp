@@ -31,7 +31,6 @@ Checks: >
         -modernize-pass-by-value,
         -modernize-return-braced-init-list,
         -modernize-use-auto,
-        -modernize-use-equals-delete,
         -modernize-use-nodiscard,
         -modernize-use-trailing-return-type,
         -readability-avoid-nested-conditional-operator,

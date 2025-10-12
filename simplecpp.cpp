@@ -427,6 +427,9 @@ public:
         init();
     }
 
+    FileStream(const FileStream&) = delete;
+    FileStream &operator=(const FileStream&) = delete;
+
     ~FileStream() override {
         fclose(file);
         file = nullptr;
@@ -458,9 +461,6 @@ private:
         } else
             ungetc(ch, file);
     }
-
-    FileStream(const FileStream&);
-    FileStream &operator=(const FileStream&);
 
     FILE *file;
     int lastCh{};
