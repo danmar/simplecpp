@@ -182,8 +182,6 @@ static std::string replaceAll(std::string s, const std::string& from, const std:
     return s;
 }
 
-const std::string simplecpp::Location::emptyFileName;
-
 void simplecpp::Location::adjust(const std::string &str)
 {
     if (strpbrk(str.c_str(), "\r\n") == nullptr) {
@@ -568,7 +566,7 @@ std::string simplecpp::TokenList::stringify(bool linenrs) const
     bool filechg = true;
     for (const Token *tok = cfront(); tok; tok = tok->next) {
         if (tok->location.line < loc.line || tok->location.fileIndex != loc.fileIndex) {
-            ret << "\n#line " << tok->location.line << " \"" << tok->location.file(files) << "\"\n";
+            ret << "\n#line " << tok->location.line << " \"" << file(tok->location) << "\"\n";
             loc = tok->location;
             filechg = true;
         }
@@ -1474,6 +1472,12 @@ unsigned int simplecpp::TokenList::fileIndex(const std::string &filename)
     return files.size() - 1U;
 }
 
+const std::string& simplecpp::TokenList::file(const Location& loc) const
+{
+    static const std::string s_emptyFileName;
+    return loc.fileIndex < files.size() ? files[loc.fileIndex] : s_emptyFileName;
+}
+
 
 namespace simplecpp {
     class Macro;
@@ -1881,7 +1885,7 @@ namespace simplecpp {
             usageList.push_back(loc);
 
             if (nameTokInst->str() == "__FILE__") {
-                output.push_back(new Token('\"'+loc.file(output.getFiles())+'\"', loc));
+                output.push_back(new Token('\"'+output.file(loc)+'\"', loc));
                 return nameTokInst->next;
             }
             if (nameTokInst->str() == "__LINE__") {
@@ -2633,7 +2637,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
             }
         }
 
-        const std::string &sourcefile = tok->location.file(expr.getFiles());
+        const std::string &sourcefile = expr.file(tok->location);
         const bool systemheader = (tok1 && tok1->op == '<');
         std::string header;
         if (systemheader) {
@@ -3195,7 +3199,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
         if (!rawtok || rawtok->str() != INCLUDE)
             continue;
 
-        const std::string &sourcefile = rawtok->location.file(filenames);
+        const std::string &sourcefile = rawtokens.file(rawtok->location);
 
         const Token * const htok = rawtok->nextSkipComments();
         if (!sameline(rawtok, htok))
@@ -3522,7 +3526,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 const bool systemheader = (inctok->str()[0] == '<');
                 const std::string header(inctok->str().substr(1U, inctok->str().size() - 2U));
-                const FileData *const filedata = cache.get(rawtok->location.file(files), header, dui, systemheader, files, outputList).first;
+                const FileData *const filedata = cache.get(rawtokens.file(rawtok->location), header, dui, systemheader, files, outputList).first;
                 if (filedata == nullptr) {
                     if (outputList) {
                         simplecpp::Output out = {
@@ -3615,7 +3619,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 tok = tok->next;
                             bool closingAngularBracket = false;
                             if (tok) {
-                                const std::string &sourcefile = rawtok->location.file(files);
+                                const std::string &sourcefile = rawtokens.file(rawtok->location);
                                 const bool systemheader = (tok && tok->op == '<');
                                 std::string header;
 
@@ -3724,7 +3728,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         macros.erase(tok->str());
                 }
             } else if (ifstates.top() == True && rawtok->str() == PRAGMA && rawtok->next && rawtok->next->str() == ONCE && sameline(rawtok,rawtok->next)) {
-                pragmaOnce.insert(rawtok->location.file(files));
+                pragmaOnce.insert(rawtokens.file(rawtok->location));
             }
             if (ifstates.top() != True && rawtok->nextcond)
                 rawtok = rawtok->nextcond->previous;

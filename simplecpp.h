@@ -101,15 +101,9 @@ namespace simplecpp {
             return fileIndex == other.fileIndex && line == other.line;
         }
 
-        const std::string& file(const std::vector<std::string> &f) const {
-            return fileIndex < f.size() ? f[fileIndex] : emptyFileName;
-        }
-
         unsigned int fileIndex{};
         unsigned int line{1};
         unsigned int col{};
-    private:
-        static const std::string emptyFileName;
     };
 
     /**
@@ -336,6 +330,8 @@ namespace simplecpp {
         const std::vector<std::string>& getFiles() const {
             return files;
         }
+
+        const std::string& file(const Location& loc) const;
 
     private:
         TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int unused);
