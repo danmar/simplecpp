@@ -422,7 +422,7 @@ public:
     {
         if (!file) {
             files.push_back(filename);
-            throw simplecpp::Output(files, simplecpp::Output::FILE_NOT_FOUND, "File is missing: " + filename);
+            throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, simplecpp::Location(files), "File is missing: " + filename);
         }
         init();
     }
@@ -615,14 +615,15 @@ static std::string escapeString(const std::string &str)
     return ostr.str();
 }
 
-static void portabilityBackslash(simplecpp::OutputList *outputList, const std::vector<std::string> &files, const simplecpp::Location &location)
+static void portabilityBackslash(simplecpp::OutputList *outputList, const simplecpp::Location &location)
 {
     if (!outputList)
         return;
-    simplecpp::Output err(files);
-    err.type = simplecpp::Output::PORTABILITY_BACKSLASH;
-    err.location = location;
-    err.msg = "Combination 'backslash space newline' is not portable.";
+    simplecpp::Output err = {
+        simplecpp::Output::PORTABILITY_BACKSLASH,
+        location,
+        "Combination 'backslash space newline' is not portable."
+    };
     outputList->push_back(std::move(err));
 }
 
@@ -670,13 +671,12 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
         if (ch >= 0x80) {
             if (outputList) {
-                simplecpp::Output err(files);
-                err.type = simplecpp::Output::UNHANDLED_CHAR_ERROR;
-                err.location = location;
-                std::ostringstream s;
-                s << static_cast<int>(ch);
-                err.msg = "The code contains unhandled character(s) (character code=" + s.str() + "). Neither unicode nor extended ascii is supported.";
-                outputList->push_back(err);
+                simplecpp::Output err = {
+                    simplecpp::Output::UNHANDLED_CHAR_ERROR,
+                    location,
+                    "The code contains unhandled character(s) (character code=" + std::to_string(static_cast<int>(ch)) + "). Neither unicode nor extended ascii is supported."
+                };
+                outputList->push_back(std::move(err));
             }
             clear();
             return;
@@ -685,7 +685,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         if (ch == '\n') {
             if (cback() && cback()->op == '\\') {
                 if (location.col > cback()->location.col + 1U)
-                    portabilityBackslash(outputList, files, cback()->location);
+                    portabilityBackslash(outputList, cback()->location);
                 ++multiline;
                 deleteToken(back());
             } else {
@@ -790,7 +790,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         const TokenString check_portability = currentToken + tmp;
                         const std::string::size_type pos = check_portability.find_last_not_of(" \t");
                         if (pos < check_portability.size() - 1U && check_portability[pos] == '\\')
-                            portabilityBackslash(outputList, files, location);
+                            portabilityBackslash(outputList, location);
                         ++multiline;
                         tmp_ch = stream.readChar();
                         currentToken += '\n';
@@ -850,11 +850,12 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 }
                 if (!stream.good() || ch == '\n') {
                     if (outputList) {
-                        Output err(files);
-                        err.type = Output::SYNTAX_ERROR;
-                        err.location = location;
-                        err.msg = "Invalid newline in raw string delimiter.";
-                        outputList->push_back(err);
+                        Output err = {
+                            Output::SYNTAX_ERROR,
+                            location,
+                            "Invalid newline in raw string delimiter."
+                        };
+                        outputList->push_back(std::move(err));
                     }
                     return;
                 }
@@ -863,10 +864,11 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     currentToken += stream.readChar();
                 if (!endsWith(currentToken, endOfRawString)) {
                     if (outputList) {
-                        Output err(files);
-                        err.type = Output::SYNTAX_ERROR;
-                        err.location = location;
-                        err.msg = "Raw string missing terminating delimiter.";
+                        Output err = {
+                            Output::SYNTAX_ERROR,
+                            location,
+                            "Raw string missing terminating delimiter."
+                        };
                         outputList->push_back(std::move(err));
                     }
                     return;
@@ -1406,10 +1408,11 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
     if (!stream.good() || ch != end) {
         clear();
         if (outputList) {
-            Output err(files);
-            err.type = Output::SYNTAX_ERROR;
-            err.location = location;
-            err.msg = std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported.";
+            Output err = {
+                Output::SYNTAX_ERROR,
+                location,
+                std::string("No pair for character (") + start + "). Can't process file. File is either invalid or unicode, which is currently not supported."
+            };
             outputList->push_back(std::move(err));
         }
         return "";
@@ -3164,10 +3167,11 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
 
         if (filedata == nullptr) {
             if (outputList) {
-                simplecpp::Output err(filenames);
-                err.type = simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND;
-                err.location = Location(filenames);
-                err.msg = "Can not open include file '" + filename + "' that is explicitly included.";
+                simplecpp::Output err = {
+                    simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND,
+                    Location(filenames),
+                    "Can not open include file '" + filename + "' that is explicitly included."
+                };
                 outputList->push_back(std::move(err));
             }
             continue;
@@ -3235,12 +3239,13 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
         simplecpp::TokenList value(files);
         try {
             *tok1 = it->second.expand(value, tok, macros, files);
-        } catch (simplecpp::Macro::Error &err) {
+        } catch (const simplecpp::Macro::Error &err) {
             if (outputList) {
-                simplecpp::Output out(files);
-                out.type = simplecpp::Output::SYNTAX_ERROR;
-                out.location = err.location;
-                out.msg = "failed to expand \'" + tok->str() + "\', " + err.what;
+                simplecpp::Output out = {
+                    simplecpp::Output::SYNTAX_ERROR,
+                    err.location,
+                    "failed to expand \'" + tok->str() + "\', " + err.what
+                };
                 outputList->push_back(std::move(out));
             }
             return false;
@@ -3352,10 +3357,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             const cppstd_t cpp_std = simplecpp::getCppStd(dui.std);
             if (cpp_std == CPPUnknown) {
                 if (outputList) {
-                    simplecpp::Output err(files);
-                    err.type = Output::DUI_ERROR;
-                    err.msg = "unknown standard specified: '" + dui.std + "'";
-                    outputList->push_back(err);
+                    simplecpp::Output err = {
+                        Output::DUI_ERROR,
+                        Location(files),
+                        "unknown standard specified: '" + dui.std + "'"
+                    };
+                    outputList->push_back(std::move(err));
                 }
                 output.clear();
                 return;
@@ -3407,11 +3414,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
             if (ifstates.size() <= 1U && (rawtok->str() == ELIF || rawtok->str() == ELSE || rawtok->str() == ENDIF)) {
                 if (outputList) {
-                    simplecpp::Output err(files);
-                    err.type = Output::SYNTAX_ERROR;
-                    err.location = rawtok->location;
-                    err.msg = "#" + rawtok->str() + " without #if";
-                    outputList->push_back(err);
+                    simplecpp::Output err = {
+                        Output::SYNTAX_ERROR,
+                        rawtok->location,
+                        "#" + rawtok->str() + " without #if"
+                    };
+                    outputList->push_back(std::move(err));
                 }
                 output.clear();
                 return;
@@ -3419,15 +3427,19 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
             if (ifstates.top() == True && (rawtok->str() == ERROR || rawtok->str() == WARNING)) {
                 if (outputList) {
-                    simplecpp::Output err(rawtok->location.files);
-                    err.type = rawtok->str() == ERROR ? Output::ERROR : Output::WARNING;
-                    err.location = rawtok->location;
+                    std::string msg;
                     for (const Token *tok = rawtok->next; tok && sameline(rawtok,tok); tok = tok->next) {
-                        if (!err.msg.empty() && isNameChar(tok->str()[0]))
-                            err.msg += ' ';
-                        err.msg += tok->str();
+                        if (!msg.empty() && isNameChar(tok->str()[0]))
+                            msg += ' ';
+                        msg += tok->str();
                     }
-                    err.msg = '#' + rawtok->str() + ' ' + err.msg;
+                    msg = '#' + rawtok->str() + ' ' + msg;
+                    simplecpp::Output err = {
+                        rawtok->str() == ERROR ? Output::ERROR : Output::WARNING,
+                        rawtok->location,
+                        std::move(msg)
+                    };
+
                     outputList->push_back(std::move(err));
                 }
                 if (rawtok->str() == ERROR) {
@@ -3450,21 +3462,23 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                 } catch (const std::runtime_error &) {
                     if (outputList) {
-                        simplecpp::Output err(files);
-                        err.type = Output::SYNTAX_ERROR;
-                        err.location = rawtok->location;
-                        err.msg = "Failed to parse #define";
-                        outputList->push_back(err);
+                        simplecpp::Output err = {
+                            Output::SYNTAX_ERROR,
+                            rawtok->location,
+                            "Failed to parse #define"
+                        };
+                        outputList->push_back(std::move(err));
                     }
                     output.clear();
                     return;
-                } catch (simplecpp::Macro::Error &err) {
+                } catch (const simplecpp::Macro::Error &err) {
                     if (outputList) {
-                        simplecpp::Output out(files);
-                        out.type = simplecpp::Output::SYNTAX_ERROR;
-                        out.location = err.location;
-                        out.msg = "Failed to parse #define, " + err.what;
-                        outputList->push_back(out);
+                        simplecpp::Output out = {
+                            simplecpp::Output::SYNTAX_ERROR,
+                            err.location,
+                            "Failed to parse #define, " + err.what
+                        };
+                        outputList->push_back(std::move(out));
                     }
                     output.clear();
                     return;
@@ -3500,11 +3514,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
                 if (inc2.empty() || inc2.cfront()->str().size() <= 2U) {
                     if (outputList) {
-                        simplecpp::Output err(files);
-                        err.type = Output::SYNTAX_ERROR;
-                        err.location = rawtok->location;
-                        err.msg = "No header in #include";
-                        outputList->push_back(err);
+                        simplecpp::Output err = {
+                            Output::SYNTAX_ERROR,
+                            rawtok->location,
+                            "No header in #include"
+                        };
+                        outputList->push_back(std::move(err));
                     }
                     output.clear();
                     return;
@@ -3517,19 +3532,21 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 const FileData *const filedata = cache.get(rawtok->location.file(), header, dui, systemheader, files, outputList).first;
                 if (filedata == nullptr) {
                     if (outputList) {
-                        simplecpp::Output out(files);
-                        out.type = Output::MISSING_HEADER;
-                        out.location = rawtok->location;
-                        out.msg = "Header not found: " + inctok->str();
-                        outputList->push_back(out);
+                        simplecpp::Output out = {
+                            simplecpp::Output::MISSING_HEADER,
+                            rawtok->location,
+                            "Header not found: " + inctok->str()
+                        };
+                        outputList->push_back(std::move(out));
                     }
                 } else if (includetokenstack.size() >= 400) {
                     if (outputList) {
-                        simplecpp::Output out(files);
-                        out.type = Output::INCLUDE_NESTED_TOO_DEEPLY;
-                        out.location = rawtok->location;
-                        out.msg = "#include nested too deeply";
-                        outputList->push_back(out);
+                        simplecpp::Output out = {
+                            simplecpp::Output::INCLUDE_NESTED_TOO_DEEPLY,
+                            rawtok->location,
+                            "#include nested too deeply"
+                        };
+                        outputList->push_back(std::move(out));
                     }
                 } else if (pragmaOnce.find(filedata->filename) == pragmaOnce.end()) {
                     includetokenstack.push(gotoNextLine(rawtok));
@@ -3539,11 +3556,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             } else if (rawtok->str() == IF || rawtok->str() == IFDEF || rawtok->str() == IFNDEF || rawtok->str() == ELIF) {
                 if (!sameline(rawtok,rawtok->next)) {
                     if (outputList) {
-                        simplecpp::Output out(files);
-                        out.type = Output::SYNTAX_ERROR;
-                        out.location = rawtok->location;
-                        out.msg = "Syntax error in #" + rawtok->str();
-                        outputList->push_back(out);
+                        simplecpp::Output out = {
+                            simplecpp::Output::SYNTAX_ERROR,
+                            rawtok->location,
+                            "Syntax error in #" + rawtok->str()
+                        };
+                        outputList->push_back(std::move(out));
                     }
                     output.clear();
                     return;
@@ -3584,10 +3602,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 tok = tok ? tok->next : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
                                 if (outputList) {
-                                    Output out(rawtok->location.files);
-                                    out.type = Output::SYNTAX_ERROR;
-                                    out.location = rawtok->location;
-                                    out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
+                                    Output out = {
+                                        Output::SYNTAX_ERROR,
+                                        rawtok->location,
+                                        "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition"
+                                    };
                                     outputList->push_back(std::move(out));
                                 }
                                 output.clear();
@@ -3626,11 +3645,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 tok = tok ? tok->next : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')') || (!closingAngularBracket)) {
                                 if (outputList) {
-                                    Output out(rawtok->location.files);
-                                    out.type = Output::SYNTAX_ERROR;
-                                    out.location = rawtok->location;
-                                    out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
-                                    outputList->push_back(out);
+                                    Output out = {
+                                        Output::SYNTAX_ERROR,
+                                        rawtok->location,
+                                        "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition"
+                                    };
+                                    outputList->push_back(std::move(out));
                                 }
                                 output.clear();
                                 return;
@@ -3663,13 +3683,15 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         }
                     } catch (const std::exception &e) {
                         if (outputList) {
-                            Output out(rawtok->location.files);
-                            out.type = Output::SYNTAX_ERROR;
-                            out.location = rawtok->location;
-                            out.msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
+                            std::string msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
                             if (e.what() && *e.what())
-                                out.msg += std::string(", ") + e.what();
-                            outputList->push_back(out);
+                                msg += std::string(", ") + e.what();
+                            Output out = {
+                                Output::SYNTAX_ERROR,
+                                rawtok->location,
+                                std::move(msg)
+                            };
+                            outputList->push_back(std::move(out));
                         }
                         output.clear();
                         return;
