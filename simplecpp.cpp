@@ -2450,7 +2450,7 @@ namespace simplecpp {
 
     bool isAbsolutePath(const std::string &path)
     {
-#ifdef SIMPLECPP_WINDOWS
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__MSYS__)
         // C:\\path\\file
         // C:/path/file
         if (path.length() >= 3 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
@@ -2460,10 +2460,12 @@ namespace simplecpp {
         // //host/path/file
         if (path.length() >= 2 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/'))
             return true;
+#endif
 
-        return false;
-#else
+#if !defined(_WIN32) || defined(__MINGW32__)
         return !path.empty() && path[0] == '/';
+#else
+        return false;
 #endif
     }
 }
@@ -3122,7 +3124,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
 bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 {
 #ifdef _WIN32
-    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile == INVALID_HANDLE_VALUE)
         return false;
