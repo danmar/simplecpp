@@ -16,6 +16,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #if __cplusplus >= 202002L
 #  include <version>
@@ -41,7 +42,7 @@
 #endif
 
 #ifndef _WIN32
-#  include <sys/stat.h>
+#  include <sys/types.h>
 #endif
 
 #if defined(_MSC_VER)
@@ -69,7 +70,6 @@ namespace simplecpp {
 
     using TokenString = std::string;
     class Macro;
-    class FileDataCache;
 
     /**
      * Location in source code
