@@ -201,7 +201,6 @@ namespace simplecpp {
 
     /** Output from preprocessor */
     struct SIMPLECPP_LIB Output {
-        explicit Output(const std::vector<std::string> &files) : type(ERROR), location(files) {}
         enum Type : std::uint8_t {
             ERROR, /* #error */
             WARNING, /* #warning */
@@ -214,7 +213,7 @@ namespace simplecpp {
             FILE_NOT_FOUND,
             DUI_ERROR
         } type;
-        explicit Output(const std::vector<std::string>& files, Type type, const std::string& msg) : type(type), location(files), msg(msg) {}
+        Output(Type type, const Location& loc, std::string msg) : type(type), location(loc), msg(std::move(msg)) {}
         Location location;
         std::string msg;
     };
