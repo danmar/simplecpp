@@ -2061,6 +2061,77 @@ static void location5()
                   "int x ;", preprocess(code));
 }
 
+static void location6()
+{
+    const char code[] =
+        "#line 3\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "3 \"\"",
+                  preprocess(code));
+}
+
+static void location7()
+{
+    const char code[] =
+        "#line 3 \"file.c\"\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"",
+                  preprocess(code));
+}
+
+static void location8()
+{
+    const char code[] =
+        "# 3\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "2 \"\"", // TODO: should say 3
+                  preprocess(code));
+}
+
+static void location9()
+{
+    const char code[] =
+        "# 3 \"file.c\"\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"",
+                  preprocess(code));
+}
+
+static void location10()
+{
+    const char code[] =
+        "#line 3\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "\n" // TODO: should this have the #line marker?
+                  "3 \"\"",
+                  preprocess(code));
+}
+
+static void location11()
+{
+    const char code[] =
+        "#line 3 \"file.c\"\n"
+        "__LINE__ __FILE__\n"
+        "#line 33 \"file2.c\"\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"\n"
+                  "#line 33 \"file2.c\"\n"
+                  "33 \"file2.c\"",
+                  preprocess(code));
+}
+
+// TODO: test #file/#endfile
+
 static void missingHeader1()
 {
     const char code[] = "#include \"notexist.h\"\n";
@@ -3489,6 +3560,12 @@ int main(int argc, char **argv)
     TEST_CASE(location3);
     TEST_CASE(location4);
     TEST_CASE(location5);
+    TEST_CASE(location6);
+    TEST_CASE(location7);
+    TEST_CASE(location8);
+    TEST_CASE(location9);
+    TEST_CASE(location10);
+    TEST_CASE(location11);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
