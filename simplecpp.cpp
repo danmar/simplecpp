@@ -882,7 +882,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     return;
                 }
                 const std::string endOfRawString(')' + delim + currentToken);
-                while (stream.good() && !(endsWith(currentToken, endOfRawString) && currentToken.size() > 1))
+                while (stream.good() && (!endsWith(currentToken, endOfRawString) || currentToken.size() <= 1))
                     currentToken += stream.readChar();
                 if (!endsWith(currentToken, endOfRawString)) {
                     if (outputList) {
@@ -2052,7 +2052,7 @@ namespace simplecpp {
         }
 
         const Token *recursiveExpandToken(TokenList &output, TokenList &temp, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
-            if (!(temp.cback() && temp.cback()->name && tok->next && tok->next->op == '(')) {
+            if (!temp.cback() || !temp.cback()->name || !tok->next || tok->next->op != '(') {
                 output.takeTokens(temp);
                 return tok->next;
             }
