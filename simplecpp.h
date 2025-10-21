@@ -74,8 +74,7 @@ namespace simplecpp {
     /**
      * Location in source code
      */
-    class SIMPLECPP_LIB Location {
-    public:
+    struct SIMPLECPP_LIB Location {
         Location() = default;
         Location(unsigned int fileIndex, unsigned int line, unsigned int col)
             : fileIndex(fileIndex)
