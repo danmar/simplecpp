@@ -2449,7 +2449,7 @@ namespace simplecpp {
 
     bool isAbsolutePath(const std::string &path)
     {
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__MSYS__)
+#ifdef SIMPLECPP_WINDOWS
         // C:\\path\\file
         // C:/path/file
         if (path.length() >= 3 && std::isalpha(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
@@ -2459,12 +2459,10 @@ namespace simplecpp {
         // //host/path/file
         if (path.length() >= 2 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/'))
             return true;
-#endif
 
-#if !defined(_WIN32) || defined(__MINGW32__)
-        return !path.empty() && path[0] == '/';
-#else
         return false;
+#else
+        return !path.empty() && path[0] == '/';
 #endif
     }
 }
