@@ -253,12 +253,12 @@ public:
     virtual bool good() = 0;
 
     unsigned char readChar() {
-        unsigned char ch = static_cast<unsigned char>(get());
+        auto ch = static_cast<unsigned char>(get());
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
-            const unsigned char ch2 = static_cast<unsigned char>(get());
+            const auto ch2 = static_cast<unsigned char>(get());
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
@@ -281,13 +281,13 @@ public:
     }
 
     unsigned char peekChar() {
-        unsigned char ch = static_cast<unsigned char>(peek());
+        auto ch = static_cast<unsigned char>(peek());
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             (void)get();
-            const unsigned char ch2 = static_cast<unsigned char>(peek());
+            const auto ch2 = static_cast<unsigned char>(peek());
             unget();
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
@@ -1705,7 +1705,7 @@ namespace simplecpp {
     private:
         /** Create new token where Token::macro is set for replaced tokens */
         Token *newMacroToken(const TokenString &str, const Location &loc, bool replaced, const Token *expandedFromToken=nullptr) const {
-            Token *tok = new Token(str,loc);
+            auto *tok = new Token(str,loc);
             if (replaced)
                 tok->macro = nameTokDef->str();
             if (expandedFromToken)
@@ -2365,11 +2365,11 @@ namespace simplecpp {
 
         static bool isReplaced(const std::set<std::string> &expandedmacros) {
             // return true if size > 1
-            std::set<std::string>::const_iterator it = expandedmacros.begin();
-            if (it == expandedmacros.end())
+            auto it = expandedmacros.cbegin();
+            if (it == expandedmacros.cend())
                 return false;
             ++it;
-            return (it != expandedmacros.end());
+            return (it != expandedmacros.cend());
         }
 
         /** name token in definition */
@@ -3060,7 +3060,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::tryload(FileDat
         return {id_it->second, false};
     }
 
-    FileData *const data = new FileData {path, TokenList(path, filenames, outputList)};
+    auto *const data = new FileData {path, TokenList(path, filenames, outputList)};
 
     if (dui.removeComments)
         data->tokens.removeComments();
@@ -3154,7 +3154,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     std::list<const Token *> filelist;
 
     // -include files
-    for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
+    for (auto it = dui.includes.cbegin(); it != dui.includes.cend(); ++it) {
         const std::string &filename = *it;
 
         const auto loadResult = cache.get("", filename, dui, false, filenames, outputList);
@@ -3316,7 +3316,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     const bool hasInclude = isCpp17OrLater(dui) || isGnu(dui);
     MacroMap macros;
     bool strictAnsiDefined = false;
-    for (std::list<std::string>::const_iterator it = dui.defines.begin(); it != dui.defines.end(); ++it) {
+    for (auto it = dui.defines.cbegin(); it != dui.defines.cend(); ++it) {
         const std::string &macrostr = *it;
         const std::string::size_type eq = macrostr.find('=');
         const std::string::size_type par = macrostr.find('(');
@@ -3382,7 +3382,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     std::set<std::string> pragmaOnce;
 
     includetokenstack.push(rawtokens.cfront());
-    for (std::list<std::string>::const_iterator it = dui.includes.begin(); it != dui.includes.end(); ++it) {
+    for (auto it = dui.includes.cbegin(); it != dui.includes.cend(); ++it) {
         const FileData *const filedata = cache.get("", *it, dui, false, files, outputList).first;
         if (filedata != nullptr && filedata->tokens.cfront() != nullptr)
             includetokenstack.push(filedata->tokens.cfront());
