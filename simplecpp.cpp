@@ -3374,7 +3374,6 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     // AlwaysFalse => drop all code in #if and #else
     enum IfState : std::uint8_t { True, ElseIsTrue, AlwaysFalse };
     std::stack<int> ifstates;
-    std::stack<const Token *> iftokens;
     ifstates.push(True);
 
     std::stack<const Token *> includetokenstack;
@@ -3700,24 +3699,15 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         ifstates.push(AlwaysFalse);
                     else
                         ifstates.push(conditionIsTrue ? True : ElseIsTrue);
-                    iftokens.push(rawtok);
                 } else if (ifstates.top() == True) {
                     ifstates.top() = AlwaysFalse;
-                    iftokens.top()->nextcond = rawtok;
-                    iftokens.top() = rawtok;
                 } else if (ifstates.top() == ElseIsTrue && conditionIsTrue) {
                     ifstates.top() = True;
-                    iftokens.top()->nextcond = rawtok;
-                    iftokens.top() = rawtok;
                 }
             } else if (rawtok->str() == ELSE) {
                 ifstates.top() = (ifstates.top() == ElseIsTrue) ? True : AlwaysFalse;
-                iftokens.top()->nextcond = rawtok;
-                iftokens.top() = rawtok;
             } else if (rawtok->str() == ENDIF) {
                 ifstates.pop();
-                iftokens.top()->nextcond = rawtok;
-                iftokens.pop();
             } else if (rawtok->str() == UNDEF) {
                 if (ifstates.top() == True) {
                     const Token *tok = rawtok->next;
@@ -3729,10 +3719,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             } else if (ifstates.top() == True && rawtok->str() == PRAGMA && rawtok->next && rawtok->next->str() == ONCE && sameline(rawtok,rawtok->next)) {
                 pragmaOnce.insert(rawtok->location.file());
             }
-            if (ifstates.top() != True && rawtok->nextcond)
-                rawtok = rawtok->nextcond->previous;
-            else
-                rawtok = gotoNextLine(rawtok);
+            rawtok = gotoNextLine(rawtok);
             continue;
         }
 

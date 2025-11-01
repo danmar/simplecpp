@@ -446,3 +446,38 @@ def test_incpath_dir(record_property, tmpdir):
 
     assert '' == stderr
     assert "error: could not open include 'inc'\n" == stdout
+
+
+def test_include_header_twice(tmpdir):
+    """ Issue #581 - Failure when header is included twice with different
+    macros defined"""
+
+    header_file = tmpdir / 'test.h'
+    with open(header_file, 'wt') as f:
+        f.write(f"""
+                #if defined AAA
+                #elif defined BBB
+                # undef BBB
+                #endif
+
+                #ifdef BBB
+                # error BBB is defined
+                #endif
+                """)
+
+    test_file = os.path.join(tmpdir, 'test.c')
+    with open(test_file, 'wt') as f:
+        f.write(f"""
+                # define Y
+                # include "test.h"
+
+                # define BBB
+                # include "test.h"
+                """)
+
+    args = [test_file]
+
+    _, stdout, stderr = simplecpp(args, cwd=tmpdir)
+
+    assert stderr == ''
+
