@@ -43,11 +43,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install valgrind
 
+    # llvm contains llvm-profdata
     - name: Install missing software on ubuntu (clang++)
       if: contains(matrix.os, 'ubuntu') && matrix.compiler == 'clang++'
       run: |
         sudo apt-get update
-        sudo apt-get install libc++-dev
+        sudo apt-get install libc++-dev llvm
 
       # coreutils contains "nproc"
     - name: Install missing software on macos
@@ -145,15 +146,34 @@ jobs:
       run: |
         wget https://github.com/danmar/simplecpp/archive/refs/tags/1.5.1.tar.gz
         tar xvf 1.5.1.tar.gz
+        rm -f 1.5.1.tar.gz
+        
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3"
+        make -j$(nproc) CXXOPTS="-O2 -g3" simplecpp
         VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
+        
+        # PGO - start
+        make clean
+        make -j$(nproc) CXXOPTS="-O2 -g3 -fprofile-generate" LDOPTS="-fprofile-generate" simplecpp
+        SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >/dev/null
+        
+        if compgen -G "default_*.profraw" > /dev/null; then
+          llvm-profdata merge -output=default.profdata default_*.profraw
+        fi
+        
+        make clean
+        make -j$(nproc) CXXOPTS="-O2 -g3 -fprofile-use" LDOPTS="-fprofile-use" simplecpp
+        VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_pgo.log || (cat callgrind_pgo.log && false)
+        cat callgrind_pgo.log
+        # PGO - end
+        
         for f in callgrind.out.*;
         do
           callgrind_annotate --auto=no $f > $f.annotated.log
           head -50 $f.annotated.log
         done
+        rm -rf simplecpp-1.5.1
 
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-24.04'
