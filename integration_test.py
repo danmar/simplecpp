@@ -449,6 +449,9 @@ def test_incpath_dir(record_property, tmpdir):
 
 
 def test_include_header_twice(tmpdir):
+    """ Issue #581 - Failure when header is included twice with different
+    macros defined"""
+
     header_file = tmpdir / 'test.h'
     with open(header_file, 'wt') as f:
         f.write(f"""
