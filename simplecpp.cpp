@@ -3701,12 +3701,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     else
                         ifstates.push(conditionIsTrue ? True : ElseIsTrue);
                     iftokens.push(rawtok);
-                } else if (ifstates.top() == True) {
-                    ifstates.top() = AlwaysFalse;
-                    iftokens.top()->nextcond = rawtok;
-                    iftokens.top() = rawtok;
-                } else if (ifstates.top() == ElseIsTrue && conditionIsTrue) {
-                    ifstates.top() = True;
+                } else {
+                    if (ifstates.top() == True)
+                        ifstates.top() = AlwaysFalse;
+                    else if (ifstates.top() == ElseIsTrue && conditionIsTrue)
+                        ifstates.top() = True;
                     iftokens.top()->nextcond = rawtok;
                     iftokens.top() = rawtok;
                 }
