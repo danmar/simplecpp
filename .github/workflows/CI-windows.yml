@@ -55,6 +55,57 @@ jobs:
         run: |
           .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
 
+      # TODO: does not actually fail on errors
+      - name: Selfcheck
+        run: |
+          .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
+
+      - name: integration test
+        run: |
+          set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
+          python -m pytest integration_test.py -vv || exit /b !errorlevel!
+
+      - name: Cache Binaries
+        if: matrix.os == 'windows-2025'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .\${{ matrix.config }}\testrunner.exe
+            .\${{ matrix.config }}\simplecpp.exe
+          key: simplecpp-${{ matrix.config }}-${{ github.sha }}
+
+  test-core:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        image: [ "mcr.microsoft.com/windows/server:ltsc2025", "mcr.microsoft.com/windows/servercore:ltsc2025" ]
+        config: [Release, Debug]
+      fail-fast: false
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Restore Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            .\${{ matrix.config }}\testrunner.exe
+            .\${{ matrix.config }}\simplecpp.exe
+          key: simplecpp-${{ matrix.config }}-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      # TODO: how to share the following steps
+      - name: Test
+        run: |
+          .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
+
+      # TODO: does not actually fail on errors
       - name: Selfcheck
         run: |
           .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
