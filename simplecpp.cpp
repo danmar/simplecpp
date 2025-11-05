@@ -656,8 +656,6 @@ static const std::string COMMENT_END("*/");
 
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
 {
-    std::stack<simplecpp::Location> loc;
-
     unsigned int multiline = 0U;
 
     const Token *oldLastToken = nullptr;
@@ -699,42 +697,44 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
-                const Token * const llTok = isLastLinePreprocessor();
-                if (!llTok)
+
+                // #line 3
+                // #line 3 "file.c"
+                // #3
+                // #3 "file.c"
+                const Token * ppTok = isLastLinePreprocessor();
+                if (!ppTok)
                     continue;
-                const Token * const llNextToken = llTok->next;
-                if (!llTok->next)
+
+                const auto advanceAndSkipComments = [](const Token* tok) {
+                    do {
+                        tok = tok->next;
+                    } while (tok && tok->comment);
+                    return tok;
+                };
+
+                // skip #
+                ppTok = advanceAndSkipComments(ppTok);
+                if (!ppTok)
                     continue;
-                if (llNextToken->next) {
-                    // TODO: add support for "# 3"
-                    // #3 "file.c"
-                    // #line 3 "file.c"
-                    if ((llNextToken->number &&
-                              llNextToken->next->str()[0] == '\"') ||
-                             (llNextToken->str() == "line" &&
-                              llNextToken->next->number &&
-                              llNextToken->next->next &&
-                              llNextToken->next->next->str()[0] == '\"'))
-                    {
-                        const Token *strtok = cback();
-                        while (strtok->comment)
-                            strtok = strtok->previous;
-                        const Token *numtok = strtok->previous;
-                        while (numtok->comment)
-                            numtok = numtok->previous;
-                        lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
-                                      std::atol(numtok->str().c_str()), &location);
-                    }
-                    // #line 3
-                    else if (llNextToken->str() == "line" &&
-                             llNextToken->next->number)
-                    {
-                        const Token *numtok = cback();
-                        while (numtok->comment)
-                            numtok = numtok->previous;
-                        lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
-                    }
-                }
+
+                if (ppTok->str() == "line")
+                    ppTok = advanceAndSkipComments(ppTok);
+
+                if (!ppTok || !ppTok->number)
+                    continue;
+
+                const unsigned int line = std::atol(ppTok->str().c_str());
+                ppTok = advanceAndSkipComments(ppTok);
+
+                unsigned int fileindex;
+
+                if (ppTok && ppTok->str()[0] == '\"')
+                    fileindex = fileIndex(replaceAll(ppTok->str().substr(1U, ppTok->str().size() - 2U),"\\\\","\\"));
+                else
+                    fileindex = location.fileIndex;
+
+                lineDirective(fileindex, line, &location);
             }
 
             continue;
