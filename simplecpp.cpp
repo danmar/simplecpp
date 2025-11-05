@@ -706,21 +706,10 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!llTok->next)
                     continue;
                 if (llNextToken->next) {
-                    // #file "file.c"
-                    if (llNextToken->str() == "file" &&
-                        llNextToken->next->str()[0] == '\"')
-                    {
-                        const Token *strtok = cback();
-                        while (strtok->comment)
-                            strtok = strtok->previous;
-                        loc.push(location);
-                        location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
-                        location.line = 1U;
-                    }
                     // TODO: add support for "# 3"
                     // #3 "file.c"
                     // #line 3 "file.c"
-                    else if ((llNextToken->number &&
+                    if ((llNextToken->number &&
                               llNextToken->next->str()[0] == '\"') ||
                              (llNextToken->str() == "line" &&
                               llNextToken->next->number &&
@@ -745,12 +734,6 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                             numtok = numtok->previous;
                         lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
                     }
-                }
-                // #endfile
-                else if (llNextToken->str() == "endfile" && !loc.empty())
-                {
-                    location = loc.top();
-                    loc.pop();
                 }
             }
 

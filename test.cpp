@@ -2138,8 +2138,6 @@ static void location11()
                   preprocess(code));
 }
 
-// TODO: test #file/#endfile
-
 static void missingHeader1()
 {
     const char code[] = "#include \"notexist.h\"\n";
