@@ -107,7 +107,8 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
     std::vector<std::string> files;
     simplecpp::FileDataCache cache;
     simplecpp::TokenList tokens = makeTokenList(code,files);
-    tokens.removeComments();
+    if (dui.removeComments)
+        tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, cache, dui, outputList);
     simplecpp::cleanup(cache);
@@ -437,33 +438,36 @@ static void comment()
 
 static void comment_multiline()
 {
+    simplecpp::DUI dui;
+    dui.removeComments = true;
+
     const char code[] = "#define ABC {// \\\n"
                         "}\n"
                         "void f() ABC\n";
-    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code));
+    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code, dui));
 
     const char code1[] = "#define ABC {// \\\r\n"
                          "}\n"
                          "void f() ABC\n";
-    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code1));
+    ASSERT_EQUALS("\n\nvoid f ( ) {", preprocess(code1, dui));
 
     const char code2[] = "#define A 1// \\\r"
                          "\r"
                          "2\r"
                          "A\r";
-    ASSERT_EQUALS("\n\n2\n1", preprocess(code2));
+    ASSERT_EQUALS("\n\n2\n1", preprocess(code2, dui));
 
     const char code3[] = "void f() {// \\ \n}\n";
-    ASSERT_EQUALS("void f ( ) {", preprocess(code3));
+    ASSERT_EQUALS("void f ( ) {", preprocess(code3, dui));
 
     const char code4[] = "void f() {// \\\\\\\t\t\n}\n";
-    ASSERT_EQUALS("void f ( ) {", preprocess(code4));
+    ASSERT_EQUALS("void f ( ) {", preprocess(code4, dui));
 
     const char code5[] = "void f() {// \\\\\\a\n}\n";
-    ASSERT_EQUALS("void f ( ) {\n}", preprocess(code5));
+    ASSERT_EQUALS("void f ( ) {\n}", preprocess(code5, dui));
 
     const char code6[] = "void f() {// \\\n\n\n}\n";
-    ASSERT_EQUALS("void f ( ) {\n\n\n}", preprocess(code6));
+    ASSERT_EQUALS("void f ( ) {\n\n\n}", preprocess(code6, dui));
 
     // #471 ensure there is newline in comment so that line-splicing can be detected by tools
     ASSERT_EQUALS("// abc\ndef", readfile("// abc\\\ndef"));
@@ -570,9 +574,12 @@ static void define6()
 
 static void define7()
 {
+    simplecpp::DUI dui;
+    dui.removeComments = true;
+
     const char code[] = "#define A(X) X+1\n"
                         "A(1 /*23*/)";
-    ASSERT_EQUALS("\n1 + 1", preprocess(code));
+    ASSERT_EQUALS("\n1 + 1", preprocess(code, dui));
 }
 
 static void define8()   // 6.10.3.10
@@ -1591,6 +1598,7 @@ static void has_include_2()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
+    dui.removeComments = true; // TODO: remove this
     dui.includePaths.push_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
     dui.std = "c++14";
@@ -2167,7 +2175,9 @@ static void missingHeader4()
 {
     const char code[] = "#/**/include <>\n";
     simplecpp::OutputList outputList;
-    ASSERT_EQUALS("", preprocess(code, &outputList));
+    simplecpp::DUI dui;
+    dui.removeComments = true; // TODO: remove this
+    ASSERT_EQUALS("", preprocess(code, dui, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
 
