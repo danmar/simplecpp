@@ -2097,7 +2097,8 @@ static void location8()
         "# 3\n"
         "__LINE__ __FILE__\n";
     ASSERT_EQUALS("\n"
-                  "2 \"\"", // TODO: should say 3
+                  "\n"
+                  "3 \"\"",
                   preprocess(code));
 }
 
@@ -2138,7 +2139,16 @@ static void location11()
                   preprocess(code));
 }
 
-// TODO: test #file/#endfile
+static void location12()
+{
+    const char code[] =
+        "/**//**/#/**//**/line/**//**/3/**//**/\"file.c\"/**/\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"",
+                  preprocess(code));
+}
 
 static void missingHeader1()
 {
@@ -3576,6 +3586,7 @@ int main(int argc, char **argv)
     TEST_CASE(location9);
     TEST_CASE(location10);
     TEST_CASE(location11);
+    TEST_CASE(location12);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
