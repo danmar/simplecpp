@@ -239,6 +239,9 @@ int main(int argc, char **argv)
             case simplecpp::Output::DUI_ERROR:
                 std::cerr << "dui error: ";
                 break;
+            case simplecpp::Output::CACHE_ERROR:
+                std::cerr << "cache error: ";
+                break;
             }
             std::cerr << output.msg << std::endl;
         }

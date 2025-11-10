@@ -167,6 +167,9 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::DUI_ERROR:
             ostr << "dui_error,";
             break;
+        case simplecpp::Output::Type::CACHE_ERROR:
+            ostr << "cache_error,";
+            break;
         }
 
         ostr << output.msg << '\n';
