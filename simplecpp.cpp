@@ -53,8 +53,10 @@
 #include <vector>
 
 #ifdef _WIN32
+#  include <system_error>
 #  include <direct.h>
 #else
+#  include <cerrno>
 #  include <sys/stat.h>
 #endif
 
@@ -3051,8 +3053,18 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::tryload(FileDat
     const std::string &path = name_it->first;
     FileID fileId;
 
-    if (!getFileId(path, fileId))
+    std::string errmsg;
+    if (!getFileId(path, fileId, errmsg)) {
+        if (outputList && !errmsg.empty()) {
+            simplecpp::Output err = {
+                Output::CACHE_ERROR,
+                Location{filenames},
+                "Failed to get ID for " + path + " (" + errmsg + ")"
+            };
+            outputList->push_back(std::move(err));
+        }
         return {nullptr, false};
+    }
 
     const auto id_it = mIdMap.find(fileId);
     if (id_it != mIdMap.end()) {
@@ -3118,15 +3130,23 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::get(const std::
     return {nullptr, false};
 }
 
-bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
-{
+bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id, std::string& errmsg) {
+    errmsg = "";
+
 #ifdef _WIN32
     HANDLE hFile = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (hFile == INVALID_HANDLE_VALUE)
+    if (hFile == INVALID_HANDLE_VALUE) {
+        const DWORD err = GetLastError();
+        if (err != ERROR_FILE_NOT_FOUND)
+            errmsg = "CreateFileA() failed with '" + std::system_category().message(err) + "'";
         return false;
+    }
 
     const BOOL ret = GetFileInformationByHandleEx(hFile, FileIdInfo, &id.fileIdInfo, sizeof(id.fileIdInfo));
+    if (!ret) {
+        const DWORD err = GetLastError();
+        errmsg = "GetFileInformationByHandleEx() failed with '" + std::system_category().message(err) + "'";
+    }
 
     CloseHandle(hFile);
 
@@ -3134,8 +3154,12 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
 #else
     struct stat statbuf;
 
-    if (stat(path.c_str(), &statbuf) != 0)
+    if (stat(path.c_str(), &statbuf) == -1) {
+        const int err = errno;
+        if (err != ENOENT)
+            errmsg = std::string("stat() failed with '") + strerror(err) + "'";
         return false;
+    }
 
     id.dev = statbuf.st_dev;
     id.ino = statbuf.st_ino;
