@@ -54,8 +54,16 @@
 
 #ifdef _WIN32
 #  include <direct.h>
+using mode_t = unsigned short;
 #else
 #  include <sys/stat.h>
+#  include <sys/types.h>
+#endif
+
+#ifdef __GNUC__
+#  define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#  define unlikely(x) (x)
 #endif
 
 static bool isHex(const std::string &s)
@@ -467,6 +475,74 @@ private:
     int lastStatus{};
 };
 
+class FileStreamBuffered : public simplecpp::TokenList::Stream {
+public:
+    FileStreamBuffered(const std::string &filename, std::vector<std::string> &files)
+        : file(fopen(filename.c_str(), "rb"))
+    {
+        if (!file) {
+            files.push_back(filename);
+            throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, simplecpp::Location(files), "File is missing: " + filename);
+        }
+        init();
+    }
+
+    ~FileStreamBuffered() override {
+        fclose(file);
+        file = nullptr;
+    }
+
+    FileStreamBuffered(const FileStreamBuffered&) = delete;
+    FileStreamBuffered &operator=(const FileStreamBuffered&) = delete;
+
+    int get() override {
+        read_internal();
+        return buf[buf_idx++];
+    }
+    int peek() override {
+        read_internal();
+        return buf[buf_idx];
+    }
+    void unget() override {
+        --buf_idx;
+    }
+    bool good() override {
+        return lastStatus != EOF;
+    }
+
+private:
+    void read_internal() {
+        // check if we are in the last chunk
+        if (unlikely(buf_idx >= buf_len)) {
+            if (buf_len != sizeof(buf)) {
+                lastStatus = EOF;
+                return;
+            }
+        }
+
+        if (unlikely(buf_idx == -1 || buf_idx == buf_len))
+        {
+            buf_idx = 0;
+            buf_len = fread(buf, 1, sizeof(buf), file);
+            if (buf_len == 0) {
+                lastStatus = EOF;
+            }
+            else if (buf_len != sizeof(buf)) {
+                if (ferror(file)) {
+                    // TODO: is this correct?
+                    lastStatus = EOF;
+                }
+            }
+        }
+    }
+
+    FILE *file;
+    int lastStatus{};
+    unsigned char buf[8192];
+    int buf_len{};
+    int buf_idx{-1};
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
@@ -487,7 +563,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     try {
-        FileStream stream(filename, filenames);
+        FileStreamBuffered stream(filename, filenames);
         readfile(stream,filename,outputList);
     } catch (const simplecpp::Output & e) { // TODO handle extra type of errors
         outputList->push_back(e);
@@ -654,8 +730,6 @@ static const std::string COMMENT_END("*/");
 
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
 {
-    std::stack<simplecpp::Location> loc;
-
     unsigned int multiline = 0U;
 
     const Token *oldLastToken = nullptr;
@@ -697,59 +771,44 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
             if (oldLastToken != cback()) {
                 oldLastToken = cback();
-                const Token * const llTok = isLastLinePreprocessor();
-                if (!llTok)
+
+                // #line 3
+                // #line 3 "file.c"
+                // #3
+                // #3 "file.c"
+                const Token * ppTok = isLastLinePreprocessor();
+                if (!ppTok)
                     continue;
-                const Token * const llNextToken = llTok->next;
-                if (!llTok->next)
+
+                const auto advanceAndSkipComments = [](const Token* tok) {
+                    do {
+                        tok = tok->next;
+                    } while (tok && tok->comment);
+                    return tok;
+                };
+
+                // skip #
+                ppTok = advanceAndSkipComments(ppTok);
+                if (!ppTok)
                     continue;
-                if (llNextToken->next) {
-                    // #file "file.c"
-                    if (llNextToken->str() == "file" &&
-                        llNextToken->next->str()[0] == '\"')
-                    {
-                        const Token *strtok = cback();
-                        while (strtok->comment)
-                            strtok = strtok->previous;
-                        loc.push(location);
-                        location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
-                        location.line = 1U;
-                    }
-                    // TODO: add support for "# 3"
-                    // #3 "file.c"
-                    // #line 3 "file.c"
-                    else if ((llNextToken->number &&
-                              llNextToken->next->str()[0] == '\"') ||
-                             (llNextToken->str() == "line" &&
-                              llNextToken->next->number &&
-                              llNextToken->next->next &&
-                              llNextToken->next->next->str()[0] == '\"'))
-                    {
-                        const Token *strtok = cback();
-                        while (strtok->comment)
-                            strtok = strtok->previous;
-                        const Token *numtok = strtok->previous;
-                        while (numtok->comment)
-                            numtok = numtok->previous;
-                        lineDirective(fileIndex(replaceAll(strtok->str().substr(1U, strtok->str().size() - 2U),"\\\\","\\")),
-                                      std::atol(numtok->str().c_str()), &location);
-                    }
-                    // #line 3
-                    else if (llNextToken->str() == "line" &&
-                             llNextToken->next->number)
-                    {
-                        const Token *numtok = cback();
-                        while (numtok->comment)
-                            numtok = numtok->previous;
-                        lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), &location);
-                    }
-                }
-                // #endfile
-                else if (llNextToken->str() == "endfile" && !loc.empty())
-                {
-                    location = loc.top();
-                    loc.pop();
-                }
+
+                if (ppTok->str() == "line")
+                    ppTok = advanceAndSkipComments(ppTok);
+
+                if (!ppTok || !ppTok->number)
+                    continue;
+
+                const unsigned int line = std::atol(ppTok->str().c_str());
+                ppTok = advanceAndSkipComments(ppTok);
+
+                unsigned int fileindex;
+
+                if (ppTok && ppTok->str()[0] == '\"')
+                    fileindex = fileIndex(replaceAll(ppTok->str().substr(1U, ppTok->str().size() - 2U),"\\\\","\\"));
+                else
+                    fileindex = location.fileIndex;
+
+                lineDirective(fileindex, line, &location);
             }
 
             continue;
@@ -3015,9 +3074,11 @@ static std::string openHeaderDirect(std::ifstream &f, const std::string &path)
     if (nonExistingFilesCache.contains(path))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
-    f.open(path.c_str());
-    if (f.is_open())
-        return path;
+    if (simplecpp::isFile(path)) {
+        f.open(path.c_str());
+        if (f.is_open())
+            return path;
+    }
 #ifdef SIMPLECPP_WINDOWS
     nonExistingFilesCache.add(path);
 #endif
@@ -3149,6 +3210,9 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
     struct stat statbuf;
 
     if (stat(path.c_str(), &statbuf) != 0)
+        return false;
+
+    if ((statbuf.st_mode & S_IFMT) != S_IFREG)
         return false;
 
     id.dev = statbuf.st_dev;
@@ -3912,4 +3976,22 @@ std::string simplecpp::getCppStdString(cppstd_t std)
 std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
+}
+
+static mode_t file_type(const std::string &path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return 0;
+    return file_stat.st_mode & S_IFMT;
+}
+
+bool simplecpp::isFile(const std::string &path)
+{
+    return file_type(path) == S_IFREG;
+}
+
+bool simplecpp::isDirectory(const std::string &path)
+{
+    return file_type(path) == S_IFDIR;
 }

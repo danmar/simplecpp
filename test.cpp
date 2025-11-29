@@ -2097,7 +2097,8 @@ static void location8()
         "# 3\n"
         "__LINE__ __FILE__\n";
     ASSERT_EQUALS("\n"
-                  "2 \"\"", // TODO: should say 3
+                  "\n"
+                  "3 \"\"",
                   preprocess(code));
 }
 
@@ -2138,7 +2139,16 @@ static void location11()
                   preprocess(code));
 }
 
-// TODO: test #file/#endfile
+static void location12()
+{
+    const char code[] =
+        "/**//**/#/**//**/line/**//**/3/**//**/\"file.c\"/**/\n"
+        "__LINE__ __FILE__\n";
+    ASSERT_EQUALS("\n"
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"",
+                  preprocess(code));
+}
 
 static void missingHeader1()
 {
@@ -2180,6 +2190,44 @@ static void missingHeader4()
     ASSERT_EQUALS("", preprocess(code, dui, &outputList));
     ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
+
+#ifndef _WIN32
+static void missingHeader5()
+{
+    // this is a directory
+    const char code[] = "#include \"/\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/\"\n", toString(outputList));
+}
+
+static void missingHeader6()
+{
+    // this is a directory
+    const char code[] = "#include \"/usr\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/usr\"\n", toString(outputList));
+}
+
+static void missingHeader7()
+{
+    // this is a directory
+    const char code[] = "#include </>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </>\n", toString(outputList));
+}
+
+static void missingHeader8()
+{
+    // this is a directory
+    const char code[] = "#include </usr>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </usr>\n", toString(outputList));
+}
+#endif
 
 static void nestedInclude()
 {
@@ -3399,6 +3447,14 @@ static void leak()
                             "#define e\n";
         (void)preprocess(code, simplecpp::DUI());
     }
+    {
+        const char code[] = "#include</\\\\>\n"
+                            "#include</\\\\>\n";
+        simplecpp::OutputList outputList;
+        ASSERT_EQUALS("", preprocess(code, &outputList));
+        ASSERT_EQUALS("file0,1,missing_header,Header not found: </\\\\>\n"
+                      "file0,2,missing_header,Header not found: </\\\\>\n", toString(outputList));
+    }
 }
 
 int main(int argc, char **argv)
@@ -3576,11 +3632,18 @@ int main(int argc, char **argv)
     TEST_CASE(location9);
     TEST_CASE(location10);
     TEST_CASE(location11);
+    TEST_CASE(location12);
 
     TEST_CASE(missingHeader1);
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
     TEST_CASE(missingHeader4);
+#ifndef _WIN32
+    TEST_CASE(missingHeader5);
+    TEST_CASE(missingHeader6);
+    TEST_CASE(missingHeader7);
+    TEST_CASE(missingHeader8);
+#endif
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
     TEST_CASE(circularInclude);
