@@ -1,0 +1,4287 @@
+
+#line 68 "simplecpp.h"
+namespace simplecpp {
+
+enum cstd_t { CUnknown = - 1 , C89 , C99 , C11 , C17 , C23 } ;
+
+
+enum cppstd_t { CPPUnknown = - 1 , CPP03 , CPP11 , CPP14 , CPP17 , CPP20 , CPP23 , CPP26 } ;
+
+typedef std :: string TokenString ;
+class Macro ;
+class FileDataCache ;
+
+
+
+
+class Location {
+public :
+explicit Location ( const std :: vector < std :: string > & f ) : files ( f ) , fileIndex ( 0 ) , line ( 1U ) , col ( 0U ) { }
+
+Location ( const Location & loc ) : files ( loc . files ) , fileIndex ( loc . fileIndex ) , line ( loc . line ) , col ( loc . col ) { }
+
+Location & operator = ( const Location & other ) {
+if ( this != & other ) {
+fileIndex = other . fileIndex ;
+line = other . line ;
+col = other . col ;
+}
+return * this ;
+}
+
+
+void adjust ( const std :: string & str ) ;
+
+bool operator < ( const Location & rhs ) const {
+if ( fileIndex != rhs . fileIndex )
+return fileIndex < rhs . fileIndex ;
+if ( line != rhs . line )
+return line < rhs . line ;
+return col < rhs . col ;
+}
+
+bool sameline ( const Location & other ) const {
+return fileIndex == other . fileIndex && line == other . line ;
+}
+
+const std :: string & file ( ) const {
+return fileIndex < files . size ( ) ? files [ fileIndex ] : emptyFileName ;
+}
+
+const std :: vector < std :: string > & files ;
+unsigned int fileIndex ;
+unsigned int line ;
+unsigned int col ;
+private :
+static const std :: string emptyFileName ;
+} ;
+
+
+
+
+
+class Token {
+public :
+Token ( const TokenString & s , const Location & loc , bool wsahead = false ) :
+whitespaceahead ( wsahead ) , location ( loc ) , previous ( nullptr ) , next ( nullptr ) , nextcond ( nullptr ) , string ( s ) {
+flags ( ) ;
+}
+
+Token ( const Token & tok ) :
+macro ( tok . macro ) , op ( tok . op ) , comment ( tok . comment ) , name ( tok . name ) , number ( tok . number ) , whitespaceahead ( tok . whitespaceahead ) , location ( tok . location ) , previous ( nullptr ) , next ( nullptr ) , nextcond ( nullptr ) , string ( tok . string ) , mExpandedFrom ( tok . mExpandedFrom ) { }
+
+void flags ( ) {
+name = ( std :: isalpha ( static_cast < unsigned char > ( string [ 0 ] ) ) || string [ 0 ] == '_' || string [ 0 ] == '$' )
+&& ( std :: memchr ( string . c_str ( ) , '\'' , string . size ( ) ) == nullptr ) ;
+comment = string . size ( ) > 1U && string [ 0 ] == '/' && ( string [ 1 ] == '/' || string [ 1 ] == '*' ) ;
+number = isNumberLike ( string ) ;
+op = ( string . size ( ) == 1U && ! name && ! comment && ! number ) ? string [ 0 ] : '\0' ;
+}
+
+const TokenString & str ( ) const {
+return string ;
+}
+void setstr ( const std :: string & s ) {
+string = s ;
+flags ( ) ;
+}
+
+bool isOneOf ( const char ops [ ] ) const ;
+bool startsWithOneOf ( const char c [ ] ) const ;
+bool endsWithOneOf ( const char c [ ] ) const ;
+static bool isNumberLike ( const std :: string & str ) {
+return std :: isdigit ( static_cast < unsigned char > ( str [ 0 ] ) ) ||
+( str . size ( ) > 1U && ( str [ 0 ] == '-' || str [ 0 ] == '+' ) && std :: isdigit ( static_cast < unsigned char > ( str [ 1 ] ) ) ) ;
+}
+
+TokenString macro ;
+char op ;
+bool comment ;
+bool name ;
+bool number ;
+bool whitespaceahead ;
+Location location ;
+Token * previous ;
+Token * next ;
+mutable const Token * nextcond ;
+
+const Token * previousSkipComments ( ) const {
+const Token * tok = this -> previous ;
+while ( tok && tok -> comment )
+tok = tok -> previous ;
+return tok ;
+}
+
+const Token * nextSkipComments ( ) const {
+const Token * tok = this -> next ;
+while ( tok && tok -> comment )
+tok = tok -> next ;
+return tok ;
+}
+
+void setExpandedFrom ( const Token * tok , const Macro * m ) {
+mExpandedFrom = tok -> mExpandedFrom ;
+mExpandedFrom . insert ( m ) ;
+if ( tok -> whitespaceahead )
+whitespaceahead = true ;
+}
+bool isExpandedFrom ( const Macro * m ) const {
+return mExpandedFrom . find ( m ) != mExpandedFrom . end ( ) ;
+}
+
+void printAll ( ) const ;
+void printOut ( ) const ;
+private :
+TokenString string ;
+
+std :: set < const Macro * > mExpandedFrom ;
+
+
+Token & operator = ( const Token & tok ) ;
+} ;
+
+
+struct Output {
+explicit Output ( const std :: vector < std :: string > & files ) : type ( ERROR ) , location ( files ) { }
+enum Type {
+ERROR ,
+WARNING ,
+MISSING_HEADER ,
+INCLUDE_NESTED_TOO_DEEPLY ,
+SYNTAX_ERROR ,
+PORTABILITY_BACKSLASH ,
+UNHANDLED_CHAR_ERROR ,
+EXPLICIT_INCLUDE_NOT_FOUND ,
+FILE_NOT_FOUND ,
+DUI_ERROR
+} type ;
+explicit Output ( const std :: vector < std :: string > & files , Type type , const std :: string & msg ) : type ( type ) , location ( files ) , msg ( msg ) { }
+Location location ;
+std :: string msg ;
+} ;
+
+typedef std :: list < Output > OutputList ;
+
+
+class TokenList {
+public :
+class Stream ;
+
+explicit TokenList ( std :: vector < std :: string > & filenames ) ;
+
+TokenList ( std :: istream & istr , std :: vector < std :: string > & filenames , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr ) ;
+
+
+template < size_t size >
+TokenList ( const char ( & data ) [ size ] , std :: vector < std :: string > & filenames , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr )
+: TokenList ( reinterpret_cast < const unsigned char * > ( data ) , size - 1 , filenames , filename , outputList , 0 )
+{ }
+
+template < size_t size >
+TokenList ( const unsigned char ( & data ) [ size ] , std :: vector < std :: string > & filenames , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr )
+: TokenList ( data , size - 1 , filenames , filename , outputList , 0 )
+{ }
+
+
+TokenList ( const unsigned char * data , std :: size_t size , std :: vector < std :: string > & filenames , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr )
+: TokenList ( data , size , filenames , filename , outputList , 0 )
+{ }
+
+TokenList ( const char * data , std :: size_t size , std :: vector < std :: string > & filenames , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr )
+: TokenList ( reinterpret_cast < const unsigned char * > ( data ) , size , filenames , filename , outputList , 0 )
+{ }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TokenList ( const std :: string & filename , std :: vector < std :: string > & filenames , OutputList * outputList = nullptr ) ;
+TokenList ( const TokenList & other ) ;
+TokenList ( TokenList && other ) ;
+~ TokenList ( ) ;
+TokenList & operator = ( const TokenList & other ) ;
+TokenList & operator = ( TokenList && other ) ;
+
+void clear ( ) ;
+bool empty ( ) const {
+return ! frontToken ;
+}
+void push_back ( Token * tok ) ;
+
+void dump ( ) const ;
+std :: string stringify ( ) const ;
+
+void readfile ( Stream & stream , const std :: string & filename = std :: string ( ) , OutputList * outputList = nullptr ) ;
+void constFold ( ) ;
+
+void removeComments ( ) ;
+
+Token * front ( ) {
+return frontToken ;
+}
+
+const Token * cfront ( ) const {
+return frontToken ;
+}
+
+Token * back ( ) {
+return backToken ;
+}
+
+const Token * cback ( ) const {
+return backToken ;
+}
+
+void deleteToken ( Token * tok ) {
+if ( ! tok )
+return ;
+Token * const prev = tok -> previous ;
+Token * const next = tok -> next ;
+if ( prev )
+prev -> next = next ;
+if ( next )
+next -> previous = prev ;
+if ( frontToken == tok )
+frontToken = next ;
+if ( backToken == tok )
+backToken = prev ;
+delete tok ;
+}
+
+void takeTokens ( TokenList & other ) {
+if ( ! other . frontToken )
+return ;
+if ( ! frontToken ) {
+frontToken = other . frontToken ;
+} else {
+backToken -> next = other . frontToken ;
+other . frontToken -> previous = backToken ;
+}
+backToken = other . backToken ;
+other . frontToken = other . backToken = nullptr ;
+}
+
+
+std :: map < std :: string , std :: size_t > sizeOfType ;
+
+const std :: vector < std :: string > & getFiles ( ) const {
+return files ;
+}
+
+private :
+TokenList ( const unsigned char * data , std :: size_t size , std :: vector < std :: string > & filenames , const std :: string & filename , OutputList * outputList , int unused ) ;
+
+void combineOperators ( ) ;
+
+void constFoldUnaryNotPosNeg ( Token * tok ) ;
+void constFoldMulDivRem ( Token * tok ) ;
+void constFoldAddSub ( Token * tok ) ;
+void constFoldShift ( Token * tok ) ;
+void constFoldComparison ( Token * tok ) ;
+void constFoldBitwise ( Token * tok ) ;
+void constFoldLogicalOp ( Token * tok ) ;
+void constFoldQuestionOp ( Token * * tok1 ) ;
+
+std :: string readUntil ( Stream & stream , const Location & location , char start , char end , OutputList * outputList ) ;
+void lineDirective ( unsigned int fileIndex , unsigned int line , Location * location ) ;
+
+std :: string lastLine ( int maxsize = 1000 ) const ;
+const Token * lastLineTok ( int maxsize = 1000 ) const ;
+bool isLastLinePreprocessor ( int maxsize = 1000 ) const ;
+
+unsigned int fileIndex ( const std :: string & filename ) ;
+
+Token * frontToken ;
+Token * backToken ;
+std :: vector < std :: string > & files ;
+} ;
+
+
+struct MacroUsage {
+explicit MacroUsage ( const std :: vector < std :: string > & f , bool macroValueKnown_ ) : macroLocation ( f ) , useLocation ( f ) , macroValueKnown ( macroValueKnown_ ) { }
+std :: string macroName ;
+Location macroLocation ;
+Location useLocation ;
+bool macroValueKnown ;
+} ;
+
+
+struct IfCond {
+explicit IfCond ( const Location & location , const std :: string & E , long long result ) : location ( location ) , E ( E ) , result ( result ) { }
+Location location ;
+std :: string E ;
+long long result ;
+} ;
+
+
+
+
+
+struct DUI {
+DUI ( ) : clearIncludeCache ( false ) , removeComments ( false ) { }
+std :: list < std :: string > defines ;
+std :: set < std :: string > undefined ;
+std :: list < std :: string > includePaths ;
+std :: list < std :: string > includes ;
+std :: string std ;
+bool clearIncludeCache ;
+bool removeComments ;
+} ;
+
+struct FileData {
+
+std :: string filename ;
+
+TokenList tokens ;
+} ;
+
+class FileDataCache {
+public :
+FileDataCache ( ) = default ;
+
+FileDataCache ( const FileDataCache & ) = delete ;
+FileDataCache ( FileDataCache && ) = default ;
+
+FileDataCache & operator = ( const FileDataCache & ) = delete ;
+FileDataCache & operator = ( FileDataCache && ) = default ;
+
+
+
+std :: pair < FileData * , bool > get ( const std :: string & sourcefile , const std :: string & header , const DUI & dui , bool systemheader , std :: vector < std :: string > & filenames , OutputList * outputList ) ;
+
+void insert ( FileData data ) {
+FileData * const newdata = new FileData ( std :: move ( data ) ) ;
+
+mData . emplace_back ( newdata ) ;
+mNameMap . emplace ( newdata -> filename , newdata ) ;
+}
+
+void clear ( ) {
+mNameMap . clear ( ) ;
+mIdMap . clear ( ) ;
+mData . clear ( ) ;
+}
+
+typedef std :: vector < std :: unique_ptr < FileData >> container_type ;
+typedef container_type :: iterator iterator ;
+typedef container_type :: const_iterator const_iterator ;
+typedef container_type :: size_type size_type ;
+
+size_type size ( ) const {
+return mData . size ( ) ;
+}
+iterator begin ( ) {
+return mData . begin ( ) ;
+}
+iterator end ( ) {
+return mData . end ( ) ;
+}
+const_iterator begin ( ) const {
+return mData . begin ( ) ;
+}
+const_iterator end ( ) const {
+return mData . end ( ) ;
+}
+const_iterator cbegin ( ) const {
+return mData . cbegin ( ) ;
+}
+const_iterator cend ( ) const {
+return mData . cend ( ) ;
+}
+
+private :
+struct FileID {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dev_t dev ;
+ino_t ino ;
+
+bool operator == ( const FileID & that ) const noexcept {
+return dev == that . dev && ino == that . ino ;
+}
+
+struct Hasher {
+std :: size_t operator ( ) ( const FileID & id ) const {
+
+
+
+
+return static_cast < std :: size_t > ( id . dev ) ^ static_cast < std :: size_t > ( id . ino ) ;
+
+}
+} ;
+} ;
+
+using name_map_type = std :: unordered_map < std :: string , FileData * > ;
+using id_map_type = std :: unordered_map < FileID , FileData * , FileID :: Hasher > ;
+
+static bool getFileId ( const std :: string & path , FileID & id ) ;
+
+std :: pair < FileData * , bool > tryload ( name_map_type :: iterator & name_it , const DUI & dui , std :: vector < std :: string > & filenames , OutputList * outputList ) ;
+
+container_type mData ;
+name_map_type mNameMap ;
+id_map_type mIdMap ;
+} ;
+
+long long characterLiteralToLL ( const std :: string & str ) ;
+
+FileDataCache load ( const TokenList & rawtokens , std :: vector < std :: string > & filenames , const DUI & dui , OutputList * outputList = nullptr , FileDataCache cache = { } ) ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+void preprocess ( TokenList & output , const TokenList & rawtokens , std :: vector < std :: string > & files , FileDataCache & cache , const DUI & dui , OutputList * outputList = nullptr , std :: list < MacroUsage > * macroUsage = nullptr , std :: list < IfCond > * ifCond = nullptr ) ;
+
+
+
+
+void cleanup ( FileDataCache & cache ) ;
+
+
+std :: string simplifyPath ( std :: string path ) ;
+
+
+std :: string convertCygwinToWindowsPath ( const std :: string & cygwinPath ) ;
+
+
+cstd_t getCStd ( const std :: string & std ) ;
+
+
+cppstd_t getCppStd ( const std :: string & std ) ;
+
+
+std :: string getCStdString ( const std :: string & std ) ;
+std :: string getCStdString ( cstd_t std ) ;
+
+
+std :: string getCppStdString ( const std :: string & std ) ;
+std :: string getCppStdString ( cppstd_t std ) ;
+}
+#line 49 "simplecpp.cpp"
+static bool isHex ( const std :: string & s )
+{
+return s . size ( ) > 2 && ( s . compare ( 0 , 2 , "0x" ) == 0 || s . compare ( 0 , 2 , "0X" ) == 0 ) ;
+}
+
+static bool isOct ( const std :: string & s )
+{
+return s . size ( ) > 1 && ( s [ 0 ] == '0' ) && ( s [ 1 ] >= '0' ) && ( s [ 1 ] < '8' ) ;
+}
+
+
+static bool isStringLiteral_ ( const std :: string & s )
+{
+return s . size ( ) > 1 && ( s [ 0 ] == '\"' ) && ( * s . rbegin ( ) == '\"' ) ;
+}
+
+
+static bool isCharLiteral_ ( const std :: string & s )
+{
+
+
+return s . size ( ) > 1 && ( s [ 0 ] == '\'' ) && ( * s . rbegin ( ) == '\'' ) ;
+}
+
+static const simplecpp :: TokenString DEFINE ( "define" ) ;
+static const simplecpp :: TokenString UNDEF ( "undef" ) ;
+
+static const simplecpp :: TokenString INCLUDE ( "include" ) ;
+
+static const simplecpp :: TokenString ERROR ( "error" ) ;
+static const simplecpp :: TokenString WARNING ( "warning" ) ;
+
+static const simplecpp :: TokenString IF ( "if" ) ;
+static const simplecpp :: TokenString IFDEF ( "ifdef" ) ;
+static const simplecpp :: TokenString IFNDEF ( "ifndef" ) ;
+static const simplecpp :: TokenString DEFINED ( "defined" ) ;
+static const simplecpp :: TokenString ELSE ( "else" ) ;
+static const simplecpp :: TokenString ELIF ( "elif" ) ;
+static const simplecpp :: TokenString ENDIF ( "endif" ) ;
+
+static const simplecpp :: TokenString PRAGMA ( "pragma" ) ;
+static const simplecpp :: TokenString ONCE ( "once" ) ;
+
+static const simplecpp :: TokenString HAS_INCLUDE ( "__has_include" ) ;
+
+template < class T > static std :: string toString ( T t )
+{
+
+std :: ostringstream ostr ;
+ostr << t ;
+return ostr . str ( ) ;
+}
+
+
+
+
+
+
+
+
+
+
+static long long stringToLL ( const std :: string & s )
+{
+long long ret ;
+const bool hex = isHex ( s ) ;
+const bool oct = isOct ( s ) ;
+std :: istringstream istr ( hex ? s . substr ( 2 ) : oct ? s . substr ( 1 ) : s ) ;
+if ( hex )
+istr >> std :: hex ;
+else if ( oct )
+istr >> std :: oct ;
+istr >> ret ;
+return ret ;
+}
+
+static unsigned long long stringToULL ( const std :: string & s )
+{
+unsigned long long ret ;
+const bool hex = isHex ( s ) ;
+const bool oct = isOct ( s ) ;
+std :: istringstream istr ( hex ? s . substr ( 2 ) : oct ? s . substr ( 1 ) : s ) ;
+if ( hex )
+istr >> std :: hex ;
+else if ( oct )
+istr >> std :: oct ;
+istr >> ret ;
+return ret ;
+}
+
+static bool endsWith ( const std :: string & s , const std :: string & e )
+{
+return ( s . size ( ) >= e . size ( ) ) && std :: equal ( e . rbegin ( ) , e . rend ( ) , s . rbegin ( ) ) ;
+}
+
+static bool sameline ( const simplecpp :: Token * tok1 , const simplecpp :: Token * tok2 )
+{
+return tok1 && tok2 && tok1 -> location . sameline ( tok2 -> location ) ;
+}
+
+static bool isAlternativeBinaryOp ( const simplecpp :: Token * tok , const std :: string & alt )
+{
+return ( tok -> name &&
+tok -> str ( ) == alt &&
+tok -> previous &&
+tok -> next &&
+( tok -> previous -> number || tok -> previous -> name || tok -> previous -> op == ')' ) &&
+( tok -> next -> number || tok -> next -> name || tok -> next -> op == '(' ) ) ;
+}
+
+static bool isAlternativeUnaryOp ( const simplecpp :: Token * tok , const std :: string & alt )
+{
+return ( ( tok -> name && tok -> str ( ) == alt ) &&
+( ! tok -> previous || tok -> previous -> op == '(' ) &&
+( tok -> next && ( tok -> next -> name || tok -> next -> number ) ) ) ;
+}
+
+static std :: string replaceAll ( std :: string s , const std :: string & from , const std :: string & to )
+{
+for ( size_t pos = s . find ( from ) ; pos != std :: string :: npos ; pos = s . find ( from , pos + to . size ( ) ) )
+s . replace ( pos , from . size ( ) , to ) ;
+return s ;
+}
+
+const std :: string simplecpp :: Location :: emptyFileName ;
+
+void simplecpp :: Location :: adjust ( const std :: string & str )
+{
+if ( strpbrk ( str . c_str ( ) , "\r\n" ) == nullptr ) {
+col += str . size ( ) ;
+return ;
+}
+
+for ( std :: size_t i = 0U ; i < str . size ( ) ; ++ i ) {
+col ++ ;
+if ( str [ i ] == '\n' || str [ i ] == '\r' ) {
+col = 1 ;
+line ++ ;
+if ( str [ i ] == '\r' && ( i + 1 ) < str . size ( ) && str [ i + 1 ] == '\n' )
+++ i ;
+}
+}
+}
+
+bool simplecpp :: Token :: isOneOf ( const char ops [ ] ) const
+{
+return ( op != '\0' ) && ( std :: strchr ( ops , op ) != nullptr ) ;
+}
+
+bool simplecpp :: Token :: startsWithOneOf ( const char c [ ] ) const
+{
+return std :: strchr ( c , string [ 0 ] ) != nullptr ;
+}
+
+bool simplecpp :: Token :: endsWithOneOf ( const char c [ ] ) const
+{
+return std :: strchr ( c , string [ string . size ( ) - 1U ] ) != nullptr ;
+}
+
+void simplecpp :: Token :: printAll ( ) const
+{
+const Token * tok = this ;
+while ( tok -> previous )
+tok = tok -> previous ;
+for ( ; tok ; tok = tok -> next ) {
+if ( tok -> previous ) {
+std :: cout << ( sameline ( tok , tok -> previous ) ? ' ' : '\n' ) ;
+}
+std :: cout << tok -> str ( ) ;
+}
+std :: cout << std :: endl ;
+}
+
+void simplecpp :: Token :: printOut ( ) const
+{
+for ( const Token * tok = this ; tok ; tok = tok -> next ) {
+if ( tok != this ) {
+std :: cout << ( sameline ( tok , tok -> previous ) ? ' ' : '\n' ) ;
+}
+std :: cout << tok -> str ( ) ;
+}
+std :: cout << std :: endl ;
+}
+
+
+class simplecpp :: TokenList :: Stream {
+public :
+virtual ~ Stream ( ) { }
+
+virtual int get ( ) = 0 ;
+virtual int peek ( ) = 0 ;
+virtual void unget ( ) = 0 ;
+virtual bool good ( ) = 0 ;
+
+unsigned char readChar ( ) {
+unsigned char ch = static_cast < unsigned char > ( get ( ) ) ;
+
+
+
+if ( isUtf16 ) {
+const unsigned char ch2 = static_cast < unsigned char > ( get ( ) ) ;
+const int ch16 = makeUtf16Char ( ch , ch2 ) ;
+ch = static_cast < unsigned char > ( ( ( ch16 >= 0x80 ) ? 0xff : ch16 ) ) ;
+}
+
+
+if ( ch == '\r' ) {
+ch = '\n' ;
+
+int ch2 = get ( ) ;
+if ( isUtf16 ) {
+const int c2 = get ( ) ;
+ch2 = makeUtf16Char ( ch2 , c2 ) ;
+}
+
+if ( ch2 != '\n' )
+ungetChar ( ) ;
+}
+
+return ch ;
+}
+
+unsigned char peekChar ( ) {
+unsigned char ch = static_cast < unsigned char > ( peek ( ) ) ;
+
+
+
+if ( isUtf16 ) {
+( void ) get ( ) ;
+const unsigned char ch2 = static_cast < unsigned char > ( peek ( ) ) ;
+unget ( ) ;
+const int ch16 = makeUtf16Char ( ch , ch2 ) ;
+ch = static_cast < unsigned char > ( ( ( ch16 >= 0x80 ) ? 0xff : ch16 ) ) ;
+}
+
+
+if ( ch == '\r' )
+ch = '\n' ;
+
+return ch ;
+}
+
+void ungetChar ( ) {
+unget ( ) ;
+if ( isUtf16 )
+unget ( ) ;
+}
+
+protected :
+void init ( ) {
+
+isUtf16 = false ;
+bom = getAndSkipBOM ( ) ;
+isUtf16 = ( bom == 0xfeff || bom == 0xfffe ) ;
+}
+
+private :
+inline int makeUtf16Char ( const unsigned char ch , const unsigned char ch2 ) const {
+return ( bom == 0xfeff ) ? ( ch << 8 | ch2 ) : ( ch2 << 8 | ch ) ;
+}
+
+unsigned short getAndSkipBOM ( ) {
+const int ch1 = peek ( ) ;
+
+
+if ( ch1 >= 0xfe ) {
+( void ) get ( ) ;
+const unsigned short byte = ( static_cast < unsigned char > ( ch1 ) << 8 ) ;
+if ( peek ( ) >= 0xfe )
+return byte | static_cast < unsigned char > ( get ( ) ) ;
+unget ( ) ;
+return 0 ;
+}
+
+
+if ( ch1 == 0xef ) {
+( void ) get ( ) ;
+if ( peek ( ) == 0xbb ) {
+( void ) get ( ) ;
+if ( peek ( ) == 0xbf ) {
+( void ) get ( ) ;
+return 0 ;
+}
+unget ( ) ;
+}
+unget ( ) ;
+}
+
+return 0 ;
+}
+
+unsigned short bom ;
+protected :
+bool isUtf16 ;
+} ;
+
+class StdIStream : public simplecpp :: TokenList :: Stream {
+public :
+
+explicit StdIStream ( std :: istream & istr )
+: istr ( istr ) {
+assert ( istr . good ( ) ) ;
+init ( ) ;
+}
+
+virtual int get ( ) override {
+return istr . get ( ) ;
+}
+virtual int peek ( ) override {
+return istr . peek ( ) ;
+}
+virtual void unget ( ) override {
+istr . unget ( ) ;
+}
+virtual bool good ( ) override {
+return istr . good ( ) ;
+}
+
+private :
+std :: istream & istr ;
+} ;
+
+class StdCharBufStream : public simplecpp :: TokenList :: Stream {
+public :
+
+StdCharBufStream ( const unsigned char * str , std :: size_t size )
+: str ( str )
+, size ( size )
+, pos ( 0 )
+, lastStatus ( 0 ) {
+init ( ) ;
+}
+
+virtual int get ( ) override {
+if ( pos >= size )
+return lastStatus = EOF ;
+return str [ pos ++ ] ;
+}
+virtual int peek ( ) override {
+if ( pos >= size )
+return lastStatus = EOF ;
+return str [ pos ] ;
+}
+virtual void unget ( ) override {
+-- pos ;
+}
+virtual bool good ( ) override {
+return lastStatus != EOF ;
+}
+
+private :
+const unsigned char * str ;
+const std :: size_t size ;
+std :: size_t pos ;
+int lastStatus ;
+} ;
+
+class FileStream : public simplecpp :: TokenList :: Stream {
+public :
+
+explicit FileStream ( const std :: string & filename , std :: vector < std :: string > & files )
+: file ( fopen ( filename . c_str ( ) , "rb" ) )
+, lastCh ( 0 )
+, lastStatus ( 0 ) {
+if ( ! file ) {
+files . push_back ( filename ) ;
+throw simplecpp :: Output ( files , simplecpp :: Output :: FILE_NOT_FOUND , "File is missing: " + filename ) ;
+}
+init ( ) ;
+}
+
+~ FileStream ( ) override {
+fclose ( file ) ;
+file = nullptr ;
+}
+
+virtual int get ( ) override {
+lastStatus = lastCh = fgetc ( file ) ;
+return lastCh ;
+}
+virtual int peek ( ) override {
+
+const int ch = fgetc ( file ) ;
+unget_internal ( ch ) ;
+return ch ;
+}
+virtual void unget ( ) override {
+unget_internal ( lastCh ) ;
+}
+virtual bool good ( ) override {
+return lastStatus != EOF ;
+}
+
+private :
+void unget_internal ( int ch ) {
+if ( isUtf16 ) {
+
+
+fseek ( file , - 1 , SEEK_CUR ) ;
+} else
+ungetc ( ch , file ) ;
+}
+
+FileStream ( const FileStream & ) ;
+FileStream & operator = ( const FileStream & ) ;
+
+FILE * file ;
+int lastCh ;
+int lastStatus ;
+} ;
+
+simplecpp :: TokenList :: TokenList ( std :: vector < std :: string > & filenames ) : frontToken ( nullptr ) , backToken ( nullptr ) , files ( filenames ) { }
+
+simplecpp :: TokenList :: TokenList ( std :: istream & istr , std :: vector < std :: string > & filenames , const std :: string & filename , OutputList * outputList )
+: frontToken ( nullptr ) , backToken ( nullptr ) , files ( filenames )
+{
+StdIStream stream ( istr ) ;
+readfile ( stream , filename , outputList ) ;
+}
+
+simplecpp :: TokenList :: TokenList ( const unsigned char * data , std :: size_t size , std :: vector < std :: string > & filenames , const std :: string & filename , OutputList * outputList , int )
+: frontToken ( nullptr ) , backToken ( nullptr ) , files ( filenames )
+{
+StdCharBufStream stream ( data , size ) ;
+readfile ( stream , filename , outputList ) ;
+}
+
+simplecpp :: TokenList :: TokenList ( const std :: string & filename , std :: vector < std :: string > & filenames , OutputList * outputList )
+: frontToken ( nullptr ) , backToken ( nullptr ) , files ( filenames )
+{
+try {
+FileStream stream ( filename , filenames ) ;
+readfile ( stream , filename , outputList ) ;
+} catch ( const simplecpp :: Output & e ) {
+outputList -> push_back ( e ) ;
+}
+}
+
+simplecpp :: TokenList :: TokenList ( const TokenList & other ) : frontToken ( nullptr ) , backToken ( nullptr ) , files ( other . files )
+{
+* this = other ;
+}
+
+simplecpp :: TokenList :: TokenList ( TokenList && other ) : frontToken ( nullptr ) , backToken ( nullptr ) , files ( other . files )
+{
+* this = std :: move ( other ) ;
+}
+
+simplecpp :: TokenList :: ~ TokenList ( )
+{
+clear ( ) ;
+}
+
+simplecpp :: TokenList & simplecpp :: TokenList :: operator = ( const TokenList & other )
+{
+if ( this != & other ) {
+clear ( ) ;
+files = other . files ;
+for ( const Token * tok = other . cfront ( ) ; tok ; tok = tok -> next )
+push_back ( new Token ( * tok ) ) ;
+sizeOfType = other . sizeOfType ;
+}
+return * this ;
+}
+
+simplecpp :: TokenList & simplecpp :: TokenList :: operator = ( TokenList && other )
+{
+if ( this != & other ) {
+clear ( ) ;
+frontToken = other . frontToken ;
+other . frontToken = nullptr ;
+backToken = other . backToken ;
+other . backToken = nullptr ;
+files = other . files ;
+sizeOfType = std :: move ( other . sizeOfType ) ;
+}
+return * this ;
+}
+
+void simplecpp :: TokenList :: clear ( )
+{
+backToken = nullptr ;
+while ( frontToken ) {
+Token * const next = frontToken -> next ;
+delete frontToken ;
+frontToken = next ;
+}
+sizeOfType . clear ( ) ;
+}
+
+void simplecpp :: TokenList :: push_back ( Token * tok )
+{
+if ( ! frontToken )
+frontToken = tok ;
+else
+backToken -> next = tok ;
+tok -> previous = backToken ;
+backToken = tok ;
+}
+
+void simplecpp :: TokenList :: dump ( ) const
+{
+std :: cout << stringify ( ) << std :: endl ;
+}
+
+std :: string simplecpp :: TokenList :: stringify ( ) const
+{
+std :: ostringstream ret ;
+Location loc ( files ) ;
+for ( const Token * tok = cfront ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> location . line < loc . line || tok -> location . fileIndex != loc . fileIndex ) {
+ret << "\n#line " << tok -> location . line << " \"" << tok -> location . file ( ) << "\"\n" ;
+loc = tok -> location ;
+}
+
+while ( tok -> location . line > loc . line ) {
+ret << '\n' ;
+loc . line ++ ;
+}
+
+if ( sameline ( tok -> previous , tok ) )
+ret << ' ' ;
+
+ret << tok -> str ( ) ;
+
+loc . adjust ( tok -> str ( ) ) ;
+}
+
+return ret . str ( ) ;
+}
+
+static bool isNameChar ( unsigned char ch )
+{
+return std :: isalnum ( ch ) || ch == '_' || ch == '$' ;
+}
+
+static std :: string escapeString ( const std :: string & str )
+{
+std :: ostringstream ostr ;
+ostr << '\"' ;
+for ( std :: size_t i = 1U ; i < str . size ( ) - 1 ; ++ i ) {
+const char c = str [ i ] ;
+if ( c == '\\' || c == '\"' || c == '\'' )
+ostr << '\\' ;
+ostr << c ;
+}
+ostr << '\"' ;
+return ostr . str ( ) ;
+}
+
+static void portabilityBackslash ( simplecpp :: OutputList * outputList , const std :: vector < std :: string > & files , const simplecpp :: Location & location )
+{
+if ( ! outputList )
+return ;
+simplecpp :: Output err ( files ) ;
+err . type = simplecpp :: Output :: PORTABILITY_BACKSLASH ;
+err . location = location ;
+err . msg = "Combination 'backslash space newline' is not portable." ;
+outputList -> push_back ( std :: move ( err ) ) ;
+}
+
+static bool isStringLiteralPrefix ( const std :: string & str )
+{
+return str == "u" || str == "U" || str == "L" || str == "u8" ||
+str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R" ;
+}
+
+void simplecpp :: TokenList :: lineDirective ( unsigned int fileIndex , unsigned int line , Location * location )
+{
+if ( fileIndex != location -> fileIndex || line >= location -> line ) {
+location -> fileIndex = fileIndex ;
+location -> line = line ;
+return ;
+}
+
+if ( line + 2 >= location -> line ) {
+location -> line = line ;
+while ( cback ( ) -> op != '#' )
+deleteToken ( back ( ) ) ;
+deleteToken ( back ( ) ) ;
+return ;
+}
+}
+
+static const std :: string COMMENT_END ( "*/" ) ;
+
+void simplecpp :: TokenList :: readfile ( Stream & stream , const std :: string & filename , OutputList * outputList )
+{
+std :: stack < simplecpp :: Location > loc ;
+
+unsigned int multiline = 0U ;
+
+const Token * oldLastToken = nullptr ;
+
+Location location ( files ) ;
+location . fileIndex = fileIndex ( filename ) ;
+location . line = 1U ;
+location . col = 1U ;
+while ( stream . good ( ) ) {
+unsigned char ch = stream . readChar ( ) ;
+if ( ! stream . good ( ) )
+break ;
+
+if ( ch >= 0x80 ) {
+if ( outputList ) {
+simplecpp :: Output err ( files ) ;
+err . type = simplecpp :: Output :: UNHANDLED_CHAR_ERROR ;
+err . location = location ;
+std :: ostringstream s ;
+s << static_cast < int > ( ch ) ;
+err . msg = "The code contains unhandled character(s) (character code=" + s . str ( ) + "). Neither unicode nor extended ascii is supported." ;
+outputList -> push_back ( err ) ;
+}
+clear ( ) ;
+return ;
+}
+
+if ( ch == '\n' ) {
+if ( cback ( ) && cback ( ) -> op == '\\' ) {
+if ( location . col > cback ( ) -> location . col + 1U )
+portabilityBackslash ( outputList , files , cback ( ) -> location ) ;
+++ multiline ;
+deleteToken ( back ( ) ) ;
+} else {
+location . line += multiline + 1 ;
+multiline = 0U ;
+}
+if ( ! multiline )
+location . col = 1 ;
+
+if ( oldLastToken != cback ( ) ) {
+oldLastToken = cback ( ) ;
+if ( ! isLastLinePreprocessor ( ) )
+continue ;
+const std :: string lastline ( lastLine ( ) ) ;
+if ( lastline == "# file %str%" ) {
+const Token * strtok = cback ( ) ;
+while ( strtok -> comment )
+strtok = strtok -> previous ;
+loc . push ( location ) ;
+location . fileIndex = fileIndex ( strtok -> str ( ) . substr ( 1U , strtok -> str ( ) . size ( ) - 2U ) ) ;
+location . line = 1U ;
+} else if ( lastline == "# line %num%" ) {
+const Token * numtok = cback ( ) ;
+while ( numtok -> comment )
+numtok = numtok -> previous ;
+lineDirective ( location . fileIndex , std :: atol ( numtok -> str ( ) . c_str ( ) ) , & location ) ;
+} else if ( lastline == "# %num% %str%" || lastline == "# line %num% %str%" ) {
+const Token * strtok = cback ( ) ;
+while ( strtok -> comment )
+strtok = strtok -> previous ;
+const Token * numtok = strtok -> previous ;
+while ( numtok -> comment )
+numtok = numtok -> previous ;
+lineDirective ( fileIndex ( replaceAll ( strtok -> str ( ) . substr ( 1U , strtok -> str ( ) . size ( ) - 2U ) , "\\\\" , "\\" ) ) ,
+std :: atol ( numtok -> str ( ) . c_str ( ) ) , & location ) ;
+}
+
+else if ( lastline == "# endfile" && ! loc . empty ( ) ) {
+location = loc . top ( ) ;
+loc . pop ( ) ;
+}
+}
+
+continue ;
+}
+
+if ( ch <= ' ' ) {
+location . col ++ ;
+continue ;
+}
+
+TokenString currentToken ;
+
+if ( cback ( ) && cback ( ) -> location . line == location . line && cback ( ) -> previous && cback ( ) -> previous -> op == '#' ) {
+const Token * const llTok = lastLineTok ( ) ;
+if ( llTok && llTok -> op == '#' && llTok -> next && ( llTok -> next -> str ( ) == "error" || llTok -> next -> str ( ) == "warning" ) ) {
+char prev = ' ' ;
+while ( stream . good ( ) && ( prev == '\\' || ( ch != '\r' && ch != '\n' ) ) ) {
+currentToken += ch ;
+prev = ch ;
+ch = stream . readChar ( ) ;
+}
+stream . ungetChar ( ) ;
+push_back ( new Token ( currentToken , location ) ) ;
+location . adjust ( currentToken ) ;
+continue ;
+}
+}
+
+
+if ( isNameChar ( ch ) ) {
+const bool num = ! ! std :: isdigit ( ch ) ;
+while ( stream . good ( ) && isNameChar ( ch ) ) {
+currentToken += ch ;
+ch = stream . readChar ( ) ;
+if ( num && ch == '\'' && isNameChar ( stream . peekChar ( ) ) )
+ch = stream . readChar ( ) ;
+}
+
+stream . ungetChar ( ) ;
+}
+
+
+else if ( ch == '/' && stream . peekChar ( ) == '/' ) {
+while ( stream . good ( ) && ch != '\n' ) {
+currentToken += ch ;
+ch = stream . readChar ( ) ;
+if ( ch == '\\' ) {
+TokenString tmp ;
+char tmp_ch = ch ;
+while ( ( stream . good ( ) ) && ( tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t' ) ) {
+tmp += tmp_ch ;
+tmp_ch = stream . readChar ( ) ;
+}
+if ( ! stream . good ( ) ) {
+break ;
+}
+
+if ( tmp_ch != '\n' ) {
+currentToken += tmp ;
+} else {
+const TokenString check_portability = currentToken + tmp ;
+const std :: string :: size_type pos = check_portability . find_last_not_of ( " \t" ) ;
+if ( pos < check_portability . size ( ) - 1U && check_portability [ pos ] == '\\' )
+portabilityBackslash ( outputList , files , location ) ;
+++ multiline ;
+tmp_ch = stream . readChar ( ) ;
+currentToken += '\n' ;
+}
+ch = tmp_ch ;
+}
+}
+if ( ch == '\n' ) {
+stream . ungetChar ( ) ;
+}
+}
+
+
+else if ( ch == '/' && stream . peekChar ( ) == '*' ) {
+currentToken = "/*" ;
+( void ) stream . readChar ( ) ;
+ch = stream . readChar ( ) ;
+while ( stream . good ( ) ) {
+currentToken += ch ;
+if ( currentToken . size ( ) >= 4U && endsWith ( currentToken , COMMENT_END ) )
+break ;
+ch = stream . readChar ( ) ;
+}
+
+
+std :: string :: size_type pos = 0 ;
+while ( ( pos = currentToken . find ( "\\\n" , pos ) ) != std :: string :: npos ) {
+currentToken . erase ( pos , 2 ) ;
+++ multiline ;
+}
+if ( multiline || isLastLinePreprocessor ( ) ) {
+pos = 0 ;
+while ( ( pos = currentToken . find ( '\n' , pos ) ) != std :: string :: npos ) {
+currentToken . erase ( pos , 1 ) ;
+++ multiline ;
+}
+}
+}
+
+
+else if ( ch == '\"' || ch == '\'' ) {
+std :: string prefix ;
+if ( cback ( ) && cback ( ) -> name && isStringLiteralPrefix ( cback ( ) -> str ( ) ) &&
+( ( cback ( ) -> location . col + cback ( ) -> str ( ) . size ( ) ) == location . col ) &&
+( cback ( ) -> location . line == location . line ) ) {
+prefix = cback ( ) -> str ( ) ;
+}
+
+if ( ch == '\"' && ! prefix . empty ( ) && * cback ( ) -> str ( ) . rbegin ( ) == 'R' ) {
+std :: string delim ;
+currentToken = ch ;
+prefix . resize ( prefix . size ( ) - 1 ) ;
+ch = stream . readChar ( ) ;
+while ( stream . good ( ) && ch != '(' && ch != '\n' ) {
+delim += ch ;
+ch = stream . readChar ( ) ;
+}
+if ( ! stream . good ( ) || ch == '\n' ) {
+if ( outputList ) {
+Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = location ;
+err . msg = "Invalid newline in raw string delimiter." ;
+outputList -> push_back ( err ) ;
+}
+return ;
+}
+const std :: string endOfRawString ( ')' + delim + currentToken ) ;
+while ( stream . good ( ) && ! ( endsWith ( currentToken , endOfRawString ) && currentToken . size ( ) > 1 ) )
+currentToken += stream . readChar ( ) ;
+if ( ! endsWith ( currentToken , endOfRawString ) ) {
+if ( outputList ) {
+Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = location ;
+err . msg = "Raw string missing terminating delimiter." ;
+outputList -> push_back ( std :: move ( err ) ) ;
+}
+return ;
+}
+currentToken . erase ( currentToken . size ( ) - endOfRawString . size ( ) , endOfRawString . size ( ) - 1U ) ;
+currentToken = escapeString ( currentToken ) ;
+currentToken . insert ( 0 , prefix ) ;
+back ( ) -> setstr ( currentToken ) ;
+location . adjust ( currentToken ) ;
+if ( currentToken . find_first_of ( "\r\n" ) == std :: string :: npos )
+location . col += 2 + 2 * delim . size ( ) ;
+else
+location . col += 1 + delim . size ( ) ;
+
+continue ;
+}
+
+currentToken = readUntil ( stream , location , ch , ch , outputList ) ;
+if ( currentToken . size ( ) < 2U )
+
+return ;
+
+std :: string s = currentToken ;
+std :: string :: size_type pos ;
+int newlines = 0 ;
+while ( ( pos = s . find_first_of ( "\r\n" ) ) != std :: string :: npos ) {
+s . erase ( pos , 1 ) ;
+newlines ++ ;
+}
+
+if ( prefix . empty ( ) )
+push_back ( new Token ( s , location , ! ! std :: isspace ( stream . peekChar ( ) ) ) ) ;
+else
+back ( ) -> setstr ( prefix + s ) ;
+
+if ( newlines > 0 ) {
+const Token * const llTok = lastLineTok ( ) ;
+if ( llTok && llTok -> op == '#' && llTok -> next && ( llTok -> next -> str ( ) == "define" || llTok -> next -> str ( ) == "pragma" ) && llTok -> next -> next ) {
+multiline += newlines ;
+location . adjust ( s ) ;
+continue ;
+}
+}
+
+location . adjust ( currentToken ) ;
+continue ;
+}
+
+else {
+currentToken += ch ;
+}
+
+if ( * currentToken . begin ( ) == '<' ) {
+const Token * const llTok = lastLineTok ( ) ;
+if ( llTok && llTok -> op == '#' && llTok -> next && llTok -> next -> str ( ) == "include" ) {
+currentToken = readUntil ( stream , location , '<' , '>' , outputList ) ;
+if ( currentToken . size ( ) < 2U )
+return ;
+}
+}
+
+push_back ( new Token ( currentToken , location , ! ! std :: isspace ( stream . peekChar ( ) ) ) ) ;
+
+if ( multiline )
+location . col += currentToken . size ( ) ;
+else
+location . adjust ( currentToken ) ;
+}
+
+combineOperators ( ) ;
+}
+
+void simplecpp :: TokenList :: constFold ( )
+{
+while ( cfront ( ) ) {
+
+Token * tok = back ( ) ;
+while ( tok && tok -> op != '(' )
+tok = tok -> previous ;
+
+
+if ( ! tok )
+tok = front ( ) ;
+
+
+constFoldUnaryNotPosNeg ( tok ) ;
+constFoldMulDivRem ( tok ) ;
+constFoldAddSub ( tok ) ;
+constFoldShift ( tok ) ;
+constFoldComparison ( tok ) ;
+constFoldBitwise ( tok ) ;
+constFoldLogicalOp ( tok ) ;
+constFoldQuestionOp ( & tok ) ;
+
+
+if ( tok -> op != '(' )
+break ;
+
+if ( ! tok -> next || ! tok -> next -> next || tok -> next -> next -> op != ')' )
+break ;
+
+tok = tok -> next ;
+deleteToken ( tok -> previous ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+static bool isFloatSuffix ( const simplecpp :: Token * tok )
+{
+if ( ! tok || tok -> str ( ) . size ( ) != 1U )
+return false ;
+const char c = std :: tolower ( tok -> str ( ) [ 0 ] ) ;
+return c == 'f' || c == 'l' ;
+}
+
+void simplecpp :: TokenList :: combineOperators ( )
+{
+std :: stack < bool > executableScope ;
+executableScope . push ( false ) ;
+for ( Token * tok = front ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> op == '{' ) {
+if ( executableScope . top ( ) ) {
+executableScope . push ( true ) ;
+continue ;
+}
+const Token * prev = tok -> previous ;
+while ( prev && prev -> isOneOf ( ";{}()" ) )
+prev = prev -> previous ;
+executableScope . push ( prev && prev -> op == ')' ) ;
+continue ;
+}
+if ( tok -> op == '}' ) {
+if ( executableScope . size ( ) > 1 )
+executableScope . pop ( ) ;
+continue ;
+}
+
+if ( tok -> op == '.' ) {
+
+if ( tok -> next && tok -> next -> op == '.' && tok -> next -> location . col == ( tok -> location . col + 1 ) &&
+tok -> next -> next && tok -> next -> next -> op == '.' && tok -> next -> next -> location . col == ( tok -> location . col + 2 ) ) {
+tok -> setstr ( "..." ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+continue ;
+}
+
+if ( tok -> previous && tok -> previous -> number && sameline ( tok -> previous , tok ) && tok -> previous -> str ( ) . find_first_of ( "._" ) == std :: string :: npos ) {
+tok -> setstr ( tok -> previous -> str ( ) + '.' ) ;
+deleteToken ( tok -> previous ) ;
+if ( sameline ( tok , tok -> next ) && ( isFloatSuffix ( tok -> next ) || ( tok -> next && tok -> next -> startsWithOneOf ( "AaBbCcDdEeFfPp" ) ) ) ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+if ( tok -> next && tok -> next -> number ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+const char lastChar = tok -> str ( ) [ tok -> str ( ) . size ( ) - 1 ] ;
+if ( tok -> number && ! isOct ( tok -> str ( ) ) &&
+( ( ! isHex ( tok -> str ( ) ) && ( lastChar == 'E' || lastChar == 'e' ) ) ||
+( isHex ( tok -> str ( ) ) && ( lastChar == 'P' || lastChar == 'p' ) ) ) &&
+tok -> next && tok -> next -> isOneOf ( "+-" ) && tok -> next -> next && tok -> next -> next -> number ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> op + tok -> next -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+
+if ( tok -> op == '\0' || ! tok -> next || tok -> next -> op == '\0' )
+continue ;
+if ( ! sameline ( tok , tok -> next ) )
+continue ;
+if ( tok -> location . col + 1U != tok -> next -> location . col )
+continue ;
+
+if ( tok -> next -> op == '=' && tok -> isOneOf ( "=!<>+-*/%&|^" ) ) {
+if ( tok -> op == '&' && ! executableScope . top ( ) ) {
+
+
+int indentlevel = 0 ;
+const Token * start = tok ;
+while ( indentlevel >= 0 && start ) {
+if ( start -> op == ')' )
+++ indentlevel ;
+else if ( start -> op == '(' )
+-- indentlevel ;
+else if ( start -> isOneOf ( ";{}" ) )
+break ;
+start = start -> previous ;
+}
+if ( indentlevel == - 1 && start ) {
+const Token * const ftok = start ;
+bool isFuncDecl = ftok -> name ;
+while ( isFuncDecl ) {
+if ( ! start -> name && start -> str ( ) != "::" && start -> op != '*' && start -> op != '&' )
+isFuncDecl = false ;
+if ( ! start -> previous )
+break ;
+if ( start -> previous -> isOneOf ( ";{}:" ) )
+break ;
+start = start -> previous ;
+}
+isFuncDecl &= start != ftok && start -> name ;
+if ( isFuncDecl ) {
+
+continue ;
+}
+}
+}
+tok -> setstr ( tok -> str ( ) + "=" ) ;
+deleteToken ( tok -> next ) ;
+} else if ( ( tok -> op == '|' || tok -> op == '&' ) && tok -> op == tok -> next -> op ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+} else if ( tok -> op == ':' && tok -> next -> op == ':' ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+} else if ( tok -> op == '-' && tok -> next -> op == '>' ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+} else if ( ( tok -> op == '<' || tok -> op == '>' ) && tok -> op == tok -> next -> op ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+if ( tok -> next && tok -> next -> op == '=' && tok -> next -> next && tok -> next -> next -> op != '=' ) {
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+}
+} else if ( ( tok -> op == '+' || tok -> op == '-' ) && tok -> op == tok -> next -> op ) {
+if ( tok -> location . col + 1U != tok -> next -> location . col )
+continue ;
+if ( tok -> previous && tok -> previous -> number )
+continue ;
+if ( tok -> next -> next && tok -> next -> next -> number )
+continue ;
+tok -> setstr ( tok -> str ( ) + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+}
+
+static const std :: string COMPL ( "compl" ) ;
+static const std :: string NOT ( "not" ) ;
+void simplecpp :: TokenList :: constFoldUnaryNotPosNeg ( simplecpp :: Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+
+if ( isAlternativeUnaryOp ( tok , NOT ) )
+tok -> op = '!' ;
+
+else if ( isAlternativeUnaryOp ( tok , COMPL ) )
+tok -> op = '~' ;
+
+if ( tok -> op == '!' && tok -> next && tok -> next -> number ) {
+tok -> setstr ( tok -> next -> str ( ) == "0" ? "1" : "0" ) ;
+deleteToken ( tok -> next ) ;
+} else if ( tok -> op == '~' && tok -> next && tok -> next -> number ) {
+tok -> setstr ( toString ( ~ stringToLL ( tok -> next -> str ( ) ) ) ) ;
+deleteToken ( tok -> next ) ;
+} else {
+if ( tok -> previous && ( tok -> previous -> number || tok -> previous -> name ) )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+switch ( tok -> op ) {
+case '+' :
+tok -> setstr ( tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+break ;
+case '-' :
+tok -> setstr ( tok -> op + tok -> next -> str ( ) ) ;
+deleteToken ( tok -> next ) ;
+break ;
+}
+}
+}
+}
+
+void simplecpp :: TokenList :: constFoldMulDivRem ( Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+
+long long result ;
+if ( tok -> op == '*' )
+result = ( stringToLL ( tok -> previous -> str ( ) ) * stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> op == '/' || tok -> op == '%' ) {
+const long long rhs = stringToLL ( tok -> next -> str ( ) ) ;
+if ( rhs == 0 )
+throw std :: overflow_error ( "division/modulo by zero" ) ;
+const long long lhs = stringToLL ( tok -> previous -> str ( ) ) ;
+if ( rhs == - 1 && lhs == std :: numeric_limits < long long > :: min ( ) )
+throw std :: overflow_error ( "division overflow" ) ;
+if ( tok -> op == '/' )
+result = ( lhs / rhs ) ;
+else
+result = ( lhs % rhs ) ;
+} else
+continue ;
+
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+void simplecpp :: TokenList :: constFoldAddSub ( Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+
+long long result ;
+if ( tok -> op == '+' )
+result = stringToLL ( tok -> previous -> str ( ) ) + stringToLL ( tok -> next -> str ( ) ) ;
+else if ( tok -> op == '-' )
+result = stringToLL ( tok -> previous -> str ( ) ) - stringToLL ( tok -> next -> str ( ) ) ;
+else
+continue ;
+
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+void simplecpp :: TokenList :: constFoldShift ( Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+
+long long result ;
+if ( tok -> str ( ) == "<<" )
+result = stringToLL ( tok -> previous -> str ( ) ) << stringToLL ( tok -> next -> str ( ) ) ;
+else if ( tok -> str ( ) == ">>" )
+result = stringToLL ( tok -> previous -> str ( ) ) >> stringToLL ( tok -> next -> str ( ) ) ;
+else
+continue ;
+
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+static const std :: string NOTEQ ( "not_eq" ) ;
+void simplecpp :: TokenList :: constFoldComparison ( Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( isAlternativeBinaryOp ( tok , NOTEQ ) )
+tok -> setstr ( "!=" ) ;
+
+if ( ! tok -> startsWithOneOf ( "<>=!" ) )
+continue ;
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+
+int result ;
+if ( tok -> str ( ) == "==" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) == stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> str ( ) == "!=" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) != stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> str ( ) == ">" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) > stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> str ( ) == ">=" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) >= stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> str ( ) == "<" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) < stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( tok -> str ( ) == "<=" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) <= stringToLL ( tok -> next -> str ( ) ) ) ;
+else
+continue ;
+
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+static const std :: string BITAND ( "bitand" ) ;
+static const std :: string BITOR ( "bitor" ) ;
+static const std :: string XOR ( "xor" ) ;
+void simplecpp :: TokenList :: constFoldBitwise ( Token * tok )
+{
+Token * const tok1 = tok ;
+for ( const char * op = "&^|" ; * op ; op ++ ) {
+const std :: string * alternativeOp ;
+if ( * op == '&' )
+alternativeOp = & BITAND ;
+else if ( * op == '|' )
+alternativeOp = & BITOR ;
+else
+alternativeOp = & XOR ;
+for ( tok = tok1 ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( tok -> op != * op && ! isAlternativeBinaryOp ( tok , * alternativeOp ) )
+continue ;
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+long long result ;
+if ( * op == '&' )
+result = ( stringToLL ( tok -> previous -> str ( ) ) & stringToLL ( tok -> next -> str ( ) ) ) ;
+else if ( * op == '^' )
+result = ( stringToLL ( tok -> previous -> str ( ) ) ^ stringToLL ( tok -> next -> str ( ) ) ) ;
+else
+result = ( stringToLL ( tok -> previous -> str ( ) ) | stringToLL ( tok -> next -> str ( ) ) ) ;
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+}
+
+static const std :: string AND ( "and" ) ;
+static const std :: string OR ( "or" ) ;
+void simplecpp :: TokenList :: constFoldLogicalOp ( Token * tok )
+{
+for ( ; tok && tok -> op != ')' ; tok = tok -> next ) {
+if ( tok -> name ) {
+if ( isAlternativeBinaryOp ( tok , AND ) )
+tok -> setstr ( "&&" ) ;
+else if ( isAlternativeBinaryOp ( tok , OR ) )
+tok -> setstr ( "||" ) ;
+}
+if ( tok -> str ( ) != "&&" && tok -> str ( ) != "||" )
+continue ;
+if ( ! tok -> previous || ! tok -> previous -> number )
+continue ;
+if ( ! tok -> next || ! tok -> next -> number )
+continue ;
+
+int result ;
+if ( tok -> str ( ) == "||" )
+result = ( stringToLL ( tok -> previous -> str ( ) ) || stringToLL ( tok -> next -> str ( ) ) ) ;
+else
+result = ( stringToLL ( tok -> previous -> str ( ) ) && stringToLL ( tok -> next -> str ( ) ) ) ;
+
+tok = tok -> previous ;
+tok -> setstr ( toString ( result ) ) ;
+deleteToken ( tok -> next ) ;
+deleteToken ( tok -> next ) ;
+}
+}
+
+void simplecpp :: TokenList :: constFoldQuestionOp ( Token * * tok1 )
+{
+bool gotoTok1 = false ;
+for ( Token * tok = * tok1 ; tok && tok -> op != ')' ; tok = gotoTok1 ? * tok1 : tok -> next ) {
+gotoTok1 = false ;
+if ( tok -> str ( ) != "?" )
+continue ;
+if ( ! tok -> previous || ! tok -> next || ! tok -> next -> next )
+throw std :: runtime_error ( "invalid expression" ) ;
+if ( ! tok -> previous -> number )
+continue ;
+if ( tok -> next -> next -> op != ':' )
+continue ;
+Token * const condTok = tok -> previous ;
+Token * const trueTok = tok -> next ;
+Token * const falseTok = trueTok -> next -> next ;
+if ( ! falseTok )
+throw std :: runtime_error ( "invalid expression" ) ;
+if ( condTok == * tok1 )
+* tok1 = ( condTok -> str ( ) != "0" ? trueTok : falseTok ) ;
+deleteToken ( condTok -> next ) ;
+deleteToken ( trueTok -> next ) ;
+deleteToken ( condTok -> str ( ) == "0" ? trueTok : falseTok ) ;
+deleteToken ( condTok ) ;
+gotoTok1 = true ;
+}
+}
+
+void simplecpp :: TokenList :: removeComments ( )
+{
+Token * tok = frontToken ;
+while ( tok ) {
+Token * const tok1 = tok ;
+tok = tok -> next ;
+if ( tok1 -> comment )
+deleteToken ( tok1 ) ;
+}
+}
+
+std :: string simplecpp :: TokenList :: readUntil ( Stream & stream , const Location & location , const char start , const char end , OutputList * outputList )
+{
+std :: string ret ;
+ret += start ;
+
+bool backslash = false ;
+char ch = 0 ;
+while ( ch != end && ch != '\r' && ch != '\n' && stream . good ( ) ) {
+ch = stream . readChar ( ) ;
+if ( backslash && ch == '\n' ) {
+ch = 0 ;
+backslash = false ;
+continue ;
+}
+backslash = false ;
+ret += ch ;
+if ( ch == '\\' ) {
+bool update_ch = false ;
+char next = 0 ;
+do {
+next = stream . readChar ( ) ;
+if ( next == '\r' || next == '\n' ) {
+ret . erase ( ret . size ( ) - 1U ) ;
+backslash = ( next == '\r' ) ;
+update_ch = false ;
+} else if ( next == '\\' )
+update_ch = ! update_ch ;
+ret += next ;
+} while ( next == '\\' ) ;
+if ( update_ch )
+ch = next ;
+}
+}
+
+if ( ! stream . good ( ) || ch != end ) {
+clear ( ) ;
+if ( outputList ) {
+Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = location ;
+err . msg = std :: string ( "No pair for character (" ) + start + "). Can't process file. File is either invalid or unicode, which is currently not supported." ;
+outputList -> push_back ( std :: move ( err ) ) ;
+}
+return "" ;
+}
+
+return ret ;
+}
+
+std :: string simplecpp :: TokenList :: lastLine ( int maxsize ) const
+{
+std :: string ret ;
+int count = 0 ;
+for ( const Token * tok = cback ( ) ; ; tok = tok -> previous ) {
+if ( ! sameline ( tok , cback ( ) ) ) {
+break ;
+}
+if ( tok -> comment )
+continue ;
+if ( ++ count > maxsize )
+return "" ;
+if ( ! ret . empty ( ) )
+ret += ' ' ;
+
+if ( tok -> str ( ) [ 0 ] == '\"' )
+ret += "%rts%" ;
+else if ( tok -> number )
+ret += "%mun%" ;
+else {
+ret += tok -> str ( ) ;
+std :: reverse ( ret . end ( ) - tok -> str ( ) . length ( ) , ret . end ( ) ) ;
+}
+}
+std :: reverse ( ret . begin ( ) , ret . end ( ) ) ;
+return ret ;
+}
+
+const simplecpp :: Token * simplecpp :: TokenList :: lastLineTok ( int maxsize ) const
+{
+const Token * prevTok = nullptr ;
+int count = 0 ;
+for ( const Token * tok = cback ( ) ; ; tok = tok -> previous ) {
+if ( ! sameline ( tok , cback ( ) ) )
+break ;
+if ( tok -> comment )
+continue ;
+if ( ++ count > maxsize )
+return nullptr ;
+prevTok = tok ;
+}
+return prevTok ;
+}
+
+bool simplecpp :: TokenList :: isLastLinePreprocessor ( int maxsize ) const
+{
+const Token * const prevTok = lastLineTok ( maxsize ) ;
+return prevTok && prevTok -> op == '#' ;
+}
+
+unsigned int simplecpp :: TokenList :: fileIndex ( const std :: string & filename )
+{
+for ( unsigned int i = 0 ; i < files . size ( ) ; ++ i ) {
+if ( files [ i ] == filename )
+return i ;
+}
+files . push_back ( filename ) ;
+return files . size ( ) - 1U ;
+}
+
+
+namespace simplecpp {
+class Macro ;
+using MacroMap = std :: unordered_map < TokenString , Macro > ;
+
+class Macro {
+public :
+explicit Macro ( std :: vector < std :: string > & f ) : nameTokDef ( nullptr ) , valueToken ( nullptr ) , endToken ( nullptr ) , files ( f ) , tokenListDefine ( f ) , variadic ( false ) , variadicOpt ( false ) , optExpandValue ( nullptr ) , optNoExpandValue ( nullptr ) , valueDefinedInCode_ ( false ) { }
+
+Macro ( const Token * tok , std :: vector < std :: string > & f ) : nameTokDef ( nullptr ) , files ( f ) , tokenListDefine ( f ) , valueDefinedInCode_ ( true ) {
+if ( sameline ( tok -> previousSkipComments ( ) , tok ) )
+throw std :: runtime_error ( "bad macro syntax" ) ;
+if ( tok -> op != '#' )
+throw std :: runtime_error ( "bad macro syntax" ) ;
+const Token * const hashtok = tok ;
+tok = tok -> next ;
+if ( ! tok || tok -> str ( ) != DEFINE )
+throw std :: runtime_error ( "bad macro syntax" ) ;
+tok = tok -> next ;
+if ( ! tok || ! tok -> name || ! sameline ( hashtok , tok ) )
+throw std :: runtime_error ( "bad macro syntax" ) ;
+if ( ! parseDefine ( tok ) )
+throw std :: runtime_error ( "bad macro syntax" ) ;
+}
+
+Macro ( const std :: string & name , const std :: string & value , std :: vector < std :: string > & f ) : nameTokDef ( nullptr ) , files ( f ) , tokenListDefine ( f ) , valueDefinedInCode_ ( false ) {
+const std :: string def ( name + ' ' + value ) ;
+StdCharBufStream stream ( reinterpret_cast < const unsigned char * > ( def . data ( ) ) , def . size ( ) ) ;
+tokenListDefine . readfile ( stream ) ;
+if ( ! parseDefine ( tokenListDefine . cfront ( ) ) )
+throw std :: runtime_error ( "bad macro syntax. macroname=" + name + " value=" + value ) ;
+}
+
+Macro ( const Macro & other ) : nameTokDef ( nullptr ) , files ( other . files ) , tokenListDefine ( other . files ) , valueDefinedInCode_ ( other . valueDefinedInCode_ ) {
+* this = other ;
+}
+
+~ Macro ( ) {
+delete optExpandValue ;
+delete optNoExpandValue ;
+}
+
+Macro & operator = ( const Macro & other ) {
+if ( this != & other ) {
+files = other . files ;
+valueDefinedInCode_ = other . valueDefinedInCode_ ;
+if ( other . tokenListDefine . empty ( ) )
+parseDefine ( other . nameTokDef ) ;
+else {
+tokenListDefine = other . tokenListDefine ;
+parseDefine ( tokenListDefine . cfront ( ) ) ;
+}
+usageList = other . usageList ;
+}
+return * this ;
+}
+
+bool valueDefinedInCode ( ) const {
+return valueDefinedInCode_ ;
+}
+
+
+
+
+
+
+
+
+
+
+const Token * expand ( TokenList * const output ,
+const Token * rawtok ,
+const MacroMap & macros ,
+std :: vector < std :: string > & inputFiles ) const {
+std :: set < TokenString > expandedmacros ;
+
+
+
+
+
+TokenList output2 ( inputFiles ) ;
+
+if ( functionLike ( ) && rawtok -> next && rawtok -> next -> op == '(' ) {
+
+const Token * const rawtok1 = rawtok ;
+TokenList rawtokens2 ( inputFiles ) ;
+rawtokens2 . push_back ( new Token ( rawtok -> str ( ) , rawtok1 -> location , rawtok -> whitespaceahead ) ) ;
+rawtok = rawtok -> next ;
+rawtokens2 . push_back ( new Token ( rawtok -> str ( ) , rawtok1 -> location , rawtok -> whitespaceahead ) ) ;
+rawtok = rawtok -> next ;
+int par = 1 ;
+while ( rawtok && par > 0 ) {
+if ( rawtok -> op == '(' )
+++ par ;
+else if ( rawtok -> op == ')' )
+-- par ;
+else if ( rawtok -> op == '#' && ! sameline ( rawtok -> previous , rawtok ) )
+throw Error ( rawtok -> location , "it is invalid to use a preprocessor directive as macro parameter" ) ;
+rawtokens2 . push_back ( new Token ( rawtok -> str ( ) , rawtok1 -> location , rawtok -> whitespaceahead ) ) ;
+rawtok = rawtok -> next ;
+}
+if ( expand ( & output2 , rawtok1 -> location , rawtokens2 . cfront ( ) , macros , expandedmacros ) )
+rawtok = rawtok1 -> next ;
+} else {
+rawtok = expand ( & output2 , rawtok -> location , rawtok , macros , expandedmacros ) ;
+}
+while ( output2 . cback ( ) && rawtok ) {
+unsigned int par = 0 ;
+Token * macro2tok = output2 . back ( ) ;
+while ( macro2tok ) {
+if ( macro2tok -> op == '(' ) {
+if ( par == 0 )
+break ;
+-- par ;
+} else if ( macro2tok -> op == ')' )
+++ par ;
+macro2tok = macro2tok -> previous ;
+}
+if ( macro2tok ) {
+macro2tok = macro2tok -> previous ;
+expandedmacros . insert ( name ( ) ) ;
+} else if ( rawtok -> op == '(' )
+macro2tok = output2 . back ( ) ;
+if ( ! macro2tok || ! macro2tok -> name )
+break ;
+if ( output2 . cfront ( ) != output2 . cback ( ) && macro2tok -> str ( ) == this -> name ( ) )
+break ;
+const MacroMap :: const_iterator macro = macros . find ( macro2tok -> str ( ) ) ;
+if ( macro == macros . end ( ) || ! macro -> second . functionLike ( ) )
+break ;
+TokenList rawtokens2 ( inputFiles ) ;
+const Location loc ( macro2tok -> location ) ;
+while ( macro2tok ) {
+Token * const next = macro2tok -> next ;
+rawtokens2 . push_back ( new Token ( macro2tok -> str ( ) , loc ) ) ;
+output2 . deleteToken ( macro2tok ) ;
+macro2tok = next ;
+}
+par = ( rawtokens2 . cfront ( ) != rawtokens2 . cback ( ) ) ? 1U : 0U ;
+const Token * rawtok2 = rawtok ;
+for ( ; rawtok2 ; rawtok2 = rawtok2 -> next ) {
+rawtokens2 . push_back ( new Token ( rawtok2 -> str ( ) , loc ) ) ;
+if ( rawtok2 -> op == '(' )
+++ par ;
+else if ( rawtok2 -> op == ')' ) {
+if ( par <= 1U )
+break ;
+-- par ;
+}
+}
+if ( ! rawtok2 || par != 1U )
+break ;
+if ( macro -> second . expand ( & output2 , rawtok -> location , rawtokens2 . cfront ( ) , macros , expandedmacros ) != nullptr )
+break ;
+rawtok = rawtok2 -> next ;
+}
+output -> takeTokens ( output2 ) ;
+return rawtok ;
+}
+
+
+const TokenString & name ( ) const {
+return nameTokDef -> str ( ) ;
+}
+
+
+const Location & defineLocation ( ) const {
+return nameTokDef -> location ;
+}
+
+
+const std :: list < Location > & usage ( ) const {
+return usageList ;
+}
+
+
+bool functionLike ( ) const {
+return nameTokDef -> next &&
+nameTokDef -> next -> op == '(' &&
+sameline ( nameTokDef , nameTokDef -> next ) &&
+nameTokDef -> next -> location . col == nameTokDef -> location . col + nameTokDef -> str ( ) . size ( ) ;
+}
+
+
+struct Error {
+Error ( const Location & loc , const std :: string & s ) : location ( loc ) , what ( s ) { }
+const Location location ;
+const std :: string what ;
+} ;
+
+
+struct wrongNumberOfParameters : public Error {
+wrongNumberOfParameters ( const Location & loc , const std :: string & macroName ) : Error ( loc , "Wrong number of parameters for macro \'" + macroName + "\'." ) { }
+} ;
+
+
+struct invalidHashHash : public Error {
+static inline std :: string format ( const std :: string & macroName , const std :: string & message ) {
+return "Invalid ## usage when expanding \'" + macroName + "\': " + message ;
+}
+
+invalidHashHash ( const Location & loc , const std :: string & macroName , const std :: string & message )
+: Error ( loc , format ( macroName , message ) ) { }
+
+static inline invalidHashHash unexpectedToken ( const Location & loc , const std :: string & macroName , const Token * tokenA ) {
+return invalidHashHash ( loc , macroName , "Unexpected token '" + tokenA -> str ( ) + "'" ) ;
+}
+
+static inline invalidHashHash cannotCombine ( const Location & loc , const std :: string & macroName , const Token * tokenA , const Token * tokenB ) {
+return invalidHashHash ( loc , macroName , "Combining '" + tokenA -> str ( ) + "' and '" + tokenB -> str ( ) + "' yields an invalid token." ) ;
+}
+
+static inline invalidHashHash unexpectedNewline ( const Location & loc , const std :: string & macroName ) {
+return invalidHashHash ( loc , macroName , "Unexpected newline" ) ;
+}
+
+static inline invalidHashHash universalCharacterUB ( const Location & loc , const std :: string & macroName , const Token * tokenA , const std :: string & strAB ) {
+return invalidHashHash ( loc , macroName , "Combining '\\" + tokenA -> str ( ) + "' and '" + strAB . substr ( tokenA -> str ( ) . size ( ) ) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4." ) ;
+}
+} ;
+private :
+
+Token * newMacroToken ( const TokenString & str , const Location & loc , bool replaced , const Token * expandedFromToken = nullptr ) const {
+Token * tok = new Token ( str , loc ) ;
+if ( replaced )
+tok -> macro = nameTokDef -> str ( ) ;
+if ( expandedFromToken )
+tok -> setExpandedFrom ( expandedFromToken , this ) ;
+return tok ;
+}
+
+bool parseDefine ( const Token * nametoken ) {
+nameTokDef = nametoken ;
+variadic = false ;
+variadicOpt = false ;
+optExpandValue = nullptr ;
+optNoExpandValue = nullptr ;
+if ( ! nameTokDef ) {
+valueToken = endToken = nullptr ;
+args . clear ( ) ;
+return false ;
+}
+
+
+if ( functionLike ( ) ) {
+args . clear ( ) ;
+const Token * argtok = nameTokDef -> next -> next ;
+while ( sameline ( nametoken , argtok ) && argtok -> op != ')' ) {
+if ( argtok -> str ( ) == "..." &&
+argtok -> next && argtok -> next -> op == ')' ) {
+variadic = true ;
+if ( ! argtok -> previous -> name )
+args . push_back ( "__VA_ARGS__" ) ;
+argtok = argtok -> next ;
+break ;
+}
+if ( argtok -> op != ',' )
+args . push_back ( argtok -> str ( ) ) ;
+argtok = argtok -> next ;
+}
+if ( ! sameline ( nametoken , argtok ) ) {
+endToken = argtok ? argtok -> previous : argtok ;
+valueToken = nullptr ;
+return false ;
+}
+valueToken = argtok ? argtok -> next : nullptr ;
+} else {
+args . clear ( ) ;
+valueToken = nameTokDef -> next ;
+}
+
+if ( ! sameline ( valueToken , nameTokDef ) )
+valueToken = nullptr ;
+endToken = valueToken ;
+while ( sameline ( endToken , nameTokDef ) ) {
+if ( variadic && endToken -> str ( ) == "__VA_OPT__" )
+variadicOpt = true ;
+endToken = endToken -> next ;
+}
+
+if ( variadicOpt ) {
+TokenList expandValue ( files ) ;
+TokenList noExpandValue ( files ) ;
+for ( const Token * tok = valueToken ; tok && tok != endToken ; ) {
+if ( tok -> str ( ) == "__VA_OPT__" ) {
+if ( ! sameline ( tok , tok -> next ) || tok -> next -> op != '(' )
+throw Error ( tok -> location , "In definition of '" + nameTokDef -> str ( ) + "': Missing opening parenthesis for __VA_OPT__" ) ;
+tok = tok -> next -> next ;
+int par = 1 ;
+while ( tok && tok != endToken ) {
+if ( tok -> op == '(' )
+par ++ ;
+else if ( tok -> op == ')' )
+par -- ;
+else if ( tok -> str ( ) == "__VA_OPT__" )
+throw Error ( tok -> location , "In definition of '" + nameTokDef -> str ( ) + "': __VA_OPT__ cannot be nested" ) ;
+if ( par == 0 ) {
+tok = tok -> next ;
+break ;
+}
+expandValue . push_back ( new Token ( * tok ) ) ;
+tok = tok -> next ;
+}
+if ( par != 0 ) {
+const Token * const lastTok = expandValue . back ( ) ? expandValue . back ( ) : valueToken -> next ;
+throw Error ( lastTok -> location , "In definition of '" + nameTokDef -> str ( ) + "': Missing closing parenthesis for __VA_OPT__" ) ;
+}
+} else {
+expandValue . push_back ( new Token ( * tok ) ) ;
+noExpandValue . push_back ( new Token ( * tok ) ) ;
+tok = tok -> next ;
+}
+}
+optExpandValue = new TokenList ( std :: move ( expandValue ) ) ;
+optNoExpandValue = new TokenList ( std :: move ( noExpandValue ) ) ;
+}
+
+return true ;
+}
+
+unsigned int getArgNum ( const TokenString & str ) const {
+unsigned int par = 0 ;
+while ( par < args . size ( ) ) {
+if ( str == args [ par ] )
+return par ;
+par ++ ;
+}
+return ~ 0U ;
+}
+
+std :: vector < const Token * > getMacroParameters ( const Token * nameTokInst , bool calledInDefine ) const {
+if ( ! nameTokInst -> next || nameTokInst -> next -> op != '(' || ! functionLike ( ) )
+return std :: vector < const Token * > ( ) ;
+
+std :: vector < const Token * > parametertokens ;
+parametertokens . push_back ( nameTokInst -> next ) ;
+unsigned int par = 0U ;
+for ( const Token * tok = nameTokInst -> next -> next ; calledInDefine ? sameline ( tok , nameTokInst ) : ( tok != nullptr ) ; tok = tok -> next ) {
+if ( tok -> op == '(' )
+++ par ;
+else if ( tok -> op == ')' ) {
+if ( par == 0U ) {
+parametertokens . push_back ( tok ) ;
+break ;
+}
+-- par ;
+} else if ( par == 0U && tok -> op == ',' && ( ! variadic || parametertokens . size ( ) < args . size ( ) ) )
+parametertokens . push_back ( tok ) ;
+}
+return parametertokens ;
+}
+
+const Token * appendTokens ( TokenList * tokens ,
+const Location & rawloc ,
+const Token * const lpar ,
+const MacroMap & macros ,
+const std :: set < TokenString > & expandedmacros ,
+const std :: vector < const Token * > & parametertokens ) const {
+if ( ! lpar || lpar -> op != '(' )
+return nullptr ;
+unsigned int par = 0 ;
+const Token * tok = lpar ;
+while ( sameline ( lpar , tok ) ) {
+if ( tok -> op == '#' && sameline ( tok , tok -> next ) && tok -> next -> op == '#' && sameline ( tok , tok -> next -> next ) ) {
+
+tok = expandHashHash ( tokens , rawloc , tok , macros , expandedmacros , parametertokens , false ) ;
+} else if ( tok -> op == '#' && sameline ( tok , tok -> next ) && tok -> next -> op != '#' ) {
+tok = expandHash ( tokens , rawloc , tok , expandedmacros , parametertokens ) ;
+} else {
+if ( ! expandArg ( tokens , tok , rawloc , macros , expandedmacros , parametertokens ) ) {
+tokens -> push_back ( new Token ( * tok ) ) ;
+if ( tok -> macro . empty ( ) && ( par > 0 || tok -> str ( ) != "(" ) )
+tokens -> back ( ) -> macro = name ( ) ;
+}
+
+if ( tok -> op == '(' )
+++ par ;
+else if ( tok -> op == ')' ) {
+-- par ;
+if ( par == 0U )
+break ;
+}
+tok = tok -> next ;
+}
+}
+for ( Token * tok2 = tokens -> front ( ) ; tok2 ; tok2 = tok2 -> next )
+tok2 -> location = lpar -> location ;
+return sameline ( lpar , tok ) ? tok : nullptr ;
+}
+
+const Token * expand ( TokenList * const output , const Location & loc , const Token * const nameTokInst , const MacroMap & macros , std :: set < TokenString > expandedmacros ) const {
+expandedmacros . insert ( nameTokInst -> str ( ) ) ;
+
+
+
+
+
+usageList . push_back ( loc ) ;
+
+if ( nameTokInst -> str ( ) == "__FILE__" ) {
+output -> push_back ( new Token ( '\"' + loc . file ( ) + '\"' , loc ) ) ;
+return nameTokInst -> next ;
+}
+if ( nameTokInst -> str ( ) == "__LINE__" ) {
+output -> push_back ( new Token ( toString ( loc . line ) , loc ) ) ;
+return nameTokInst -> next ;
+}
+if ( nameTokInst -> str ( ) == "__COUNTER__" ) {
+output -> push_back ( new Token ( toString ( usageList . size ( ) - 1U ) , loc ) ) ;
+return nameTokInst -> next ;
+}
+
+const bool calledInDefine = ( loc . fileIndex != nameTokInst -> location . fileIndex ||
+loc . line < nameTokInst -> location . line ) ;
+
+std :: vector < const Token * > parametertokens1 ( getMacroParameters ( nameTokInst , calledInDefine ) ) ;
+
+if ( functionLike ( ) ) {
+
+if ( nameTokInst -> next && nameTokInst -> next -> op != '(' ) {
+output -> push_back ( new Token ( nameTokInst -> str ( ) , loc ) ) ;
+return nameTokInst -> next ;
+}
+
+
+if ( variadic ) {
+if ( parametertokens1 . size ( ) < args . size ( ) ) {
+throw wrongNumberOfParameters ( nameTokInst -> location , name ( ) ) ;
+}
+} else {
+if ( parametertokens1 . size ( ) != args . size ( ) + ( args . empty ( ) ? 2U : 1U ) )
+throw wrongNumberOfParameters ( nameTokInst -> location , name ( ) ) ;
+}
+}
+
+
+TokenList tokensparams ( files ) ;
+std :: vector < const Token * > parametertokens2 ;
+if ( ! parametertokens1 . empty ( ) ) {
+bool counter = false ;
+for ( const Token * tok = parametertokens1 [ 0 ] ; tok != parametertokens1 . back ( ) ; tok = tok -> next ) {
+if ( tok -> str ( ) == "__COUNTER__" ) {
+counter = true ;
+break ;
+}
+}
+
+const MacroMap :: const_iterator m = macros . find ( "__COUNTER__" ) ;
+
+if ( ! counter || m == macros . end ( ) )
+parametertokens2 . swap ( parametertokens1 ) ;
+else {
+const Macro & counterMacro = m -> second ;
+unsigned int par = 0 ;
+for ( const Token * tok = parametertokens1 [ 0 ] ; tok && par < parametertokens1 . size ( ) ; tok = tok -> next ) {
+if ( tok -> str ( ) == "__COUNTER__" ) {
+tokensparams . push_back ( new Token ( toString ( counterMacro . usageList . size ( ) ) , tok -> location ) ) ;
+counterMacro . usageList . push_back ( tok -> location ) ;
+} else {
+tokensparams . push_back ( new Token ( * tok ) ) ;
+if ( tok == parametertokens1 [ par ] ) {
+parametertokens2 . push_back ( tokensparams . cback ( ) ) ;
+par ++ ;
+}
+}
+}
+}
+}
+
+Token * const output_end_1 = output -> back ( ) ;
+
+const Token * valueToken2 ;
+const Token * endToken2 ;
+
+if ( variadicOpt ) {
+if ( parametertokens2 . size ( ) > args . size ( ) && parametertokens2 [ args . size ( ) - 1 ] -> next -> op != ')' )
+valueToken2 = optExpandValue -> cfront ( ) ;
+else
+valueToken2 = optNoExpandValue -> cfront ( ) ;
+endToken2 = nullptr ;
+} else {
+valueToken2 = valueToken ;
+endToken2 = endToken ;
+}
+
+
+for ( const Token * tok = valueToken2 ; tok != endToken2 ; ) {
+if ( tok -> op != '#' ) {
+
+if ( sameline ( tok , tok -> next ) && tok -> next && tok -> next -> op == '#' && tok -> next -> next && tok -> next -> next -> op == '#' ) {
+if ( ! sameline ( tok , tok -> next -> next -> next ) )
+throw invalidHashHash :: unexpectedNewline ( tok -> location , name ( ) ) ;
+if ( variadic && tok -> op == ',' && tok -> next -> next -> next -> str ( ) == args . back ( ) ) {
+Token * const comma = newMacroToken ( tok -> str ( ) , loc , isReplaced ( expandedmacros ) , tok ) ;
+output -> push_back ( comma ) ;
+tok = expandToken ( output , loc , tok -> next -> next -> next , macros , expandedmacros , parametertokens2 ) ;
+if ( output -> back ( ) == comma )
+output -> deleteToken ( comma ) ;
+continue ;
+}
+TokenList new_output ( files ) ;
+if ( ! expandArg ( & new_output , tok , parametertokens2 ) )
+output -> push_back ( newMacroToken ( tok -> str ( ) , loc , isReplaced ( expandedmacros ) , tok ) ) ;
+else if ( new_output . empty ( ) )
+output -> push_back ( newMacroToken ( "" , loc , isReplaced ( expandedmacros ) ) ) ;
+else
+for ( const Token * tok2 = new_output . cfront ( ) ; tok2 ; tok2 = tok2 -> next )
+output -> push_back ( newMacroToken ( tok2 -> str ( ) , loc , isReplaced ( expandedmacros ) , tok2 ) ) ;
+tok = tok -> next ;
+} else {
+tok = expandToken ( output , loc , tok , macros , expandedmacros , parametertokens2 ) ;
+}
+continue ;
+}
+
+int numberOfHash = 1 ;
+const Token * hashToken = tok -> next ;
+while ( sameline ( tok , hashToken ) && hashToken -> op == '#' ) {
+hashToken = hashToken -> next ;
+++ numberOfHash ;
+}
+if ( numberOfHash == 4 && tok -> next -> location . col + 1 == tok -> next -> next -> location . col ) {
+
+output -> push_back ( newMacroToken ( "##" , loc , isReplaced ( expandedmacros ) ) ) ;
+tok = hashToken ;
+continue ;
+}
+
+if ( numberOfHash >= 2 && tok -> location . col + 1 < tok -> next -> location . col ) {
+output -> push_back ( new Token ( * tok ) ) ;
+tok = tok -> next ;
+continue ;
+}
+
+tok = tok -> next ;
+if ( tok == endToken2 ) {
+output -> push_back ( new Token ( * tok -> previous ) ) ;
+break ;
+}
+if ( tok -> op == '#' ) {
+
+tok = expandHashHash ( output , loc , tok -> previous , macros , expandedmacros , parametertokens2 ) ;
+} else {
+
+tok = expandHash ( output , loc , tok -> previous , expandedmacros , parametertokens2 ) ;
+}
+}
+
+if ( ! functionLike ( ) ) {
+for ( Token * tok = output_end_1 ? output_end_1 -> next : output -> front ( ) ; tok ; tok = tok -> next ) {
+tok -> macro = nameTokInst -> str ( ) ;
+}
+}
+
+if ( ! parametertokens1 . empty ( ) )
+parametertokens1 . swap ( parametertokens2 ) ;
+
+return functionLike ( ) ? parametertokens2 . back ( ) -> next : nameTokInst -> next ;
+}
+
+const Token * recursiveExpandToken ( TokenList * output , TokenList & temp , const Location & loc , const Token * tok , const MacroMap & macros , const std :: set < TokenString > & expandedmacros , const std :: vector < const Token * > & parametertokens ) const {
+if ( ! ( temp . cback ( ) && temp . cback ( ) -> name && tok -> next && tok -> next -> op == '(' ) ) {
+output -> takeTokens ( temp ) ;
+return tok -> next ;
+}
+
+if ( ! sameline ( tok , tok -> next ) ) {
+output -> takeTokens ( temp ) ;
+return tok -> next ;
+}
+
+const MacroMap :: const_iterator it = macros . find ( temp . cback ( ) -> str ( ) ) ;
+if ( it == macros . end ( ) || expandedmacros . find ( temp . cback ( ) -> str ( ) ) != expandedmacros . end ( ) ) {
+output -> takeTokens ( temp ) ;
+return tok -> next ;
+}
+
+const Macro & calledMacro = it -> second ;
+if ( ! calledMacro . functionLike ( ) ) {
+output -> takeTokens ( temp ) ;
+return tok -> next ;
+}
+
+TokenList temp2 ( files ) ;
+temp2 . push_back ( new Token ( temp . cback ( ) -> str ( ) , tok -> location ) ) ;
+
+const Token * const tok2 = appendTokens ( & temp2 , loc , tok -> next , macros , expandedmacros , parametertokens ) ;
+if ( ! tok2 )
+return tok -> next ;
+output -> takeTokens ( temp ) ;
+output -> deleteToken ( output -> back ( ) ) ;
+calledMacro . expand ( output , loc , temp2 . cfront ( ) , macros , expandedmacros ) ;
+return tok2 -> next ;
+}
+
+const Token * expandToken ( TokenList * output , const Location & loc , const Token * tok , const MacroMap & macros , const std :: set < TokenString > & expandedmacros , const std :: vector < const Token * > & parametertokens ) const {
+
+if ( ! tok -> name ) {
+output -> push_back ( newMacroToken ( tok -> str ( ) , loc , true , tok ) ) ;
+return tok -> next ;
+}
+
+
+{
+TokenList temp ( files ) ;
+if ( expandArg ( & temp , tok , loc , macros , expandedmacros , parametertokens ) ) {
+if ( tok -> str ( ) == "__VA_ARGS__" && temp . empty ( ) && output -> cback ( ) && output -> cback ( ) -> str ( ) == "," &&
+tok -> nextSkipComments ( ) && tok -> nextSkipComments ( ) -> str ( ) == ")" )
+output -> deleteToken ( output -> back ( ) ) ;
+return recursiveExpandToken ( output , temp , loc , tok , macros , expandedmacros , parametertokens ) ;
+}
+}
+
+
+const MacroMap :: const_iterator it = macros . find ( tok -> str ( ) ) ;
+if ( it != macros . end ( ) && expandedmacros . find ( tok -> str ( ) ) == expandedmacros . end ( ) ) {
+std :: set < std :: string > expandedmacros2 ( expandedmacros ) ;
+expandedmacros2 . insert ( tok -> str ( ) ) ;
+
+const Macro & calledMacro = it -> second ;
+if ( ! calledMacro . functionLike ( ) ) {
+TokenList temp ( files ) ;
+calledMacro . expand ( & temp , loc , tok , macros , expandedmacros ) ;
+return recursiveExpandToken ( output , temp , loc , tok , macros , expandedmacros2 , parametertokens ) ;
+}
+if ( ! sameline ( tok , tok -> next ) ) {
+output -> push_back ( newMacroToken ( tok -> str ( ) , loc , true , tok ) ) ;
+return tok -> next ;
+}
+TokenList tokens ( files ) ;
+tokens . push_back ( new Token ( * tok ) ) ;
+const Token * tok2 = nullptr ;
+if ( tok -> next -> op == '(' )
+tok2 = appendTokens ( & tokens , loc , tok -> next , macros , expandedmacros , parametertokens ) ;
+else if ( expandArg ( & tokens , tok -> next , loc , macros , expandedmacros , parametertokens ) ) {
+tokens . front ( ) -> location = loc ;
+if ( tokens . cfront ( ) -> next && tokens . cfront ( ) -> next -> op == '(' )
+tok2 = tok -> next ;
+}
+if ( ! tok2 ) {
+output -> push_back ( newMacroToken ( tok -> str ( ) , loc , true , tok ) ) ;
+return tok -> next ;
+}
+TokenList temp ( files ) ;
+calledMacro . expand ( & temp , loc , tokens . cfront ( ) , macros , expandedmacros ) ;
+return recursiveExpandToken ( output , temp , loc , tok2 , macros , expandedmacros , parametertokens ) ;
+}
+
+if ( tok -> str ( ) == DEFINED ) {
+const Token * const tok2 = tok -> next ;
+const Token * const tok3 = tok2 ? tok2 -> next : nullptr ;
+const Token * const tok4 = tok3 ? tok3 -> next : nullptr ;
+const Token * defToken = nullptr ;
+const Token * lastToken = nullptr ;
+if ( sameline ( tok , tok4 ) && tok2 -> op == '(' && tok3 -> name && tok4 -> op == ')' ) {
+defToken = tok3 ;
+lastToken = tok4 ;
+} else if ( sameline ( tok , tok2 ) && tok2 -> name ) {
+defToken = lastToken = tok2 ;
+}
+if ( defToken ) {
+std :: string macroName = defToken -> str ( ) ;
+if ( defToken -> next && defToken -> next -> op == '#' && defToken -> next -> next && defToken -> next -> next -> op == '#' && defToken -> next -> next -> next && defToken -> next -> next -> next -> name && sameline ( defToken , defToken -> next -> next -> next ) ) {
+TokenList temp ( files ) ;
+if ( expandArg ( & temp , defToken , parametertokens ) )
+macroName = temp . cback ( ) -> str ( ) ;
+if ( expandArg ( & temp , defToken -> next -> next -> next , parametertokens ) )
+macroName += temp . cback ( ) ? temp . cback ( ) -> str ( ) : "" ;
+else
+macroName += defToken -> next -> next -> next -> str ( ) ;
+lastToken = defToken -> next -> next -> next ;
+}
+const bool def = ( macros . find ( macroName ) != macros . end ( ) ) ;
+output -> push_back ( newMacroToken ( def ? "1" : "0" , loc , true ) ) ;
+return lastToken -> next ;
+}
+}
+
+output -> push_back ( newMacroToken ( tok -> str ( ) , loc , true , tok ) ) ;
+return tok -> next ;
+}
+
+bool expandArg ( TokenList * output , const Token * tok , const std :: vector < const Token * > & parametertokens ) const {
+if ( ! tok -> name )
+return false ;
+
+const unsigned int argnr = getArgNum ( tok -> str ( ) ) ;
+if ( argnr >= args . size ( ) )
+return false ;
+
+
+if ( variadic && argnr + 1U >= parametertokens . size ( ) )
+return true ;
+
+for ( const Token * partok = parametertokens [ argnr ] -> next ; partok != parametertokens [ argnr + 1U ] ; partok = partok -> next )
+output -> push_back ( new Token ( * partok ) ) ;
+
+return true ;
+}
+
+bool expandArg ( TokenList * output , const Token * tok , const Location & loc , const MacroMap & macros , const std :: set < TokenString > & expandedmacros , const std :: vector < const Token * > & parametertokens ) const {
+if ( ! tok -> name )
+return false ;
+const unsigned int argnr = getArgNum ( tok -> str ( ) ) ;
+if ( argnr >= args . size ( ) )
+return false ;
+if ( variadic && argnr + 1U >= parametertokens . size ( ) )
+return true ;
+for ( const Token * partok = parametertokens [ argnr ] -> next ; partok != parametertokens [ argnr + 1U ] ; ) {
+const MacroMap :: const_iterator it = macros . find ( partok -> str ( ) ) ;
+if ( it != macros . end ( ) && ! partok -> isExpandedFrom ( & it -> second ) && ( partok -> str ( ) == name ( ) || expandedmacros . find ( partok -> str ( ) ) == expandedmacros . end ( ) ) ) {
+std :: set < TokenString > expandedmacros2 ( expandedmacros ) ;
+expandedmacros2 . erase ( name ( ) ) ;
+partok = it -> second . expand ( output , loc , partok , macros , std :: move ( expandedmacros2 ) ) ;
+} else {
+output -> push_back ( newMacroToken ( partok -> str ( ) , loc , isReplaced ( expandedmacros ) , partok ) ) ;
+output -> back ( ) -> macro = partok -> macro ;
+partok = partok -> next ;
+}
+}
+if ( tok -> whitespaceahead && output -> back ( ) )
+output -> back ( ) -> whitespaceahead = true ;
+return true ;
+}
+
+
+
+
+
+
+
+
+
+
+const Token * expandHash ( TokenList * output , const Location & loc , const Token * tok , const std :: set < TokenString > & expandedmacros , const std :: vector < const Token * > & parametertokens ) const {
+TokenList tokenListHash ( files ) ;
+const MacroMap macros2 ;
+tok = expandToken ( & tokenListHash , loc , tok -> next , macros2 , expandedmacros , parametertokens ) ;
+std :: ostringstream ostr ;
+ostr << '\"' ;
+for ( const Token * hashtok = tokenListHash . cfront ( ) , * next ; hashtok ; hashtok = next ) {
+next = hashtok -> next ;
+ostr << hashtok -> str ( ) ;
+if ( next && hashtok -> whitespaceahead )
+ostr << ' ' ;
+}
+ostr << '\"' ;
+output -> push_back ( newMacroToken ( escapeString ( ostr . str ( ) ) , loc , isReplaced ( expandedmacros ) ) ) ;
+return tok ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+const Token * expandHashHash ( TokenList * output , const Location & loc , const Token * tok , const MacroMap & macros , const std :: set < TokenString > & expandedmacros , const std :: vector < const Token * > & parametertokens , bool expandResult = true ) const {
+Token * A = output -> back ( ) ;
+if ( ! A )
+throw invalidHashHash ( tok -> location , name ( ) , "Missing first argument" ) ;
+if ( ! sameline ( tok , tok -> next ) || ! sameline ( tok , tok -> next -> next ) )
+throw invalidHashHash :: unexpectedNewline ( tok -> location , name ( ) ) ;
+
+const bool canBeConcatenatedWithEqual = A -> isOneOf ( "+-*/%&|^" ) || A -> str ( ) == "<<" || A -> str ( ) == ">>" ;
+const bool canBeConcatenatedStringOrChar = isStringLiteral_ ( A -> str ( ) ) || isCharLiteral_ ( A -> str ( ) ) ;
+const bool unexpectedA = ( ! A -> name && ! A -> number && ! A -> str ( ) . empty ( ) && ! canBeConcatenatedWithEqual && ! canBeConcatenatedStringOrChar ) ;
+
+Token * const B = tok -> next -> next ;
+if ( ! B -> name && ! B -> number && B -> op && ! B -> isOneOf ( "#=" ) )
+throw invalidHashHash :: unexpectedToken ( tok -> location , name ( ) , B ) ;
+
+if ( ( canBeConcatenatedWithEqual && B -> op != '=' ) ||
+( ! canBeConcatenatedWithEqual && B -> op == '=' ) )
+throw invalidHashHash :: cannotCombine ( tok -> location , name ( ) , A , B ) ;
+
+
+if ( canBeConcatenatedStringOrChar && ( B -> number || ! B -> name ) )
+throw invalidHashHash :: cannotCombine ( tok -> location , name ( ) , A , B ) ;
+
+TokenList tokensB ( files ) ;
+const Token * nextTok = B -> next ;
+
+if ( canBeConcatenatedStringOrChar ) {
+if ( unexpectedA )
+throw invalidHashHash :: unexpectedToken ( tok -> location , name ( ) , A ) ;
+
+
+
+if ( expandArg ( & tokensB , B , parametertokens ) ) {
+for ( Token * b = tokensB . front ( ) ; b ; b = b -> next )
+b -> location = loc ;
+} else {
+tokensB . push_back ( new Token ( * B ) ) ;
+tokensB . back ( ) -> location = loc ;
+}
+output -> takeTokens ( tokensB ) ;
+} else {
+std :: string strAB ;
+
+const bool varargs = variadic && ! args . empty ( ) && B -> str ( ) == args [ args . size ( ) - 1U ] ;
+
+if ( expandArg ( & tokensB , B , parametertokens ) ) {
+if ( tokensB . empty ( ) )
+strAB = A -> str ( ) ;
+else if ( varargs && A -> op == ',' )
+strAB = "," ;
+else if ( varargs && unexpectedA )
+throw invalidHashHash :: unexpectedToken ( tok -> location , name ( ) , A ) ;
+else {
+strAB = A -> str ( ) + tokensB . cfront ( ) -> str ( ) ;
+tokensB . deleteToken ( tokensB . front ( ) ) ;
+}
+} else {
+if ( unexpectedA )
+throw invalidHashHash :: unexpectedToken ( tok -> location , name ( ) , A ) ;
+strAB = A -> str ( ) + B -> str ( ) ;
+}
+
+
+if ( A -> previous && A -> previous -> str ( ) == "\\" ) {
+if ( strAB [ 0 ] == 'u' && strAB . size ( ) == 5 )
+throw invalidHashHash :: universalCharacterUB ( tok -> location , name ( ) , A , strAB ) ;
+if ( strAB [ 0 ] == 'U' && strAB . size ( ) == 9 )
+throw invalidHashHash :: universalCharacterUB ( tok -> location , name ( ) , A , strAB ) ;
+}
+
+if ( varargs && tokensB . empty ( ) && tok -> previous -> str ( ) == "," )
+output -> deleteToken ( A ) ;
+else if ( strAB != "," && macros . find ( strAB ) == macros . end ( ) ) {
+A -> setstr ( strAB ) ;
+for ( Token * b = tokensB . front ( ) ; b ; b = b -> next )
+b -> location = loc ;
+output -> takeTokens ( tokensB ) ;
+} else if ( sameline ( B , nextTok ) && sameline ( B , nextTok -> next ) && nextTok -> op == '#' && nextTok -> next -> op == '#' ) {
+TokenList output2 ( files ) ;
+output2 . push_back ( new Token ( strAB , tok -> location ) ) ;
+nextTok = expandHashHash ( & output2 , loc , nextTok , macros , expandedmacros , parametertokens ) ;
+output -> deleteToken ( A ) ;
+output -> takeTokens ( output2 ) ;
+} else {
+output -> deleteToken ( A ) ;
+TokenList tokens ( files ) ;
+tokens . push_back ( new Token ( strAB , tok -> location ) ) ;
+
+if ( tokensB . empty ( ) && sameline ( B , B -> next ) && B -> next -> op == '(' ) {
+const MacroMap :: const_iterator it = macros . find ( strAB ) ;
+if ( it != macros . end ( ) && expandedmacros . find ( strAB ) == expandedmacros . end ( ) && it -> second . functionLike ( ) ) {
+const Token * const tok2 = appendTokens ( & tokens , loc , B -> next , macros , expandedmacros , parametertokens ) ;
+if ( tok2 )
+nextTok = tok2 -> next ;
+}
+}
+if ( expandResult )
+expandToken ( output , loc , tokens . cfront ( ) , macros , expandedmacros , parametertokens ) ;
+else
+output -> takeTokens ( tokens ) ;
+for ( Token * b = tokensB . front ( ) ; b ; b = b -> next )
+b -> location = loc ;
+output -> takeTokens ( tokensB ) ;
+}
+}
+
+return nextTok ;
+}
+
+static bool isReplaced ( const std :: set < std :: string > & expandedmacros ) {
+
+std :: set < std :: string > :: const_iterator it = expandedmacros . begin ( ) ;
+if ( it == expandedmacros . end ( ) )
+return false ;
+++ it ;
+return ( it != expandedmacros . end ( ) ) ;
+}
+
+
+const Token * nameTokDef ;
+
+
+std :: vector < TokenString > args ;
+
+
+const Token * valueToken ;
+
+
+const Token * endToken ;
+
+
+std :: vector < std :: string > & files ;
+
+
+TokenList tokenListDefine ;
+
+
+mutable std :: list < Location > usageList ;
+
+
+bool variadic ;
+
+
+bool variadicOpt ;
+
+
+const TokenList * optExpandValue ;
+const TokenList * optNoExpandValue ;
+
+
+bool valueDefinedInCode_ ;
+} ;
+}
+
+namespace simplecpp {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+static bool isAbsolutePath ( const std :: string & path )
+{
+return path . length ( ) > 1U && path [ 0 ] == '/' ;
+}
+
+
+namespace simplecpp {
+
+
+
+std :: string simplifyPath ( std :: string path )
+{
+if ( path . empty ( ) )
+return path ;
+
+std :: string :: size_type pos ;
+
+
+std :: replace ( path . begin ( ) , path . end ( ) , '\\' , '/' ) ;
+
+const bool unc ( path . compare ( 0 , 2 , "//" ) == 0 ) ;
+
+
+pos = 0 ;
+while ( ( pos = path . find ( "//" , pos ) ) != std :: string :: npos ) {
+path . erase ( pos , 1 ) ;
+}
+
+
+pos = 0 ;
+while ( ( pos = path . find ( "./" , pos ) ) != std :: string :: npos ) {
+if ( pos == 0 || path [ pos - 1U ] == '/' )
+path . erase ( pos , 2 ) ;
+else
+pos += 2 ;
+}
+
+
+if ( endsWith ( path , "/." ) )
+path . erase ( path . size ( ) - 1 ) ;
+
+
+pos = 1 ;
+while ( ( pos = path . find ( "/.." , pos ) ) != std :: string :: npos ) {
+
+if ( pos + 3 < path . size ( ) && path [ pos + 3 ] != '/' ) {
+++ pos ;
+continue ;
+}
+
+std :: string :: size_type pos1 = path . rfind ( '/' , pos - 1U ) ;
+if ( pos1 == std :: string :: npos ) {
+pos1 = 0 ;
+} else {
+pos1 += 1U ;
+}
+const std :: string previousSubPath = path . substr ( pos1 , pos - pos1 ) ;
+if ( previousSubPath == ".." ) {
+
+++ pos ;
+} else {
+
+path . erase ( pos1 , pos - pos1 + 4 ) ;
+if ( path . empty ( ) )
+path = "." ;
+
+pos = ( pos1 == 0 ) ? 1 : ( pos1 - 1 ) ;
+}
+}
+
+
+
+
+
+if ( unc )
+path = '/' + path ;
+
+return path ;
+}
+}
+
+
+static void simplifySizeof ( simplecpp :: TokenList & expr , const std :: map < std :: string , std :: size_t > & sizeOfType )
+{
+for ( simplecpp :: Token * tok = expr . front ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> str ( ) != "sizeof" )
+continue ;
+simplecpp :: Token * tok1 = tok -> next ;
+if ( ! tok1 ) {
+throw std :: runtime_error ( "missing sizeof argument" ) ;
+}
+simplecpp :: Token * tok2 = tok1 -> next ;
+if ( ! tok2 ) {
+throw std :: runtime_error ( "missing sizeof argument" ) ;
+}
+if ( tok1 -> op == '(' ) {
+tok1 = tok1 -> next ;
+while ( tok2 -> op != ')' ) {
+tok2 = tok2 -> next ;
+if ( ! tok2 ) {
+throw std :: runtime_error ( "invalid sizeof expression" ) ;
+}
+}
+}
+
+std :: string type ;
+for ( simplecpp :: Token * typeToken = tok1 ; typeToken != tok2 ; typeToken = typeToken -> next ) {
+if ( ( typeToken -> str ( ) == "unsigned" || typeToken -> str ( ) == "signed" ) && typeToken -> next -> name )
+continue ;
+if ( typeToken -> str ( ) == "*" && type . find ( '*' ) != std :: string :: npos )
+continue ;
+if ( ! type . empty ( ) )
+type += ' ' ;
+type += typeToken -> str ( ) ;
+}
+
+const std :: map < std :: string , std :: size_t > :: const_iterator it = sizeOfType . find ( type ) ;
+if ( it != sizeOfType . end ( ) )
+tok -> setstr ( toString ( it -> second ) ) ;
+else
+continue ;
+
+tok2 = tok2 -> next ;
+while ( tok -> next != tok2 )
+expr . deleteToken ( tok -> next ) ;
+}
+}
+
+static bool isCpp17OrLater ( const simplecpp :: DUI & dui )
+{
+const std :: string std_ver = simplecpp :: getCppStdString ( dui . std ) ;
+return ! std_ver . empty ( ) && ( std_ver >= "201703L" ) ;
+}
+
+static bool isGnu ( const simplecpp :: DUI & dui )
+{
+return dui . std . rfind ( "gnu" , 0 ) != std :: string :: npos ;
+}
+
+static std :: string dirPath ( const std :: string & path , bool withTrailingSlash = true )
+{
+const std :: size_t lastSlash = path . find_last_of ( "\\/" ) ;
+if ( lastSlash == std :: string :: npos ) {
+return "" ;
+}
+return path . substr ( 0 , lastSlash + ( withTrailingSlash ? 1U : 0U ) ) ;
+}
+
+static std :: string openHeader ( std :: ifstream & f , const simplecpp :: DUI & dui , const std :: string & sourcefile , const std :: string & header , bool systemheader ) ;
+static void simplifyHasInclude ( simplecpp :: TokenList & expr , const simplecpp :: DUI & dui )
+{
+if ( ! isCpp17OrLater ( dui ) && ! isGnu ( dui ) )
+return ;
+
+for ( simplecpp :: Token * tok = expr . front ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> str ( ) != HAS_INCLUDE )
+continue ;
+simplecpp :: Token * tok1 = tok -> next ;
+if ( ! tok1 ) {
+throw std :: runtime_error ( "missing __has_include argument" ) ;
+}
+simplecpp :: Token * tok2 = tok1 -> next ;
+if ( ! tok2 ) {
+throw std :: runtime_error ( "missing __has_include argument" ) ;
+}
+if ( tok1 -> op == '(' ) {
+tok1 = tok1 -> next ;
+while ( tok2 -> op != ')' ) {
+tok2 = tok2 -> next ;
+if ( ! tok2 ) {
+throw std :: runtime_error ( "invalid __has_include expression" ) ;
+}
+}
+}
+
+const std :: string & sourcefile = tok -> location . file ( ) ;
+const bool systemheader = ( tok1 && tok1 -> op == '<' ) ;
+std :: string header ;
+if ( systemheader ) {
+simplecpp :: Token * tok3 = tok1 -> next ;
+if ( ! tok3 ) {
+throw std :: runtime_error ( "missing __has_include closing angular bracket" ) ;
+}
+while ( tok3 -> op != '>' ) {
+tok3 = tok3 -> next ;
+if ( ! tok3 ) {
+throw std :: runtime_error ( "invalid __has_include expression" ) ;
+}
+}
+
+for ( simplecpp :: Token * headerToken = tok1 -> next ; headerToken != tok3 ; headerToken = headerToken -> next )
+header += headerToken -> str ( ) ;
+} else {
+header = tok1 -> str ( ) . substr ( 1U , tok1 -> str ( ) . size ( ) - 2U ) ;
+}
+std :: ifstream f ;
+const std :: string header2 = openHeader ( f , dui , sourcefile , header , systemheader ) ;
+tok -> setstr ( header2 . empty ( ) ? "0" : "1" ) ;
+
+tok2 = tok2 -> next ;
+while ( tok -> next != tok2 )
+expr . deleteToken ( tok -> next ) ;
+}
+}
+
+static const char * const altopData [ ] = { "and" , "or" , "bitand" , "bitor" , "compl" , "not" , "not_eq" , "xor" } ;
+static const std :: set < std :: string > altop ( & altopData [ 0 ] , & altopData [ 8 ] ) ;
+static void simplifyName ( simplecpp :: TokenList & expr )
+{
+for ( simplecpp :: Token * tok = expr . front ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> name ) {
+if ( altop . find ( tok -> str ( ) ) != altop . end ( ) ) {
+bool alt ;
+if ( tok -> str ( ) == "not" || tok -> str ( ) == "compl" ) {
+alt = isAlternativeUnaryOp ( tok , tok -> str ( ) ) ;
+} else {
+alt = isAlternativeBinaryOp ( tok , tok -> str ( ) ) ;
+}
+if ( alt )
+continue ;
+}
+if ( tok -> next && tok -> next -> str ( ) == "(" )
+throw std :: runtime_error ( "undefined function-like macro invocation: " + tok -> str ( ) + "( ... )" ) ;
+tok -> setstr ( "0" ) ;
+}
+}
+}
+
+
+
+
+
+
+
+
+
+static unsigned long long stringToULLbounded (
+const std :: string & s ,
+std :: size_t & pos ,
+int base = 0 ,
+std :: ptrdiff_t minlen = 1 ,
+std :: size_t maxlen = std :: string :: npos
+)
+{
+const std :: string sub = s . substr ( pos , maxlen ) ;
+const char * const start = sub . c_str ( ) ;
+char * end ;
+const unsigned long long value = std :: strtoull ( start , & end , base ) ;
+pos += end - start ;
+if ( end - start < minlen )
+throw std :: runtime_error ( "expected digit" ) ;
+return value ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+long long simplecpp :: characterLiteralToLL ( const std :: string & str )
+{
+
+bool narrow = false ;
+bool utf8 = false ;
+bool utf16 = false ;
+
+std :: size_t pos ;
+
+if ( ! str . empty ( ) && str [ 0 ] == '\'' ) {
+narrow = true ;
+pos = 1 ;
+} else if ( str . size ( ) >= 2 && str [ 0 ] == 'u' && str [ 1 ] == '\'' ) {
+utf16 = true ;
+pos = 2 ;
+} else if ( str . size ( ) >= 3 && str [ 0 ] == 'u' && str [ 1 ] == '8' && str [ 2 ] == '\'' ) {
+utf8 = true ;
+pos = 3 ;
+} else if ( str . size ( ) >= 2 && ( str [ 0 ] == 'L' || str [ 0 ] == 'U' ) && str [ 1 ] == '\'' ) {
+pos = 2 ;
+} else
+throw std :: runtime_error ( "expected a character literal" ) ;
+
+unsigned long long multivalue = 0 ;
+
+std :: size_t nbytes = 0 ;
+
+while ( pos + 1 < str . size ( ) ) {
+if ( str [ pos ] == '\'' || str [ pos ] == '\n' )
+throw std :: runtime_error ( "raw single quotes and newlines not allowed in character literals" ) ;
+
+if ( nbytes >= 1 && ! narrow )
+throw std :: runtime_error ( "multiple characters only supported in narrow character literals" ) ;
+
+unsigned long long value ;
+
+if ( str [ pos ] == '\\' ) {
+pos ++ ;
+const char escape = str [ pos ++ ] ;
+
+if ( pos >= str . size ( ) )
+throw std :: runtime_error ( "unexpected end of character literal" ) ;
+
+switch ( escape ) {
+
+case '%' :
+case '(' :
+case '[' :
+case '{' :
+
+case '\'' :
+case '"' :
+case '?' :
+case '\\' :
+value = static_cast < unsigned char > ( escape ) ;
+break ;
+
+case 'a' :
+value = static_cast < unsigned char > ( '\a' ) ;
+break ;
+case 'b' :
+value = static_cast < unsigned char > ( '\b' ) ;
+break ;
+case 'f' :
+value = static_cast < unsigned char > ( '\f' ) ;
+break ;
+case 'n' :
+value = static_cast < unsigned char > ( '\n' ) ;
+break ;
+case 'r' :
+value = static_cast < unsigned char > ( '\r' ) ;
+break ;
+case 't' :
+value = static_cast < unsigned char > ( '\t' ) ;
+break ;
+case 'v' :
+value = static_cast < unsigned char > ( '\v' ) ;
+break ;
+
+
+case 'e' :
+case 'E' :
+value = static_cast < unsigned char > ( '\x1b' ) ;
+break ;
+
+case '0' :
+case '1' :
+case '2' :
+case '3' :
+case '4' :
+case '5' :
+case '6' :
+case '7' :
+
+value = stringToULLbounded ( str , -- pos , 8 , 1 , 3 ) ;
+break ;
+
+case 'x' :
+
+value = stringToULLbounded ( str , pos , 16 ) ;
+break ;
+
+case 'u' :
+case 'U' : {
+
+const std :: size_t ndigits = ( escape == 'u' ? 4 : 8 ) ;
+value = stringToULLbounded ( str , pos , 16 , ndigits , ndigits ) ;
+
+
+
+if ( ( ( narrow || utf8 ) && value > 0x7f ) || ( utf16 && value > 0xffff ) || value > 0x10ffff )
+throw std :: runtime_error ( "code point too large" ) ;
+
+if ( value >= 0xd800 && value <= 0xdfff )
+throw std :: runtime_error ( "surrogate code points not allowed in universal character names" ) ;
+
+break ;
+}
+
+default :
+throw std :: runtime_error ( "invalid escape sequence" ) ;
+}
+} else {
+value = static_cast < unsigned char > ( str [ pos ++ ] ) ;
+
+if ( ! narrow && value >= 0x80 ) {
+
+
+
+
+int additional_bytes ;
+if ( value >= 0xf5 )
+throw std :: runtime_error ( "assumed UTF-8 encoded source, but sequence is invalid" ) ;
+if ( value >= 0xf0 )
+additional_bytes = 3 ;
+else if ( value >= 0xe0 )
+additional_bytes = 2 ;
+else if ( value >= 0xc2 )
+additional_bytes = 1 ;
+else
+throw std :: runtime_error ( "assumed UTF-8 encoded source, but sequence is invalid" ) ;
+
+value &= ( 1 << ( 6 - additional_bytes ) ) - 1 ;
+
+while ( additional_bytes -- ) {
+if ( pos + 1 >= str . size ( ) )
+throw std :: runtime_error ( "assumed UTF-8 encoded source, but character literal ends unexpectedly" ) ;
+
+const unsigned char c = str [ pos ++ ] ;
+
+if ( ( ( c >> 6 ) != 2 )
+|| ( ! value && additional_bytes == 1 && c < 0xa0 )
+|| ( ! value && additional_bytes == 2 && c < 0x90 ) )
+throw std :: runtime_error ( "assumed UTF-8 encoded source, but sequence is invalid" ) ;
+
+value = ( value << 6 ) | ( c & ( ( 1 << 7 ) - 1 ) ) ;
+}
+
+if ( value >= 0xd800 && value <= 0xdfff )
+throw std :: runtime_error ( "assumed UTF-8 encoded source, but sequence is invalid" ) ;
+
+if ( ( utf8 && value > 0x7f ) || ( utf16 && value > 0xffff ) || value > 0x10ffff )
+throw std :: runtime_error ( "code point too large" ) ;
+}
+}
+
+if ( ( ( narrow || utf8 ) && value > std :: numeric_limits < unsigned char > :: max ( ) ) || ( utf16 && value >> 16 ) || value >> 32 )
+throw std :: runtime_error ( "numeric escape sequence too large" ) ;
+
+multivalue <<= CHAR_BIT ;
+multivalue |= value ;
+nbytes ++ ;
+}
+
+if ( pos + 1 != str . size ( ) || str [ pos ] != '\'' )
+throw std :: runtime_error ( "missing closing quote in character literal" ) ;
+
+if ( ! nbytes )
+throw std :: runtime_error ( "empty character literal" ) ;
+
+
+if ( narrow && nbytes == 1 )
+return static_cast < char > ( multivalue ) ;
+
+
+if ( narrow )
+return static_cast < int > ( multivalue ) ;
+
+
+
+return multivalue ;
+}
+
+static void simplifyNumbers ( simplecpp :: TokenList & expr )
+{
+for ( simplecpp :: Token * tok = expr . front ( ) ; tok ; tok = tok -> next ) {
+if ( tok -> str ( ) . size ( ) == 1U )
+continue ;
+if ( tok -> str ( ) . compare ( 0 , 2 , "0x" ) == 0 )
+tok -> setstr ( toString ( stringToULL ( tok -> str ( ) ) ) ) ;
+else if ( ! tok -> number && tok -> str ( ) . find ( '\'' ) != std :: string :: npos )
+tok -> setstr ( toString ( simplecpp :: characterLiteralToLL ( tok -> str ( ) ) ) ) ;
+}
+}
+
+static void simplifyComments ( simplecpp :: TokenList & expr )
+{
+for ( simplecpp :: Token * tok = expr . front ( ) ; tok ; ) {
+simplecpp :: Token * const d = tok ;
+tok = tok -> next ;
+if ( d -> comment )
+expr . deleteToken ( d ) ;
+}
+}
+
+static long long evaluate ( simplecpp :: TokenList & expr , const simplecpp :: DUI & dui , const std :: map < std :: string , std :: size_t > & sizeOfType )
+{
+simplifyComments ( expr ) ;
+simplifySizeof ( expr , sizeOfType ) ;
+simplifyHasInclude ( expr , dui ) ;
+simplifyName ( expr ) ;
+simplifyNumbers ( expr ) ;
+expr . constFold ( ) ;
+
+return expr . cfront ( ) && expr . cfront ( ) == expr . cback ( ) && expr . cfront ( ) -> number ? stringToLL ( expr . cfront ( ) -> str ( ) ) : 0LL ;
+}
+
+static const simplecpp :: Token * gotoNextLine ( const simplecpp :: Token * tok )
+{
+const unsigned int line = tok -> location . line ;
+const unsigned int file = tok -> location . fileIndex ;
+while ( tok && tok -> location . line == line && tok -> location . fileIndex == file )
+tok = tok -> next ;
+return tok ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static std :: string openHeaderDirect ( std :: ifstream & f , const std :: string & path )
+{
+
+
+
+
+f . open ( path . c_str ( ) ) ;
+if ( f . is_open ( ) )
+return path ;
+
+
+
+return "" ;
+}
+
+static std :: string openHeader ( std :: ifstream & f , const simplecpp :: DUI & dui , const std :: string & sourcefile , const std :: string & header , bool systemheader )
+{
+if ( isAbsolutePath ( header ) )
+return openHeaderDirect ( f , simplecpp :: simplifyPath ( header ) ) ;
+
+
+if ( ! systemheader ) {
+std :: string path = openHeaderDirect ( f , simplecpp :: simplifyPath ( dirPath ( sourcefile ) + header ) ) ;
+if ( ! path . empty ( ) ) {
+return path ;
+}
+}
+
+
+for ( const auto & includePath : dui . includePaths ) {
+std :: string path = openHeaderDirect ( f , simplecpp :: simplifyPath ( includePath + "/" + header ) ) ;
+if ( ! path . empty ( ) )
+return path ;
+}
+return "" ;
+}
+
+std :: pair < simplecpp :: FileData * , bool > simplecpp :: FileDataCache :: tryload ( FileDataCache :: name_map_type :: iterator & name_it , const simplecpp :: DUI & dui , std :: vector < std :: string > & filenames , simplecpp :: OutputList * outputList )
+{
+const std :: string & path = name_it -> first ;
+FileID fileId ;
+
+if ( ! getFileId ( path , fileId ) )
+return { nullptr , false } ;
+
+const auto id_it = mIdMap . find ( fileId ) ;
+if ( id_it != mIdMap . end ( ) ) {
+name_it -> second = id_it -> second ;
+return { id_it -> second , false } ;
+}
+
+FileData * const data = new FileData { path , TokenList ( path , filenames , outputList ) } ;
+
+if ( dui . removeComments )
+data -> tokens . removeComments ( ) ;
+
+name_it -> second = data ;
+mIdMap . emplace ( fileId , data ) ;
+mData . emplace_back ( data ) ;
+
+return { data , true } ;
+}
+
+std :: pair < simplecpp :: FileData * , bool > simplecpp :: FileDataCache :: get ( const std :: string & sourcefile , const std :: string & header , const simplecpp :: DUI & dui , bool systemheader , std :: vector < std :: string > & filenames , simplecpp :: OutputList * outputList )
+{
+if ( isAbsolutePath ( header ) ) {
+auto ins = mNameMap . emplace ( simplecpp :: simplifyPath ( header ) , nullptr ) ;
+
+if ( ins . second ) {
+const auto ret = tryload ( ins . first , dui , filenames , outputList ) ;
+if ( ret . first != nullptr ) {
+return ret ;
+}
+} else {
+return { ins . first -> second , false } ;
+}
+
+return { nullptr , false } ;
+}
+
+if ( ! systemheader ) {
+auto ins = mNameMap . emplace ( simplecpp :: simplifyPath ( dirPath ( sourcefile ) + header ) , nullptr ) ;
+
+if ( ins . second ) {
+const auto ret = tryload ( ins . first , dui , filenames , outputList ) ;
+if ( ret . first != nullptr ) {
+return ret ;
+}
+} else if ( ins . first -> second != nullptr ) {
+return { ins . first -> second , false } ;
+}
+}
+
+for ( const auto & includePath : dui . includePaths ) {
+auto ins = mNameMap . emplace ( simplecpp :: simplifyPath ( includePath + "/" + header ) , nullptr ) ;
+
+if ( ins . second ) {
+const auto ret = tryload ( ins . first , dui , filenames , outputList ) ;
+if ( ret . first != nullptr ) {
+return ret ;
+}
+} else if ( ins . first -> second != nullptr ) {
+return { ins . first -> second , false } ;
+}
+}
+
+return { nullptr , false } ;
+}
+
+bool simplecpp :: FileDataCache :: getFileId ( const std :: string & path , FileID & id )
+{
+
+
+
+
+
+
+
+
+
+
+
+
+struct stat statbuf ;
+
+if ( stat ( path . c_str ( ) , & statbuf ) != 0 )
+return false ;
+
+id . dev = statbuf . st_dev ;
+id . ino = statbuf . st_ino ;
+
+return true ;
+
+}
+
+simplecpp :: FileDataCache simplecpp :: load ( const simplecpp :: TokenList & rawtokens , std :: vector < std :: string > & filenames , const simplecpp :: DUI & dui , simplecpp :: OutputList * outputList , FileDataCache cache )
+{
+
+
+
+
+
+std :: list < const Token * > filelist ;
+
+
+for ( std :: list < std :: string > :: const_iterator it = dui . includes . begin ( ) ; it != dui . includes . end ( ) ; ++ it ) {
+const std :: string & filename = * it ;
+
+const auto loadResult = cache . get ( "" , filename , dui , false , filenames , outputList ) ;
+const bool loaded = loadResult . second ;
+FileData * const filedata = loadResult . first ;
+
+if ( filedata == nullptr ) {
+if ( outputList ) {
+simplecpp :: Output err ( filenames ) ;
+err . type = simplecpp :: Output :: EXPLICIT_INCLUDE_NOT_FOUND ;
+err . location = Location ( filenames ) ;
+err . msg = "Can not open include file '" + filename + "' that is explicitly included." ;
+outputList -> push_back ( std :: move ( err ) ) ;
+}
+continue ;
+}
+
+if ( ! loaded )
+continue ;
+
+if ( ! filedata -> tokens . front ( ) )
+continue ;
+
+if ( dui . removeComments )
+filedata -> tokens . removeComments ( ) ;
+
+filelist . push_back ( filedata -> tokens . front ( ) ) ;
+}
+
+for ( const Token * rawtok = rawtokens . cfront ( ) ; rawtok || ! filelist . empty ( ) ; rawtok = rawtok ? rawtok -> next : nullptr ) {
+if ( rawtok == nullptr ) {
+rawtok = filelist . back ( ) ;
+filelist . pop_back ( ) ;
+}
+
+if ( rawtok -> op != '#' || sameline ( rawtok -> previousSkipComments ( ) , rawtok ) )
+continue ;
+
+rawtok = rawtok -> nextSkipComments ( ) ;
+if ( ! rawtok || rawtok -> str ( ) != INCLUDE )
+continue ;
+
+const std :: string & sourcefile = rawtok -> location . file ( ) ;
+
+const Token * const htok = rawtok -> nextSkipComments ( ) ;
+if ( ! sameline ( rawtok , htok ) )
+continue ;
+
+const bool systemheader = ( htok -> str ( ) [ 0 ] == '<' ) ;
+const std :: string header ( htok -> str ( ) . substr ( 1U , htok -> str ( ) . size ( ) - 2U ) ) ;
+
+const auto loadResult = cache . get ( sourcefile , header , dui , systemheader , filenames , outputList ) ;
+const bool loaded = loadResult . second ;
+
+if ( ! loaded )
+continue ;
+
+FileData * const filedata = loadResult . first ;
+
+if ( ! filedata -> tokens . front ( ) )
+continue ;
+
+if ( dui . removeComments )
+filedata -> tokens . removeComments ( ) ;
+
+filelist . push_back ( filedata -> tokens . front ( ) ) ;
+}
+
+return cache ;
+}
+
+static bool preprocessToken ( simplecpp :: TokenList & output , const simplecpp :: Token * * tok1 , simplecpp :: MacroMap & macros , std :: vector < std :: string > & files , simplecpp :: OutputList * outputList )
+{
+const simplecpp :: Token * const tok = * tok1 ;
+const simplecpp :: MacroMap :: const_iterator it = macros . find ( tok -> str ( ) ) ;
+if ( it != macros . end ( ) ) {
+simplecpp :: TokenList value ( files ) ;
+try {
+* tok1 = it -> second . expand ( & value , tok , macros , files ) ;
+} catch ( simplecpp :: Macro :: Error & err ) {
+if ( outputList ) {
+simplecpp :: Output out ( files ) ;
+out . type = simplecpp :: Output :: SYNTAX_ERROR ;
+out . location = err . location ;
+out . msg = "failed to expand \'" + tok -> str ( ) + "\', " + err . what ;
+outputList -> push_back ( std :: move ( out ) ) ;
+}
+return false ;
+}
+output . takeTokens ( value ) ;
+} else {
+if ( ! tok -> comment )
+output . push_back ( new simplecpp :: Token ( * tok ) ) ;
+* tok1 = tok -> next ;
+}
+return true ;
+}
+
+static void getLocaltime ( struct tm & ltime )
+{
+time_t t ;
+time ( & t ) ;
+
+
+localtime_r ( & t , & ltime ) ;
+
+
+
+}
+
+static std :: string getDateDefine ( const struct tm * timep )
+{
+char buf [ ] = "??? ?? ????" ;
+strftime ( buf , sizeof ( buf ) , "%b %d %Y" , timep ) ;
+return std :: string ( "\"" ) . append ( buf ) . append ( "\"" ) ;
+}
+
+static std :: string getTimeDefine ( const struct tm * timep )
+{
+char buf [ ] = "??:??:??" ;
+strftime ( buf , sizeof ( buf ) , "%H:%M:%S" , timep ) ;
+return std :: string ( "\"" ) . append ( buf ) . append ( "\"" ) ;
+}
+
+void simplecpp :: preprocess ( simplecpp :: TokenList & output , const simplecpp :: TokenList & rawtokens , std :: vector < std :: string > & files , simplecpp :: FileDataCache & cache , const simplecpp :: DUI & dui , simplecpp :: OutputList * outputList , std :: list < simplecpp :: MacroUsage > * macroUsage , std :: list < simplecpp :: IfCond > * ifCond )
+{
+
+
+
+
+
+std :: map < std :: string , std :: size_t > sizeOfType ( rawtokens . sizeOfType ) ;
+sizeOfType . insert ( std :: make_pair ( "char" , sizeof ( char ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "short" , sizeof ( short ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "short int" , sizeOfType [ "short" ] ) ) ;
+sizeOfType . insert ( std :: make_pair ( "int" , sizeof ( int ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long" , sizeof ( long ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long int" , sizeOfType [ "long" ] ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long long" , sizeof ( long long ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "float" , sizeof ( float ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "double" , sizeof ( double ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long double" , sizeof ( long double ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "char *" , sizeof ( char * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "short *" , sizeof ( short * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "short int *" , sizeOfType [ "short *" ] ) ) ;
+sizeOfType . insert ( std :: make_pair ( "int *" , sizeof ( int * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long *" , sizeof ( long * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long int *" , sizeOfType [ "long *" ] ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long long *" , sizeof ( long long * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "float *" , sizeof ( float * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "double *" , sizeof ( double * ) ) ) ;
+sizeOfType . insert ( std :: make_pair ( "long double *" , sizeof ( long double * ) ) ) ;
+
+
+std :: vector < std :: string > dummy ;
+
+const bool hasInclude = isCpp17OrLater ( dui ) || isGnu ( dui ) ;
+MacroMap macros ;
+bool strictAnsiDefined = false ;
+for ( std :: list < std :: string > :: const_iterator it = dui . defines . begin ( ) ; it != dui . defines . end ( ) ; ++ it ) {
+const std :: string & macrostr = * it ;
+const std :: string :: size_type eq = macrostr . find ( '=' ) ;
+const std :: string :: size_type par = macrostr . find ( '(' ) ;
+const std :: string macroname = macrostr . substr ( 0 , std :: min ( eq , par ) ) ;
+if ( macroname == "__STRICT_ANSI__" )
+strictAnsiDefined = true ;
+if ( dui . undefined . find ( macroname ) != dui . undefined . end ( ) )
+continue ;
+const std :: string lhs ( macrostr . substr ( 0 , eq ) ) ;
+const std :: string rhs ( eq == std :: string :: npos ? std :: string ( "1" ) : macrostr . substr ( eq + 1 ) ) ;
+const Macro macro ( lhs , rhs , dummy ) ;
+macros . insert ( std :: pair < TokenString , Macro > ( macro . name ( ) , macro ) ) ;
+}
+
+const bool strictAnsiUndefined = dui . undefined . find ( "__STRICT_ANSI__" ) != dui . undefined . cend ( ) ;
+if ( ! isGnu ( dui ) && ! strictAnsiDefined && ! strictAnsiUndefined )
+macros . insert ( std :: pair < TokenString , Macro > ( "__STRICT_ANSI__" , Macro ( "__STRICT_ANSI__" , "1" , dummy ) ) ) ;
+
+macros . insert ( std :: make_pair ( "__FILE__" , Macro ( "__FILE__" , "__FILE__" , dummy ) ) ) ;
+macros . insert ( std :: make_pair ( "__LINE__" , Macro ( "__LINE__" , "__LINE__" , dummy ) ) ) ;
+macros . insert ( std :: make_pair ( "__COUNTER__" , Macro ( "__COUNTER__" , "__COUNTER__" , dummy ) ) ) ;
+struct tm ltime = { } ;
+getLocaltime ( ltime ) ;
+macros . insert ( std :: make_pair ( "__DATE__" , Macro ( "__DATE__" , getDateDefine ( & ltime ) , dummy ) ) ) ;
+macros . insert ( std :: make_pair ( "__TIME__" , Macro ( "__TIME__" , getTimeDefine ( & ltime ) , dummy ) ) ) ;
+
+if ( ! dui . std . empty ( ) ) {
+const cstd_t c_std = simplecpp :: getCStd ( dui . std ) ;
+if ( c_std != CUnknown ) {
+const std :: string std_def = simplecpp :: getCStdString ( c_std ) ;
+if ( ! std_def . empty ( ) )
+macros . insert ( std :: make_pair ( "__STDC_VERSION__" , Macro ( "__STDC_VERSION__" , std_def , dummy ) ) ) ;
+} else {
+const cppstd_t cpp_std = simplecpp :: getCppStd ( dui . std ) ;
+if ( cpp_std == CPPUnknown ) {
+if ( outputList ) {
+simplecpp :: Output err ( files ) ;
+err . type = Output :: DUI_ERROR ;
+err . msg = "unknown standard specified: '" + dui . std + "'" ;
+outputList -> push_back ( err ) ;
+}
+output . clear ( ) ;
+return ;
+}
+const std :: string std_def = simplecpp :: getCppStdString ( cpp_std ) ;
+if ( ! std_def . empty ( ) )
+macros . insert ( std :: make_pair ( "__cplusplus" , Macro ( "__cplusplus" , std_def , dummy ) ) ) ;
+}
+}
+
+
+
+
+enum IfState { True , ElseIsTrue , AlwaysFalse } ;
+std :: stack < int > ifstates ;
+std :: stack < const Token * > iftokens ;
+ifstates . push ( True ) ;
+
+std :: stack < const Token * > includetokenstack ;
+
+std :: set < std :: string > pragmaOnce ;
+
+includetokenstack . push ( rawtokens . cfront ( ) ) ;
+for ( std :: list < std :: string > :: const_iterator it = dui . includes . begin ( ) ; it != dui . includes . end ( ) ; ++ it ) {
+const FileData * const filedata = cache . get ( "" , * it , dui , false , files , outputList ) . first ;
+if ( filedata != nullptr && filedata -> tokens . cfront ( ) != nullptr )
+includetokenstack . push ( filedata -> tokens . cfront ( ) ) ;
+}
+
+std :: map < std :: string , std :: list < Location >> maybeUsedMacros ;
+
+for ( const Token * rawtok = nullptr ; rawtok || ! includetokenstack . empty ( ) ; ) {
+if ( rawtok == nullptr ) {
+rawtok = includetokenstack . top ( ) ;
+includetokenstack . pop ( ) ;
+continue ;
+}
+
+if ( rawtok -> op == '#' && ! sameline ( rawtok -> previousSkipComments ( ) , rawtok ) ) {
+if ( ! sameline ( rawtok , rawtok -> next ) ) {
+rawtok = rawtok -> next ;
+continue ;
+}
+rawtok = rawtok -> next ;
+if ( ! rawtok -> name ) {
+rawtok = gotoNextLine ( rawtok ) ;
+continue ;
+}
+
+if ( ifstates . size ( ) <= 1U && ( rawtok -> str ( ) == ELIF || rawtok -> str ( ) == ELSE || rawtok -> str ( ) == ENDIF ) ) {
+if ( outputList ) {
+simplecpp :: Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = rawtok -> location ;
+err . msg = "#" + rawtok -> str ( ) + " without #if" ;
+outputList -> push_back ( err ) ;
+}
+output . clear ( ) ;
+return ;
+}
+
+if ( ifstates . top ( ) == True && ( rawtok -> str ( ) == ERROR || rawtok -> str ( ) == WARNING ) ) {
+if ( outputList ) {
+simplecpp :: Output err ( rawtok -> location . files ) ;
+err . type = rawtok -> str ( ) == ERROR ? Output :: ERROR : Output :: WARNING ;
+err . location = rawtok -> location ;
+for ( const Token * tok = rawtok -> next ; tok && sameline ( rawtok , tok ) ; tok = tok -> next ) {
+if ( ! err . msg . empty ( ) && isNameChar ( tok -> str ( ) [ 0 ] ) )
+err . msg += ' ' ;
+err . msg += tok -> str ( ) ;
+}
+err . msg = '#' + rawtok -> str ( ) + ' ' + err . msg ;
+outputList -> push_back ( std :: move ( err ) ) ;
+}
+if ( rawtok -> str ( ) == ERROR ) {
+output . clear ( ) ;
+return ;
+}
+}
+
+if ( rawtok -> str ( ) == DEFINE ) {
+if ( ifstates . top ( ) != True )
+continue ;
+try {
+const Macro & macro = Macro ( rawtok -> previous , files ) ;
+if ( dui . undefined . find ( macro . name ( ) ) == dui . undefined . end ( ) ) {
+const MacroMap :: iterator it = macros . find ( macro . name ( ) ) ;
+if ( it == macros . end ( ) )
+macros . insert ( std :: pair < TokenString , Macro > ( macro . name ( ) , macro ) ) ;
+else
+it -> second = macro ;
+}
+} catch ( const std :: runtime_error & ) {
+if ( outputList ) {
+simplecpp :: Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = rawtok -> location ;
+err . msg = "Failed to parse #define" ;
+outputList -> push_back ( err ) ;
+}
+output . clear ( ) ;
+return ;
+} catch ( simplecpp :: Macro :: Error & err ) {
+if ( outputList ) {
+simplecpp :: Output out ( files ) ;
+out . type = simplecpp :: Output :: SYNTAX_ERROR ;
+out . location = err . location ;
+out . msg = "Failed to parse #define, " + err . what ;
+outputList -> push_back ( out ) ;
+}
+output . clear ( ) ;
+return ;
+}
+} else if ( ifstates . top ( ) == True && rawtok -> str ( ) == INCLUDE ) {
+TokenList inc1 ( files ) ;
+for ( const Token * inctok = rawtok -> next ; sameline ( rawtok , inctok ) ; inctok = inctok -> next ) {
+if ( ! inctok -> comment )
+inc1 . push_back ( new Token ( * inctok ) ) ;
+}
+TokenList inc2 ( files ) ;
+if ( ! inc1 . empty ( ) && inc1 . cfront ( ) -> name ) {
+const Token * inctok = inc1 . cfront ( ) ;
+if ( ! preprocessToken ( inc2 , & inctok , macros , files , outputList ) ) {
+output . clear ( ) ;
+return ;
+}
+} else {
+inc2 . takeTokens ( inc1 ) ;
+}
+
+if ( ! inc1 . empty ( ) && ! inc2 . empty ( ) && inc2 . cfront ( ) -> op == '<' && inc2 . cback ( ) -> op == '>' ) {
+TokenString hdr ;
+
+
+for ( const Token * tok = inc2 . cfront ( ) ; tok ; tok = tok -> next ) {
+hdr += tok -> str ( ) ;
+}
+inc2 . clear ( ) ;
+inc2 . push_back ( new Token ( hdr , inc1 . cfront ( ) -> location ) ) ;
+inc2 . front ( ) -> op = '<' ;
+}
+
+if ( inc2 . empty ( ) || inc2 . cfront ( ) -> str ( ) . size ( ) <= 2U ) {
+if ( outputList ) {
+simplecpp :: Output err ( files ) ;
+err . type = Output :: SYNTAX_ERROR ;
+err . location = rawtok -> location ;
+err . msg = "No header in #include" ;
+outputList -> push_back ( err ) ;
+}
+output . clear ( ) ;
+return ;
+}
+
+const Token * const inctok = inc2 . cfront ( ) ;
+
+const bool systemheader = ( inctok -> str ( ) [ 0 ] == '<' ) ;
+const std :: string header ( inctok -> str ( ) . substr ( 1U , inctok -> str ( ) . size ( ) - 2U ) ) ;
+const FileData * const filedata = cache . get ( rawtok -> location . file ( ) , header , dui , systemheader , files , outputList ) . first ;
+if ( filedata == nullptr ) {
+if ( outputList ) {
+simplecpp :: Output out ( files ) ;
+out . type = Output :: MISSING_HEADER ;
+out . location = rawtok -> location ;
+out . msg = "Header not found: " + inctok -> str ( ) ;
+outputList -> push_back ( out ) ;
+}
+} else if ( includetokenstack . size ( ) >= 400 ) {
+if ( outputList ) {
+simplecpp :: Output out ( files ) ;
+out . type = Output :: INCLUDE_NESTED_TOO_DEEPLY ;
+out . location = rawtok -> location ;
+out . msg = "#include nested too deeply" ;
+outputList -> push_back ( out ) ;
+}
+} else if ( pragmaOnce . find ( filedata -> filename ) == pragmaOnce . end ( ) ) {
+includetokenstack . push ( gotoNextLine ( rawtok ) ) ;
+rawtok = filedata -> tokens . cfront ( ) ;
+continue ;
+}
+} else if ( rawtok -> str ( ) == IF || rawtok -> str ( ) == IFDEF || rawtok -> str ( ) == IFNDEF || rawtok -> str ( ) == ELIF ) {
+if ( ! sameline ( rawtok , rawtok -> next ) ) {
+if ( outputList ) {
+simplecpp :: Output out ( files ) ;
+out . type = Output :: SYNTAX_ERROR ;
+out . location = rawtok -> location ;
+out . msg = "Syntax error in #" + rawtok -> str ( ) ;
+outputList -> push_back ( out ) ;
+}
+output . clear ( ) ;
+return ;
+}
+
+bool conditionIsTrue ;
+if ( ifstates . top ( ) == AlwaysFalse || ( ifstates . top ( ) == ElseIsTrue && rawtok -> str ( ) != ELIF ) )
+conditionIsTrue = false ;
+else if ( rawtok -> str ( ) == IFDEF ) {
+conditionIsTrue = ( macros . find ( rawtok -> next -> str ( ) ) != macros . end ( ) || ( hasInclude && rawtok -> next -> str ( ) == HAS_INCLUDE ) ) ;
+maybeUsedMacros [ rawtok -> next -> str ( ) ] . push_back ( rawtok -> next -> location ) ;
+} else if ( rawtok -> str ( ) == IFNDEF ) {
+conditionIsTrue = ( macros . find ( rawtok -> next -> str ( ) ) == macros . end ( ) && ! ( hasInclude && rawtok -> next -> str ( ) == HAS_INCLUDE ) ) ;
+maybeUsedMacros [ rawtok -> next -> str ( ) ] . push_back ( rawtok -> next -> location ) ;
+} else {
+TokenList expr ( files ) ;
+for ( const Token * tok = rawtok -> next ; tok && tok -> location . sameline ( rawtok -> location ) ; tok = tok -> next ) {
+if ( ! tok -> name ) {
+expr . push_back ( new Token ( * tok ) ) ;
+continue ;
+}
+
+if ( tok -> str ( ) == DEFINED ) {
+tok = tok -> next ;
+const bool par = ( tok && tok -> op == '(' ) ;
+if ( par )
+tok = tok -> next ;
+maybeUsedMacros [ rawtok -> next -> str ( ) ] . push_back ( rawtok -> next -> location ) ;
+if ( tok ) {
+if ( macros . find ( tok -> str ( ) ) != macros . end ( ) )
+expr . push_back ( new Token ( "1" , tok -> location ) ) ;
+else if ( hasInclude && tok -> str ( ) == HAS_INCLUDE )
+expr . push_back ( new Token ( "1" , tok -> location ) ) ;
+else
+expr . push_back ( new Token ( "0" , tok -> location ) ) ;
+}
+if ( par )
+tok = tok ? tok -> next : nullptr ;
+if ( ! tok || ! sameline ( rawtok , tok ) || ( par && tok -> op != ')' ) ) {
+if ( outputList ) {
+Output out ( rawtok -> location . files ) ;
+out . type = Output :: SYNTAX_ERROR ;
+out . location = rawtok -> location ;
+out . msg = "failed to evaluate " + std :: string ( rawtok -> str ( ) == IF ? "#if" : "#elif" ) + " condition" ;
+outputList -> push_back ( std :: move ( out ) ) ;
+}
+output . clear ( ) ;
+return ;
+}
+continue ;
+}
+
+if ( hasInclude && tok -> str ( ) == HAS_INCLUDE ) {
+tok = tok -> next ;
+const bool par = ( tok && tok -> op == '(' ) ;
+if ( par )
+tok = tok -> next ;
+bool closingAngularBracket = false ;
+if ( tok ) {
+const std :: string & sourcefile = rawtok -> location . file ( ) ;
+const bool systemheader = ( tok && tok -> op == '<' ) ;
+std :: string header ;
+
+if ( systemheader ) {
+while ( ( tok = tok -> next ) && tok -> op != '>' )
+header += tok -> str ( ) ;
+if ( tok && tok -> op == '>' )
+closingAngularBracket = true ;
+} else {
+header = tok -> str ( ) . substr ( 1U , tok -> str ( ) . size ( ) - 2U ) ;
+closingAngularBracket = true ;
+}
+std :: ifstream f ;
+const std :: string header2 = openHeader ( f , dui , sourcefile , header , systemheader ) ;
+expr . push_back ( new Token ( header2 . empty ( ) ? "0" : "1" , tok -> location ) ) ;
+}
+if ( par )
+tok = tok ? tok -> next : nullptr ;
+if ( ! tok || ! sameline ( rawtok , tok ) || ( par && tok -> op != ')' ) || ( ! closingAngularBracket ) ) {
+if ( outputList ) {
+Output out ( rawtok -> location . files ) ;
+out . type = Output :: SYNTAX_ERROR ;
+out . location = rawtok -> location ;
+out . msg = "failed to evaluate " + std :: string ( rawtok -> str ( ) == IF ? "#if" : "#elif" ) + " condition" ;
+outputList -> push_back ( out ) ;
+}
+output . clear ( ) ;
+return ;
+}
+continue ;
+}
+
+maybeUsedMacros [ rawtok -> next -> str ( ) ] . push_back ( rawtok -> next -> location ) ;
+
+const Token * tmp = tok ;
+if ( ! preprocessToken ( expr , & tmp , macros , files , outputList ) ) {
+output . clear ( ) ;
+return ;
+}
+if ( ! tmp )
+break ;
+tok = tmp -> previous ;
+}
+try {
+if ( ifCond ) {
+std :: string E ;
+for ( const simplecpp :: Token * tok = expr . cfront ( ) ; tok ; tok = tok -> next )
+E += ( E . empty ( ) ? "" : " " ) + tok -> str ( ) ;
+const long long result = evaluate ( expr , dui , sizeOfType ) ;
+conditionIsTrue = ( result != 0 ) ;
+ifCond -> push_back ( IfCond ( rawtok -> location , E , result ) ) ;
+} else {
+const long long result = evaluate ( expr , dui , sizeOfType ) ;
+conditionIsTrue = ( result != 0 ) ;
+}
+} catch ( const std :: exception & e ) {
+if ( outputList ) {
+Output out ( rawtok -> location . files ) ;
+out . type = Output :: SYNTAX_ERROR ;
+out . location = rawtok -> location ;
+out . msg = "failed to evaluate " + std :: string ( rawtok -> str ( ) == IF ? "#if" : "#elif" ) + " condition" ;
+if ( e . what ( ) && * e . what ( ) )
+out . msg += std :: string ( ", " ) + e . what ( ) ;
+outputList -> push_back ( out ) ;
+}
+output . clear ( ) ;
+return ;
+}
+}
+
+if ( rawtok -> str ( ) != ELIF ) {
+
+if ( ifstates . top ( ) != True )
+ifstates . push ( AlwaysFalse ) ;
+else
+ifstates . push ( conditionIsTrue ? True : ElseIsTrue ) ;
+iftokens . push ( rawtok ) ;
+} else if ( ifstates . top ( ) == True ) {
+ifstates . top ( ) = AlwaysFalse ;
+iftokens . top ( ) -> nextcond = rawtok ;
+iftokens . top ( ) = rawtok ;
+} else if ( ifstates . top ( ) == ElseIsTrue && conditionIsTrue ) {
+ifstates . top ( ) = True ;
+iftokens . top ( ) -> nextcond = rawtok ;
+iftokens . top ( ) = rawtok ;
+}
+} else if ( rawtok -> str ( ) == ELSE ) {
+ifstates . top ( ) = ( ifstates . top ( ) == ElseIsTrue ) ? True : AlwaysFalse ;
+iftokens . top ( ) -> nextcond = rawtok ;
+iftokens . top ( ) = rawtok ;
+} else if ( rawtok -> str ( ) == ENDIF ) {
+ifstates . pop ( ) ;
+iftokens . top ( ) -> nextcond = rawtok ;
+iftokens . pop ( ) ;
+} else if ( rawtok -> str ( ) == UNDEF ) {
+if ( ifstates . top ( ) == True ) {
+const Token * tok = rawtok -> next ;
+while ( sameline ( rawtok , tok ) && tok -> comment )
+tok = tok -> next ;
+if ( sameline ( rawtok , tok ) )
+macros . erase ( tok -> str ( ) ) ;
+}
+} else if ( ifstates . top ( ) == True && rawtok -> str ( ) == PRAGMA && rawtok -> next && rawtok -> next -> str ( ) == ONCE && sameline ( rawtok , rawtok -> next ) ) {
+pragmaOnce . insert ( rawtok -> location . file ( ) ) ;
+}
+if ( ifstates . top ( ) != True && rawtok -> nextcond )
+rawtok = rawtok -> nextcond -> previous ;
+else
+rawtok = gotoNextLine ( rawtok ) ;
+continue ;
+}
+
+if ( ifstates . top ( ) != True ) {
+
+rawtok = gotoNextLine ( rawtok ) ;
+continue ;
+}
+
+bool hash = false , hashhash = false ;
+if ( rawtok -> op == '#' && sameline ( rawtok , rawtok -> next ) ) {
+if ( rawtok -> next -> op != '#' ) {
+hash = true ;
+rawtok = rawtok -> next ;
+} else if ( sameline ( rawtok , rawtok -> next -> next ) ) {
+hashhash = true ;
+rawtok = rawtok -> next -> next ;
+}
+}
+
+const Location loc ( rawtok -> location ) ;
+TokenList tokens ( files ) ;
+
+if ( ! preprocessToken ( tokens , & rawtok , macros , files , outputList ) ) {
+output . clear ( ) ;
+return ;
+}
+
+if ( hash || hashhash ) {
+std :: string s ;
+for ( const Token * hashtok = tokens . cfront ( ) ; hashtok ; hashtok = hashtok -> next )
+s += hashtok -> str ( ) ;
+if ( hash )
+output . push_back ( new Token ( '\"' + s + '\"' , loc ) ) ;
+else if ( output . back ( ) )
+output . back ( ) -> setstr ( output . cback ( ) -> str ( ) + s ) ;
+else
+output . push_back ( new Token ( s , loc ) ) ;
+} else {
+output . takeTokens ( tokens ) ;
+}
+}
+
+if ( macroUsage ) {
+for ( simplecpp :: MacroMap :: const_iterator macroIt = macros . begin ( ) ; macroIt != macros . end ( ) ; ++ macroIt ) {
+const Macro & macro = macroIt -> second ;
+std :: list < Location > usage = macro . usage ( ) ;
+const std :: list < Location > & temp = maybeUsedMacros [ macro . name ( ) ] ;
+usage . insert ( usage . end ( ) , temp . begin ( ) , temp . end ( ) ) ;
+for ( std :: list < Location > :: const_iterator usageIt = usage . begin ( ) ; usageIt != usage . end ( ) ; ++ usageIt ) {
+MacroUsage mu ( usageIt -> files , macro . valueDefinedInCode ( ) ) ;
+mu . macroName = macro . name ( ) ;
+mu . macroLocation = macro . defineLocation ( ) ;
+mu . useLocation = * usageIt ;
+macroUsage -> push_back ( std :: move ( mu ) ) ;
+}
+}
+}
+}
+
+void simplecpp :: cleanup ( FileDataCache & cache )
+{
+cache . clear ( ) ;
+}
+
+simplecpp :: cstd_t simplecpp :: getCStd ( const std :: string & std )
+{
+if ( std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89" )
+return C89 ;
+if ( std == "c99" || std == "c9x" || std == "iso9899:1999" || std == "iso9899:199x" || std == "gnu99" || std == "gnu9x" )
+return C99 ;
+if ( std == "c11" || std == "c1x" || std == "iso9899:2011" || std == "gnu11" || std == "gnu1x" )
+return C11 ;
+if ( std == "c17" || std == "c18" || std == "iso9899:2017" || std == "iso9899:2018" || std == "gnu17" || std == "gnu18" )
+return C17 ;
+if ( std == "c23" || std == "gnu23" || std == "c2x" || std == "gnu2x" )
+return C23 ;
+return CUnknown ;
+}
+
+std :: string simplecpp :: getCStdString ( cstd_t std )
+{
+switch ( std ) {
+case C89 :
+
+return "" ;
+case C99 :
+return "199901L" ;
+case C11 :
+return "201112L" ;
+case C17 :
+return "201710L" ;
+case C23 :
+
+
+
+
+return "202311L" ;
+case CUnknown :
+return "" ;
+}
+return "" ;
+}
+
+std :: string simplecpp :: getCStdString ( const std :: string & std )
+{
+return getCStdString ( getCStd ( std ) ) ;
+}
+
+simplecpp :: cppstd_t simplecpp :: getCppStd ( const std :: string & std )
+{
+if ( std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03" )
+return CPP03 ;
+if ( std == "c++11" || std == "gnu++11" || std == "c++0x" || std == "gnu++0x" )
+return CPP11 ;
+if ( std == "c++14" || std == "c++1y" || std == "gnu++14" || std == "gnu++1y" )
+return CPP14 ;
+if ( std == "c++17" || std == "c++1z" || std == "gnu++17" || std == "gnu++1z" )
+return CPP17 ;
+if ( std == "c++20" || std == "c++2a" || std == "gnu++20" || std == "gnu++2a" )
+return CPP20 ;
+if ( std == "c++23" || std == "c++2b" || std == "gnu++23" || std == "gnu++2b" )
+return CPP23 ;
+if ( std == "c++26" || std == "c++2c" || std == "gnu++26" || std == "gnu++2c" )
+return CPP26 ;
+return CPPUnknown ;
+}
+
+std :: string simplecpp :: getCppStdString ( cppstd_t std )
+{
+switch ( std ) {
+case CPP03 :
+return "199711L" ;
+case CPP11 :
+return "201103L" ;
+case CPP14 :
+return "201402L" ;
+case CPP17 :
+return "201703L" ;
+case CPP20 :
+
+return "202002L" ;
+case CPP23 :
+
+
+
+
+return "202302L" ;
+case CPP26 :
+
+return "202400L" ;
+case CPPUnknown :
+return "" ;
+}
+return "" ;
+}
+
+std :: string simplecpp :: getCppStdString ( const std :: string & std )
+{
+return getCppStdString ( getCppStd ( std ) ) ;
+}
