@@ -107,15 +107,14 @@ jobs:
       # TODO: how to share the following steps
       - name: Test
         run: |
-          docker run ${{ matrix.image }} .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
+          docker run -v %%GITHUB_WORKSPACE%%\${{ matrix.config }}:C:\${{ matrix.config }} ${{ matrix.image }} C:\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
 
       # TODO: does not actually fail on errors
       - name: Selfcheck
         run: |
-          docker run ${{ matrix.image }} .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
+          docker run -v %%GITHUB_WORKSPACE%%\${{ matrix.config }}:C:\${{ matrix.config }} ${{ matrix.image }} C:\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
 
       - name: integration test
         run: |
-          set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
-          docker run ${{ matrix.image }} python -m pytest integration_test.py -vv || exit /b !errorlevel!
+          docker run -v %%GITHUB_WORKSPACE%%\${{ matrix.config }}:C:\${{ matrix.config }} ${{ matrix.image }} -e SIMPLECPP_EXE_PATH=C:\${{ matrix.config }}\simplecpp.exe python -m pytest integration_test.py -vv || exit /b !errorlevel!
         
