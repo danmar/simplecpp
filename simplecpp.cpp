@@ -3126,7 +3126,21 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
     if (hFile == INVALID_HANDLE_VALUE)
         return false;
 
-    const BOOL ret = GetFileInformationByHandleEx(hFile, FileIdInfo, &id.fileIdInfo, sizeof(id.fileIdInfo));
+    BOOL ret = GetFileInformationByHandleEx(hFile, FileIdInfo, &id.fileIdInfo, sizeof(id.fileIdInfo));
+    if (!ret) {
+        const DWORD err = GetLastError();
+        if (err == ERROR_INVALID_PARAMETER || // encountered when using a non-NTFS filesystem e.g. exFAT
+            err == ERROR_NOT_SUPPORTED) // encountered on Windows Server Core (used as a Docker container)
+        {
+            BY_HANDLE_FILE_INFORMATION fileInfo;
+            ret = GetFileInformationByHandle(hFile, &fileInfo);
+            if (ret) {
+                id.fileIdInfo.VolumeSerialNumber = static_cast<std::uint64_t>(fileInfo.dwVolumeSerialNumber);
+                id.fileIdInfo.FileId.IdentifierHi = static_cast<std::uint64_t>(fileInfo.nFileIndexHigh);
+                id.fileIdInfo.FileId.IdentifierLo = static_cast<std::uint64_t>(fileInfo.nFileIndexLow);
+            }
+        }
+    }
 
     CloseHandle(hFile);
 
