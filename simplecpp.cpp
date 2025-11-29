@@ -984,7 +984,7 @@ void simplecpp::TokenList::constFold()
         constFoldComparison(tok);
         constFoldBitwise(tok);
         constFoldLogicalOp(tok);
-        constFoldQuestionOp(&tok);
+        constFoldQuestionOp(tok);
 
         // If there is no '(' we are done with the constant folding
         if (tok->op != '(')
@@ -1354,11 +1354,11 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
     }
 }
 
-void simplecpp::TokenList::constFoldQuestionOp(Token **tok1)
+void simplecpp::TokenList::constFoldQuestionOp(Token *&tok1)
 {
     bool gotoTok1 = false;
     // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
-    for (Token *tok = *tok1; tok && tok->op != ')'; tok =  gotoTok1 ? *tok1 : tok->next) {
+    for (Token *tok = tok1; tok && tok->op != ')'; tok =  gotoTok1 ? tok1 : tok->next) {
         gotoTok1 = false;
         if (tok->str() != "?")
             continue;
@@ -1373,8 +1373,8 @@ void simplecpp::TokenList::constFoldQuestionOp(Token **tok1)
         Token * const falseTok = trueTok->next->next;
         if (!falseTok)
             throw std::runtime_error("invalid expression");
-        if (condTok == *tok1)
-            *tok1 = (condTok->str() != "0" ? trueTok : falseTok);
+        if (condTok == tok1)
+            tok1 = (condTok->str() != "0" ? trueTok : falseTok);
         deleteToken(condTok->next); // ?
         deleteToken(trueTok->next); // :
         deleteToken(condTok->str() == "0" ? trueTok : falseTok);
@@ -3241,14 +3241,14 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     return cache;
 }
 
-static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token **tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
+static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token *&tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
 {
-    const simplecpp::Token * const tok = *tok1;
+    const simplecpp::Token * const tok = tok1;
     const simplecpp::MacroMap::const_iterator it = tok->name ? macros.find(tok->str()) : macros.end();
     if (it != macros.end()) {
         simplecpp::TokenList value(files);
         try {
-            *tok1 = it->second.expand(value, tok, macros, files);
+            tok1 = it->second.expand(value, tok, macros, files);
         } catch (const simplecpp::Macro::Error &err) {
             if (outputList) {
                 simplecpp::Output out = {
@@ -3264,7 +3264,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
     } else {
         if (!tok->comment)
             output.push_back(new simplecpp::Token(*tok));
-        *tok1 = tok->next;
+        tok1 = tok->next;
     }
     return true;
 }
@@ -3502,7 +3502,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 TokenList inc2(files);
                 if (!inc1.empty() && inc1.cfront()->name) {
                     const Token *inctok = inc1.cfront();
-                    if (!preprocessToken(inc2, &inctok, macros, files, outputList)) {
+                    if (!preprocessToken(inc2, inctok, macros, files, outputList)) {
                         output.clear();
                         return;
                     }
@@ -3671,7 +3671,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);
 
                         const Token *tmp = tok;
-                        if (!preprocessToken(expr, &tmp, macros, files, outputList)) {
+                        if (!preprocessToken(expr, tmp, macros, files, outputList)) {
                             output.clear();
                             return;
                         }
@@ -3769,7 +3769,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const Location loc(rawtok->location);
         TokenList tokens(files);
 
-        if (!preprocessToken(tokens, &rawtok, macros, files, outputList)) {
+        if (!preprocessToken(tokens, rawtok, macros, files, outputList)) {
             output.clear();
             return;
         }
