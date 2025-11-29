@@ -984,7 +984,7 @@ void simplecpp::TokenList::constFold()
         constFoldComparison(tok);
         constFoldBitwise(tok);
         constFoldLogicalOp(tok);
-        constFoldQuestionOp(&tok);
+        constFoldQuestionOp(tok);
 
         // If there is no '(' we are done with the constant folding
         if (tok->op != '(')
@@ -1354,11 +1354,11 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
     }
 }
 
-void simplecpp::TokenList::constFoldQuestionOp(Token **tok1)
+void simplecpp::TokenList::constFoldQuestionOp(Token *&tok1)
 {
     bool gotoTok1 = false;
     // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
-    for (Token *tok = *tok1; tok && tok->op != ')'; tok =  gotoTok1 ? *tok1 : tok->next) {
+    for (Token *tok = tok1; tok && tok->op != ')'; tok =  gotoTok1 ? tok1 : tok->next) {
         gotoTok1 = false;
         if (tok->str() != "?")
             continue;
@@ -1373,8 +1373,8 @@ void simplecpp::TokenList::constFoldQuestionOp(Token **tok1)
         Token * const falseTok = trueTok->next->next;
         if (!falseTok)
             throw std::runtime_error("invalid expression");
-        if (condTok == *tok1)
-            *tok1 = (condTok->str() != "0" ? trueTok : falseTok);
+        if (condTok == tok1)
+            tok1 = (condTok->str() != "0" ? trueTok : falseTok);
         deleteToken(condTok->next); // ?
         deleteToken(trueTok->next); // :
         deleteToken(condTok->str() == "0" ? trueTok : falseTok);
