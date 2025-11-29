@@ -98,6 +98,7 @@ jobs:
           fail-on-cache-miss: true
 
       # TODO: only do this once per image
+      # TODO: cache this as it takes several minutes for it to complete
       - name: Pull Image
         run: |
           docker image pull ${{ matrix.image }} || exit /b !errorlevel!
