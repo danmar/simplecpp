@@ -100,7 +100,8 @@ jobs:
       # TODO: only do this once per image
       - name: Pull Image
         run: |
-          docker image pull ${{ matrix.image }}
+          docker image pull ${{ matrix.image }} || exit /b !errorlevel!
+          docker image ls || exit /b !errorlevel!
 
       # TODO: how to share the following steps
       - name: Test
