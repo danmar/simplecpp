@@ -34,7 +34,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Woverloaded-virtual)       # when a function declaration hides virtual functions from a base class
 
     add_compile_options(-Wsuggest-attribute=noreturn)
-    add_compile_options_safe(-Wuseless-cast)
+    if (NOT MINGW)
+        add_compile_options_safe(-Wuseless-cast)
+    endif()
 
     # we are not interested in these
     set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS -Wno-multichar)
@@ -62,6 +64,14 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     # contradicts -Wcovered-switch-default
     add_compile_options(-Wno-switch-default)
+    if (MINGW)
+        add_compile_options(-Wno-reserved-macro-identifier)
+        add_compile_options(-Wno-unused-macros)
+    endif()
+
+    # these are experimental warning which might produce false positives
+    add_compile_options_safe(-Wno-thread-safety-negative)
+    add_compile_options_safe(-Wno-thread-safety-beta)
 
     # TODO: fix these?
     add_compile_options(-Wno-padded)
