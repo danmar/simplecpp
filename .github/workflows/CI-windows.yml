@@ -97,6 +97,11 @@ jobs:
           key: simplecpp-${{ matrix.config }}-${{ github.sha }}
           fail-on-cache-miss: true
 
+      # TODO: only do this once
+      - name: Pull Image
+        run: |
+          docker image pull ${{ matrix.image }}
+
       # TODO: how to share the following steps
       - name: Test
         run: |
