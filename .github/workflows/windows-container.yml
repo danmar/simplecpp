@@ -1,0 +1,15 @@
+name: Windows Container Test
+
+on: [push, pull_request]
+
+jobs:
+  windows-container:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run command in Windows container
+      run: |
+        docker run --rm mcr.microsoft.com/windows/servercore:ltsc2022 cmd /c "echo Hello from Windows container && dir C:\"
