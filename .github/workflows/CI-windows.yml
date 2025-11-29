@@ -76,7 +76,7 @@ jobs:
 
   test-core:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     strategy:
       matrix:
         image: [ "mcr.microsoft.com/windows/server:ltsc2025", "mcr.microsoft.com/windows/servercore:ltsc2025" ]
