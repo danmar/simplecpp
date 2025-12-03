@@ -481,3 +481,25 @@ def test_include_header_twice(tmpdir):
 
     assert stderr == ''
 
+
+def test_define(record_property, tmpdir):  # #589
+    test_file = os.path.join(tmpdir, "test.cpp")
+    with open(test_file, 'w') as f:
+        f.write(
+"""#define PREFIX_WITH_MACRO(test_name) Macro##test_name
+
+TEST_P(PREFIX_WITH_MACRO(NamingTest), n) {}
+""")
+
+    args = [
+        '-DTEST_P(A,B)=void __ ## A ## _ ## B ( )',
+        'test.cpp'
+    ]
+
+    exitcode, stdout, stderr = simplecpp(args, cwd=tmpdir)
+    record_property("stdout", stdout)
+    record_property("stderr", stderr)
+
+    assert exitcode == 0
+    assert stderr == "test.cpp:1: syntax error: failed to expand 'TEST_P', Invalid ## usage when expanding 'TEST_P': Unexpected token ')'\n"
+    assert stdout == '\n'
