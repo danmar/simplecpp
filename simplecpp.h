@@ -110,7 +110,7 @@ namespace simplecpp {
 
         const std::vector<std::string> &files;
         unsigned int fileIndex{};
-        unsigned int line{1};
+        unsigned int line{};
         unsigned int col{};
     private:
         static const std::string emptyFileName;
