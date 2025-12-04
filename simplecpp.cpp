@@ -1490,12 +1490,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(new TokenList(f)), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : valueToken(nullptr), endToken(nullptr), files(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : files(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
