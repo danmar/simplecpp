@@ -47,6 +47,7 @@
 #ifdef SIMPLECPP_WINDOWS
 #  include <mutex>
 #endif
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -3346,22 +3347,22 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 
     const bool strictAnsiUndefined = dui.undefined.find("__STRICT_ANSI__") != dui.undefined.cend();
     if (!isGnu(dui) && !strictAnsiDefined && !strictAnsiUndefined)
-        macros.emplace("__STRICT_ANSI__", Macro("__STRICT_ANSI__", "1", dummy));
+        macros.emplace(std::piecewise_construct, std::forward_as_tuple("__STRICT_ANSI__"), std::forward_as_tuple("__STRICT_ANSI__", "1", dummy));
 
-    macros.emplace("__FILE__", Macro("__FILE__", "__FILE__", dummy));
-    macros.emplace("__LINE__", Macro("__LINE__", "__LINE__", dummy));
-    macros.emplace("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__FILE__"), std::forward_as_tuple("__FILE__", "__FILE__", dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__LINE__"), std::forward_as_tuple("__LINE__", "__LINE__", dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__COUNTER__"), std::forward_as_tuple("__COUNTER__", "__COUNTER__", dummy));
     struct tm ltime = {};
     getLocaltime(ltime);
-    macros.emplace("__DATE__", Macro("__DATE__", getDateDefine(&ltime), dummy));
-    macros.emplace("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__DATE__"), std::forward_as_tuple("__DATE__", getDateDefine(&ltime), dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__TIME__"), std::forward_as_tuple("__TIME__", getTimeDefine(&ltime), dummy));
 
     if (!dui.std.empty()) {
         const cstd_t c_std = simplecpp::getCStd(dui.std);
         if (c_std != CUnknown) {
             const std::string std_def = simplecpp::getCStdString(c_std);
             if (!std_def.empty())
-                macros.emplace("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy));
+                macros.emplace(std::piecewise_construct, std::forward_as_tuple("__STDC_VERSION__"), std::forward_as_tuple("__STDC_VERSION__", std_def, dummy));
         } else {
             const cppstd_t cpp_std = simplecpp::getCppStd(dui.std);
             if (cpp_std == CPPUnknown) {
@@ -3378,7 +3379,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
             const std::string std_def = simplecpp::getCppStdString(cpp_std);
             if (!std_def.empty())
-                macros.emplace("__cplusplus", Macro("__cplusplus", std_def, dummy));
+                macros.emplace(std::piecewise_construct, std::forward_as_tuple("__cplusplus"), std::forward_as_tuple("__cplusplus", std_def, dummy));
         }
     }
 
