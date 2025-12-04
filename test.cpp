@@ -2761,7 +2761,7 @@ static void readfile_file_not_found()
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
     (void)simplecpp::TokenList("NotAFile", files, &outputList);
-    ASSERT_EQUALS("file0,1,file_not_found,File is missing: NotAFile\n", toString(outputList));
+    ASSERT_EQUALS("file0,0,file_not_found,File is missing: NotAFile\n", toString(outputList));
 }
 
 static void stringify1()
