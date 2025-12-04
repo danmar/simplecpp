@@ -3302,26 +3302,26 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 #endif
 
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
-    sizeOfType.insert(std::make_pair("char", sizeof(char)));
-    sizeOfType.insert(std::make_pair("short", sizeof(short)));
-    sizeOfType.insert(std::make_pair("short int", sizeOfType["short"]));
-    sizeOfType.insert(std::make_pair("int", sizeof(int)));
-    sizeOfType.insert(std::make_pair("long", sizeof(long)));
-    sizeOfType.insert(std::make_pair("long int", sizeOfType["long"]));
-    sizeOfType.insert(std::make_pair("long long", sizeof(long long)));
-    sizeOfType.insert(std::make_pair("float", sizeof(float)));
-    sizeOfType.insert(std::make_pair("double", sizeof(double)));
-    sizeOfType.insert(std::make_pair("long double", sizeof(long double)));
-    sizeOfType.insert(std::make_pair("char *", sizeof(char *)));
-    sizeOfType.insert(std::make_pair("short *", sizeof(short *)));
-    sizeOfType.insert(std::make_pair("short int *", sizeOfType["short *"]));
-    sizeOfType.insert(std::make_pair("int *", sizeof(int *)));
-    sizeOfType.insert(std::make_pair("long *", sizeof(long *)));
-    sizeOfType.insert(std::make_pair("long int *", sizeOfType["long *"]));
-    sizeOfType.insert(std::make_pair("long long *", sizeof(long long *)));
-    sizeOfType.insert(std::make_pair("float *", sizeof(float *)));
-    sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
-    sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
+    sizeOfType.emplace("char", sizeof(char));
+    sizeOfType.emplace("short", sizeof(short));
+    sizeOfType.emplace("short int", sizeOfType["short"]);
+    sizeOfType.emplace("int", sizeof(int));
+    sizeOfType.emplace("long", sizeof(long));
+    sizeOfType.emplace("long int", sizeOfType["long"]);
+    sizeOfType.emplace("long long", sizeof(long long));
+    sizeOfType.emplace("float", sizeof(float));
+    sizeOfType.emplace("double", sizeof(double));
+    sizeOfType.emplace("long double", sizeof(long double));
+    sizeOfType.emplace("char *", sizeof(char *));
+    sizeOfType.emplace("short *", sizeof(short *));
+    sizeOfType.emplace("short int *", sizeOfType["short *"]);
+    sizeOfType.emplace("int *", sizeof(int *));
+    sizeOfType.emplace("long *", sizeof(long *));
+    sizeOfType.emplace("long int *", sizeOfType["long *"]);
+    sizeOfType.emplace("long long *", sizeof(long long *));
+    sizeOfType.emplace("float *", sizeof(float *));
+    sizeOfType.emplace("double *", sizeof(double *));
+    sizeOfType.emplace("long double *", sizeof(long double *));
 
     // use a dummy vector for the macros because as this is not part of the file and would add an empty entry - e.g. /usr/include/poll.h
     std::vector<std::string> dummy;
@@ -3341,27 +3341,27 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const std::string lhs(macrostr.substr(0,eq));
         const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
         const Macro macro(lhs, rhs, dummy);
-        macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
+        macros.emplace(macro.name(), macro);
     }
 
     const bool strictAnsiUndefined = dui.undefined.find("__STRICT_ANSI__") != dui.undefined.cend();
     if (!isGnu(dui) && !strictAnsiDefined && !strictAnsiUndefined)
-        macros.insert(std::pair<TokenString, Macro>("__STRICT_ANSI__", Macro("__STRICT_ANSI__", "1", dummy)));
+        macros.emplace("__STRICT_ANSI__", Macro("__STRICT_ANSI__", "1", dummy));
 
-    macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", dummy)));
-    macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", dummy)));
-    macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", dummy)));
+    macros.emplace("__FILE__", Macro("__FILE__", "__FILE__", dummy));
+    macros.emplace("__LINE__", Macro("__LINE__", "__LINE__", dummy));
+    macros.emplace("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", dummy));
     struct tm ltime = {};
     getLocaltime(ltime);
-    macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), dummy)));
-    macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy)));
+    macros.emplace("__DATE__", Macro("__DATE__", getDateDefine(&ltime), dummy));
+    macros.emplace("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy));
 
     if (!dui.std.empty()) {
         const cstd_t c_std = simplecpp::getCStd(dui.std);
         if (c_std != CUnknown) {
             const std::string std_def = simplecpp::getCStdString(c_std);
             if (!std_def.empty())
-                macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy)));
+                macros.emplace("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy));
         } else {
             const cppstd_t cpp_std = simplecpp::getCppStd(dui.std);
             if (cpp_std == CPPUnknown) {
@@ -3378,7 +3378,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
             const std::string std_def = simplecpp::getCppStdString(cpp_std);
             if (!std_def.empty())
-                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
+                macros.emplace("__cplusplus", Macro("__cplusplus", std_def, dummy));
         }
     }
 
@@ -3465,7 +3465,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
                         const MacroMap::iterator it = macros.find(macro.name());
                         if (it == macros.end())
-                            macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                            macros.emplace(macro.name(), macro);
                         else
                             it->second = macro;
                     }
