@@ -39,6 +39,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -1489,12 +1490,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(new TokenList(f)), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1513,15 +1514,15 @@ namespace simplecpp {
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
-            tokenListDefine.readfile(stream);
-            if (!parseDefine(tokenListDefine.cfront()))
+            tokenListDefine->readfile(stream);
+            if (!parseDefine(tokenListDefine->cfront()))
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
+        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.tokenListDefine), valueDefinedInCode_(other.valueDefinedInCode_) {
             // TODO: remove the try-catch - see #537
             // avoid bugprone-exception-escape clang-tidy warning
             try {
@@ -1539,11 +1540,11 @@ namespace simplecpp {
             if (this != &other) {
                 files = other.files;
                 valueDefinedInCode_ = other.valueDefinedInCode_;
-                if (other.tokenListDefine.empty())
+                if (other.tokenListDefine->empty())
                     parseDefine(other.nameTokDef);
                 else {
                     tokenListDefine = other.tokenListDefine;
-                    parseDefine(tokenListDefine.cfront());
+                    parseDefine(tokenListDefine->cfront());
                 }
                 usageList = other.usageList;
             }
@@ -2401,7 +2402,7 @@ namespace simplecpp {
         std::vector<std::string> &files;
 
         /** this is used for -D where the definition is not seen anywhere in code */
-        TokenList tokenListDefine;
+        std::shared_ptr<TokenList> tokenListDefine;
 
         /** usage of this macro */
         mutable std::list<Location> usageList;
