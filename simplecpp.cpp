@@ -1490,12 +1490,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(new TokenList(f)), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(new TokenList(f)), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1514,7 +1514,7 @@ namespace simplecpp {
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
             tokenListDefine->readfile(stream);
@@ -1522,7 +1522,7 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.tokenListDefine), valueDefinedInCode_(other.valueDefinedInCode_) {
+        Macro(const Macro &other) : files(other.files), tokenListDefine(other.tokenListDefine), valueDefinedInCode_(other.valueDefinedInCode_) {
             // TODO: remove the try-catch - see #537
             // avoid bugprone-exception-escape clang-tidy warning
             try {
@@ -2387,7 +2387,7 @@ namespace simplecpp {
         }
 
         /** name token in definition */
-        const Token *nameTokDef;
+        const Token *nameTokDef{};
 
         /** arguments for macro */
         std::vector<TokenString> args;
