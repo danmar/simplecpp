@@ -1522,7 +1522,7 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &other) : files(other.files), tokenListDefine(other.tokenListDefine), valueDefinedInCode_(other.valueDefinedInCode_) {
+        Macro(const Macro &other) : files(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
             // TODO: remove the try-catch - see #537
             // avoid bugprone-exception-escape clang-tidy warning
             try {
@@ -1540,10 +1540,10 @@ namespace simplecpp {
             if (this != &other) {
                 files = other.files;
                 valueDefinedInCode_ = other.valueDefinedInCode_;
-                if (other.tokenListDefine->empty())
+                tokenListDefine = other.tokenListDefine;
+                if (!tokenListDefine || tokenListDefine->empty())
                     parseDefine(other.nameTokDef);
                 else {
-                    tokenListDefine = other.tokenListDefine;
                     parseDefine(tokenListDefine->cfront());
                 }
                 usageList = other.usageList;
