@@ -3206,7 +3206,7 @@ static void stdValid()
 static void assertToken(const std::string& s, bool name, bool number, bool comment, char op, int line)
 {
     const std::vector<std::string> f;
-    const simplecpp::Location l(f);
+    const simplecpp::Location l;
     const simplecpp::Token t(s, l);
     assertEquals(name, t.name, line);
     assertEquals(number, t.number, line);

@@ -207,7 +207,7 @@ int main(int argc, char **argv)
             std::cout << outputTokens.stringify(linenrs) << std::endl;
 
         for (const simplecpp::Output &output : outputList) {
-            std::cerr << output.location.file() << ':' << output.location.line << ": ";
+            std::cerr << outputTokens.file(output.location) << ':' << output.location.line << ": ";
             switch (output.type) {
             case simplecpp::Output::ERROR:
                 std::cerr << "#error: ";
