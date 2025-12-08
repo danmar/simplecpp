@@ -69,6 +69,44 @@ namespace simplecpp {
     enum cppstd_t : std::int8_t { CPPUnknown=-1, CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26 };
 
     using TokenString = std::string;
+
+#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
+    using View = std::string_view;
+#else
+    struct View
+    {
+        // cppcheck-suppress noExplicitConstructor
+        View(const char* data)
+            : data_(data)
+            , size_(strlen(data))
+        {}
+
+#if !defined(__cpp_lib_span)
+        View(const char* data, std::size_t size)
+            : data_(data)
+            , size_(size)
+        {}
+
+        // cppcheck-suppress noExplicitConstructor
+        View(const std::string& str)
+            : data_(str.data())
+            , size_(str.size())
+        {}
+#endif
+
+        const char* data() const {
+            return data_;
+        }
+
+        std::size_t size() const {
+            return size_;
+        }
+
+        const char* data_;
+        std::size_t size_;
+    };
+#endif
+
     class Macro;
 
     /**
@@ -238,12 +276,10 @@ namespace simplecpp {
             : TokenList(reinterpret_cast<const unsigned char*>(data), size, filenames, filename, outputList, 0)
         {}
 #endif
-#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
         /** generates a token list from the given buffer */
-        TokenList(std::string_view data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+        TokenList(View data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
         {}
-#endif
 #ifdef __cpp_lib_span
         /** generates a token list from the given buffer */
         TokenList(std::span<const char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
