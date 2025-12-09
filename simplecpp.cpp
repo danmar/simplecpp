@@ -2626,7 +2626,7 @@ static std::string dirPath(const std::string& path, bool withTrailingSlash=true)
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
 
-/** Evaluate sizeof(type)
+/** Evaluate __has_include(include)
  * @throws std::runtime_error thrown on missing arguments or invalid expression
  */
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
@@ -2685,7 +2685,7 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
     }
 }
 
-/** Evaluate sizeof(type)
+/** Evaluate name
  * @throws std::runtime_error thrown on undefined function-like macro
  */
 static void simplifyName(simplecpp::TokenList &expr)
@@ -2929,6 +2929,9 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
     return multivalue;
 }
 
+/**
+ * @throws std::runtime_error thrown on invalid literal
+ */
 static void simplifyNumbers(simplecpp::TokenList &expr)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -2951,6 +2954,10 @@ static void simplifyComments(simplecpp::TokenList &expr)
     }
 }
 
+/**
+ * @throws std::runtime_error thrown on invalid literals, missing sizeof arguments or invalid expressions,
+ * missing __has_include() arguments or expressions, undefined function-like macros, invalid number literals
+ */
 static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
 {
     simplifyComments(expr);
