@@ -33,7 +33,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <exception>
 #include <fstream>
 #include <iostream>
 #include <istream>
@@ -490,7 +489,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     try {
         FileStream stream(filename, filenames);
         readfile(stream,filename,outputList);
-    } catch (const simplecpp::Output & e) { // TODO handle extra type of errors
+    } catch (const simplecpp::Output & e) {
         outputList->push_back(e);
     }
 }
@@ -3691,7 +3690,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
                         }
-                    } catch (const std::exception &e) {
+                    } catch (const std::runtime_error &e) {
                         if (outputList) {
                             std::string msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
                             if (e.what() && *e.what())
