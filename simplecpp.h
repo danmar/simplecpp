@@ -257,7 +257,6 @@ namespace simplecpp {
         explicit TokenList(std::vector<std::string> &filenames);
         /** generates a token list from the given std::istream parameter */
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
-#ifdef SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
         template<size_t size>
         TokenList(const char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
@@ -268,7 +267,7 @@ namespace simplecpp {
         TokenList(const unsigned char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(data, size-1, filenames, filename, outputList, 0)
         {}
-
+#ifdef SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
         TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(data, size, filenames, filename, outputList, 0)
