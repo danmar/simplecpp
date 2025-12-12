@@ -3299,11 +3299,80 @@ static void preprocess_files()
     }
 }
 
-static void safe_api()
+static void tokenlist_api()
 {
+    std::vector<std::string> filenames;
+#  if !defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
+    // buffer
+    {
+        char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(input,sizeof(input),filenames,"");
+    }
+    {
+        const char input[] = "code";
+        simplecpp::TokenList(input,sizeof(input),filenames,"");
+    }
+    {
+        unsigned char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(input,sizeof(input),filenames,"");
+    }
+    {
+        const unsigned char input[] = "code";
+        simplecpp::TokenList(input,sizeof(input),filenames,"");
+    }
+#endif
+    // buffer via View
+    {
+        const char * const input = "code";
+        simplecpp::TokenList({input},filenames,"");
+    }
+    // buffer via View
+    {
+        char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(simplecpp::View{input},filenames,"");
+    }
+    {
+        const char input[] = "code";
+        simplecpp::TokenList(simplecpp::View{input},filenames,"");
+    }
+    // sized buffer via View
+    {
+        char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList({input,sizeof(input)},filenames,"");
+    }
+    {
+        const char input[] = "code";
+        simplecpp::TokenList({input,sizeof(input)},filenames,"");
+    }
+    // array
+    {
+        char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(input,filenames,"");
+    }
+    {
+        const char input[] = "code";
+        simplecpp::TokenList(input,filenames,"");
+    }
+    {
+        unsigned char input[] = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(input,filenames,"");
+    }
+    {
+        const unsigned char input[] = "code";
+        simplecpp::TokenList(input,filenames,"");
+    }
+    // std::string via View
+    {
+        std::string input = "code"; // NOLINT(misc-const-correctness)
+        simplecpp::TokenList(input,filenames,"");
+    }
+    {
+        const std::string input = "code";
+        simplecpp::TokenList(input,filenames,"");
+    }
+
     // this test is to make sure the safe APIs are compiling
 #if defined(__cpp_lib_string_view) || defined(__cpp_lib_span)
-    std::vector<std::string> filenames;
 #  if defined(__cpp_lib_string_view)
     {
         const char input[] = "code";
@@ -3660,7 +3729,7 @@ int main(int argc, char **argv)
 
     TEST_CASE(preprocess_files);
 
-    TEST_CASE(safe_api);
+    TEST_CASE(tokenlist_api);
 
     TEST_CASE(isAbsolutePath);
 
