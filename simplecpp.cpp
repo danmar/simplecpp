@@ -33,7 +33,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <exception>
 #include <fstream>
 #include <iostream>
 #include <istream>
@@ -414,6 +413,9 @@ private:
 
 class FileStream : public simplecpp::TokenList::Stream {
 public:
+    /**
+     * @throws simplecpp::Output thrown if file is not found
+     */
     // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
     explicit FileStream(const std::string &filename, std::vector<std::string> &files)
         : file(fopen(filename.c_str(), "rb"))
@@ -487,7 +489,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     try {
         FileStream stream(filename, filenames);
         readfile(stream,filename,outputList);
-    } catch (const simplecpp::Output & e) { // TODO handle extra type of errors
+    } catch (const simplecpp::Output & e) {
         outputList->push_back(e);
     }
 }
@@ -1488,6 +1490,9 @@ namespace simplecpp {
     public:
         explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
+        /**
+         * @throws std::runtime_error thrown on bad macro syntax
+         */
         Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
@@ -1504,6 +1509,9 @@ namespace simplecpp {
                 throw std::runtime_error("bad macro syntax");
         }
 
+        /**
+         * @throws std::runtime_error thrown on bad macro syntax
+         */
         Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
@@ -1552,7 +1560,9 @@ namespace simplecpp {
          * @param macros     list of macros
          * @param inputFiles the input files
          * @return token after macro
-         * @throw Can throw wrongNumberOfParameters or invalidHashHash
+         * @throws Error thrown on missing or invalid preprocessor directives
+         * @throws wrongNumberOfParameters thrown on invalid number of parameters
+         * @throws invalidHashHash thrown on invalid ## usage
          */
         const Token * expand(TokenList & output,
                              const Token * rawtok,
@@ -2544,7 +2554,9 @@ namespace simplecpp {
     }
 }
 
-/** Evaluate sizeof(type) */
+/** Evaluate sizeof(type)
+ * @throws std::runtime_error thrown on missing arguments or invalid expression
+ */
 static void simplifySizeof(simplecpp::TokenList &expr, const std::map<std::string, std::size_t> &sizeOfType)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -2612,6 +2624,10 @@ static std::string dirPath(const std::string& path, bool withTrailingSlash=true)
 }
 
 static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const std::string &sourcefile, const std::string &header, bool systemheader);
+
+/** Evaluate __has_include(include)
+ * @throws std::runtime_error thrown on missing arguments or invalid expression
+ */
 static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI &dui)
 {
     if (!isCpp17OrLater(dui) && !isGnu(dui))
@@ -2668,6 +2684,9 @@ static void simplifyHasInclude(simplecpp::TokenList &expr, const simplecpp::DUI 
     }
 }
 
+/** Evaluate name
+ * @throws std::runtime_error thrown on undefined function-like macro
+ */
 static void simplifyName(simplecpp::TokenList &expr)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -2696,7 +2715,7 @@ static void simplifyName(simplecpp::TokenList &expr)
  * unsigned long long value, updating pos to point to the first
  * unused element of s.
  * Returns ULLONG_MAX if the result is not representable and
- * throws if the above requirements were not possible to satisfy.
+ * @throws std::runtime_error thrown if the above requirements were not possible to satisfy.
  */
 static unsigned long long stringToULLbounded(
     const std::string& s,
@@ -2716,34 +2735,6 @@ static unsigned long long stringToULLbounded(
     return value;
 }
 
-/* Converts character literal (including prefix, but not ud-suffix)
- * to long long value.
- *
- * Assumes ASCII-compatible single-byte encoded str for narrow literals
- * and UTF-8 otherwise.
- *
- * For target assumes
- * - execution character set encoding matching str
- * - UTF-32 execution wide-character set encoding
- * - requirements for __STDC_UTF_16__, __STDC_UTF_32__ and __STDC_ISO_10646__ satisfied
- * - char16_t is 16bit wide
- * - char32_t is 32bit wide
- * - wchar_t is 32bit wide and unsigned
- * - matching char signedness to host
- * - matching sizeof(int) to host
- *
- * For host assumes
- * - ASCII-compatible execution character set
- *
- * For host and target assumes
- * - CHAR_BIT == 8
- * - two's complement
- *
- * Implements multi-character narrow literals according to GCC's behavior,
- * except multi code unit universal character names are not supported.
- * Multi-character wide literals are not supported.
- * Limited support of universal character names for non-UTF-8 execution character set encodings.
- */
 long long simplecpp::characterLiteralToLL(const std::string& str)
 {
     // default is wide/utf32
@@ -2937,6 +2928,9 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
     return multivalue;
 }
 
+/**
+ * @throws std::runtime_error thrown on invalid literal
+ */
 static void simplifyNumbers(simplecpp::TokenList &expr)
 {
     for (simplecpp::Token *tok = expr.front(); tok; tok = tok->next) {
@@ -2959,6 +2953,10 @@ static void simplifyComments(simplecpp::TokenList &expr)
     }
 }
 
+/**
+ * @throws std::runtime_error thrown on invalid literals, missing sizeof arguments or invalid expressions,
+ * missing __has_include() arguments or expressions, undefined function-like macros, invalid number literals
+ */
 static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
 {
     simplifyComments(expr);
@@ -3692,7 +3690,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             const long long result = evaluate(expr, dui, sizeOfType);
                             conditionIsTrue = (result != 0);
                         }
-                    } catch (const std::exception &e) {
+                    } catch (const std::runtime_error &e) {
                         if (outputList) {
                             std::string msg = "failed to evaluate " + std::string(rawtok->str() == IF ? "#if" : "#elif") + " condition";
                             if (e.what() && *e.what())

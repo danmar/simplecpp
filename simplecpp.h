@@ -338,12 +338,18 @@ namespace simplecpp {
         void combineOperators();
 
         void constFoldUnaryNotPosNeg(Token *tok);
+        /**
+         * @throws std::overflow_error thrown on overflow or division by zero
+         */
         void constFoldMulDivRem(Token *tok);
         void constFoldAddSub(Token *tok);
         void constFoldShift(Token *tok);
         void constFoldComparison(Token *tok);
         void constFoldBitwise(Token *tok);
         void constFoldLogicalOp(Token *tok);
+        /**
+         * @throws std::runtime_error thrown on invalid expressions
+         */
         void constFoldQuestionOp(Token *&tok1);
 
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
@@ -501,6 +507,34 @@ namespace simplecpp {
         id_map_type mIdMap;
     };
 
+    /** Converts character literal (including prefix, but not ud-suffix) to long long value.
+     *
+     * Assumes ASCII-compatible single-byte encoded str for narrow literals
+     * and UTF-8 otherwise.
+     *
+     * For target assumes
+     * - execution character set encoding matching str
+     * - UTF-32 execution wide-character set encoding
+     * - requirements for __STDC_UTF_16__, __STDC_UTF_32__ and __STDC_ISO_10646__ satisfied
+     * - char16_t is 16bit wide
+     * - char32_t is 32bit wide
+     * - wchar_t is 32bit wide and unsigned
+     * - matching char signedness to host
+     * - matching sizeof(int) to host
+     *
+     * For host assumes
+     * - ASCII-compatible execution character set
+     *
+     * For host and target assumes
+     * - CHAR_BIT == 8
+     * - two's complement
+     *
+     * Implements multi-character narrow literals according to GCC's behavior,
+     * except multi code unit universal character names are not supported.
+     * Multi-character wide literals are not supported.
+     * Limited support of universal character names for non-UTF-8 execution character set encodings.
+     * @throws std::runtime_error thrown on invalid literal
+     */
     SIMPLECPP_LIB long long characterLiteralToLL(const std::string& str);
 
     SIMPLECPP_LIB FileDataCache load(const TokenList &rawtokens, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList = nullptr, FileDataCache cache = {});
