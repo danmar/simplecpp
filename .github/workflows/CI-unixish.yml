@@ -71,15 +71,26 @@ jobs:
       run: |
         make -j$(nproc) selfcheck
 
-    - name: make testrunner (c++17)
+    - name: make (c++14)
       run: |
         make clean
-        make -j$(nproc) testrunner CXXOPTS="-std=c++17"
+        make -j$(nproc) CXXOPTS="-Werror -std=c++14"
 
-    - name: make testrunner (c++20)
+    - name: make (c++17)
       run: |
         make clean
-        make -j$(nproc) testrunner CXXOPTS="-std=c++20"
+        make -j$(nproc) CXXOPTS="-Werror -std=c++17"
+
+    - name: make (c++20)
+      run: |
+        make clean
+        make -j$(nproc) CXXOPTS="-Werror -std=c++20"
+
+    - name: make (c++23)
+      run: |
+        make clean
+        # ubuntu-22.04 and macos-14 do not support c++23 yet
+        make -j$(nproc) CXXOPTS="-Werror -std=c++2b"
 
     - name: Run CMake
       run: |
