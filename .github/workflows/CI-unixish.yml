@@ -119,7 +119,7 @@ jobs:
         make -j$(nproc) test selfcheck CXXOPTS="-Werror -stdlib=libc++ -g3 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG" LDOPTS="-lc++"
 
     - name: Run AddressSanitizer
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-24.04' || matrix.os == 'macos-26'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -fsanitize=address" LDOPTS="-fsanitize=address"
@@ -127,7 +127,7 @@ jobs:
         ASAN_OPTIONS: detect_stack_use_after_return=1
 
     - name: Run UndefinedBehaviorSanitizer
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-24.04' || matrix.os == 'macos-26'
       run: |
         make clean
         make -j$(nproc) test selfcheck CXXOPTS="-Werror -O2 -g3 -fsanitize=undefined -fno-sanitize=signed-integer-overflow" LDOPTS="-fsanitize=undefined -fno-sanitize=signed-integer-overflow"
