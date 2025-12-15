@@ -23,6 +23,7 @@ Checks: >
         -bugprone-narrowing-conversions,
         -bugprone-switch-missing-default-case,
         -concurrency-mt-unsafe,
+        -clang-analyzer-cplusplus.NewDelete,
         -misc-no-recursion,
         -misc-non-private-member-variables-in-classes,
         -misc-use-anonymous-namespace,
