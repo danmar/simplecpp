@@ -69,6 +69,46 @@ namespace simplecpp {
     enum cppstd_t : std::int8_t { CPPUnknown=-1, CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26 };
 
     using TokenString = std::string;
+
+#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
+    using View = std::string_view;
+#else
+    struct View
+    {
+        // cppcheck-suppress noExplicitConstructor
+        View(const char* data)
+            : mData(data)
+            , mSize(strlen(data))
+        {}
+
+        // only provide when std::span is not available so using untyped initilization won't use View
+#if !defined(__cpp_lib_span)
+        View(const char* data, std::size_t size)
+            : mData(data)
+            , mSize(size)
+        {}
+
+        // cppcheck-suppress noExplicitConstructor
+        View(const std::string& str)
+            : mData(str.data())
+            , mSize(str.size())
+        {}
+#endif // !defined(__cpp_lib_span)
+
+        const char* data() const {
+            return mData;
+        }
+
+        std::size_t size() const {
+            return mSize;
+        }
+
+    private:
+        const char* mData;
+        std::size_t mSize;
+    };
+#endif // defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
+
     class Macro;
 
     /**
@@ -217,7 +257,6 @@ namespace simplecpp {
         explicit TokenList(std::vector<std::string> &filenames);
         /** generates a token list from the given std::istream parameter */
         TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
-#ifdef SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
         template<size_t size>
         TokenList(const char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
@@ -228,7 +267,7 @@ namespace simplecpp {
         TokenList(const unsigned char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(data, size-1, filenames, filename, outputList, 0)
         {}
-
+#ifdef SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
         TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(data, size, filenames, filename, outputList, 0)
@@ -237,13 +276,11 @@ namespace simplecpp {
         TokenList(const char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(reinterpret_cast<const unsigned char*>(data), size, filenames, filename, outputList, 0)
         {}
-#endif
-#if defined(__cpp_lib_string_view) && !defined(__cpp_lib_span)
+#endif // SIMPLECPP_TOKENLIST_ALLOW_PTR
         /** generates a token list from the given buffer */
-        TokenList(std::string_view data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
+        TokenList(View data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(reinterpret_cast<const unsigned char*>(data.data()), data.size(), filenames, filename, outputList, 0)
         {}
-#endif
 #ifdef __cpp_lib_span
         /** generates a token list from the given buffer */
         TokenList(std::span<const char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
@@ -254,7 +291,7 @@ namespace simplecpp {
         TokenList(std::span<const unsigned char> data, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
             : TokenList(data.data(), data.size(), filenames, filename, outputList, 0)
         {}
-#endif
+#endif // __cpp_lib_span
 
         /** generates a token list from the given filename parameter */
         TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList = nullptr);
