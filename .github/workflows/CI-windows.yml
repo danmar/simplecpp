@@ -66,7 +66,7 @@ jobs:
 
       - name: Run CMake (c++17)
         run: |
-          cmake -S . -B build.cxx17 -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=20 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
+          cmake -S . -B build.cxx17 -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=17 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
 
       - name: Build (c++17)
         run: |
