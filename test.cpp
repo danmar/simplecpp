@@ -321,6 +321,8 @@ static void characterLiteral()
     ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\343\201\202'"), std::runtime_error, "code point too large");
     ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8'\360\223\200\200'"), std::runtime_error, "code point too large");
 
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'\\U11111111"), std::runtime_error, "code point too large");
+
     ASSERT_EQUALS('\x89', simplecpp::characterLiteralToLL("'\x89'"));
     ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\x89'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
 
@@ -372,6 +374,33 @@ static void characterLiteral()
 
     ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xed\xa0\x80'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
     ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U'\xed\xbf\xbf'"), std::runtime_error, "assumed UTF-8 encoded source, but sequence is invalid");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL(""), std::runtime_error, "expected a character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("LU"), std::runtime_error, "expected a character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL(";\n"), std::runtime_error, "expected a character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8U"), std::runtime_error, "expected a character literal");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'\n\n"), std::runtime_error, "raw single quotes and newlines not allowed in character literals");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("''&"), std::runtime_error, "raw single quotes and newlines not allowed in character literals");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("L'\fff"), std::runtime_error, "multiple characters only supported in narrow character literals");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'\\\n"), std::runtime_error, "unexpected end of character literal");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'"), std::runtime_error, "missing closing quote in character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u'"), std::runtime_error, "missing closing quote in character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("L'"), std::runtime_error, "missing closing quote in character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'a"), std::runtime_error, "missing closing quote in character literal");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("''"), std::runtime_error, "empty character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("L''"), std::runtime_error, "empty character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("U''"), std::runtime_error, "empty character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u''"), std::runtime_error, "empty character literal");
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u8''"), std::runtime_error, "empty character literal");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("'\\555"), std::runtime_error, "numeric escape sequence too large");
+
+    ASSERT_THROW_EQUALS(simplecpp::characterLiteralToLL("u'Ó"), std::runtime_error, "assumed UTF-8 encoded source, but character literal ends unexpectedly");
 }
 
 static void combineOperators_floatliteral()
