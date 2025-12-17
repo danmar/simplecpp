@@ -79,9 +79,28 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
+#ifdef STORE_INPUT_DIR
+// make testrunner CXXOPTS="-DSTORE_INPUT_DIR=\"\\\"/home/user/simple_corpus\\\"\""
+#include <atomic>
+#include <fstream>
+
+static void storeInput(const std::string& str)
+{
+    static std::atomic_uint64_t num(0);
+    {
+        std::ofstream out(STORE_INPUT_DIR "/" + std::to_string(num++));
+        out << str;
+    }
+}
+#endif
+
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
+    const std::string str(code, size);
+#ifdef STORE_INPUT_DIR
+    storeInput(str);
+#endif
+    std::istringstream istr(str);
     return simplecpp::TokenList(istr,filenames,filename,outputList);
 }
 
