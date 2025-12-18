@@ -79,9 +79,28 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
+#ifdef STORE_INPUT_DIR
+// make testrunner CXXOPTS="-DSTORE_INPUT_DIR=\"\\\"/home/user/simple_corpus\\\"\""
+#include <atomic>
+#include <fstream>
+
+static void storeInput(const std::string& str)
+{
+    static std::atomic_uint64_t num(0);
+    {
+        std::ofstream out(STORE_INPUT_DIR "/" + std::to_string(num++));
+        out << str;
+    }
+}
+#endif
+
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
+    const std::string str(code, size);
+#ifdef STORE_INPUT_DIR
+    storeInput(str);
+#endif
+    std::istringstream istr(str);
     return simplecpp::TokenList(istr,filenames,filename,outputList);
 }
 
@@ -2210,6 +2229,44 @@ static void missingHeader4()
     ASSERT_EQUALS("file0,1,syntax_error,No header in #include\n", toString(outputList));
 }
 
+#ifndef _WIN32
+static void missingHeader5()
+{
+    // this is a directory
+    const char code[] = "#include \"/\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/\"\n", toString(outputList));
+}
+
+static void missingHeader6()
+{
+    // this is a directory
+    const char code[] = "#include \"/usr\"\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: \"/usr\"\n", toString(outputList));
+}
+
+static void missingHeader7()
+{
+    // this is a directory
+    const char code[] = "#include </>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </>\n", toString(outputList));
+}
+
+static void missingHeader8()
+{
+    // this is a directory
+    const char code[] = "#include </usr>\n";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,missing_header,Header not found: </usr>\n", toString(outputList));
+}
+#endif
+
 static void nestedInclude()
 {
     const char code[] = "#include \"test.h\"\n";
@@ -3504,6 +3561,14 @@ static void leak()
                             "#define e\n";
         (void)preprocess(code, simplecpp::DUI());
     }
+    {
+        const char code[] = "#include</\\\\>\n"
+                            "#include</\\\\>\n";
+        simplecpp::OutputList outputList;
+        ASSERT_EQUALS("", preprocess(code, &outputList));
+        ASSERT_EQUALS("file0,1,missing_header,Header not found: </\\\\>\n"
+                      "file0,2,missing_header,Header not found: </\\\\>\n", toString(outputList));
+    }
 }
 
 int main(int argc, char **argv)
@@ -3686,6 +3751,12 @@ int main(int argc, char **argv)
     TEST_CASE(missingHeader2);
     TEST_CASE(missingHeader3);
     TEST_CASE(missingHeader4);
+#ifndef _WIN32
+    TEST_CASE(missingHeader5);
+    TEST_CASE(missingHeader6);
+    TEST_CASE(missingHeader7);
+    TEST_CASE(missingHeader8);
+#endif
     TEST_CASE(nestedInclude);
     TEST_CASE(systemInclude);
     TEST_CASE(circularInclude);

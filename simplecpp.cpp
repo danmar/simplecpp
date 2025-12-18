@@ -53,8 +53,10 @@
 
 #ifdef _WIN32
 #  include <direct.h>
+using mode_t = unsigned short;
 #else
 #  include <sys/stat.h>
+#  include <sys/types.h>
 #endif
 
 static bool isHex(const std::string &s)
@@ -3014,9 +3016,11 @@ static std::string openHeaderDirect(std::ifstream &f, const std::string &path)
     if (nonExistingFilesCache.contains(path))
         return "";  // file is known not to exist, skip expensive file open call
 #endif
-    f.open(path.c_str());
-    if (f.is_open())
-        return path;
+    if (simplecpp::isFile(path)) {
+        f.open(path.c_str());
+        if (f.is_open())
+            return path;
+    }
 #ifdef SIMPLECPP_WINDOWS
     nonExistingFilesCache.add(path);
 #endif
@@ -3148,6 +3152,9 @@ bool simplecpp::FileDataCache::getFileId(const std::string &path, FileID &id)
     struct stat statbuf;
 
     if (stat(path.c_str(), &statbuf) != 0)
+        return false;
+
+    if ((statbuf.st_mode & S_IFMT) != S_IFREG)
         return false;
 
     id.dev = statbuf.st_dev;
@@ -3911,4 +3918,22 @@ std::string simplecpp::getCppStdString(cppstd_t std)
 std::string simplecpp::getCppStdString(const std::string &std)
 {
     return getCppStdString(getCppStd(std));
+}
+
+static mode_t file_type(const std::string &path)
+{
+    struct stat file_stat;
+    if (stat(path.c_str(), &file_stat) == -1)
+        return 0;
+    return file_stat.st_mode & S_IFMT;
+}
+
+bool simplecpp::isFile(const std::string &path)
+{
+    return file_type(path) == S_IFREG;
+}
+
+bool simplecpp::isDirectory(const std::string &path)
+{
+    return file_type(path) == S_IFDIR;
 }
