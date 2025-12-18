@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir corpus
           mkdir artifacts
-          ./fuzz -only_ascii=1 -timeout=5 -fork=$(nproc) -use_value_profile=1 -timeout_exitcode=0 -max_total_time=60 -artifact_prefix=./artifacts/ corpus corpus_test
+          ./fuzz -only_ascii=1 -timeout=5 -fork=$(nproc) -use_value_profile=1 -timeout_exitcode=0 -max_total_time=60 -artifact_prefix=./artifacts/ corpus
           # if a crash happens with a file from the corpus the fuzzer will not fail - so fail if any artifacts have been written
           test $(find ./artifacts -type f | wc -l) -eq 0
 
