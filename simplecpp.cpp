@@ -351,121 +351,123 @@ protected:
     bool isUtf16;
 };
 
-class StdIStream : public simplecpp::TokenList::Stream {
-public:
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    explicit StdIStream(std::istream &istr)
-        : istr(istr) {
-        assert(istr.good());
-        init();
-    }
-
-    int get() override {
-        return istr.get();
-    }
-    int peek() override {
-        return istr.peek();
-    }
-    void unget() override {
-        istr.unget();
-    }
-    bool good() override {
-        return istr.good();
-    }
-
-private:
-    std::istream &istr;
-};
-
-class StdCharBufStream : public simplecpp::TokenList::Stream {
-public:
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    StdCharBufStream(const unsigned char* str, std::size_t size)
-        : str(str)
-        , size(size)
-    {
-        init();
-    }
-
-    int get() override {
-        if (pos >= size)
-            return lastStatus = EOF;
-        return str[pos++];
-    }
-    int peek() override {
-        if (pos >= size)
-            return lastStatus = EOF;
-        return str[pos];
-    }
-    void unget() override {
-        --pos;
-    }
-    bool good() override {
-        return lastStatus != EOF;
-    }
-
-private:
-    const unsigned char *str;
-    const std::size_t size;
-    std::size_t pos{};
-    int lastStatus{};
-};
-
-class FileStream : public simplecpp::TokenList::Stream {
-public:
-    /**
-     * @throws simplecpp::Output thrown if file is not found
-     */
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    explicit FileStream(const std::string &filename, std::vector<std::string> &files)
-        : file(fopen(filename.c_str(), "rb"))
-    {
-        if (!file) {
-            files.emplace_back(filename);
-            throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, {}, "File is missing: " + filename);
+namespace {
+    class StdIStream : public simplecpp::TokenList::Stream {
+    public:
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        explicit StdIStream(std::istream &istr)
+            : istr(istr) {
+            assert(istr.good());
+            init();
         }
-        init();
-    }
 
-    FileStream(const FileStream&) = delete;
-    FileStream &operator=(const FileStream&) = delete;
+        int get() override {
+            return istr.get();
+        }
+        int peek() override {
+            return istr.peek();
+        }
+        void unget() override {
+            istr.unget();
+        }
+        bool good() override {
+            return istr.good();
+        }
 
-    ~FileStream() override {
-        fclose(file);
-        file = nullptr;
-    }
+    private:
+        std::istream &istr;
+    };
 
-    int get() override {
-        lastStatus = lastCh = fgetc(file);
-        return lastCh;
-    }
-    int peek() override {
-        // keep lastCh intact
-        const int ch = fgetc(file);
-        unget_internal(ch);
-        return ch;
-    }
-    void unget() override {
-        unget_internal(lastCh);
-    }
-    bool good() override {
-        return lastStatus != EOF;
-    }
+    class StdCharBufStream : public simplecpp::TokenList::Stream {
+    public:
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        StdCharBufStream(const unsigned char* str, std::size_t size)
+            : str(str)
+            , size(size)
+        {
+            init();
+        }
 
-private:
-    void unget_internal(int ch) {
-        if (isUtf16) {
-            // TODO: use ungetc() as well
-            // UTF-16 has subsequent unget() calls
-            fseek(file, -1, SEEK_CUR);
-        } else
-            ungetc(ch, file);
-    }
+        int get() override {
+            if (pos >= size)
+                return lastStatus = EOF;
+            return str[pos++];
+        }
+        int peek() override {
+            if (pos >= size)
+                return lastStatus = EOF;
+            return str[pos];
+        }
+        void unget() override {
+            --pos;
+        }
+        bool good() override {
+            return lastStatus != EOF;
+        }
 
-    FILE *file;
-    int lastCh{};
-    int lastStatus{};
-};
+    private:
+        const unsigned char *str;
+        const std::size_t size;
+        std::size_t pos{};
+        int lastStatus{};
+    };
+
+    class FileStream : public simplecpp::TokenList::Stream {
+    public:
+        /**
+         * @throws simplecpp::Output thrown if file is not found
+         */
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        explicit FileStream(const std::string &filename, std::vector<std::string> &files)
+            : file(fopen(filename.c_str(), "rb"))
+        {
+            if (!file) {
+                files.emplace_back(filename);
+                throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, {}, "File is missing: " + filename);
+            }
+            init();
+        }
+
+        FileStream(const FileStream&) = delete;
+        FileStream &operator=(const FileStream&) = delete;
+
+        ~FileStream() override {
+            fclose(file);
+            file = nullptr;
+        }
+
+        int get() override {
+            lastStatus = lastCh = fgetc(file);
+            return lastCh;
+        }
+        int peek() override {
+            // keep lastCh intact
+            const int ch = fgetc(file);
+            unget_internal(ch);
+            return ch;
+        }
+        void unget() override {
+            unget_internal(lastCh);
+        }
+        bool good() override {
+            return lastStatus != EOF;
+        }
+
+    private:
+        void unget_internal(int ch) {
+            if (isUtf16) {
+                // TODO: use ungetc() as well
+                // UTF-16 has subsequent unget() calls
+                fseek(file, -1, SEEK_CUR);
+            } else
+                ungetc(ch, file);
+        }
+
+        FILE *file;
+        int lastCh{};
+        int lastStatus{};
+    };
+}
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
