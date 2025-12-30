@@ -1699,19 +1699,19 @@ namespace simplecpp {
                 : Error(loc, format(macroName, message)) {}
 
             static inline invalidHashHash unexpectedToken(const Location &loc, const std::string &macroName, const Token *tokenA) {
-                return invalidHashHash(loc, macroName, "Unexpected token '"+ tokenA->str()+"'");
+                return {loc, macroName, "Unexpected token '"+ tokenA->str()+"'"};
             }
 
             static inline invalidHashHash cannotCombine(const Location &loc, const std::string &macroName, const Token *tokenA, const Token *tokenB) {
-                return invalidHashHash(loc, macroName, "Combining '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token.");
+                return {loc, macroName, "Combining '"+ tokenA->str()+ "' and '"+ tokenB->str() + "' yields an invalid token."};
             }
 
             static inline invalidHashHash unexpectedNewline(const Location &loc, const std::string &macroName) {
-                return invalidHashHash(loc, macroName, "Unexpected newline");
+                return {loc, macroName, "Unexpected newline"};
             }
 
             static inline invalidHashHash universalCharacterUB(const Location &loc, const std::string &macroName, const Token* tokenA, const std::string& strAB) {
-                return invalidHashHash(loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.");
+                return {loc, macroName, "Combining '\\"+ tokenA->str()+ "' and '"+ strAB.substr(tokenA->str().size()) + "' yields universal character '\\" + strAB + "'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4."};
             }
         };
     private:
@@ -1828,7 +1828,7 @@ namespace simplecpp {
 
         std::vector<const Token *> getMacroParameters(const Token *nameTokInst, bool calledInDefine) const {
             if (!nameTokInst->next || nameTokInst->next->op != '(' || !functionLike())
-                return std::vector<const Token *>();
+                return {};
 
             std::vector<const Token *> parametertokens;
             parametertokens.push_back(nameTokInst->next);
