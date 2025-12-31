@@ -141,7 +141,7 @@ namespace simplecpp {
         }
 
         unsigned int fileIndex{};
-        unsigned int line{1};
+        unsigned int line{};
         unsigned int col{};
     };
 

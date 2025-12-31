@@ -565,6 +565,7 @@ std::string simplecpp::TokenList::stringify(bool linenrs) const
 {
     std::ostringstream ret;
     Location loc;
+    loc.line = 1;
     bool filechg = true;
     for (const Token *tok = cfront(); tok; tok = tok->next) {
         if (tok->location.line < loc.line || tok->location.fileIndex != loc.fileIndex) {
