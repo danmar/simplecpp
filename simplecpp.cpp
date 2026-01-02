@@ -39,6 +39,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -47,6 +48,7 @@
 #ifdef SIMPLECPP_WINDOWS
 #  include <mutex>
 #endif
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -1489,12 +1491,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f) : valueToken(nullptr), endToken(nullptr), files(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f) : files(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1513,15 +1515,15 @@ namespace simplecpp {
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : files(f), tokenListDefine(new TokenList(f)), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
-            tokenListDefine.readfile(stream);
-            if (!parseDefine(tokenListDefine.cfront()))
+            tokenListDefine->readfile(stream);
+            if (!parseDefine(tokenListDefine->cfront()))
                 throw std::runtime_error("bad macro syntax. macroname=" + name + " value=" + value);
         }
 
-        Macro(const Macro &other) : nameTokDef(nullptr), files(other.files), tokenListDefine(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
+        Macro(const Macro &other) : files(other.files), valueDefinedInCode_(other.valueDefinedInCode_) {
             // TODO: remove the try-catch - see #537
             // avoid bugprone-exception-escape clang-tidy warning
             try {
@@ -1539,11 +1541,11 @@ namespace simplecpp {
             if (this != &other) {
                 files = other.files;
                 valueDefinedInCode_ = other.valueDefinedInCode_;
-                if (other.tokenListDefine.empty())
+                tokenListDefine = other.tokenListDefine;
+                if (!tokenListDefine || tokenListDefine->empty())
                     parseDefine(other.nameTokDef);
                 else {
-                    tokenListDefine = other.tokenListDefine;
-                    parseDefine(tokenListDefine.cfront());
+                    parseDefine(tokenListDefine->cfront());
                 }
                 usageList = other.usageList;
             }
@@ -2386,7 +2388,7 @@ namespace simplecpp {
         }
 
         /** name token in definition */
-        const Token *nameTokDef;
+        const Token *nameTokDef{};
 
         /** arguments for macro */
         std::vector<TokenString> args;
@@ -2401,7 +2403,7 @@ namespace simplecpp {
         std::vector<std::string> &files;
 
         /** this is used for -D where the definition is not seen anywhere in code */
-        TokenList tokenListDefine;
+        std::shared_ptr<TokenList> tokenListDefine;
 
         /** usage of this macro */
         mutable std::list<Location> usageList;
@@ -3303,26 +3305,26 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
 #endif
 
     std::map<std::string, std::size_t> sizeOfType(rawtokens.sizeOfType);
-    sizeOfType.insert(std::make_pair("char", sizeof(char)));
-    sizeOfType.insert(std::make_pair("short", sizeof(short)));
-    sizeOfType.insert(std::make_pair("short int", sizeOfType["short"]));
-    sizeOfType.insert(std::make_pair("int", sizeof(int)));
-    sizeOfType.insert(std::make_pair("long", sizeof(long)));
-    sizeOfType.insert(std::make_pair("long int", sizeOfType["long"]));
-    sizeOfType.insert(std::make_pair("long long", sizeof(long long)));
-    sizeOfType.insert(std::make_pair("float", sizeof(float)));
-    sizeOfType.insert(std::make_pair("double", sizeof(double)));
-    sizeOfType.insert(std::make_pair("long double", sizeof(long double)));
-    sizeOfType.insert(std::make_pair("char *", sizeof(char *)));
-    sizeOfType.insert(std::make_pair("short *", sizeof(short *)));
-    sizeOfType.insert(std::make_pair("short int *", sizeOfType["short *"]));
-    sizeOfType.insert(std::make_pair("int *", sizeof(int *)));
-    sizeOfType.insert(std::make_pair("long *", sizeof(long *)));
-    sizeOfType.insert(std::make_pair("long int *", sizeOfType["long *"]));
-    sizeOfType.insert(std::make_pair("long long *", sizeof(long long *)));
-    sizeOfType.insert(std::make_pair("float *", sizeof(float *)));
-    sizeOfType.insert(std::make_pair("double *", sizeof(double *)));
-    sizeOfType.insert(std::make_pair("long double *", sizeof(long double *)));
+    sizeOfType.emplace("char", sizeof(char));
+    sizeOfType.emplace("short", sizeof(short));
+    sizeOfType.emplace("short int", sizeOfType["short"]);
+    sizeOfType.emplace("int", sizeof(int));
+    sizeOfType.emplace("long", sizeof(long));
+    sizeOfType.emplace("long int", sizeOfType["long"]);
+    sizeOfType.emplace("long long", sizeof(long long));
+    sizeOfType.emplace("float", sizeof(float));
+    sizeOfType.emplace("double", sizeof(double));
+    sizeOfType.emplace("long double", sizeof(long double));
+    sizeOfType.emplace("char *", sizeof(char *));
+    sizeOfType.emplace("short *", sizeof(short *));
+    sizeOfType.emplace("short int *", sizeOfType["short *"]);
+    sizeOfType.emplace("int *", sizeof(int *));
+    sizeOfType.emplace("long *", sizeof(long *));
+    sizeOfType.emplace("long int *", sizeOfType["long *"]);
+    sizeOfType.emplace("long long *", sizeof(long long *));
+    sizeOfType.emplace("float *", sizeof(float *));
+    sizeOfType.emplace("double *", sizeof(double *));
+    sizeOfType.emplace("long double *", sizeof(long double *));
 
     // use a dummy vector for the macros because as this is not part of the file and would add an empty entry - e.g. /usr/include/poll.h
     std::vector<std::string> dummy;
@@ -3342,27 +3344,27 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
         const std::string lhs(macrostr.substr(0,eq));
         const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
         const Macro macro(lhs, rhs, dummy);
-        macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
+        macros.emplace(macro.name(), macro);
     }
 
     const bool strictAnsiUndefined = dui.undefined.find("__STRICT_ANSI__") != dui.undefined.cend();
     if (!isGnu(dui) && !strictAnsiDefined && !strictAnsiUndefined)
-        macros.insert(std::pair<TokenString, Macro>("__STRICT_ANSI__", Macro("__STRICT_ANSI__", "1", dummy)));
+        macros.emplace(std::piecewise_construct, std::forward_as_tuple("__STRICT_ANSI__"), std::forward_as_tuple("__STRICT_ANSI__", "1", dummy));
 
-    macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", dummy)));
-    macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", dummy)));
-    macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", dummy)));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__FILE__"), std::forward_as_tuple("__FILE__", "__FILE__", dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__LINE__"), std::forward_as_tuple("__LINE__", "__LINE__", dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__COUNTER__"), std::forward_as_tuple("__COUNTER__", "__COUNTER__", dummy));
     struct tm ltime = {};
     getLocaltime(ltime);
-    macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), dummy)));
-    macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy)));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__DATE__"), std::forward_as_tuple("__DATE__", getDateDefine(&ltime), dummy));
+    macros.emplace(std::piecewise_construct, std::forward_as_tuple("__TIME__"), std::forward_as_tuple("__TIME__", getTimeDefine(&ltime), dummy));
 
     if (!dui.std.empty()) {
         const cstd_t c_std = simplecpp::getCStd(dui.std);
         if (c_std != CUnknown) {
             const std::string std_def = simplecpp::getCStdString(c_std);
             if (!std_def.empty())
-                macros.insert(std::make_pair("__STDC_VERSION__", Macro("__STDC_VERSION__", std_def, dummy)));
+                macros.emplace(std::piecewise_construct, std::forward_as_tuple("__STDC_VERSION__"), std::forward_as_tuple("__STDC_VERSION__", std_def, dummy));
         } else {
             const cppstd_t cpp_std = simplecpp::getCppStd(dui.std);
             if (cpp_std == CPPUnknown) {
@@ -3379,7 +3381,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
             const std::string std_def = simplecpp::getCppStdString(cpp_std);
             if (!std_def.empty())
-                macros.insert(std::make_pair("__cplusplus", Macro("__cplusplus", std_def, dummy)));
+                macros.emplace(std::piecewise_construct, std::forward_as_tuple("__cplusplus"), std::forward_as_tuple("__cplusplus", std_def, dummy));
         }
     }
 
@@ -3466,7 +3468,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
                         const MacroMap::iterator it = macros.find(macro.name());
                         if (it == macros.end())
-                            macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                            macros.emplace(macro.name(), macro);
                         else
                             it->second = macro;
                     }
