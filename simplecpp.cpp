@@ -540,7 +540,7 @@ void simplecpp::TokenList::clear()
     backToken = nullptr;
     while (frontToken) {
         Token * const next = frontToken->next;
-        delete frontToken;
+        delete frontToken.get();
         frontToken = next;
     }
     sizeOfType.clear();
@@ -1355,7 +1355,6 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
 void simplecpp::TokenList::constFoldQuestionOp(Token *&tok1)
 {
     bool gotoTok1 = false;
-    // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
     for (Token *tok = tok1; tok && tok->op != ')'; tok =  gotoTok1 ? tok1 : tok->next) {
         gotoTok1 = false;
         if (tok->str() != "?")
@@ -1966,7 +1965,6 @@ namespace simplecpp {
                 }
             }
 
-            // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
             Token * const output_end_1 = output.back();
 
             const Token *valueToken2;
