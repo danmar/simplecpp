@@ -82,7 +82,7 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
     std::istringstream istr(std::string(code, size));
-    return simplecpp::TokenList(istr,filenames,filename,outputList);
+    return {istr,filenames,filename,outputList};
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)

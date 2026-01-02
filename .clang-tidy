@@ -29,7 +29,6 @@ Checks: >
         -modernize-avoid-c-arrays,
         -modernize-loop-convert,
         -modernize-pass-by-value,
-        -modernize-return-braced-init-list,
         -modernize-use-nodiscard,
         -modernize-use-trailing-return-type,
         -readability-avoid-nested-conditional-operator,
