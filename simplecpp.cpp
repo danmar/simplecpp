@@ -3341,8 +3341,21 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             continue;
         const std::string lhs(macrostr.substr(0,eq));
         const std::string rhs(eq==std::string::npos ? std::string("1") : macrostr.substr(eq+1));
-        const Macro macro(lhs, rhs, dummy);
-        macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
+        try {
+            const Macro macro(lhs, rhs, dummy);
+            macros.insert(std::pair<TokenString,Macro>(macro.name(), macro));
+        } catch (const std::runtime_error& e) {
+            if (outputList) {
+                simplecpp::Output err = {
+                    Output::DUI_ERROR,
+                    {},
+                    e.what()
+                };
+                outputList->push_back(std::move(err));
+            }
+            output.clear();
+            return;
+        }
     }
 
     const bool strictAnsiUndefined = dui.undefined.find("__STRICT_ANSI__") != dui.undefined.cend();
