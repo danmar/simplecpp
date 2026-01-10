@@ -3442,6 +3442,18 @@ static void tokenlist_api()
 #endif // __cpp_lib_span
 }
 
+static void bad_macro_syntax() // #616
+{
+    simplecpp::DUI dui;
+    dui.defines.emplace_back("\"");
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess("", dui, &outputList));
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS(simplecpp::Output::Type::DUI_ERROR, outputList.cbegin()->type);
+    ASSERT_EQUALS("bad macro syntax. macroname=\" value=1", outputList.cbegin()->msg);
+}
+
 static void isAbsolutePath() {
 #ifdef _WIN32
     ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:\\foo\\bar"));
@@ -3768,6 +3780,8 @@ int main(int argc, char **argv)
     TEST_CASE(tokenlist_api);
 
     TEST_CASE(isAbsolutePath);
+
+    TEST_CASE(bad_macro_syntax);
 
     TEST_CASE(fuzz_crash);
 
