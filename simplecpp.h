@@ -311,6 +311,10 @@ namespace simplecpp {
         std::string stringify(bool linenrs = false) const;
 
         void readfile(Stream &stream, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        /**
+         * @throws std::overflow_error thrown on overflow or division by zero
+         * @throws std::runtime_error thrown on invalid expressions
+         */
         void constFold();
 
         void removeComments();
