@@ -1005,6 +1005,14 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
     return c == 'f' || c == 'l';
 }
 
+static const std::string AND("and");
+static const std::string BITAND("bitand");
+static const std::string BITOR("bitor");
+static bool isAlternativeAndBitandBitor(const simplecpp::Token* tok)
+{
+    return isAlternativeBinaryOp(tok, AND) || isAlternativeBinaryOp(tok, BITAND) || isAlternativeBinaryOp(tok, BITOR);
+}
+
 void simplecpp::TokenList::combineOperators()
 {
     std::stack<bool> executableScope;
@@ -1040,7 +1048,7 @@ void simplecpp::TokenList::combineOperators()
             if (tok->previous && tok->previous->number && sameline(tok->previous, tok) && tok->previous->str().find_first_of("._") == std::string::npos) {
                 tok->setstr(tok->previous->str() + '.');
                 deleteToken(tok->previous);
-                if (sameline(tok, tok->next) && (isFloatSuffix(tok->next) || (tok->next && tok->next->startsWithOneOf("AaBbCcDdEeFfPp")))) {
+                if (sameline(tok, tok->next) && (isFloatSuffix(tok->next) || (tok->next && tok->next->startsWithOneOf("AaBbCcDdEeFfPp") && !isAlternativeAndBitandBitor(tok->next)))) {
                     tok->setstr(tok->str() + tok->next->str());
                     deleteToken(tok->next);
                 }
@@ -1285,8 +1293,6 @@ void simplecpp::TokenList::constFoldComparison(Token *tok)
     }
 }
 
-static const std::string BITAND("bitand");
-static const std::string BITOR("bitor");
 static const std::string XOR("xor");
 void simplecpp::TokenList::constFoldBitwise(Token *tok)
 {
@@ -1321,7 +1327,6 @@ void simplecpp::TokenList::constFoldBitwise(Token *tok)
     }
 }
 
-static const std::string AND("and");
 static const std::string OR("or");
 void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
 {
