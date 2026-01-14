@@ -67,8 +67,9 @@ static void assertThrowFailed(int line)
 
 static void testcase(const std::string &name, void (*f)(), int argc, char * const *argv)
 {
-    if (argc == 1)
+    if (argc == 1) {
         f();
+    }
     else {
         for (int i = 1; i < argc; i++) {
             if (name == argv[i])

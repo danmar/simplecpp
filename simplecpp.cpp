@@ -351,121 +351,124 @@ protected:
     bool isUtf16;
 };
 
-class StdIStream : public simplecpp::TokenList::Stream {
-public:
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    explicit StdIStream(std::istream &istr)
-        : istr(istr) {
-        assert(istr.good());
-        init();
-    }
-
-    int get() override {
-        return istr.get();
-    }
-    int peek() override {
-        return istr.peek();
-    }
-    void unget() override {
-        istr.unget();
-    }
-    bool good() override {
-        return istr.good();
-    }
-
-private:
-    std::istream &istr;
-};
-
-class StdCharBufStream : public simplecpp::TokenList::Stream {
-public:
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    StdCharBufStream(const unsigned char* str, std::size_t size)
-        : str(str)
-        , size(size)
-    {
-        init();
-    }
-
-    int get() override {
-        if (pos >= size)
-            return lastStatus = EOF;
-        return str[pos++];
-    }
-    int peek() override {
-        if (pos >= size)
-            return lastStatus = EOF;
-        return str[pos];
-    }
-    void unget() override {
-        --pos;
-    }
-    bool good() override {
-        return lastStatus != EOF;
-    }
-
-private:
-    const unsigned char *str;
-    const std::size_t size;
-    std::size_t pos{};
-    int lastStatus{};
-};
-
-class FileStream : public simplecpp::TokenList::Stream {
-public:
-    /**
-     * @throws simplecpp::Output thrown if file is not found
-     */
-    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-    explicit FileStream(const std::string &filename, std::vector<std::string> &files)
-        : file(fopen(filename.c_str(), "rb"))
-    {
-        if (!file) {
-            files.push_back(filename);
-            throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, {}, "File is missing: " + filename);
+namespace {
+    class StdIStream : public simplecpp::TokenList::Stream {
+    public:
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        explicit StdIStream(std::istream &istr)
+            : istr(istr) {
+            assert(istr.good());
+            init();
         }
-        init();
-    }
 
-    FileStream(const FileStream&) = delete;
-    FileStream &operator=(const FileStream&) = delete;
+        int get() override {
+            return istr.get();
+        }
+        int peek() override {
+            return istr.peek();
+        }
+        void unget() override {
+            istr.unget();
+        }
+        bool good() override {
+            return istr.good();
+        }
 
-    ~FileStream() override {
-        fclose(file);
-        file = nullptr;
-    }
+    private:
+        std::istream &istr;
+    };
 
-    int get() override {
-        lastStatus = lastCh = fgetc(file);
-        return lastCh;
-    }
-    int peek() override {
-        // keep lastCh intact
-        const int ch = fgetc(file);
-        unget_internal(ch);
-        return ch;
-    }
-    void unget() override {
-        unget_internal(lastCh);
-    }
-    bool good() override {
-        return lastStatus != EOF;
-    }
+    class StdCharBufStream : public simplecpp::TokenList::Stream {
+    public:
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        StdCharBufStream(const unsigned char* str, std::size_t size)
+            : str(str)
+            , size(size)
+        {
+            init();
+        }
 
-private:
-    void unget_internal(int ch) {
-        if (isUtf16) {
-            // TODO: use ungetc() as well
-            // UTF-16 has subsequent unget() calls
-            fseek(file, -1, SEEK_CUR);
-        } else
-            ungetc(ch, file);
-    }
+        int get() override {
+            if (pos >= size)
+                return lastStatus = EOF;
+            return str[pos++];
+        }
+        int peek() override {
+            if (pos >= size)
+                return lastStatus = EOF;
+            return str[pos];
+        }
+        void unget() override {
+            --pos;
+        }
+        bool good() override {
+            return lastStatus != EOF;
+        }
 
-    FILE *file;
-    int lastCh{};
-    int lastStatus{};
-};
+    private:
+        const unsigned char *str;
+        const std::size_t size;
+        std::size_t pos{};
+        int lastStatus{};
+    };
+
+    class FileStream : public simplecpp::TokenList::Stream {
+    public:
+        /**
+         * @throws simplecpp::Output thrown if file is not found
+         */
+        // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+        explicit FileStream(const std::string &filename, std::vector<std::string> &files)
+            : file(fopen(filename.c_str(), "rb"))
+        {
+            if (!file) {
+                files.push_back(filename);
+                throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, {}, "File is missing: " + filename);
+            }
+            init();
+        }
+
+        FileStream(const FileStream&) = delete;
+        FileStream &operator=(const FileStream&) = delete;
+
+        ~FileStream() override {
+            fclose(file);
+            file = nullptr;
+        }
+
+        int get() override {
+            lastStatus = lastCh = fgetc(file);
+            return lastCh;
+        }
+        int peek() override {
+            // keep lastCh intact
+            const int ch = fgetc(file);
+            unget_internal(ch);
+            return ch;
+        }
+        void unget() override {
+            unget_internal(lastCh);
+        }
+        bool good() override {
+            return lastStatus != EOF;
+        }
+
+    private:
+        void unget_internal(int ch) {
+            if (isUtf16) {
+                // TODO: use ungetc() as well
+                // UTF-16 has subsequent unget() calls
+                fseek(file, -1, SEEK_CUR);
+            } else {
+                ungetc(ch, file);
+            }
+        }
+
+        FILE *file;
+        int lastCh{};
+        int lastStatus{};
+    };
+}
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
@@ -1179,8 +1182,9 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
             continue;
 
         long long result;
-        if (tok->op == '*')
+        if (tok->op == '*') {
             result = (stringToLL(tok->previous->str()) * stringToLL(tok->next->str()));
+        }
         else if (tok->op == '/' || tok->op == '%') {
             const long long rhs = stringToLL(tok->next->str());
             if (rhs == 0)
@@ -1192,8 +1196,9 @@ void simplecpp::TokenList::constFoldMulDivRem(Token *tok)
                 result = (lhs / rhs);
             else
                 result = (lhs % rhs);
-        } else
+        } else {
             continue;
+        }
 
         tok = tok->previous;
         tok->setstr(toString(result));
@@ -1417,8 +1422,9 @@ std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &loca
                     ret.erase(ret.size()-1U);
                     backslash = (next == '\r');
                     update_ch = false;
-                } else if (next == '\\')
+                } else if (next == '\\') {
                     update_ch = !update_ch;
+                }
                 ret += next;
             } while (next == '\\');
             if (update_ch)
@@ -1539,8 +1545,9 @@ namespace simplecpp {
             if (this != &other) {
                 files = other.files;
                 valueDefinedInCode_ = other.valueDefinedInCode_;
-                if (other.tokenListDefine.empty())
+                if (other.tokenListDefine.empty()) {
                     parseDefine(other.nameTokDef);
+                }
                 else {
                     tokenListDefine = other.tokenListDefine;
                     parseDefine(tokenListDefine.cfront());
@@ -1609,15 +1616,17 @@ namespace simplecpp {
                         if (par==0)
                             break;
                         --par;
-                    } else if (macro2tok->op == ')')
+                    } else if (macro2tok->op == ')') {
                         ++par;
+                    }
                     macro2tok = macro2tok->previous;
                 }
                 if (macro2tok) { // macro2tok->op == '('
                     macro2tok = macro2tok->previous;
                     expandedmacros.insert(name());
-                } else if (rawtok->op == '(')
+                } else if (rawtok->op == '(') {
                     macro2tok = output2.back();
+                }
                 if (!macro2tok || !macro2tok->name)
                     break;
                 if (output2.cfront() != output2.cback() && macro2tok->str() == this->name())
@@ -1637,8 +1646,9 @@ namespace simplecpp {
                 const Token *rawtok2 = rawtok;
                 for (; rawtok2; rawtok2 = rawtok2->next) {
                     rawtokens2.push_back(new Token(rawtok2->str(), loc));
-                    if (rawtok2->op == '(')
+                    if (rawtok2->op == '(') {
                         ++par;
+                    }
                     else if (rawtok2->op == ')') {
                         if (par <= 1U)
                             break;
@@ -1835,16 +1845,18 @@ namespace simplecpp {
             parametertokens.push_back(nameTokInst->next);
             unsigned int par = 0U;
             for (const Token *tok = nameTokInst->next->next; calledInDefine ? sameline(tok, nameTokInst) : (tok != nullptr); tok = tok->next) {
-                if (tok->op == '(')
+                if (tok->op == '(') {
                     ++par;
+                }
                 else if (tok->op == ')') {
                     if (par == 0U) {
                         parametertokens.push_back(tok);
                         break;
                     }
                     --par;
-                } else if (par == 0U && tok->op == ',' && (!variadic || parametertokens.size() < args.size()))
+                } else if (par == 0U && tok->op == ',' && (!variadic || parametertokens.size() < args.size())) {
                     parametertokens.push_back(tok);
+                }
             }
             return parametertokens;
         }
@@ -1872,8 +1884,9 @@ namespace simplecpp {
                             tokens.back()->macro = name();
                     }
 
-                    if (tok->op == '(')
+                    if (tok->op == '(') {
                         ++par;
+                    }
                     else if (tok->op == ')') {
                         --par;
                         if (par == 0U)
@@ -1946,8 +1959,9 @@ namespace simplecpp {
 
                 const MacroMap::const_iterator m = macros.find("__COUNTER__");
 
-                if (!counter || m == macros.end())
+                if (!counter || m == macros.end()) {
                     parametertokens2.swap(parametertokens1);
+                }
                 else {
                     const Macro &counterMacro = m->second;
                     unsigned int par = 0;
@@ -2136,8 +2150,9 @@ namespace simplecpp {
                 TokenList tokens(files);
                 tokens.push_back(new Token(*tok));
                 const Token * tok2 = nullptr;
-                if (tok->next->op == '(')
+                if (tok->next->op == '(') {
                     tok2 = appendTokens(tokens, loc, tok->next, macros, expandedmacros, parametertokens);
+                }
                 else if (expandArg(tokens, tok->next, loc, macros, expandedmacros, parametertokens)) {
                     tokens.front()->location = loc;
                     if (tokens.cfront()->next && tokens.cfront()->next->op == '(')
@@ -2313,12 +2328,15 @@ namespace simplecpp {
                 const bool varargs = variadic && !args.empty() && B->str() == args[args.size()-1U];
 
                 if (expandArg(tokensB, B, parametertokens)) {
-                    if (tokensB.empty())
+                    if (tokensB.empty()) {
                         strAB = A->str();
-                    else if (varargs && A->op == ',')
+                    }
+                    else if (varargs && A->op == ',') {
                         strAB = ",";
-                    else if (varargs && unexpectedA)
+                    }
+                    else if (varargs && unexpectedA) {
                         throw invalidHashHash::unexpectedToken(tok->location, name(), A);
+                    }
                     else {
                         strAB = A->str() + tokensB.cfront()->str();
                         tokensB.deleteToken(tokensB.front());
@@ -2337,8 +2355,9 @@ namespace simplecpp {
                         throw invalidHashHash::universalCharacterUB(tok->location, name(), A, strAB);
                 }
 
-                if (varargs && tokensB.empty() && tok->previous->str() == ",")
+                if (varargs && tokensB.empty() && tok->previous->str() == ",") {
                     output.deleteToken(A);
+                }
                 else if (strAB != "," && macros.find(strAB) == macros.end()) {
                     A->setstr(strAB);
                     for (Token *b = tokensB.front(); b; b = b->next)
@@ -2756,8 +2775,9 @@ long long simplecpp::characterLiteralToLL(const std::string& str)
         pos = 3;
     } else if (str.size() >= 2 && (str[0] == 'L' || str[0] == 'U') && str[1] == '\'') {
         pos = 2;
-    } else
+    } else {
         throw std::runtime_error("expected a character literal");
+    }
 
     unsigned long long multivalue = 0;
 
@@ -3592,8 +3612,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 }
 
                 bool conditionIsTrue;
-                if (ifstates.top() == AlwaysFalse || (ifstates.top() == ElseIsTrue && rawtok->str() != ELIF))
+                if (ifstates.top() == AlwaysFalse || (ifstates.top() == ElseIsTrue && rawtok->str() != ELIF)) {
                     conditionIsTrue = false;
+                }
                 else if (rawtok->str() == IFDEF) {
                     conditionIsTrue = (macros.find(rawtok->next->str()) != macros.end() || (hasInclude && rawtok->next->str() == HAS_INCLUDE));
                     maybeUsedMacros[rawtok->next->str()].push_back(rawtok->next->location);

@@ -80,6 +80,9 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-shorten-64-to-32)
     add_compile_options(-Wno-shadow-field-in-constructor)
 
+    # TODO: enable?
+    add_compile_options_safe(-Wexperimental-lifetime-safety-suggestions)
+
     # we are not interested in these
     set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS "-Wno-multichar -Wno-four-char-constants")
 
