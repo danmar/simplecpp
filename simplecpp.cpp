@@ -2957,6 +2957,7 @@ static void simplifyComments(simplecpp::TokenList &expr)
 /**
  * @throws std::runtime_error thrown on invalid literals, missing sizeof arguments or invalid expressions,
  * missing __has_include() arguments or expressions, undefined function-like macros, invalid number literals
+ * @throws std::overflow_error thrown on overflow or division by zero
  */
 static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui, const std::map<std::string, std::size_t> &sizeOfType)
 {
