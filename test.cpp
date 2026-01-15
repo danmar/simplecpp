@@ -37,6 +37,32 @@ static int numberOfFailedAssertions = 0;
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 #define ASSERT_THROW_EQUALS(stmt, e, expected) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e& ex) { assertEquals((expected), (ex.what()), __LINE__); } } while (false)
 
+#ifndef __has_cpp_attribute
+#define __has_cpp_attribute(x) 0
+#endif
+
+#if __has_cpp_attribute (noreturn) \
+    || (defined(__GNUC__) && (__GNUC__ >= 5)) \
+    || defined(__clang__) \
+    || defined(__CPPCHECK__)
+#  define NORETURN [[noreturn]]
+#elif defined(__GNUC__)
+#  define NORETURN __attribute__((noreturn))
+#else
+#  define NORETURN
+#endif
+
+NORETURN static void unreachable()
+{
+#if defined(__GNUC__)
+    __builtin_unreachable();
+#elif defined(_MSC_VER)
+    __assume(false);
+#else
+#  error "no unreachable implementation"
+#endif
+}
+
 static std::string pprint(const std::string &in)
 {
     std::string ret;
@@ -55,6 +81,8 @@ static const char* inputString(Input input) {
     case Input::CharBuffer:
         return "CharBuffer";
     }
+
+    unreachable();
 }
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
@@ -106,6 +134,8 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
     case Input::CharBuffer:
         return {{code, size}, filenames, filename, outputList};
     }
+
+    unreachable();
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
