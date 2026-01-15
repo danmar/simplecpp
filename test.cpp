@@ -1607,7 +1607,7 @@ static void has_include_1()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.includePaths.emplace_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
@@ -1628,7 +1628,7 @@ static void has_include_2()
                         "#endif";
     simplecpp::DUI dui;
     dui.removeComments = true; // TODO: remove this
-    dui.includePaths.push_back(testSourceDir);
+    dui.includePaths.emplace_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
@@ -1657,7 +1657,7 @@ static void has_include_3()
     ASSERT_EQUALS("\n\n\n\nB", preprocess(code, dui));
 
     // Unless -I is set (preferably, we should differentiate -I and -isystem...)
-    dui.includePaths.push_back(testSourceDir + "/testsuite");
+    dui.includePaths.emplace_back(testSourceDir + "/testsuite");
     dui.std = "";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
     dui.std = "c++14";
@@ -1678,7 +1678,7 @@ static void has_include_4()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir); // we default to latest standard internally
+    dui.includePaths.emplace_back(testSourceDir); // we default to latest standard internally
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
@@ -1699,7 +1699,7 @@ static void has_include_5()
                         "#endif";
     simplecpp::DUI dui;
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
-    dui.includePaths.push_back(testSourceDir);
+    dui.includePaths.emplace_back(testSourceDir);
     dui.std = "c++14";
     ASSERT_EQUALS("", preprocess(code, dui));
     dui.std = "c++17";
@@ -1718,7 +1718,7 @@ static void has_include_6()
                         "  #endif\n"
                         "#endif";
     simplecpp::DUI dui;
-    dui.includePaths.push_back(testSourceDir);
+    dui.includePaths.emplace_back(testSourceDir);
     ASSERT_EQUALS("\n\nA", preprocess(code, dui)); // we default to latest standard internally
     dui.std = "c++99";
     ASSERT_EQUALS("", preprocess(code, dui));
