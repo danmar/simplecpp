@@ -36,3 +36,16 @@ testrunner
 
 # python
 __pycache__/
+
+# Visual Studio (CI build)
+/Debug
+/simplecpp.dir
+/simplecpp_obj.dir
+/testrunner.dir
+/x64
+/*.vcxproj
+/*.vcxproj.filters
+/cmake_install.cmake
+/CMakeCache.txt
+/CTestTestfile.cmake
+/simplecpp.sln

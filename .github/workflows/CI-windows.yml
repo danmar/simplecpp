@@ -64,6 +64,25 @@ jobs:
           set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
           python -m pytest integration_test.py -vv || exit /b !errorlevel!
 
+      - name: Build (AddressSanitizer)
+        run: |
+          msbuild -m simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 /t:Clean;Rebuild || exit /b !errorlevel!
+        env:
+          _CL_: /fsanitize=address /fsanitize-address-use-after-return /Zi
+
+      - name: Test (AddressSanitizer)
+        run: |
+          .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
+
+      - name: Selfcheck (AddressSanitizer)
+        run: |
+          .\${{ matrix.config }}\simplecpp.exe simplecpp.cpp -e || exit /b !errorlevel!
+
+      - name: integration test (AddressSanitizer)
+        run: |
+          set SIMPLECPP_EXE_PATH=.\${{ matrix.config }}\simplecpp.exe
+          python -m pytest integration_test.py -vv || exit /b !errorlevel!
+
       - name: Run CMake (c++17)
         run: |
           cmake -S . -B build.cxx17 -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=17 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
