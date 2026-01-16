@@ -3366,7 +3366,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     macros.insert(std::make_pair("__FILE__", Macro("__FILE__", "__FILE__", dummy)));
     macros.insert(std::make_pair("__LINE__", Macro("__LINE__", "__LINE__", dummy)));
     macros.insert(std::make_pair("__COUNTER__", Macro("__COUNTER__", "__COUNTER__", dummy)));
-    struct tm ltime{};
+    struct tm ltime {};
     getLocaltime(ltime);
     macros.insert(std::make_pair("__DATE__", Macro("__DATE__", getDateDefine(&ltime), dummy)));
     macros.insert(std::make_pair("__TIME__", Macro("__TIME__", getTimeDefine(&ltime), dummy)));
