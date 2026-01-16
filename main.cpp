@@ -3,6 +3,7 @@
  * Copyright (C) 2016-2023 simplecpp team
  */
 
+#define SIMPLECPP_TOKENLIST_ALLOW_PTR 0
 #include "simplecpp.h"
 
 #include <cstdlib>
