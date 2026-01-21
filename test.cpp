@@ -6,6 +6,7 @@
 #include "simplecpp.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -24,10 +25,43 @@
 #define STRINGIZE(x) STRINGIZE_(x)
 
 static const std::string testSourceDir = SIMPLECPP_TEST_SOURCE_DIR;
+
+enum class Input : std::uint8_t {
+    Stringstream,
+    CharBuffer
+};
+
+static Input USE_INPUT = Input::Stringstream;
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
 #define ASSERT_THROW_EQUALS(stmt, e, expected) do { try { stmt; assertThrowFailed(__LINE__); } catch (const e& ex) { assertEquals((expected), (ex.what()), __LINE__); } } while (false)
+
+#ifndef __has_cpp_attribute
+#define __has_cpp_attribute(x) 0
+#endif
+
+#if __has_cpp_attribute (noreturn) \
+    || (defined(__GNUC__) && (__GNUC__ >= 5)) \
+    || defined(__clang__) \
+    || defined(__CPPCHECK__)
+#  define NORETURN [[noreturn]]
+#elif defined(__GNUC__)
+#  define NORETURN __attribute__((noreturn))
+#else
+#  define NORETURN
+#endif
+
+NORETURN static void unreachable()
+{
+#if defined(__GNUC__)
+    __builtin_unreachable();
+#elif defined(_MSC_VER)
+    __assume(false);
+#else
+#  error "no unreachable implementation"
+#endif
+}
 
 static std::string pprint(const std::string &in)
 {
@@ -40,11 +74,22 @@ static std::string pprint(const std::string &in)
     return ret;
 }
 
+static const char* inputString(Input input) {
+    switch (input) {
+    case Input::Stringstream:
+        return "Stringstream";
+    case Input::CharBuffer:
+        return "CharBuffer";
+    }
+
+    unreachable();
+}
+
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
     if (expected != actual) {
         numberOfFailedAssertions++;
-        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "------ assertion failed (" << inputString(USE_INPUT) << ")---------" << std::endl;
         std::cerr << "line test.cpp:" << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
@@ -81,8 +126,16 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
-    return {istr,filenames,filename,outputList};
+    switch (USE_INPUT) {
+    case Input::Stringstream: {
+        std::istringstream istr(std::string(code, size));
+        return {istr,filenames,filename,outputList};
+    }
+    case Input::CharBuffer:
+        return {{code, size}, filenames, filename, outputList};
+    }
+
+    unreachable();
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
@@ -3523,8 +3576,10 @@ static void leak()
     }
 }
 
-int main(int argc, char **argv)
+static void runTests(int argc, char **argv, Input input)
 {
+    USE_INPUT = input;
+
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);
@@ -3791,6 +3846,11 @@ int main(int argc, char **argv)
     TEST_CASE(fuzz_crash);
 
     TEST_CASE(leak);
+}
 
+int main(int argc, char **argv)
+{
+    runTests(argc, argv, Input::Stringstream);
+    runTests(argc, argv, Input::CharBuffer);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
