@@ -3477,13 +3477,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     continue;
                 try {
                     const Macro &macro = Macro(rawtok->previous, files);
-                    if (dui.undefined.find(macro.name()) == dui.undefined.end()) {
-                        const MacroMap::iterator it = macros.find(macro.name());
-                        if (it == macros.end())
-                            macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
-                        else
-                            it->second = macro;
-                    }
+                    const MacroMap::iterator it = macros.find(macro.name());
+                    if (it == macros.end())
+                        macros.insert(std::pair<TokenString, Macro>(macro.name(), macro));
+                    else
+                        it->second = macro;
                 } catch (const std::runtime_error &) {
                     if (outputList) {
                         simplecpp::Output err{
