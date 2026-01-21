@@ -160,13 +160,14 @@ jobs:
         rm -f 1.5.1.tar.gz
         
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3" simplecpp
+        # TODO: we could also use -O3 but that causes a performance regression with GCC
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto" LDOPTS="-flto" simplecpp
         VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind.log || (cat callgrind.log && false)
         cat callgrind.log
         
         # PGO - start
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3 -fprofile-generate" LDOPTS="-fprofile-generate" simplecpp
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto -fprofile-generate" LDOPTS="-flto -fprofile-generate" simplecpp
         SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >/dev/null
         
         if compgen -G "default_*.profraw" > /dev/null; then
@@ -174,7 +175,7 @@ jobs:
         fi
         
         make clean
-        make -j$(nproc) CXXOPTS="-O2 -g3 -fprofile-use" LDOPTS="-fprofile-use" simplecpp
+        make -j$(nproc) CXXOPTS="-O2 -g3 -flto -fprofile-use" LDOPTS="-flto -fprofile-use" simplecpp
         VALGRIND_TOOL=callgrind SIMPLECPP_PATH=simplecpp-1.5.1 ./selfcheck.sh >callgrind_pgo.log || (cat callgrind_pgo.log && false)
         cat callgrind_pgo.log
         # PGO - end
