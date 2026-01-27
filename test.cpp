@@ -433,6 +433,7 @@ static void combineOperators_floatliteral()
     ASSERT_EQUALS("1p + 3", preprocess("1p+3"));
     ASSERT_EQUALS("1.0_a . b", preprocess("1.0_a.b"));
     ASSERT_EQUALS("1_a . b", preprocess("1_a.b"));
+    ASSERT_EQUALS("bool x = d != 0. and b ;", preprocess("bool x = d != 0. and b;"));
 }
 
 static void combineOperators_increment()
