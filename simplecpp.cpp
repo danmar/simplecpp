@@ -658,8 +658,6 @@ static const std::string COMMENT_END("*/");
 
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
 {
-    std::stack<simplecpp::Location> loc;
-
     unsigned int multiline = 0U;
 
     const Token *oldLastToken = nullptr;
@@ -705,26 +703,15 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!llTok->next)
                     continue;
                 if (llNextToken->next) {
-                    // #file "file.c"
-                    if (llNextToken->str() == "file" &&
-                        llNextToken->next->str()[0] == '\"')
-                    {
-                        const Token *strtok = cback();
-                        while (strtok->comment)
-                            strtok = strtok->previous;
-                        loc.push(location);
-                        location.fileIndex = fileIndex(strtok->str().substr(1U, strtok->str().size() - 2U));
-                        location.line = 1U;
-                    }
                     // TODO: add support for "# 3"
                     // #3 "file.c"
                     // #line 3 "file.c"
-                    else if ((llNextToken->number &&
-                              llNextToken->next->str()[0] == '\"') ||
-                             (llNextToken->str() == "line" &&
-                              llNextToken->next->number &&
-                              llNextToken->next->next &&
-                              llNextToken->next->next->str()[0] == '\"'))
+                    if ((llNextToken->number &&
+                         llNextToken->next->str()[0] == '\"') ||
+                        (llNextToken->str() == "line" &&
+                         llNextToken->next->number &&
+                         llNextToken->next->next &&
+                         llNextToken->next->next->str()[0] == '\"'))
                     {
                         const Token *strtok = cback();
                         while (strtok->comment)
@@ -744,12 +731,6 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                             numtok = numtok->previous;
                         lineDirective(location.fileIndex, std::atol(numtok->str().c_str()), location);
                     }
-                }
-                // #endfile
-                else if (llNextToken->str() == "endfile" && !loc.empty())
-                {
-                    location = loc.top();
-                    loc.pop();
                 }
             }
 
