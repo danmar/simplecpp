@@ -33,19 +33,19 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 21
-          sudo apt-get install clang-tidy-21
+          sudo ./llvm.sh 22
+          sudo apt-get install clang-tidy-22
 
       - name: Verify clang-tidy configuration
         run: |
-          clang-tidy-21 --verify-config
+          clang-tidy-22 --verify-config
 
       - name: Prepare CMake
         run: |
           cmake -S . -B cmake.output -Werror=dev --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         env:
-          CXX: clang-21
+          CXX: clang-22
 
       - name: Clang-Tidy
         run: |
-          run-clang-tidy-21 -q -j $(nproc) -p=cmake.output
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output
