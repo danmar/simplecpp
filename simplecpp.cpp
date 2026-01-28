@@ -57,6 +57,12 @@
 #  include <sys/stat.h>
 #endif
 
+#ifdef __GNUC__
+#  define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#  define unlikely(x) (x)
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -250,12 +256,12 @@ public:
     virtual bool good() = 0;
 
     unsigned char readChar() {
-        auto ch = static_cast<unsigned char>(get());
+        auto ch = static_cast<unsigned char>(get()); // TODO: check EOF?
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
-            const auto ch2 = static_cast<unsigned char>(get());
+            const auto ch2 = static_cast<unsigned char>(get()); // TODO: check EOF?
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
@@ -278,13 +284,13 @@ public:
     }
 
     unsigned char peekChar() {
-        auto ch = static_cast<unsigned char>(peek());
+        auto ch = static_cast<unsigned char>(peek()); // TODO: check EOF?
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             (void)get();
-            const auto ch2 = static_cast<unsigned char>(peek());
+            const auto ch2 = static_cast<unsigned char>(peek()); // TODO: check EOF?
             unget();
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
@@ -470,6 +476,74 @@ namespace {
     };
 }
 
+class FileStreamBuffered : public simplecpp::TokenList::Stream {
+public:
+    FileStreamBuffered(const std::string &filename, std::vector<std::string> &files)
+        : file(fopen(filename.c_str(), "rb"))
+    {
+        if (!file) {
+            files.push_back(filename);
+            throw simplecpp::Output(simplecpp::Output::FILE_NOT_FOUND, simplecpp::Location(files), "File is missing: " + filename);
+        }
+        init();
+    }
+
+    ~FileStreamBuffered() override {
+        fclose(file);
+        file = nullptr;
+    }
+
+    FileStreamBuffered(const FileStreamBuffered&) = delete;
+    FileStreamBuffered &operator=(const FileStreamBuffered&) = delete;
+
+    int get() override {
+        read_internal();
+        return buf[buf_idx++];
+    }
+    int peek() override {
+        read_internal();
+        return buf[buf_idx];
+    }
+    void unget() override {
+        --buf_idx;
+    }
+    bool good() override {
+        return lastStatus != EOF;
+    }
+
+private:
+    void read_internal() {
+        // check if we are in the last chunk
+        if (unlikely(buf_idx >= buf_len)) {
+            if (buf_len != sizeof(buf)) {
+                lastStatus = EOF;
+                return;
+            }
+        }
+
+        if (unlikely(buf_idx == -1 || buf_idx == buf_len))
+        {
+            buf_idx = 0;
+            buf_len = fread(buf, 1, sizeof(buf), file);
+            if (buf_len == 0) {
+                lastStatus = EOF;
+            }
+            else if (buf_len != sizeof(buf)) {
+                if (ferror(file)) {
+                    // TODO: is this correct?
+                    lastStatus = EOF;
+                }
+            }
+        }
+    }
+
+    FILE *file;
+    int lastStatus{};
+    unsigned char buf[8192];
+    int buf_len{};
+    int buf_idx{-1};
+};
+
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
 simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
@@ -490,7 +564,7 @@ simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::st
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     try {
-        FileStream stream(filename, filenames);
+        FileStreamBuffered stream(filename, filenames);
         readfile(stream,filename,outputList);
     } catch (const simplecpp::Output & e) {
         outputList->emplace_back(e);
