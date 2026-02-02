@@ -67,14 +67,12 @@ static bool isOct(const std::string &s)
     return s.size()>1 && (s[0]=='0') && (s[1] >= '0') && (s[1] < '8');
 }
 
-// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
-static bool isStringLiteral_(const std::string &s)
+static bool isStringLiteral(const std::string &s)
 {
     return s.size() > 1 && (s[0]=='\"') && (*s.rbegin()=='\"');
 }
 
-// TODO: added an undercore since this conflicts with a function of the same name in utils.h from Cppcheck source when building Cppcheck with MSBuild
-static bool isCharLiteral_(const std::string &s)
+static bool isCharLiteral(const std::string &s)
 {
     // char literal patterns can include 'a', '\t', '\000', '\xff', 'abcd', and maybe ''
     // This only checks for the surrounding '' but doesn't parse the content.
@@ -2295,7 +2293,7 @@ namespace simplecpp {
                 throw invalidHashHash::unexpectedNewline(tok->location, name());
 
             const bool canBeConcatenatedWithEqual = A->isOneOf("+-*/%&|^") || A->str() == "<<" || A->str() == ">>";
-            const bool canBeConcatenatedStringOrChar = isStringLiteral_(A->str()) || isCharLiteral_(A->str());
+            const bool canBeConcatenatedStringOrChar = isStringLiteral(A->str()) || isCharLiteral(A->str());
             const bool unexpectedA = (!A->name && !A->number && !A->str().empty() && !canBeConcatenatedWithEqual && !canBeConcatenatedStringOrChar);
 
             const Token * const B = tok->next->next;
