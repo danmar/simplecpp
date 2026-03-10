@@ -10,6 +10,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <stdexcept>
 #include <string>
