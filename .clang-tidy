@@ -42,6 +42,7 @@ Checks: >
         -readability-isolate-declaration,
         -readability-magic-numbers,
         -readability-redundant-inline-specifier,
+        -readability-trailing-comma,
         -readability-use-concise-preprocessor-directives,
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
