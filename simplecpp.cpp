@@ -150,12 +150,12 @@ static bool endsWith(const std::string &s, const std::string &e)
     return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
 }
 
-static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
+static bool sameline(const simplecpp::Token * const tok1, const simplecpp::Token * const tok2)
 {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
 
-static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeBinaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return (tok->name &&
             tok->str() == alt &&
@@ -165,7 +165,7 @@ static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string
             (tok->next->number || tok->next->name || tok->next->op == '('));
 }
 
-static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeUnaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return ((tok->name && tok->str() == alt) &&
             (!tok->previous || tok->previous->op == '(') &&
@@ -998,7 +998,7 @@ void simplecpp::TokenList::constFold()
     }
 }
 
-static bool isFloatSuffix(const simplecpp::Token *tok)
+static bool isFloatSuffix(const simplecpp::Token * const tok)
 {
     if (!tok || tok->str().size() != 1U)
         return false;
@@ -1009,7 +1009,7 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
 static const std::string AND("and");
 static const std::string BITAND("bitand");
 static const std::string BITOR("bitor");
-static bool isAlternativeAndBitandBitor(const simplecpp::Token* tok)
+static bool isAlternativeAndBitandBitor(const simplecpp::Token * const tok)
 {
     return isAlternativeBinaryOp(tok, AND) || isAlternativeBinaryOp(tok, BITAND) || isAlternativeBinaryOp(tok, BITOR);
 }
@@ -3310,14 +3310,14 @@ static void getLocaltime(struct tm &ltime)
 #endif
 }
 
-static std::string getDateDefine(const struct tm *timep)
+static std::string getDateDefine(const struct tm * const timep)
 {
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(const struct tm *timep)
+static std::string getTimeDefine(const struct tm * const timep)
 {
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%H:%M:%S", timep);
