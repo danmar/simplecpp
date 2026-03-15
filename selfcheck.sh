@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 if [ -z "$SIMPLECPP_PATH" ]; then
   SIMPLECPP_PATH=.
 fi
@@ -27,6 +29,24 @@ errors=$(echo "$output" | grep -v 'Header not found: <')
 if [ $ec -ne 0 ]; then
   # only fail if we got errors which do not refer to missing system includes
   if [ ! -z "$errors" ]; then
+    exit $ec
+  fi
+fi
+
+# TODO: handle valgrind
+if [ -n "${STRICT}" ] && [ "${STRICT}" -eq 1 ]; then
+  # macos-13 does not support --tmpdir
+  # macos-* does not support --suffix
+  tmpfile=$(mktemp -u /tmp/selfcheck.XXXXXXXXXX.exp)
+  ec=$?
+  if [ $ec -ne 0 ]; then
+    exit $ec
+  fi
+  ./simplecpp "$SIMPLECPP_PATH/simplecpp.cpp" > "$tmpfile" 2> /dev/null
+  diff -u selfcheck.exp "$tmpfile"
+  ec=$?
+  rm -f "$tmpfile"
+  if [ $ec -ne 0 ]; then
     exit $ec
   fi
 fi
