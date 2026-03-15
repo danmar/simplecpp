@@ -10,6 +10,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -103,7 +104,7 @@ static std::string readfile(const char code[], std::size_t size, simplecpp::Outp
     return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, const std::string &file = std::string())
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage = nullptr, std::list<simplecpp::IfCond> *ifCond = nullptr, const std::string &file = std::string())
 {
     std::vector<std::string> files;
     simplecpp::FileDataCache cache;
@@ -111,7 +112,7 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui, simp
     if (dui.removeComments)
         tokens.removeComments();
     simplecpp::TokenList tokens2(files);
-    simplecpp::preprocess(tokens2, tokens, files, cache, dui, outputList);
+    simplecpp::preprocess(tokens2, tokens, files, cache, dui, outputList, macroUsage, ifCond);
     simplecpp::cleanup(cache);
     return tokens2.stringify();
 }
@@ -123,7 +124,7 @@ static std::string preprocess(const char code[])
 
 static std::string preprocess(const char code[], const std::string &file)
 {
-    return preprocess(code, simplecpp::DUI(), nullptr, file);
+    return preprocess(code, simplecpp::DUI(), nullptr, nullptr, nullptr, file);
 }
 
 static std::string preprocess(const char code[], const simplecpp::DUI &dui)
@@ -134,6 +135,16 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui)
 static std::string preprocess(const char code[], simplecpp::OutputList *outputList)
 {
     return preprocess(code, simplecpp::DUI(), outputList);
+}
+
+static std::string preprocess(const char code[], std::list<simplecpp::IfCond> *ifCond)
+{
+    return preprocess(code, simplecpp::DUI(), nullptr, nullptr, ifCond);
+}
+
+static std::string preprocess(const char code[], std::list<simplecpp::MacroUsage> *macroUsage)
+{
+    return preprocess(code, simplecpp::DUI(), nullptr, macroUsage);
 }
 
 static std::string toString(const simplecpp::OutputList &outputList)
@@ -3461,6 +3472,70 @@ static void bad_macro_syntax() // #616
     ASSERT_EQUALS("bad macro syntax. macroname=\" value=1", outputList.cbegin()->msg);
 }
 
+static void ifCond()
+{
+    {
+        const char code[] = "int i;";
+        std::list<simplecpp::IfCond> ifCond;
+        ASSERT_EQUALS("int i ;", preprocess(code, &ifCond));
+        ASSERT_EQUALS(0, ifCond.size());
+    }
+    {
+        const char code[] = "#if 0\n"
+                            "# elif __GNUC__ == 1\n"
+                            "#  elif defined(__APPLE__)\n"
+                            "#endif\n";
+        std::list<simplecpp::IfCond> ifCond;
+        ASSERT_EQUALS("", preprocess(code, &ifCond));
+        ASSERT_EQUALS(3, ifCond.size());
+        auto it = ifCond.cbegin();
+        ASSERT_EQUALS(0, it->location.fileIndex);
+        ASSERT_EQUALS(1, it->location.line);
+        ASSERT_EQUALS(2, it->location.col);
+        ASSERT_EQUALS("0", it->E);
+        ASSERT_EQUALS(0, it->result);
+        ++it;
+        ASSERT_EQUALS(0, it->location.fileIndex);
+        ASSERT_EQUALS(2, it->location.line);
+        ASSERT_EQUALS(3, it->location.col);
+        ASSERT_EQUALS("__GNUC__ == 1", it->E);
+        ASSERT_EQUALS(0, it->result);
+        ++it;
+        ASSERT_EQUALS(0, it->location.fileIndex);
+        ASSERT_EQUALS(3, it->location.line);
+        ASSERT_EQUALS(4, it->location.col);
+        ASSERT_EQUALS("0", it->E);
+        ASSERT_EQUALS(0, it->result);
+    }
+}
+
+static void macroUsage()
+{
+    {
+        const char code[] = "int i;";
+        std::list<simplecpp::MacroUsage> macroUsage;
+        ASSERT_EQUALS("int i ;", preprocess(code, &macroUsage));
+        ASSERT_EQUALS(0, macroUsage.size());
+    }
+    {
+        const char code[] = "#define DEF_1\n"
+                            "#ifdef DEF_1\n"
+                            "#endif\n";
+        std::list<simplecpp::MacroUsage> macroUsage;
+        ASSERT_EQUALS("", preprocess(code, &macroUsage));
+        ASSERT_EQUALS(1, macroUsage.size());
+        auto it = macroUsage.cbegin();
+        ASSERT_EQUALS("DEF_1", it->macroName);
+        ASSERT_EQUALS(0, it->macroLocation.fileIndex);
+        ASSERT_EQUALS(1, it->macroLocation.line);
+        ASSERT_EQUALS(9, it->macroLocation.col);
+        ASSERT_EQUALS(true, it->macroValueKnown);
+        ASSERT_EQUALS(0, it->useLocation.fileIndex);
+        ASSERT_EQUALS(2, it->useLocation.line);
+        ASSERT_EQUALS(8, it->useLocation.col);
+    }
+}
+
 static void isAbsolutePath() {
 #ifdef _WIN32
     ASSERT_EQUALS(true, simplecpp::isAbsolutePath("C:\\foo\\bar"));
@@ -3789,6 +3864,9 @@ int main(int argc, char **argv)
     TEST_CASE(isAbsolutePath);
 
     TEST_CASE(bad_macro_syntax);
+
+    TEST_CASE(ifCond);
+    TEST_CASE(macroUsage);
 
     TEST_CASE(fuzz_crash);
 
