@@ -1692,10 +1692,9 @@ namespace simplecpp {
         }
 
         /** base class for errors */
-        struct Error {
-            Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
+        struct Error : public std::runtime_error {
+            Error(const Location &loc, const std::string &s) : std::runtime_error(s), location(loc) {}
             const Location location;
-            const std::string what;
         };
 
         /** Struct that is thrown when macro is expanded with wrong number of parameters */
@@ -1739,6 +1738,9 @@ namespace simplecpp {
             return tok;
         }
 
+        /**
+         * @throws Error thrown in case of __VA_OPT__ issues
+         */
         bool parseDefine(const Token *nametoken) {
             nameTokDef = nametoken;
             variadic = false;
@@ -3278,7 +3280,7 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
                 simplecpp::Output out{
                     simplecpp::Output::SYNTAX_ERROR,
                     err.location,
-                    "failed to expand \'" + tok->str() + "\', " + err.what
+                    "failed to expand \'" + tok->str() + "\', " + err.what()
                 };
                 outputList->emplace_back(std::move(out));
             }
@@ -3507,23 +3509,12 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         else
                             it->second = macro;
                     }
-                } catch (const std::runtime_error &) {
-                    if (outputList) {
-                        simplecpp::Output err{
-                            Output::SYNTAX_ERROR,
-                            rawtok->location,
-                            "Failed to parse #define"
-                        };
-                        outputList->emplace_back(std::move(err));
-                    }
-                    output.clear();
-                    return;
-                } catch (const simplecpp::Macro::Error &err) {
+                } catch (const std::runtime_error &err) {
                     if (outputList) {
                         simplecpp::Output out{
-                            simplecpp::Output::SYNTAX_ERROR,
-                            err.location,
-                            "Failed to parse #define, " + err.what
+                            Output::SYNTAX_ERROR,
+                            rawtok->location,
+                            std::string("Failed to parse #define, ") + err.what()
                         };
                         outputList->emplace_back(std::move(out));
                     }

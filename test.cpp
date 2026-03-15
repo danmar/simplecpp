@@ -687,7 +687,7 @@ static void define_invalid_1()
     const char code[] = "#define  A(\nB\n";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, bad macro syntax\n", toString(outputList));
 }
 
 static void define_invalid_2()
@@ -695,7 +695,7 @@ static void define_invalid_2()
     const char code[] = "#define\nhas#";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, bad macro syntax\n", toString(outputList));
 }
 
 static void define_define_1()
@@ -1092,6 +1092,15 @@ static void define_va_opt_8()
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("\nconst char * v1 = \"\" ;", preprocess(code, &outputList));
     ASSERT_EQUALS("", toString(outputList));
+}
+
+static void define_va_opt_9()
+{
+    simplecpp::DUI dui;
+    dui.defines.emplace_back("f(...)=__VA_OPT__");
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess("", dui, &outputList));
+    ASSERT_EQUALS("file0,0,dui_error,In definition of 'f': Missing opening parenthesis for __VA_OPT__\n", toString(outputList));
 }
 
 static void define_ifdef()
@@ -3599,6 +3608,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_6);
     TEST_CASE(define_va_opt_7);
     TEST_CASE(define_va_opt_8);
+    TEST_CASE(define_va_opt_9); // #632
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
 
