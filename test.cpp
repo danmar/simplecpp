@@ -2621,7 +2621,7 @@ static void readfile_nullbyte()
     const char code[] = "ab\0cd";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("ab cd", readfile(code,sizeof(code), &outputList));
-    ASSERT_EQUALS(true, outputList.empty()); // should warning be written?
+    ASSERT_EQUALS(true, outputList.empty()); // TODO: should warning be written?
 }
 
 static void readfile_char()
@@ -2770,6 +2770,41 @@ static void readfile_file_not_found()
     (void)simplecpp::TokenList("NotAFile", files, &outputList);
     ASSERT_EQUALS("file0,0,file_not_found,File is missing: NotAFile\n", toString(outputList));
 }
+
+static void readfile_empty()
+{
+    const char code[] = "";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty());
+}
+
+// the BOM/UTF-16 detection reads two bytes
+static void readfile_onebyte()
+{
+    const char code[] = ".";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS(".", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty());
+}
+
+static void readfile_utf16_unsupported()
+{
+    const char code[] = "\xfe\xff\xd8\x3d\xde\x42"; // smiley emoji
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=255). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
+static void readfile_utf16_incomplete()
+{
+    const char code[] = "\xfe\xff\x00\x31\x00\x32\x00"; // the last UTF16 char is incomplete
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("12", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty());
+}
+
+// TODO: test with incomplete BOMs
 
 static void stringify1()
 {
@@ -3743,6 +3778,10 @@ int main(int argc, char **argv)
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);
     TEST_CASE(readfile_file_not_found);
+    TEST_CASE(readfile_empty);
+    TEST_CASE(readfile_onebyte);
+    TEST_CASE(readfile_utf16_unsupported);
+    TEST_CASE(readfile_utf16_incomplete);
 
     TEST_CASE(stringify1);
 
