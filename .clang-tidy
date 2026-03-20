@@ -56,3 +56,5 @@ CheckOptions:
     value:           '1'
   - key:             misc-const-correctness.TransformPointersAsValues
     value:           '1'
+  - key:             bugprone-exception-escape.TreatFunctionsWithoutSpecificationAsThrowing
+    value:           OnlyUndefined
