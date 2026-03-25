@@ -1124,6 +1124,17 @@ static void define_va_opt_8()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void define_va_opt_9()
+{
+    try {
+    simplecpp::DUI dui;
+    dui.defines.emplace_back("f(...)=__VA_OPT__");
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess("", dui, &outputList));
+    ASSERT_EQUALS("file0,0,dui_error,In definition of 'f': Missing opening parenthesis for __VA_OPT__\n", toString(outputList));
+    } catch(...) {}
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -3739,6 +3750,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_6);
     TEST_CASE(define_va_opt_7);
     TEST_CASE(define_va_opt_8);
+    TEST_CASE(define_va_opt_9); // #632
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
 
