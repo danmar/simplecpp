@@ -32,7 +32,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 21
+          sudo ./llvm.sh 22
 
       - name: Generate corpus
         run: |
@@ -54,7 +54,7 @@ jobs:
           # TODO: use -stdlib=libc++ -lc++
           make -j$(nproc) CXXOPTS="-O3 -flto -fno-omit-frame-pointer -g -gline-tables-only -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize=integer -fno-sanitize-recover=undefined" LDOPTS="-flto" LIB_FUZZING_ENGINE="-fsanitize=fuzzer" fuzz
         env:
-          CXX: clang++-21
+          CXX: clang++-22
 
       - name: Run fuzzer
         run: |
