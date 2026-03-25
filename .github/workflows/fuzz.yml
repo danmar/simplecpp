@@ -63,6 +63,9 @@ jobs:
           ./fuzz -only_ascii=1 -timeout=5 -fork=$(nproc) -use_value_profile=1 -reduce_inputs=0 -timeout_exitcode=0 -max_total_time=60 -artifact_prefix=./artifacts/ corpus
           # if a crash happens with a file from the corpus the fuzzer will not fail - so fail if any artifacts have been written
           test $(find ./artifacts -type f | wc -l) -eq 0
+        env:
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:report_error_type=1
 
       - name: Upload corpus
         if: success() || failure()
