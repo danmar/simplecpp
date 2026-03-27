@@ -276,16 +276,18 @@ public:
     }
 
     unsigned char peekChar() {
-        auto ch = static_cast<unsigned char>(peek());
+        const int pk = peek();
+        auto ch = static_cast<unsigned char>(pk);
+        if (pk == EOF)
+            return ch;
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             (void)get();
-            const int ch2 = peek();
-            if (ch2 != EOF)
-                unget();
-            const int ch16 = makeUtf16Char(ch, static_cast<unsigned char>(ch2));
+            const int ch2 = static_cast<unsigned char>(peek());
+            unget();
+            const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
         }
 
