@@ -45,6 +45,16 @@
 #  include <sys/types.h>
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 #if defined(_MSC_VER)
 #  pragma warning(push)
 // suppress warnings about "conversion from 'type1' to 'type2', possible loss of data"
@@ -163,7 +173,7 @@ namespace simplecpp {
 
         Token &operator=(const Token &tok) = delete;
 
-        const TokenString& str() const {
+        const TokenString& str() const SIMPLECPP_LIFETIMEBOUND {
             return string;
         }
         void setstr(const std::string &s) {
@@ -480,25 +490,25 @@ namespace simplecpp {
         using const_iterator = container_type::const_iterator;
         using size_type = container_type::size_type;
 
-        size_type size() const {
+        size_type size() const SIMPLECPP_LIFETIMEBOUND {
             return mData.size();
         }
-        iterator begin() {
+        iterator begin() SIMPLECPP_LIFETIMEBOUND {
             return mData.begin();
         }
-        iterator end() {
+        iterator end() SIMPLECPP_LIFETIMEBOUND {
             return mData.end();
         }
-        const_iterator begin() const {
+        const_iterator begin() const SIMPLECPP_LIFETIMEBOUND {
             return mData.begin();
         }
-        const_iterator end() const {
+        const_iterator end() const SIMPLECPP_LIFETIMEBOUND {
             return mData.end();
         }
-        const_iterator cbegin() const {
+        const_iterator cbegin() const SIMPLECPP_LIFETIMEBOUND {
             return mData.cbegin();
         }
-        const_iterator cend() const {
+        const_iterator cend() const SIMPLECPP_LIFETIMEBOUND {
             return mData.cend();
         }
 
