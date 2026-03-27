@@ -285,7 +285,7 @@ public:
         // character is non-ASCII character then replace it with 0xff
         if (isUtf16) {
             (void)get();
-            const int ch2 = static_cast<unsigned char>(peek());
+            const auto ch2 = static_cast<unsigned char>(peek());
             unget();
             const int ch16 = makeUtf16Char(ch, ch2);
             ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
