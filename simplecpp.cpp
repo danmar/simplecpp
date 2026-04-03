@@ -635,10 +635,10 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
-void simplecpp::TokenList::lineDirective(unsigned int fileIndex, unsigned int line, Location &location)
+void simplecpp::TokenList::lineDirective(unsigned int fileId, unsigned int line, Location &location)
 {
-    if (fileIndex != location.fileIndex || line >= location.line) {
-        location.fileIndex = fileIndex;
+    if (fileId != location.fileIndex || line >= location.line) {
+        location.fileIndex = fileId;
         location.line = line;
         return;
     }

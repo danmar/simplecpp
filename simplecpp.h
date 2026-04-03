@@ -174,9 +174,9 @@ namespace simplecpp {
         bool isOneOf(const char ops[]) const;
         bool startsWithOneOf(const char c[]) const;
         bool endsWithOneOf(const char c[]) const;
-        static bool isNumberLike(const std::string& str) {
-            return std::isdigit(static_cast<unsigned char>(str[0])) ||
-                   (str.size() > 1U && (str[0] == '-' || str[0] == '+') && std::isdigit(static_cast<unsigned char>(str[1])));
+        static bool isNumberLike(const std::string& s) {
+            return std::isdigit(static_cast<unsigned char>(s[0])) ||
+                   (s.size() > 1U && (s[0] == '-' || s[0] == '+') && std::isdigit(static_cast<unsigned char>(s[1])));
         }
 
         TokenString macro;
@@ -396,7 +396,7 @@ namespace simplecpp {
         void constFoldQuestionOp(Token *&tok1);
 
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
-        void lineDirective(unsigned int fileIndex, unsigned int line, Location &location);
+        void lineDirective(unsigned int fileId, unsigned int line, Location &location);
 
         const Token* lastLineTok(int maxsize=1000) const;
         const Token* isLastLinePreprocessor(int maxsize=1000) const;
