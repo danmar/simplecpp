@@ -12,14 +12,24 @@ permissions:
 defaults:
   run:
     shell: cmd
-    
+
 jobs:
 
   build:
     strategy:
       matrix:
-        os: [windows-2022, windows-2025, windows-11-arm]
+        os: [windows-2022, windows-2025, windows-2025-vs2026, windows-11-arm]
         config: [Release, Debug]
+        sln: [sln, slnx]
+        exclude:
+        - os: windows-2022
+          sln: slnx
+        - os: windows-2025
+          sln: slnx
+        - os: windows-2025-vs2026
+          sln: sln
+        - os: windows-11-arm
+          sln: slnx
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -45,12 +55,12 @@ jobs:
 
       - name: Run CMake
         run: |
-          cmake -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On . || exit /b !errorlevel!
+          cmake -A x64 -Werror=dev --warn-uninitialized -DCMAKE_COMPILE_WARNING_AS_ERROR=On . || exit /b !errorlevel!
 
       - name: Build
         run: |
-           msbuild -m simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
-           
+           msbuild -m simplecpp.${{ matrix.sln }} /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
+
       - name: Test
         run: |
           .\${{ matrix.config }}\testrunner.exe || exit /b !errorlevel!
@@ -66,17 +76,17 @@ jobs:
 
       - name: Run CMake (c++17)
         run: |
-          cmake -S . -B build.cxx17 -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=17 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
+          cmake -S . -B build.cxx17 -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=17 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
 
       - name: Build (c++17)
         run: |
-          msbuild -m build.cxx17\simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
+          msbuild -m build.cxx17\simplecpp.${{ matrix.sln }} /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
 
       - name: Run CMake (c++20)
         run: |
-          cmake -S . -B build.cxx20 -G "Visual Studio 17 2022" -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=20 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
+          cmake -S . -B build.cxx20 -A x64 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=20 -DCMAKE_COMPILE_WARNING_AS_ERROR=On || exit /b !errorlevel!
 
       - name: Build (c++20)
         run: |
-          msbuild -m build.cxx20\simplecpp.sln /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
+          msbuild -m build.cxx20\simplecpp.${{ matrix.sln }} /p:Configuration=${{ matrix.config }} /p:Platform=x64 || exit /b !errorlevel!
     
