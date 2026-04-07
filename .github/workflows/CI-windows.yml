@@ -32,10 +32,10 @@ jobs:
       - name: Setup msbuild.exe
         uses: microsoft/setup-msbuild@v2
 
-      - name: Set up Python 3.13
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           check-latest: true
 
       - name: Install missing Python packages
