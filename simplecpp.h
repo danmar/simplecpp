@@ -83,7 +83,7 @@ namespace simplecpp {
             , mSize(strlen(data))
         {}
 
-        // only provide when std::span is not available so using untyped initilization won't use View
+        // only provide when std::span is not available so using untyped initialization won't use View
 #if !defined(__cpp_lib_span)
         View(const char* data, std::size_t size)
             : mData(data)
@@ -376,7 +376,7 @@ namespace simplecpp {
         const std::string& file(const Location& loc) const;
 
     private:
-        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int unused);
+        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int /*unused*/);
 
         void combineOperators();
 
