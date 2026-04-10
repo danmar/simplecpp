@@ -213,6 +213,9 @@ namespace simplecpp {
         bool isExpandedFrom(const Macro* m) const {
             return mExpandedFrom.find(m) != mExpandedFrom.end();
         }
+        void markExpandedFrom(const Macro* m) {
+            mExpandedFrom.insert(m);
+        }
 
         void printAll() const;
         void printOut() const;
