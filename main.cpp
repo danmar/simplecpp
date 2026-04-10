@@ -86,7 +86,7 @@ int main(int argc, char **argv)
                         break;
                     }
                     dui.includes.emplace_back(std::move(value));
-                } else if (std::strncmp(arg, "-is",3)==0) {
+                } else if (std::strcmp(arg, "-is")==0) {
                     found = true;
                     use_istream = true;
                 }
@@ -104,20 +104,28 @@ int main(int argc, char **argv)
                 }
                 break;
             case 'q':
-                found = true;
-                quiet = true;
+                if (std::strcmp(arg, "-q")==0) {
+                    found = true;
+                    quiet = true;
+                }
                 break;
             case 'e':
-                found = true;
-                error_only = true;
+                if (std::strcmp(arg, "-e")==0) {
+                    found = true;
+                    error_only = true;
+                }
                 break;
             case 'f':
-                found = true;
-                fail_on_error = true;
+                if (std::strcmp(arg, "-f")==0) {
+                    found = true;
+                    fail_on_error = true;
+                }
                 break;
             case 'l':
-                linenrs = true;
-                found = true;
+                if (std::strcmp(arg, "-l")==0) {
+                    linenrs = true;
+                    found = true;
+                }
                 break;
             }
             if (!found) {
