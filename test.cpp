@@ -1210,6 +1210,15 @@ static void pragma_backslash()
     ASSERT_EQUALS("", preprocess(code, &outputList));
 }
 
+static void pragma_backslash_2() // #217
+{
+    const char code[] = "#pragma comment(linker, \"foo \\\n"
+                        "bar\")\n";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+}
+
 static void dollar()
 {
     ASSERT_EQUALS("$ab", readfile("$ab"));
@@ -3758,6 +3767,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define_va_opt_9); // #632
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
+    TEST_CASE(pragma_backslash_2); // #217
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
