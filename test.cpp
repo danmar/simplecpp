@@ -857,6 +857,44 @@ static void define21() // #66
                   "foo ( 1 , ( ( a ) ) + 1 ) ;", preprocess(code));
 }
 
+static void define22() // #40
+{
+    const char code[] = "#define COUNTER_NAME(NAME, ...) NAME##Count\n"
+                        "#define COMMA ,\n"
+                        "\n"
+                        "#define DECLARE_COUNTERS(LIST) unsigned long LIST(COUNTER_NAME, COMMA);\n"
+                        "\n"
+                        "#define ACTUAL_LIST(FUNCTION, SEPARATOR) \\\n"
+                        "FUNCTION(event1, int, foo) SEPARATOR \\\n"
+                        "FUNCTION(event2, char, bar)\n"
+                        "\n"
+                        "DECLARE_COUNTERS(ACTUAL_LIST)\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "unsigned long event1Count , event2Count ;", preprocess(code));
+}
+
+static void define23() // #40
+{
+    const char code[] = "#define COMMA ,\n"
+                        "#define MULTI(SEPARATOR) A SEPARATOR B\n"
+                        "\n"
+                        "#define VARS MULTI(COMMA)\n"
+                        "unsigned VARS;\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "unsigned A , B ;", preprocess(code));
+}
+
 
 static void define_invalid_1()
 {
@@ -3839,6 +3877,8 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define19); // #124
     TEST_CASE(define20); // #113
     TEST_CASE(define21); // #66
+    TEST_CASE(define22); // #40
+    TEST_CASE(define23); // #40
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
