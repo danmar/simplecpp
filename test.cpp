@@ -823,6 +823,18 @@ static void define18() // #130
                   "if ( pGlobalCtx && pGlobalCtx -> debug_level >= 2 ) printf ( \"FT-dbg: \" \"  %02x:%02x:%02x:%02x:%02x:%02x\\n\" , pCtx -> wlan_intf_addr [ i ] [ 0 ] , pCtx -> wlan_intf_addr [ i ] [ 1 ] , pCtx -> wlan_intf_addr [ i ] [ 2 ] , pCtx -> wlan_intf_addr [ i ] [ 3 ] , pCtx -> wlan_intf_addr [ i ] [ 4 ] , pCtx -> wlan_intf_addr [ i ] [ 5 ] ) ;", preprocess(code));
 }
 
+static void define19() // #124
+{
+    const char code[] = "#define CONCAT(tok) tok##suffix\n"
+                        "\n"
+                        "CONCAT(Test);\n"
+                        "CONCAT(const Test);\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "Testsuffix ;\n"
+                  "const Testsuffix ;", preprocess(code));
+}
+
 
 static void define_invalid_1()
 {
@@ -3802,6 +3814,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define16); // #201
     TEST_CASE(define17); // #185
     TEST_CASE(define18); // #130
+    TEST_CASE(define19); // #124
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
