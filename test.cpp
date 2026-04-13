@@ -731,6 +731,23 @@ static void define14() // #296
                   "printf ( \"bar(3)\" \"\\n\" ) ;", preprocess(code));
 }
 
+static void define15() // #231
+{
+    const char code[] = "#define CAT(a, b) CAT2(a, b)\n"
+                        "#define CAT2(a, b) a ## b\n"
+                        "#define FOO x\n"
+                        "#define BAR() CAT(F, OO)\n"
+                        "#define BAZ CAT(B, AR)()\n"
+                        "BAZ\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "x", preprocess(code));
+}
+
+
 
 
 static void define_invalid_1()
@@ -3698,6 +3715,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define12);
     TEST_CASE(define13);
     TEST_CASE(define14); // #296
+    TEST_CASE(define15); // #231
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
