@@ -835,6 +835,18 @@ static void define19() // #124
                   "const Testsuffix ;", preprocess(code));
 }
 
+static void define20() // #113
+{
+    const char code[] = "#define TARGS4 T1,T2,T3,T4\n"
+                        "#define FOOIMPL(T__CLASS, TARGS) void foo(const T__CLASS<TARGS>& x) { }\n"
+                        "#define FOOIMPL_4(T__CLASS)      FOOIMPL(T__CLASS, TARGS4)\n"
+                        "FOOIMPL_4(y)\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "void foo ( const y < T1 , T2 , T3 , T4 > & x ) { }", preprocess(code));
+}
+
 
 static void define_invalid_1()
 {
@@ -3815,6 +3827,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define17); // #185
     TEST_CASE(define18); // #130
     TEST_CASE(define19); // #124
+    TEST_CASE(define20); // #113
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
