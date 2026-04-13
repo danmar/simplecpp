@@ -811,6 +811,18 @@ static void define17() // #185
                   "static_assert ( true , \" \" ) ;", preprocess(code));
 }
 
+static void define18() // #130
+{
+    const char code[] = "#define MAC2STR(x) x[0],x[1],x[2],x[3],x[4],x[5]\n"
+                        "#define FT_DEBUG(fmt, args...) if(pGlobalCtx && pGlobalCtx->debug_level>=2) printf(\"FT-dbg: \"fmt, ##args)\n"
+                        "\n"
+                        "FT_DEBUG(\"  %02x:%02x:%02x:%02x:%02x:%02x\\n\", MAC2STR(pCtx->wlan_intf_addr[i]));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "if ( pGlobalCtx && pGlobalCtx -> debug_level >= 2 ) printf ( \"FT-dbg: \" \"  %02x:%02x:%02x:%02x:%02x:%02x\\n\" , pCtx -> wlan_intf_addr [ i ] [ 0 ] , pCtx -> wlan_intf_addr [ i ] [ 1 ] , pCtx -> wlan_intf_addr [ i ] [ 2 ] , pCtx -> wlan_intf_addr [ i ] [ 3 ] , pCtx -> wlan_intf_addr [ i ] [ 4 ] , pCtx -> wlan_intf_addr [ i ] [ 5 ] ) ;", preprocess(code));
+}
+
 
 static void define_invalid_1()
 {
@@ -3789,6 +3801,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define15); // #231
     TEST_CASE(define16); // #201
     TEST_CASE(define17); // #185
+    TEST_CASE(define18); // #130
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
