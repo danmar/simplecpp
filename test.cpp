@@ -847,6 +847,16 @@ static void define20() // #113
                   "void foo ( const y < T1 , T2 , T3 , T4 > & x ) { }", preprocess(code));
 }
 
+static void define21() // #66
+{
+    const char code[] = "#define GETMYID(a) ((a))+1\n"
+                        "#define FIGHT_FOO(c, ...) foo(c, ##__VA_ARGS__)\n"
+                        "FIGHT_FOO(1, GETMYID(a));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "foo ( 1 , ( ( a ) ) + 1 ) ;", preprocess(code));
+}
+
 
 static void define_invalid_1()
 {
@@ -3828,6 +3838,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define18); // #130
     TEST_CASE(define19); // #124
     TEST_CASE(define20); // #113
+    TEST_CASE(define21); // #66
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
