@@ -783,6 +783,33 @@ static void define16() // #201
                   "\"Blue\" , \"Green\" , \"Purple\" , \"Red\" , \"Yellow\" , \"Orange\" ,", preprocess(code));
 }
 
+static void define17() // #185
+{
+    const char code[] = "#define at(x, y) x##y\n"
+                        "#define b(...) \\\n"
+                        "aa(__VA_ARGS__, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , \\\n"
+                        ", , , , , , , , 2)\n"
+                        "#define aa(c, d, a, b, e, f, g, h, ab, ac, i, ad, j, k, l, m, n, o, p, ae, q, \\\n"
+                        "r, s, t, u, v, w, x, y, z, af, ag, ah, ai, aj, ak, al, am, an, ao, \\\n"
+                        "ap) \\\n"
+                        "ap\n"
+                        "#define aq(...) ar(b(__VA_ARGS__), __VA_ARGS__) static_assert(true, \" \")\n"
+                        "#define ar(ap, ...) at(I_, ap)(__VA_ARGS__)\n"
+                        "#define I_2(as, a)\n"
+                        "aq(a, array);\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "static_assert ( true , \" \" ) ;", preprocess(code));
+}
 
 
 static void define_invalid_1()
@@ -3761,6 +3788,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define14); // #296
     TEST_CASE(define15); // #231
     TEST_CASE(define16); // #201
+    TEST_CASE(define17); // #185
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
