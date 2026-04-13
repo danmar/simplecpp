@@ -2204,6 +2204,8 @@ namespace simplecpp {
             }
 
             output.push_back(newMacroToken(tok->str(), loc, true, tok));
+            if (it != macros.end())
+                output.back()->markExpandedFrom(&it->second);
             return tok->next;
         }
 
