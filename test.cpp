@@ -719,6 +719,18 @@ static void define13()
                   "}", preprocess(code));
 }
 
+static void define14() // #296
+{
+    const char code[] = "#define bar(x) x % 2\n"
+                        "#define foo(x) printf(#x \"\\n\")\n"
+                        "\n"
+                        " foo(bar(3));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "printf ( \"bar(3)\" \"\\n\" ) ;", preprocess(code));
+}
+
 
 
 static void define_invalid_1()
@@ -3685,6 +3697,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define11);
     TEST_CASE(define12);
     TEST_CASE(define13);
+    TEST_CASE(define14); // #296
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
