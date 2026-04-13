@@ -27,10 +27,12 @@
 
 static const std::string testSourceDir = SIMPLECPP_TEST_SOURCE_DIR;
 
-enum class Input : std::uint8_t {
-    Stringstream,
-    CharBuffer
-};
+namespace {
+    enum class Input : std::uint8_t {
+        Stringstream,
+        CharBuffer
+    };
+}
 
 static Input USE_INPUT = Input::Stringstream;
 static int numberOfFailedAssertions = 0;
