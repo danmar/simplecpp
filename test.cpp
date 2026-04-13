@@ -747,6 +747,41 @@ static void define15() // #231
                   "x", preprocess(code));
 }
 
+static void define16() // #201
+{
+    const char code[] = "#define ALL_COLORS(warm_colors) \\\n"
+                        "  X(Blue) \\\n"
+                        "  X(Green) \\\n"
+                        "  X(Purple) \\\n"
+                        "  warm_colors\n"
+                        "\n"
+                        "#define WARM_COLORS \\\n"
+                        "  X(Red) \\\n"
+                        "  X(Yellow) \\\n"
+                        "  X(Orange)\n"
+                        "\n"
+                        "#define COLOR_SET ALL_COLORS(WARM_COLORS)\n"
+                        "\n"
+                        "#define X(color) #color,\n"
+                        "\n"
+                        "COLOR_SET\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\"Blue\" , \"Green\" , \"Purple\" , \"Red\" , \"Yellow\" , \"Orange\" ,", preprocess(code));
+}
 
 
 
@@ -3725,6 +3760,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define13);
     TEST_CASE(define14); // #296
     TEST_CASE(define15); // #231
+    TEST_CASE(define16); // #201
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
