@@ -58,6 +58,7 @@ static const char* inputString(Input input) {
     case Input::CharBuffer:
         return "CharBuffer";
     }
+    return ""; // unreachable - needed for GCC and Visual Studio
 }
 
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
@@ -110,6 +111,8 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
     case Input::CharBuffer:
         return {{code, size}, filenames, filename, outputList};
     }
+
+    return simplecpp::TokenList{filenames}; // unreachable - needed for GCC and Visual Studio
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
