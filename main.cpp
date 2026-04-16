@@ -6,7 +6,6 @@
 #define SIMPLECPP_TOKENLIST_ALLOW_PTR 0
 #include "simplecpp.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
