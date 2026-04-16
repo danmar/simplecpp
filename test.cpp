@@ -22,6 +22,16 @@
 #error "SIMPLECPP_TEST_SOURCE_DIR is not defined."
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
 
@@ -101,7 +111,7 @@ static void testcase(const std::string &name, void (*const f)(), int argc, char 
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
-static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList * const outputList=nullptr)
+static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList * const outputList SIMPLECPP_LIFETIMEBOUND = nullptr)
 {
     switch (USE_INPUT) {
     case Input::Stringstream: {

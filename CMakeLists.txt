@@ -75,9 +75,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     # TODO: check for proper AppleClang version
     # we do not add the annotation until C++20
-    # the warning was introduced with Clang 23
+    # the warnings was introduced with Clang 23
     if(CMAKE_CXX_STANDARD LESS 20)
         add_compile_options_safe(-Wno-lifetime-safety-intra-tu-suggestions)
+        add_compile_options_safe(-Wno-lifetime-safety-cross-tu-suggestions)
     endif()
 
     # TODO: fix these?

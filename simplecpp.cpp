@@ -389,7 +389,7 @@ namespace {
     class StdCharBufStream : public simplecpp::TokenList::Stream {
     public:
         // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-        StdCharBufStream(const unsigned char* str, std::size_t size)
+        StdCharBufStream(const unsigned char* str SIMPLECPP_LIFETIMEBOUND, std::size_t size)
             : str(str)
             , size(size)
         {
@@ -1508,12 +1508,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
