@@ -22,6 +22,7 @@ Checks: >
         -bugprone-easily-swappable-parameters,
         -bugprone-narrowing-conversions,
         -bugprone-signed-bitwise,
+        -bugprone-std-exception-baseclass,
         -bugprone-switch-missing-default-case,
         -bugprone-throwing-static-initialization,
         -bugprone-unchecked-string-to-number-conversion,
