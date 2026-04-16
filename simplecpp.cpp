@@ -808,7 +808,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (ch == '\\') {
                     TokenString tmp;
                     char tmp_ch = ch;
-                    while ((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
+                    while (stream.good() && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
                         tmp += tmp_ch;
                         tmp_ch = stream.readChar();
                     }
