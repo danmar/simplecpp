@@ -15,7 +15,11 @@ jobs:
         include:
           - os: ubuntu-22.04
             compiler: g++
+          - os: ubuntu-22.04-arm
+            compiler: g++
           - os: ubuntu-24.04
+            compiler: g++
+          - os: ubuntu-24.04-arm
             compiler: g++
       fail-fast: false
 
