@@ -2679,7 +2679,7 @@ static void readfile_nullbyte()
     const char code[] = "ab\0cd";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("ab cd", readfile(code,sizeof(code), &outputList));
-    ASSERT_EQUALS(true, outputList.empty()); // should warning be written?
+    ASSERT_EQUALS(true, outputList.empty()); // TODO: should warning be written?
 }
 
 static void readfile_char()
@@ -2829,6 +2829,71 @@ static void readfile_file_not_found()
     ASSERT_EQUALS("file0,0,file_not_found,File is missing: NotAFile\n", toString(outputList));
 }
 
+static void readfile_empty()
+{
+    const char code[] = "";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty());
+}
+
+// the BOM/UTF-16 detection reads two bytes
+static void readfile_onebyte()
+{
+    const char code[] = ".";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS(".", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty());
+}
+
+static void readfile_utf16_le_unsupported()
+{
+    const char code[] = "\xfe\xff\xd8\x3d\xde\x42"; // smiley emoji
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=255). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
+static void readfile_utf16_be_unsupported()
+{
+    const char code[] = "\xff\xfe\x3d\xd8\x42\xde"; // smiley emoji
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=255). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
+static void readfile_utf16_le_incomplete()
+{
+    const char code[] = "\xfe\xff\x00\x31\x00\x32\x00"; // the last UTF16 char is incomplete
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("12", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty()); // TODO: report error?
+}
+
+static void readfile_utf16_be_incomplete()
+{
+    const char code[] = "\xff\xfe\x31\x00\x32\x00\x33"; // the last UTF16 char is incomplete
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("123", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS(true, outputList.empty()); // TODO: report error?
+}
+
+static void readfile_utf16_le_bom_incomplete()
+{
+    const char code[] = "\xfe";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=254). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
+static void readfile_utf16_be_bom_incomplete()
+{
+    const char code[] = "\xff";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", readfile(code,sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,1,unhandled_char_error,The code contains unhandled character(s) (character code=255). Neither unicode nor extended ascii is supported.\n", toString(outputList));
+}
+
 static void stringify1()
 {
     const char code_c[] = "#include \"A.h\"\n"
@@ -2968,7 +3033,7 @@ static void utf8_invalid()
     ASSERT_EQUALS("", readfile("\xEF\xBB 123"));
 }
 
-static void unicode()
+static void utf16()
 {
     {
         const char code[] = "\xFE\xFF\x00\x31\x00\x32";
@@ -3000,7 +3065,7 @@ static void unicode()
     }
 }
 
-static void unicode_invalid()
+static void utf16_invalid()
 {
     {
         const char code[] = "\xFF";
@@ -3869,6 +3934,14 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(readfile_unhandled_chars);
     TEST_CASE(readfile_error);
     TEST_CASE(readfile_file_not_found);
+    TEST_CASE(readfile_empty);
+    TEST_CASE(readfile_onebyte);
+    TEST_CASE(readfile_utf16_le_unsupported);
+    TEST_CASE(readfile_utf16_be_unsupported);
+    TEST_CASE(readfile_utf16_le_incomplete);
+    TEST_CASE(readfile_utf16_be_incomplete);
+    TEST_CASE(readfile_utf16_le_bom_incomplete);
+    TEST_CASE(readfile_utf16_be_bom_incomplete);
 
     TEST_CASE(stringify1);
 
@@ -3885,8 +3958,8 @@ static void runTests(int argc, char **argv, Input input)
     // utf/unicode
     TEST_CASE(utf8);
     TEST_CASE(utf8_invalid);
-    TEST_CASE(unicode);
-    TEST_CASE(unicode_invalid);
+    TEST_CASE(utf16);
+    TEST_CASE(utf16_invalid);
 
     TEST_CASE(warning);
 
