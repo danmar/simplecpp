@@ -44,6 +44,7 @@ Checks: >
         -readability-isolate-declaration,
         -readability-magic-numbers,
         -readability-redundant-inline-specifier,
+        -readability-redundant-parentheses,
         -readability-trailing-comma,
         -readability-use-concise-preprocessor-directives,
         -readability-uppercase-literal-suffix,
