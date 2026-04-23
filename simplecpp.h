@@ -311,7 +311,7 @@ namespace simplecpp {
         /** generates a token list from the given filename parameter */
         TokenList(const std::string &filename, std::vector<std::string> &filenames SIMPLECPP_LIFETIMEBOUND, OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
-        TokenList(TokenList &&other);
+        TokenList(TokenList &&other) noexcept;
         ~TokenList();
         TokenList &operator=(const TokenList &other);
         TokenList &operator=(TokenList &&other);

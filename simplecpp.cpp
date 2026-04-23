@@ -510,7 +510,7 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), b
     *this = other;
 }
 
-simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(nullptr), backToken(nullptr), files(other.files)
+simplecpp::TokenList::TokenList(TokenList &&other) noexcept : frontToken(nullptr), backToken(nullptr), files(other.files)
 {
     *this = std::move(other);
 }
