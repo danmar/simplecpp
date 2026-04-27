@@ -1,5 +1,7 @@
 # Simple C/C++ preprocessor
 
+NOTE: This repository was recently moved from https://github.com/danmar/simplecpp to https://github.com/cppcheck-opensource/simplecpp. Please make sure to update all your references to it accordingly.
+
 This is a simple C/C++ preprocessor.
 
 The goal is to have good conformance with the C and C++ standards and to handle nonstandard preprocessor extensions in gcc / clang / visual studio preprocessors. Most of the preprocessor testcases in gcc and clang are handled OK by simplecpp.
