@@ -37,13 +37,6 @@
 #include <utility>
 #include <vector>
 
-#ifdef _WIN32
-#  include <direct.h>
-#else
-#  include <sys/stat.h>
-#  include <sys/types.h>
-#endif
-
 #if defined(_WIN32)
 #  ifndef _WIN32_WINNT
 #    define _WIN32_WINNT 0x0602
@@ -56,6 +49,10 @@
 #  endif
 #  include <windows.h>
 #  undef ERROR
+#  include <direct.h>
+#else
+#  include <sys/stat.h>
+#  include <sys/types.h>
 #endif
 
 static bool isHex(const std::string &s)
