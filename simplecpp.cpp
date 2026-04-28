@@ -3076,40 +3076,42 @@ static std::string openHeader(std::ifstream &f, const simplecpp::DUI &dui, const
     return "";
 }
 
-struct FileID {
+namespace {
+    struct FileID {
 #ifdef _WIN32
-    struct {
-        std::uint64_t VolumeSerialNumber;
         struct {
-            std::uint64_t IdentifierHi;
-            std::uint64_t IdentifierLo;
-        } FileId;
-    } fileIdInfo;
+            std::uint64_t VolumeSerialNumber;
+            struct {
+                std::uint64_t IdentifierHi;
+                std::uint64_t IdentifierLo;
+            } FileId;
+        } fileIdInfo;
 
-    bool operator==(const FileID &that) const noexcept {
-        return fileIdInfo.VolumeSerialNumber == that.fileIdInfo.VolumeSerialNumber &&
-               fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
-               fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
-    }
-#else
-    dev_t dev;
-    ino_t ino;
-
-    bool operator==(const FileID& that) const noexcept {
-        return dev == that.dev && ino == that.ino;
-    }
-#endif
-    struct Hasher {
-        std::size_t operator()(const FileID &id) const {
-#ifdef _WIN32
-            return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
-                                            id.fileIdInfo.VolumeSerialNumber);
-#else
-            return static_cast<std::size_t>(id.dev) ^ static_cast<std::size_t>(id.ino);
-#endif
+        bool operator==(const FileID &that) const noexcept {
+            return fileIdInfo.VolumeSerialNumber == that.fileIdInfo.VolumeSerialNumber &&
+                   fileIdInfo.FileId.IdentifierHi == that.fileIdInfo.FileId.IdentifierHi &&
+                   fileIdInfo.FileId.IdentifierLo == that.fileIdInfo.FileId.IdentifierLo;
         }
+#else
+        dev_t dev;
+        ino_t ino;
+
+        bool operator==(const FileID& that) const noexcept {
+            return dev == that.dev && ino == that.ino;
+        }
+#endif
+        struct Hasher {
+            std::size_t operator()(const FileID &id) const {
+#ifdef _WIN32
+                return static_cast<std::size_t>(id.fileIdInfo.FileId.IdentifierHi ^ id.fileIdInfo.FileId.IdentifierLo ^
+                                                id.fileIdInfo.VolumeSerialNumber);
+#else
+                return static_cast<std::size_t>(id.dev) ^ static_cast<std::size_t>(id.ino);
+#endif
+            }
+        };
     };
-};
+}
 
 struct simplecpp::FileDataCache::Impl
 {
