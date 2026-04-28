@@ -21,6 +21,8 @@ Checks: >
         -bugprone-branch-clone,
         -bugprone-easily-swappable-parameters,
         -bugprone-narrowing-conversions,
+        -bugprone-signed-bitwise,
+        -bugprone-std-exception-baseclass,
         -bugprone-switch-missing-default-case,
         -bugprone-throwing-static-initialization,
         -bugprone-unchecked-string-to-number-conversion,
@@ -42,6 +44,8 @@ Checks: >
         -readability-isolate-declaration,
         -readability-magic-numbers,
         -readability-redundant-inline-specifier,
+        -readability-redundant-parentheses,
+        -readability-trailing-comma,
         -readability-use-concise-preprocessor-directives,
         -readability-uppercase-literal-suffix,
         -performance-avoid-endl,
@@ -55,3 +59,5 @@ CheckOptions:
     value:           '1'
   - key:             misc-const-correctness.TransformPointersAsValues
     value:           '1'
+  - key:             bugprone-exception-escape.TreatFunctionsWithoutSpecificationAsThrowing
+    value:           OnlyUndefined

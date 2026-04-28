@@ -6,7 +6,6 @@
 #define SIMPLECPP_TOKENLIST_ALLOW_PTR 0
 #include "simplecpp.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -24,7 +23,7 @@ static bool isDir(const std::string& path)
     return (file_stat.st_mode & S_IFMT) == S_IFDIR;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     bool error = false;
     const char *filename = nullptr;

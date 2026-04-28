@@ -57,6 +57,16 @@
 #  include <sys/stat.h>
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -150,12 +160,12 @@ static bool endsWith(const std::string &s, const std::string &e)
     return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
 }
 
-static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
+static bool sameline(const simplecpp::Token * const tok1, const simplecpp::Token * const tok2)
 {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
 
-static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeBinaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return (tok->name &&
             tok->str() == alt &&
@@ -165,7 +175,7 @@ static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string
             (tok->next->number || tok->next->name || tok->next->op == '('));
 }
 
-static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeUnaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return ((tok->name && tok->str() == alt) &&
             (!tok->previous || tok->previous->op == '(') &&
@@ -379,7 +389,7 @@ namespace {
     class StdCharBufStream : public simplecpp::TokenList::Stream {
     public:
         // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-        StdCharBufStream(const unsigned char* str, std::size_t size)
+        StdCharBufStream(const unsigned char* str SIMPLECPP_LIFETIMEBOUND, std::size_t size)
             : str(str)
             , size(size)
         {
@@ -430,7 +440,9 @@ namespace {
         FileStream &operator=(const FileStream&) = delete;
 
         ~FileStream() override {
+            try {
             fclose(file);
+            } catch(...) {}
             file = nullptr;
         }
 
@@ -500,7 +512,7 @@ simplecpp::TokenList::TokenList(const TokenList &other) : frontToken(nullptr), b
     *this = other;
 }
 
-simplecpp::TokenList::TokenList(TokenList &&other) : frontToken(nullptr), backToken(nullptr), files(other.files)
+simplecpp::TokenList::TokenList(TokenList &&other) noexcept : frontToken(nullptr), backToken(nullptr), files(other.files)
 {
     *this = std::move(other);
 }
@@ -798,7 +810,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (ch == '\\') {
                     TokenString tmp;
                     char tmp_ch = ch;
-                    while ((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
+                    while (stream.good() && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
                         tmp += tmp_ch;
                         tmp_ch = stream.readChar();
                     }
@@ -998,7 +1010,7 @@ void simplecpp::TokenList::constFold()
     }
 }
 
-static bool isFloatSuffix(const simplecpp::Token *tok)
+static bool isFloatSuffix(const simplecpp::Token * const tok)
 {
     if (!tok || tok->str().size() != 1U)
         return false;
@@ -1009,7 +1021,7 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
 static const std::string AND("and");
 static const std::string BITAND("bitand");
 static const std::string BITOR("bitor");
-static bool isAlternativeAndBitandBitor(const simplecpp::Token* tok)
+static bool isAlternativeAndBitandBitor(const simplecpp::Token * const tok)
 {
     return isAlternativeBinaryOp(tok, AND) || isAlternativeBinaryOp(tok, BITAND) || isAlternativeBinaryOp(tok, BITOR);
 }
@@ -1498,12 +1510,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1679,7 +1691,7 @@ namespace simplecpp {
         }
 
         /** how has this macro been used so far */
-        const std::list<Location> &usage() const {
+        const std::list<Location> &usage() const SIMPLECPP_LIFETIMEBOUND {
             return usageList;
         }
 
@@ -1869,7 +1881,7 @@ namespace simplecpp {
 
         const Token *appendTokens(TokenList &tokens,
                                   const Location &rawloc,
-                                  const Token * const lpar,
+                                  const Token * const lpar SIMPLECPP_LIFETIMEBOUND,
                                   const MacroMap &macros,
                                   const std::set<TokenString> &expandedmacros,
                                   const std::vector<const Token*> &parametertokens) const {
@@ -2999,7 +3011,7 @@ static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui,
     return expr.cfront() && expr.cfront() == expr.cback() && expr.cfront()->number ? stringToLL(expr.cfront()->str()) : 0LL;
 }
 
-static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
+static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok SIMPLECPP_LIFETIMEBOUND)
 {
     const unsigned int line = tok->location.line;
     const unsigned int file = tok->location.fileIndex;
@@ -3310,14 +3322,14 @@ static void getLocaltime(struct tm &ltime)
 #endif
 }
 
-static std::string getDateDefine(const struct tm *timep)
+static std::string getDateDefine(const struct tm * const timep)
 {
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(const struct tm *timep)
+static std::string getTimeDefine(const struct tm * const timep)
 {
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%H:%M:%S", timep);

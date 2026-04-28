@@ -22,6 +22,16 @@
 #error "SIMPLECPP_TEST_SOURCE_DIR is not defined."
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
 
@@ -86,7 +96,7 @@ static void assertThrowFailed(int line)
     std::cerr << "exception not thrown" << std::endl;
 }
 
-static void testcase(const std::string &name, void (*f)(), int argc, char * const *argv)
+static void testcase(const std::string &name, void (*const f)(), int argc, char *argv[])
 {
     if (argc == 1) {
         f();
@@ -101,7 +111,7 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 #define TEST_CASE(F)    (testcase(#F, F, argc, argv))
 
-static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
+static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList * const outputList SIMPLECPP_LIFETIMEBOUND = nullptr)
 {
     switch (USE_INPUT) {
     case Input::Stringstream: {
@@ -115,24 +125,24 @@ static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, s
     return simplecpp::TokenList{filenames}; // unreachable - needed for GCC and Visual Studio
 }
 
-static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
+static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList * const outputList=nullptr)
 {
     return makeTokenList(code, strlen(code), filenames, filename, outputList);
 }
 
-static std::string readfile(const char code[], simplecpp::OutputList *outputList=nullptr)
+static std::string readfile(const char code[], simplecpp::OutputList * const outputList=nullptr)
 {
     std::vector<std::string> files;
     return makeTokenList(code,files,std::string(),outputList).stringify();
 }
 
-static std::string readfile(const char code[], std::size_t size, simplecpp::OutputList *outputList=nullptr)
+static std::string readfile(const char code[], std::size_t size, simplecpp::OutputList * const outputList=nullptr)
 {
     std::vector<std::string> files;
     return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage = nullptr, std::list<simplecpp::IfCond> *ifCond = nullptr, const std::string &file = std::string())
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList * const outputList, std::list<simplecpp::MacroUsage> * const macroUsage = nullptr, std::list<simplecpp::IfCond> * const ifCond = nullptr, const std::string &file = std::string())
 {
     std::vector<std::string> files;
     simplecpp::FileDataCache cache;
@@ -160,17 +170,17 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui)
     return preprocess(code, dui, nullptr);
 }
 
-static std::string preprocess(const char code[], simplecpp::OutputList *outputList)
+static std::string preprocess(const char code[], simplecpp::OutputList * const outputList)
 {
     return preprocess(code, simplecpp::DUI(), outputList);
 }
 
-static std::string preprocess(const char code[], std::list<simplecpp::IfCond> *ifCond)
+static std::string preprocess(const char code[], std::list<simplecpp::IfCond> * const ifCond)
 {
     return preprocess(code, simplecpp::DUI(), nullptr, nullptr, ifCond);
 }
 
-static std::string preprocess(const char code[], std::list<simplecpp::MacroUsage> *macroUsage)
+static std::string preprocess(const char code[], std::list<simplecpp::MacroUsage> * const macroUsage)
 {
     return preprocess(code, simplecpp::DUI(), nullptr, macroUsage);
 }
@@ -3831,7 +3841,7 @@ static void leak()
     }
 }
 
-static void runTests(int argc, char **argv, Input input)
+static void runTests(int argc, char *argv[], Input input)
 {
     USE_INPUT = input;
 
@@ -4119,7 +4129,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(leak);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     runTests(argc, argv, Input::Stringstream);
     runTests(argc, argv, Input::CharBuffer);
