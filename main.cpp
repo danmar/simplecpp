@@ -98,7 +98,7 @@ int main(int argc, char **argv)
                     found = true;
                     const std::string input = arg + 7;
                     if (input.empty()) {
-                        std::cout << "error: option -inout with no value." << std::endl;
+                        std::cout << "error: option -input with no value." << std::endl;
                         error = true;
                         break;
                     }
