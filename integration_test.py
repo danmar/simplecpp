@@ -515,4 +515,4 @@ def test_utf16_bom(tmpdir):
 
     assert exitcode == 0
     assert stderr == ''
-    assert stdout == '\n'
+    assert stdout == ';\n'
