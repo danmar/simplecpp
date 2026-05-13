@@ -507,7 +507,7 @@ TEST_P(PREFIX_WITH_MACRO(NamingTest), n) {}
 def test_utf16_bom(tmpdir):
     test_file = os.path.join(tmpdir, "test.cpp")
     with open(test_file, 'w') as f:
-        f.write(b'\xFF\xFE\x00\x3B')
+        f.write("\xFF\xFE\x00\x3B")
 
     args = [test_file]
 
