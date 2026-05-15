@@ -6,6 +6,7 @@
 #include "simplecpp.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -25,6 +26,15 @@
 #define STRINGIZE(x) STRINGIZE_(x)
 
 static const std::string testSourceDir = SIMPLECPP_TEST_SOURCE_DIR;
+
+namespace {
+    enum class Input : std::uint8_t {
+        Stringstream,
+        CharBuffer
+    };
+}
+
+static Input USE_INPUT = Input::Stringstream;
 static int numberOfFailedAssertions = 0;
 
 #define ASSERT_EQUALS(expected, actual)  (assertEquals((expected), (actual), __LINE__))
@@ -41,11 +51,21 @@ static std::string pprint(const std::string &in)
     return ret;
 }
 
+static const char* inputString(Input input) {
+    switch (input) {
+    case Input::Stringstream:
+        return "Stringstream";
+    case Input::CharBuffer:
+        return "CharBuffer";
+    }
+    return ""; // unreachable - needed for GCC and Visual Studio
+}
+
 static int assertEquals(const std::string &expected, const std::string &actual, int line)
 {
     if (expected != actual) {
         numberOfFailedAssertions++;
-        std::cerr << "------ assertion failed ---------" << std::endl;
+        std::cerr << "------ assertion failed (" << inputString(USE_INPUT) << ")---------" << std::endl;
         std::cerr << "line test.cpp:" << line << std::endl;
         std::cerr << "expected:" << pprint(expected) << std::endl;
         std::cerr << "actual:" << pprint(actual) << std::endl;
@@ -83,8 +103,16 @@ static void testcase(const std::string &name, void (*f)(), int argc, char * cons
 
 static simplecpp::TokenList makeTokenList(const char code[], std::size_t size, std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
 {
-    std::istringstream istr(std::string(code, size));
-    return {istr,filenames,filename,outputList};
+    switch (USE_INPUT) {
+    case Input::Stringstream: {
+        std::istringstream istr(std::string(code, size));
+        return {istr,filenames,filename,outputList};
+    }
+    case Input::CharBuffer:
+        return {{code, size}, filenames, filename, outputList};
+    }
+
+    return simplecpp::TokenList{filenames}; // unreachable - needed for GCC and Visual Studio
 }
 
 static simplecpp::TokenList makeTokenList(const char code[], std::vector<std::string> &filenames, const std::string &filename=std::string(), simplecpp::OutputList *outputList=nullptr)
@@ -691,6 +719,181 @@ static void define13()
                   "}", preprocess(code));
 }
 
+static void define14() // #296
+{
+    const char code[] = "#define bar(x) x % 2\n"
+                        "#define foo(x) printf(#x \"\\n\")\n"
+                        "\n"
+                        " foo(bar(3));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "printf ( \"bar(3)\" \"\\n\" ) ;", preprocess(code));
+}
+
+static void define15() // #231
+{
+    const char code[] = "#define CAT(a, b) CAT2(a, b)\n"
+                        "#define CAT2(a, b) a ## b\n"
+                        "#define FOO x\n"
+                        "#define BAR() CAT(F, OO)\n"
+                        "#define BAZ CAT(B, AR)()\n"
+                        "BAZ\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "x", preprocess(code));
+}
+
+static void define16() // #201
+{
+    const char code[] = "#define ALL_COLORS(warm_colors) \\\n"
+                        "  X(Blue) \\\n"
+                        "  X(Green) \\\n"
+                        "  X(Purple) \\\n"
+                        "  warm_colors\n"
+                        "\n"
+                        "#define WARM_COLORS \\\n"
+                        "  X(Red) \\\n"
+                        "  X(Yellow) \\\n"
+                        "  X(Orange)\n"
+                        "\n"
+                        "#define COLOR_SET ALL_COLORS(WARM_COLORS)\n"
+                        "\n"
+                        "#define X(color) #color,\n"
+                        "\n"
+                        "COLOR_SET\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\"Blue\" , \"Green\" , \"Purple\" , \"Red\" , \"Yellow\" , \"Orange\" ,", preprocess(code));
+}
+
+static void define17() // #185
+{
+    const char code[] = "#define at(x, y) x##y\n"
+                        "#define b(...) \\\n"
+                        "aa(__VA_ARGS__, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , \\\n"
+                        ", , , , , , , , 2)\n"
+                        "#define aa(c, d, a, b, e, f, g, h, ab, ac, i, ad, j, k, l, m, n, o, p, ae, q, \\\n"
+                        "r, s, t, u, v, w, x, y, z, af, ag, ah, ai, aj, ak, al, am, an, ao, \\\n"
+                        "ap) \\\n"
+                        "ap\n"
+                        "#define aq(...) ar(b(__VA_ARGS__), __VA_ARGS__) static_assert(true, \" \")\n"
+                        "#define ar(ap, ...) at(I_, ap)(__VA_ARGS__)\n"
+                        "#define I_2(as, a)\n"
+                        "aq(a, array);\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "static_assert ( true , \" \" ) ;", preprocess(code));
+}
+
+static void define18() // #130
+{
+    const char code[] = "#define MAC2STR(x) x[0],x[1],x[2],x[3],x[4],x[5]\n"
+                        "#define FT_DEBUG(fmt, args...) if(pGlobalCtx && pGlobalCtx->debug_level>=2) printf(\"FT-dbg: \"fmt, ##args)\n"
+                        "\n"
+                        "FT_DEBUG(\"  %02x:%02x:%02x:%02x:%02x:%02x\\n\", MAC2STR(pCtx->wlan_intf_addr[i]));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "if ( pGlobalCtx && pGlobalCtx -> debug_level >= 2 ) printf ( \"FT-dbg: \" \"  %02x:%02x:%02x:%02x:%02x:%02x\\n\" , pCtx -> wlan_intf_addr [ i ] [ 0 ] , pCtx -> wlan_intf_addr [ i ] [ 1 ] , pCtx -> wlan_intf_addr [ i ] [ 2 ] , pCtx -> wlan_intf_addr [ i ] [ 3 ] , pCtx -> wlan_intf_addr [ i ] [ 4 ] , pCtx -> wlan_intf_addr [ i ] [ 5 ] ) ;", preprocess(code));
+}
+
+static void define19() // #124
+{
+    const char code[] = "#define CONCAT(tok) tok##suffix\n"
+                        "\n"
+                        "CONCAT(Test);\n"
+                        "CONCAT(const Test);\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "Testsuffix ;\n"
+                  "const Testsuffix ;", preprocess(code));
+}
+
+static void define20() // #113
+{
+    const char code[] = "#define TARGS4 T1,T2,T3,T4\n"
+                        "#define FOOIMPL(T__CLASS, TARGS) void foo(const T__CLASS<TARGS>& x) { }\n"
+                        "#define FOOIMPL_4(T__CLASS)      FOOIMPL(T__CLASS, TARGS4)\n"
+                        "FOOIMPL_4(y)\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "void foo ( const y < T1 , T2 , T3 , T4 > & x ) { }", preprocess(code));
+}
+
+static void define21() // #66
+{
+    const char code[] = "#define GETMYID(a) ((a))+1\n"
+                        "#define FIGHT_FOO(c, ...) foo(c, ##__VA_ARGS__)\n"
+                        "FIGHT_FOO(1, GETMYID(a));\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "foo ( 1 , ( ( a ) ) + 1 ) ;", preprocess(code));
+}
+
+static void define22() // #40
+{
+    const char code[] = "#define COUNTER_NAME(NAME, ...) NAME##Count\n"
+                        "#define COMMA ,\n"
+                        "\n"
+                        "#define DECLARE_COUNTERS(LIST) unsigned long LIST(COUNTER_NAME, COMMA);\n"
+                        "\n"
+                        "#define ACTUAL_LIST(FUNCTION, SEPARATOR) \\\n"
+                        "FUNCTION(event1, int, foo) SEPARATOR \\\n"
+                        "FUNCTION(event2, char, bar)\n"
+                        "\n"
+                        "DECLARE_COUNTERS(ACTUAL_LIST)\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "unsigned long event1Count , event2Count ;", preprocess(code));
+}
+
+static void define23() // #40
+{
+    const char code[] = "#define COMMA ,\n"
+                        "#define MULTI(SEPARATOR) A SEPARATOR B\n"
+                        "\n"
+                        "#define VARS MULTI(COMMA)\n"
+                        "unsigned VARS;\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "\n"
+                  "\n"
+                  "unsigned A , B ;", preprocess(code));
+}
 
 
 static void define_invalid_1()
@@ -698,7 +901,7 @@ static void define_invalid_1()
     const char code[] = "#define  A(\nB\n";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, bad macro syntax\n", toString(outputList));
 }
 
 static void define_invalid_2()
@@ -706,7 +909,7 @@ static void define_invalid_2()
     const char code[] = "#define\nhas#";
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define\n", toString(outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, bad macro syntax\n", toString(outputList));
 }
 
 static void define_define_1()
@@ -946,6 +1149,16 @@ static void define_define_23() // #403 crash (infinite recursion)
     ASSERT_EQUALS("\n\n\n\nYdieZ ( void ) ;", preprocess(code));
 }
 
+static void define_define_24() // #590
+{
+    const char code[] = "#define B A\n"
+                        "#define A x(B)\n"
+                        "#define C(s) s\n"
+                        "#define D(s) C(s)\n"
+                        "D(A)\n";
+    ASSERT_EQUALS("\n\n\n\nx ( A )", preprocess(code));
+}
+
 static void define_va_args_1()
 {
     const char code[] = "#define A(fmt...) dostuff(fmt)\n"
@@ -1105,6 +1318,15 @@ static void define_va_opt_8()
     ASSERT_EQUALS("", toString(outputList));
 }
 
+static void define_va_opt_9()
+{
+    simplecpp::DUI dui;
+    dui.defines.emplace_back("f(...)=__VA_OPT__");
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess("", dui, &outputList));
+    ASSERT_EQUALS("file0,0,dui_error,In definition of 'f': Missing opening parenthesis for __VA_OPT__\n", toString(outputList));
+}
+
 static void define_ifdef()
 {
     const char code[] = "#define A(X) X\n"
@@ -1129,6 +1351,15 @@ static void pragma_backslash()
                         "Well, be prepared, because the\\\n"
                         "story is just beginning. This is a test\\\n"
                         "string for demonstration purposes. \")\n";
+
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+}
+
+static void pragma_backslash_2() // #217
+{
+    const char code[] = "#pragma comment(linker, \"foo \\\n"
+                        "bar\")\n";
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
@@ -3600,8 +3831,10 @@ static void leak()
     }
 }
 
-int main(int argc, char **argv)
+static void runTests(int argc, char **argv, Input input)
 {
+    USE_INPUT = input;
+
     TEST_CASE(backslash);
 
     TEST_CASE(builtin);
@@ -3636,6 +3869,16 @@ int main(int argc, char **argv)
     TEST_CASE(define11);
     TEST_CASE(define12);
     TEST_CASE(define13);
+    TEST_CASE(define14); // #296
+    TEST_CASE(define15); // #231
+    TEST_CASE(define16); // #201
+    TEST_CASE(define17); // #185
+    TEST_CASE(define18); // #130
+    TEST_CASE(define19); // #124
+    TEST_CASE(define20); // #113
+    TEST_CASE(define21); // #66
+    TEST_CASE(define22); // #40
+    TEST_CASE(define23); // #40
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_define_1);
@@ -3662,6 +3905,7 @@ int main(int argc, char **argv)
     TEST_CASE(define_define_21);
     TEST_CASE(define_define_22); // #400
     TEST_CASE(define_define_23); // #403 - crash, infinite recursion
+    TEST_CASE(define_define_24); // #590
     TEST_CASE(define_va_args_1);
     TEST_CASE(define_va_args_2);
     TEST_CASE(define_va_args_3);
@@ -3674,8 +3918,10 @@ int main(int argc, char **argv)
     TEST_CASE(define_va_opt_6);
     TEST_CASE(define_va_opt_7);
     TEST_CASE(define_va_opt_8);
+    TEST_CASE(define_va_opt_9); // #632
 
     TEST_CASE(pragma_backslash); // multiline pragma directive
+    TEST_CASE(pragma_backslash_2); // #217
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
@@ -3871,6 +4117,11 @@ int main(int argc, char **argv)
     TEST_CASE(fuzz_crash);
 
     TEST_CASE(leak);
+}
 
+int main(int argc, char **argv)
+{
+    runTests(argc, argv, Input::Stringstream);
+    runTests(argc, argv, Input::CharBuffer);
     return numberOfFailedAssertions > 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }

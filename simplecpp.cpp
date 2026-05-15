@@ -638,10 +638,10 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
-void simplecpp::TokenList::lineDirective(unsigned int fileIndex, unsigned int line, Location &location)
+void simplecpp::TokenList::lineDirective(unsigned int fileIndex_, unsigned int line, Location &location)
 {
-    if (fileIndex != location.fileIndex || line >= location.line) {
-        location.fileIndex = fileIndex;
+    if (fileIndex_ != location.fileIndex || line >= location.line) {
+        location.fileIndex = fileIndex_;
         location.line = line;
         return;
     }
@@ -1742,6 +1742,9 @@ namespace simplecpp {
             return tok;
         }
 
+        /**
+         * @throws Error thrown in case of __VA_OPT__ issues
+         */
         bool parseDefine(const Token *nametoken) {
             nameTokDef = nametoken;
             variadic = false;
@@ -2204,6 +2207,8 @@ namespace simplecpp {
             }
 
             output.push_back(newMacroToken(tok->str(), loc, true, tok));
+            if (it != macros.end())
+                output.back()->markExpandedFrom(&it->second);
             return tok->next;
         }
 
@@ -3382,6 +3387,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             }
             output.clear();
             return;
+        } catch (const simplecpp::Macro::Error& e) {
+            if (outputList) {
+                simplecpp::Output err{
+                    Output::DUI_ERROR,
+                    {},
+                    e.what
+                };
+                outputList->emplace_back(std::move(err));
+            }
+            output.clear();
+            return;
         }
     }
 
@@ -3510,14 +3526,14 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         else
                             it->second = macro;
                     }
-                } catch (const std::runtime_error &) {
+                } catch (const std::runtime_error &err) {
                     if (outputList) {
-                        simplecpp::Output err{
+                        simplecpp::Output out{
                             Output::SYNTAX_ERROR,
                             rawtok->location,
-                            "Failed to parse #define"
+                            std::string("Failed to parse #define, ") + err.what()
                         };
-                        outputList->emplace_back(std::move(err));
+                        outputList->emplace_back(std::move(out));
                     }
                     output.clear();
                     return;
