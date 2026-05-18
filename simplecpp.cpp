@@ -275,10 +275,9 @@ public:
         return ch;
     }
 
-    unsigned char peekChar() {
-        const int pk = peek();
-        auto ch = static_cast<unsigned char>(pk);
-        if (pk == EOF)
+    int peekChar() {
+        int ch = peek();
+        if (ch == EOF)
             return ch;
 
         // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
@@ -288,7 +287,7 @@ public:
             const auto ch2 = static_cast<unsigned char>(peek());
             unget();
             const int ch16 = makeUtf16Char(ch, ch2);
-            ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
+            ch = (ch16 >= 0x80) ? 0xff : ch16;
         }
 
         // Handling of newlines..
@@ -601,7 +600,7 @@ std::string simplecpp::TokenList::stringify(bool linenrs) const
     return ret.str();
 }
 
-static bool isNameChar(unsigned char ch)
+static bool isNameChar(int ch)
 {
     return std::isalnum(ch) || ch == '_' || ch == '$';
 }
