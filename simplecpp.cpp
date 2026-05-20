@@ -3687,7 +3687,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                             bool closingAngularBracket = false;
                             if (tok) {
                                 const std::string &sourcefile = rawtokens.file(rawtok->location);
-                                const bool systemheader = (tok && tok->op == '<');
+                                const bool systemheader = tok->op == '<';
                                 std::string header;
 
                                 if (systemheader) {
