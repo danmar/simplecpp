@@ -1025,7 +1025,7 @@ void simplecpp::TokenList::combineOperators()
                 continue;
             }
             const Token *prev = tok->previous;
-            while (prev && prev->isOneOf(";{}()"))
+            while (prev && prev->isOneOf(";{}("))
                 prev = prev->previous;
             executableScope.push(prev && prev->op == ')');
             continue;
