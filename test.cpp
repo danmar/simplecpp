@@ -493,6 +493,7 @@ static void combineOperators_andequal()
     ASSERT_EQUALS("x &= 2 ;", preprocess("x &= 2;"));
     ASSERT_EQUALS("void f ( x & = 2 ) ;", preprocess("void f(x &= 2);"));
     ASSERT_EQUALS("f ( x &= 2 ) ;", preprocess("f(x &= 2);"));
+    ASSERT_EQUALS("f ( ) { return new int ( i &= 1 ) ; }", preprocess("f () { return new int(i &= 1); }"));
 }
 
 static void combineOperators_ellipsis()
