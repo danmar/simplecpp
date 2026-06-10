@@ -658,7 +658,7 @@ static const std::string COMMENT_END("*/");
 
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
 {
-    std::stack<simplecpp::Location> loc;
+    std::stack<simplecpp::Location, std::vector<simplecpp::Location>> loc;
 
     unsigned int multiline = 0U;
 
