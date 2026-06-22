@@ -167,7 +167,7 @@ static unsigned long long stringToULL(const std::string &s, std::size_t offset =
 
 static long long stringToLL(const std::string &s)
 {
-    if (s.size() > 0 && s[0] == '-')
+    if (!s.empty() && s[0] == '-')
         return -stringToULL(s, 1);
     return stringToULL(s);
 }
