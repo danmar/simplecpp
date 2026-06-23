@@ -1875,6 +1875,16 @@ static void hashhash_empty_va_args()
     ASSERT_EQUALS("\n\n\n( 2 )", preprocess(code));
 }
 
+static void hashhash_va_args_unexpected()
+{
+    const char code[] =
+        "#define C(...)!##__VA_ARGS__\n"
+        "C(1)";
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'C', Invalid ## usage when expanding 'C': Unexpected token '!'\n", toString(outputList));
+}
+
 static void hashhash_universal_character()
 {
     const char code[] =
@@ -1883,6 +1893,16 @@ static void hashhash_universal_character()
     preprocess(code, simplecpp::DUI(), &outputList);
     ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '\\u01' and '04' yields universal character '\\u0104'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.\n", toString(outputList));
 }
+
+static void hashhash_universal_character_2()
+{
+    const char code[] =
+        "#define A(x,y) x##y\nint A(\\U0104, 0104);";
+    simplecpp::OutputList outputList;
+    preprocess(code, simplecpp::DUI(), &outputList);
+    ASSERT_EQUALS("file0,1,syntax_error,failed to expand 'A', Invalid ## usage when expanding 'A': Combining '\\U0104' and '0104' yields universal character '\\U01040104'. This is undefined behavior according to C standard chapter 5.1.1.2, paragraph 4.\n", toString(outputList));
+}
+
 
 static void has_include_1()
 {
@@ -4019,11 +4039,14 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(hashhash_invalid_missing_args);
     TEST_CASE(hashhash_null_stmt);
     TEST_CASE(hashhash_empty_va_args);
+    TEST_CASE(hashhash_va_args_unexpected);
+
     // C standard, 5.1.1.2, paragraph 4:
     //    If a character sequence that matches the syntax of a universal
     //    character name is produced by token concatenation (6.10.3.3),
     //    the behavior is undefined."
     TEST_CASE(hashhash_universal_character);
+    TEST_CASE(hashhash_universal_character_2);
 
     // c++17 __has_include
     TEST_CASE(has_include_1);
