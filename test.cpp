@@ -132,17 +132,22 @@ static std::string readfile(const char code[], std::size_t size, simplecpp::Outp
     return makeTokenList(code,size,files,std::string(),outputList).stringify();
 }
 
-static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage = nullptr, std::list<simplecpp::IfCond> *ifCond = nullptr, const std::string &file = std::string())
+static std::string preprocess(const char code[], std::size_t size, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage = nullptr, std::list<simplecpp::IfCond> *ifCond = nullptr, const std::string &file = std::string())
 {
     std::vector<std::string> files;
     simplecpp::FileDataCache cache;
-    simplecpp::TokenList tokens = makeTokenList(code,files, file);
+    simplecpp::TokenList tokens = makeTokenList(code, size, files, file);
     if (dui.removeComments)
         tokens.removeComments();
     simplecpp::TokenList tokens2(files);
     simplecpp::preprocess(tokens2, tokens, files, cache, dui, outputList, macroUsage, ifCond);
     simplecpp::cleanup(cache);
     return tokens2.stringify();
+}
+
+static std::string preprocess(const char code[], const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage = nullptr, std::list<simplecpp::IfCond> *ifCond = nullptr, const std::string &file = std::string())
+{
+    return preprocess(code, strlen(code), dui, outputList, macroUsage, ifCond, file);
 }
 
 static std::string preprocess(const char code[])
@@ -163,6 +168,11 @@ static std::string preprocess(const char code[], const simplecpp::DUI &dui)
 static std::string preprocess(const char code[], simplecpp::OutputList *outputList)
 {
     return preprocess(code, simplecpp::DUI(), outputList);
+}
+
+static std::string preprocess(const char code[], std::size_t size, simplecpp::OutputList *outputList)
+{
+    return preprocess(code, size, simplecpp::DUI(), outputList);
 }
 
 static std::string preprocess(const char code[], std::list<simplecpp::IfCond> *ifCond)
@@ -913,6 +923,24 @@ static void define_invalid_2()
     ASSERT_EQUALS("file0,1,syntax_error,Failed to parse #define, bad macro syntax\n", toString(outputList));
 }
 
+static void define_invalid_3()
+{
+    const char code[] = "#define R()\n"
+                        "R";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to expand 'R', Wrong number of parameters for macro 'R'.\n", toString(outputList));
+}
+
+static void define_invalid_4()
+{
+    const char code[] = "#define X(...)\n"
+                        "X";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to expand 'X', Wrong number of parameters for macro 'X'.\n", toString(outputList));
+}
+
 static void define_define_1()
 {
     const char code[] = "#define A(x) (x+1)\n"
@@ -1340,6 +1368,30 @@ static void define_ifdef()
     ASSERT_EQUALS("", preprocess(code, &outputList));
     ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
 
+}
+
+static void if_invalid_1()
+{
+    const char code[] = "#if'\\u'";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, expected digit\n", toString(outputList));
+}
+
+static void if_invalid_2()
+{
+    const char code[] = "#if-0xBBB4444444444444%~B";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, division overflow\n", toString(outputList));
+}
+
+static void if_invalid_3()
+{
+    const char code[] = "#if@u'\\udefa'";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,1,syntax_error,failed to evaluate #if condition, surrogate code points not allowed in universal character names\n", toString(outputList));
 }
 
 static void pragma_backslash()
@@ -2031,6 +2083,42 @@ static void has_include_6()
     ASSERT_EQUALS("", preprocess(code, dui));
     dui.std = "gnu99";
     ASSERT_EQUALS("\n\nA", preprocess(code, dui));
+}
+
+static void define_has_include_invalid_1()
+{
+    const char code[] = "#define A)__has_include\n"
+                        "#if\u000BA";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to evaluate #if condition, missing __has_include argument\n", toString(outputList));
+}
+
+static void define_has_include_invalid_2()
+{
+    const char code[] = "#define f __has_include\n"
+                        "#if#f<";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to evaluate #if condition, missing __has_include argument\n", toString(outputList));
+}
+
+static void define_has_include_invalid_3()
+{
+    const char code[] = "#define\u0000X\u0007__has_include(\n"
+                        "#if%X&";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to evaluate #if condition, invalid __has_include expression\n", toString(outputList));
+}
+
+static void define_has_include_invalid_4()
+{
+    const char code[] = "#define\u0000X\u0000__has_include<2\n"
+                        "#if*X";
+    simplecpp::OutputList outputList;
+    ASSERT_EQUALS("", preprocess(code, sizeof(code), &outputList));
+    ASSERT_EQUALS("file0,2,syntax_error,failed to evaluate #if condition, invalid __has_include expression\n", toString(outputList));
 }
 
 static void strict_ansi_1()
@@ -4007,6 +4095,8 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define23); // #40
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
+    TEST_CASE(define_invalid_3);
+    TEST_CASE(define_invalid_4);
     TEST_CASE(define_define_1);
     TEST_CASE(define_define_2);
     TEST_CASE(define_define_3);
@@ -4051,6 +4141,10 @@ static void runTests(int argc, char **argv, Input input)
 
     // UB: #ifdef as macro parameter
     TEST_CASE(define_ifdef);
+
+    TEST_CASE(if_invalid_1);
+    TEST_CASE(if_invalid_2);
+    TEST_CASE(if_invalid_3);
 
     TEST_CASE(dollar);
 
@@ -4113,6 +4207,11 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(has_include_4);
     TEST_CASE(has_include_5);
     TEST_CASE(has_include_6);
+
+    TEST_CASE(define_has_include_invalid_1);
+    TEST_CASE(define_has_include_invalid_2);
+    TEST_CASE(define_has_include_invalid_3);
+    TEST_CASE(define_has_include_invalid_4);
 
     TEST_CASE(strict_ansi_1);
     TEST_CASE(strict_ansi_2);
