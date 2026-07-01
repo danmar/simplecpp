@@ -501,6 +501,10 @@ namespace simplecpp {
 
         using load_callback_type = std::function<void (FileData &)>;
 
+        void set_load_callback(load_callback_type cb) {
+            mLoadCallback = std::move(cb);
+        }
+
     private:
         struct Impl;
         std::unique_ptr<Impl> mImpl;
