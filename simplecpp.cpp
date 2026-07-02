@@ -3528,8 +3528,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 outputList->emplace_back(std::move(err));
             }
         }
-        else if (filedata->tokens.cfront() != nullptr)
+        else if (filedata->tokens.cfront() != nullptr) {
             includetokenstack.push(filedata->tokens.cfront());
+        }
     }
 
     std::map<std::string, std::list<Location>> maybeUsedMacros;
