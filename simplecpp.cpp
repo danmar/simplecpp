@@ -3518,7 +3518,17 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
     includetokenstack.push(rawtokens.cfront());
     for (auto it = dui.includes.cbegin(); it != dui.includes.cend(); ++it) {
         const FileData *const filedata = cache.get("", *it, dui, false, files, outputList).first;
-        if (filedata != nullptr && filedata->tokens.cfront() != nullptr)
+        if (filedata == nullptr) {
+            if (outputList) {
+                simplecpp::Output err{
+                    simplecpp::Output::EXPLICIT_INCLUDE_NOT_FOUND,
+                    {},
+                    "Can not open include file '" + *it + "' that is explicitly included."
+                };
+                outputList->emplace_back(std::move(err));
+            }
+        }
+        else if (filedata->tokens.cfront() != nullptr)
             includetokenstack.push(filedata->tokens.cfront());
     }
 
