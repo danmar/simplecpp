@@ -2926,6 +2926,64 @@ static void include9()
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
 }
 
+static void include10()   // #669 - -include with load()
+{
+    const char code_c[] = "X\n";
+    const char code_h[] = "#define X 123\n";
+
+    std::vector<std::string> files;
+
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "src.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "inc.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("src.c", files[0]);
+    ASSERT_EQUALS("inc.h", files[1]);
+
+    simplecpp::FileDataCache cache;
+    cache.insert({"src.c", rawtokens_c});
+    cache.insert({"inc.h", rawtokens_h});
+
+    simplecpp::OutputList outputList;
+    simplecpp::DUI dui;
+    dui.includes.emplace_back("inc.h");
+    dui.includes.emplace_back("missing.h");
+    cache = simplecpp::load(rawtokens_c, files, dui, &outputList, std::move(cache));
+
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS("Can not open include file 'missing.h' that is explicitly included.", outputList.begin()->msg);
+}
+
+static void include11()   // #669 - -include with preprocess()
+{
+    const char code_c[] = "X\n";
+    const char code_h[] = "#define X 123\n";
+
+    std::vector<std::string> files;
+
+    const simplecpp::TokenList rawtokens_c = makeTokenList(code_c, files, "src.c");
+    const simplecpp::TokenList rawtokens_h = makeTokenList(code_h, files, "inc.h");
+
+    ASSERT_EQUALS(2U, files.size());
+    ASSERT_EQUALS("src.c", files[0]);
+    ASSERT_EQUALS("inc.h", files[1]);
+
+    simplecpp::FileDataCache cache;
+    cache.insert({"src.c", rawtokens_c});
+    cache.insert({"inc.h", rawtokens_h});
+
+    simplecpp::OutputList outputList;
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    dui.includes.emplace_back("inc.h");
+    dui.includes.emplace_back("missing.h");
+    simplecpp::preprocess(out, rawtokens_c, files, cache, dui, &outputList);
+
+    ASSERT_EQUALS("123", out.stringify());
+    ASSERT_EQUALS(1, outputList.size());
+    ASSERT_EQUALS("Can not open include file 'missing.h' that is explicitly included.", outputList.begin()->msg);
+}
+
 static void readfile_nullbyte()
 {
     const char code[] = "ab\0cd";
@@ -4118,6 +4176,8 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(include7); // #include MACRO
     TEST_CASE(include8); // #include MACRO(X)
     TEST_CASE(include9); // #include MACRO
+    TEST_CASE(include10); // -include with load()
+    TEST_CASE(include11); // -include with preprocess()
 
     TEST_CASE(multiline1);
     TEST_CASE(multiline2);
