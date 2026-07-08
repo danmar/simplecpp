@@ -197,6 +197,9 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::SYNTAX_ERROR:
             ostr << "syntax_error,";
             break;
+        case simplecpp::Output::DIRECTIVE_AS_MACRO_PARAMETER:
+            ostr << "directive_as_macro_parameter,";
+            break;
         case simplecpp::Output::Type::PORTABILITY_BACKSLASH:
             ostr << "portability_backslash,";
             break;
@@ -1338,7 +1341,7 @@ static void define_ifdef()
 
     simplecpp::OutputList outputList;
     ASSERT_EQUALS("", preprocess(code, &outputList));
-    ASSERT_EQUALS("file0,3,syntax_error,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
+    ASSERT_EQUALS("file0,3,directive_as_macro_parameter,failed to expand 'A', it is invalid to use a preprocessor directive as macro parameter\n", toString(outputList));
 
 }
 

@@ -238,6 +238,7 @@ namespace simplecpp {
             MISSING_HEADER,
             INCLUDE_NESTED_TOO_DEEPLY,
             SYNTAX_ERROR,
+            DIRECTIVE_AS_MACRO_PARAMETER,
             PORTABILITY_BACKSLASH,
             UNHANDLED_CHAR_ERROR,
             EXPLICIT_INCLUDE_NOT_FOUND,

@@ -1602,7 +1602,7 @@ namespace simplecpp {
                     else if (rawtok->op == ')')
                         --par;
                     else if (rawtok->op == '#' && !sameline(rawtok->previous, rawtok))
-                        throw Error(rawtok->location, "it is invalid to use a preprocessor directive as macro parameter");
+                        throw invalidDirectiveAsMacroParameter(rawtok->location);
                     rawtokens2.push_back(new Token(rawtok->str(), rawtok1->location, rawtok->whitespaceahead));
                     rawtok = rawtok->next;
                 }
@@ -1696,6 +1696,11 @@ namespace simplecpp {
             Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
             const Location location;
             const std::string what;
+        };
+
+        struct invalidDirectiveAsMacroParameter : public Error {
+            invalidDirectiveAsMacroParameter(const Location &loc)
+                : Error(loc, "it is invalid to use a preprocessor directive as macro parameter") {}
         };
 
         /** Struct that is thrown when macro is expanded with wrong number of parameters */
@@ -3344,6 +3349,16 @@ static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token
         simplecpp::TokenList value(files);
         try {
             tok1 = it->second.expand(value, tok, macros, files);
+        } catch (const simplecpp::Macro::invalidDirectiveAsMacroParameter &err) {
+            if (outputList) {
+                simplecpp::Output out{
+                    simplecpp::Output::DIRECTIVE_AS_MACRO_PARAMETER,
+                    err.location,
+                    "failed to expand \'" + tok->str() + "\', " + err.what
+                };
+                outputList->emplace_back(std::move(out));
+            }
+            return false;
         } catch (const simplecpp::Macro::Error &err) {
             if (outputList) {
                 simplecpp::Output out{

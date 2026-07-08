@@ -272,6 +272,9 @@ int main(int argc, char **argv)
             case simplecpp::Output::SYNTAX_ERROR:
                 std::cerr << "syntax error: ";
                 break;
+            case simplecpp::Output::DIRECTIVE_AS_MACRO_PARAMETER:
+                std::cerr << "directive as macro parameter: ";
+                break;
             case simplecpp::Output::PORTABILITY_BACKSLASH:
                 std::cerr << "portability: ";
                 break;
