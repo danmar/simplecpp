@@ -967,7 +967,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
     if (!trailing_nl && outputList) {
         Output err{
-            Output::NO_EOF_NEWLINE,
+            Output::PORTABILITY_NO_EOF_NEWLINE,
             location,
             "No newline at end of file."
         };

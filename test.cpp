@@ -200,11 +200,11 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::PORTABILITY_BACKSLASH:
             ostr << "portability_backslash,";
             break;
+        case simplecpp::Output::Type::PORTABILITY_NO_EOF_NEWLINE:
+            ostr << "portability_no_eof_newline,";
+            break;
         case simplecpp::Output::Type::UNHANDLED_CHAR_ERROR:
             ostr << "unhandled_char_error,";
-            break;
-        case simplecpp::Output::Type::NO_EOF_NEWLINE:
-            ostr << "no_eof_newline,";
             break;
         case simplecpp::Output::Type::EXPLICIT_INCLUDE_NOT_FOUND:
             ostr << "explicit_include_not_found,";
@@ -3160,13 +3160,13 @@ static void readfile_no_eof_newline()
         const char code[] = "\\\n";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, &outputList);
-        ASSERT_EQUALS("file0,1,no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
     }
     {
         const char code[] = "#define A";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, &outputList);
-        ASSERT_EQUALS("file0,1,no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
     }
     {
         const char code[] = "#define A\n";
@@ -3178,13 +3178,13 @@ static void readfile_no_eof_newline()
         const char code[] = "#define A\\";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, &outputList);
-        ASSERT_EQUALS("file0,1,no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
     }
     {
         const char code[] = "// comment";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, &outputList);
-        ASSERT_EQUALS("file0,1,no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
     }
     {
         const char code[] = "// comment\n";
@@ -3196,7 +3196,7 @@ static void readfile_no_eof_newline()
         const char code[] = "/* comment \n comment */";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, &outputList);
-        ASSERT_EQUALS("file0,2,no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,2,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
     }
     {
         const char code[] = "/* comment \n comment */\n";

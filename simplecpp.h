@@ -239,8 +239,8 @@ namespace simplecpp {
             INCLUDE_NESTED_TOO_DEEPLY,
             SYNTAX_ERROR,
             PORTABILITY_BACKSLASH,
+            PORTABILITY_NO_EOF_NEWLINE,
             UNHANDLED_CHAR_ERROR,
-            NO_EOF_NEWLINE,
             EXPLICIT_INCLUDE_NOT_FOUND,
             FILE_NOT_FOUND,
             DUI_ERROR
