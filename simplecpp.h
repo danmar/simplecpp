@@ -240,6 +240,7 @@ namespace simplecpp {
             SYNTAX_ERROR,
             PORTABILITY_BACKSLASH,
             UNHANDLED_CHAR_ERROR,
+            NO_EOF_NEWLINE,
             EXPLICIT_INCLUDE_NOT_FOUND,
             FILE_NOT_FOUND,
             DUI_ERROR

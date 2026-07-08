@@ -662,6 +662,7 @@ static const std::string COMMENT_END("*/");
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
 {
     unsigned int multiline = 0U;
+    bool trailing_nl = true;
 
     const Token *oldLastToken = nullptr;
 
@@ -670,6 +671,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         unsigned char ch = stream.readChar();
         if (!stream.good())
             break;
+
+        trailing_nl = false;
 
         if (ch >= 0x80) {
             if (outputList) {
@@ -693,6 +696,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             } else {
                 location.line += multiline + 1;
                 multiline = 0U;
+                trailing_nl = true;
             }
             if (!multiline)
                 location.col = 1;
@@ -959,6 +963,15 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             location.col += currentToken.size();
         else
             location.adjust(currentToken);
+    }
+
+    if (!trailing_nl && outputList) {
+        Output err{
+            Output::NO_EOF_NEWLINE,
+            location,
+            "No newline at end of file."
+        };
+        outputList->emplace_back(std::move(err));
     }
 
     combineOperators();
