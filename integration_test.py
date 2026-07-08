@@ -17,7 +17,7 @@ def __test_relative_header_create_header(dir, with_pragma_once=True):
                 #error header_was_already_included
                 #endif
                 const int dummy = 1;
-                """)
+                """'\n')
     return header_file, "error: #error header_was_already_included"
 
 def __test_relative_header_create_source(dir, include1, include2, is_include1_sys=False, is_include2_sys=False, inv=False):
@@ -31,7 +31,7 @@ def __test_relative_header_create_source(dir, include1, include2, is_include1_sy
                 #undef TEST_H_INCLUDED
                 #include {format_include(include1, is_include1_sys)}
                 #include {format_include(include2, is_include2_sys)}
-                """)
+                """'\n')
     return src_file
 
 @pytest.mark.parametrize("with_pragma_once", (False, True))
@@ -201,27 +201,27 @@ def test_same_name_header(record_property, tmpdir):
                 #include <header_a.h>
                 #include <header_b.h>
                 TEST
-                """)
+                """'\n')
 
     with open(header_a, "wt") as f:
         f.write("""
                 #include "same_name.h"
-                """)
+                """'\n')
 
     with open(header_b, "wt") as f:
         f.write("""
                 #include "same_name.h"
-                """)
+                """'\n')
 
     with open(same_name_a, "wt") as f:
         f.write("""
                 #define TEST E
-                """)
+                """'\n')
 
     with open(same_name_b, "wt") as f:
         f.write("""
                 #define TEST OK
-                """)
+                """'\n')
 
     args = [
         format_include_path_arg(include_a),
@@ -279,13 +279,13 @@ def test_pragma_once_matching(record_property, tmpdir):
         for n in names_to_test:
             f.write(f"""
                     #include {n}
-                    """);
+                    """'\n');
 
     with open(once_header, "wt") as f:
         f.write(f"""
                 #pragma once
                 ONCE
-                """);
+                """'\n');
 
     args = [
         format_include_path_arg(test_dir),
@@ -463,7 +463,7 @@ def test_include_header_twice(tmpdir):
                 #ifdef BBB
                 # error BBB is defined
                 #endif
-                """)
+                """'\n')
 
     test_file = os.path.join(tmpdir, 'test.c')
     with open(test_file, 'wt') as f:
@@ -473,7 +473,7 @@ def test_include_header_twice(tmpdir):
 
                 # define BBB
                 # include "test.h"
-                """)
+                """'\n')
 
     args = [test_file]
 
@@ -507,7 +507,7 @@ TEST_P(PREFIX_WITH_MACRO(NamingTest), n) {}
 def test_utf16_bom(tmpdir):
     test_file = os.path.join(tmpdir, "test.cpp")
     with open(test_file, 'wb') as f:
-        f.write(b'\xFF\xFE\x3B\x00')
+        f.write(b'\xFF\xFE\x3B\x00\x0A\x00')
 
     args = [test_file]
 
