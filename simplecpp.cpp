@@ -140,9 +140,9 @@ static unsigned long long stringToULL(const std::string &s, std::size_t offset =
     }
 
     unsigned long long result = 0;
-    for (std::size_t i = offset; i < s.size(); i++) {
+    std::size_t i;
+    for (i = offset; i < s.size(); i++) {
         const char c = s[i];
-        result *= base;
 
         unsigned long long d;
         if ('0' <= c && c <= '9') {
@@ -152,14 +152,20 @@ static unsigned long long stringToULL(const std::string &s, std::size_t offset =
         } else if ('A' <= c && c <= 'F') {
             d = 10 + c - 'A';
         } else {
-            throw std::runtime_error("invalid integer literal");
+            break;
         }
 
         if (d >= base) {
             throw std::runtime_error("invalid integer literal");
         }
 
-        result += d;
+        result = base*result + d;
+    }
+
+    for (; i < s.size(); i++) {
+        if (!std::strchr("ZLUzlu", s[i])) {
+            throw std::runtime_error("invalid integer literal");
+        }
     }
 
     return result;
