@@ -2374,6 +2374,12 @@ static void ifIntegerLiteral()
 {
     testIfIntegerLiteral("123", "123", false);
     testIfIntegerLiteral("-123", "-123", false);
+    testIfIntegerLiteral("123", "123Z", false);
+    testIfIntegerLiteral("123", "123UL", false);
+    testIfIntegerLiteral("-123", "-123LL", false);
+    testIfIntegerLiteral("123", "123z", false);
+    testIfIntegerLiteral("123", "123ul", false);
+    testIfIntegerLiteral("-123", "-123ll", false);
 
     testIfIntegerLiteral("123", "0x7b", false);
     testIfIntegerLiteral("-123", "-0x7b", false);
