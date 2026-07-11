@@ -18,6 +18,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef __cpp_lib_string_view
+#include <string_view>
+#endif
+
 #ifndef SIMPLECPP_TEST_SOURCE_DIR
 #error "SIMPLECPP_TEST_SOURCE_DIR is not defined."
 #endif
