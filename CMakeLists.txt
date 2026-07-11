@@ -1,8 +1,12 @@
 cmake_minimum_required (VERSION 3.10)
 project (simplecpp LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ standard to use")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_CXX_STANDARD LESS 11)
+    message(FATAL_ERROR "C++ standard was set to ${CMAKE_CXX_STANDARD} but 11 is required as a minimum")
+endif()
 
 include(CheckCXXCompilerFlag)
 
