@@ -31,6 +31,7 @@ Checks: >
         -modernize-avoid-c-arrays,
         -modernize-loop-convert,
         -modernize-pass-by-value,
+        -modernize-use-auto,
         -modernize-use-designated-initializers,
         -modernize-use-nodiscard,
         -modernize-use-ranges,
