@@ -60,6 +60,15 @@
 #  endif
 #endif
 
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ <= 9
+// Hack to workaround GCC bug.
+// Details: https://trac.cppcheck.net/ticket/14850
+// seen on g++ before 10.x
+#define  SIMPLECPP_NOEXCEPT
+#else
+#define  SIMPLECPP_NOEXCEPT  noexcept
+#endif
+
 namespace simplecpp {
     /** C code standard */
     enum cstd_t : std::int8_t { CUnknown=-1, C89, C99, C11, C17, C23, C2Y };
@@ -454,10 +463,10 @@ namespace simplecpp {
         ~FileDataCache();
 
         FileDataCache(const FileDataCache &) = delete;
-        FileDataCache(FileDataCache &&) noexcept;
+        FileDataCache(FileDataCache &&) SIMPLECPP_NOEXCEPT;
 
         FileDataCache &operator=(const FileDataCache &) = delete;
-        FileDataCache &operator=(FileDataCache &&) noexcept;
+        FileDataCache &operator=(FileDataCache &&) SIMPLECPP_NOEXCEPT;
 
         /** Get the cached data for a file, or load and then return it if it isn't cached.
          *  returns the file data and true if the file was loaded, false if it was cached. */

@@ -3131,8 +3131,8 @@ simplecpp::FileDataCache::FileDataCache()
 {}
 
 simplecpp::FileDataCache::~FileDataCache() = default;
-simplecpp::FileDataCache::FileDataCache(FileDataCache &&) noexcept = default;
-simplecpp::FileDataCache &simplecpp::FileDataCache::operator=(simplecpp::FileDataCache &&) noexcept = default;
+simplecpp::FileDataCache::FileDataCache(FileDataCache &&) SIMPLECPP_NOEXCEPT = default;
+simplecpp::FileDataCache &simplecpp::FileDataCache::operator=(simplecpp::FileDataCache &&) SIMPLECPP_NOEXCEPT = default;
 
 static bool getFileId(const std::string &path, FileID &id);
 
