@@ -2090,38 +2090,33 @@ namespace simplecpp {
         }
 
         const Token *recursiveExpandToken(TokenList &output, TokenList &temp, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
-            if (!temp.cback() || !temp.cback()->name || !tok->next || tok->next->op != '(') {
+            // Loop: the expansion result may itself end with the name of a function-like
+            // macro whose arguments are supplied by the tokens that follow it.
+            while (true) {
+                if (!temp.cback() || !temp.cback()->name || !tok->next || tok->next->op != '(' || !sameline(tok, tok->next))
+                    break;
+
+                const MacroMap::const_iterator it = macros.find(temp.cback()->str());
+                if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end())
+                    break;
+
+                const Macro &calledMacro = it->second;
+                if (!calledMacro.functionLike() || temp.cback()->isExpandedFrom(&calledMacro))
+                    break;
+
+                TokenList temp2(files);
+                temp2.push_back(new Token(temp.cback()->str(), tok->location));
+
+                const Token * const tok2 = appendTokens(temp2, loc, tok->next, macros, expandedmacros, parametertokens);
+                if (!tok2)
+                    break;
                 output.takeTokens(temp);
-                return tok->next;
+                output.deleteToken(output.back());
+                calledMacro.expand(temp, loc, temp2.cfront(), macros, expandedmacros);
+                tok = tok2;
             }
-
-            if (!sameline(tok, tok->next)) {
-                output.takeTokens(temp);
-                return tok->next;
-            }
-
-            const MacroMap::const_iterator it = macros.find(temp.cback()->str());
-            if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end()) {
-                output.takeTokens(temp);
-                return tok->next;
-            }
-
-            const Macro &calledMacro = it->second;
-            if (!calledMacro.functionLike()) {
-                output.takeTokens(temp);
-                return tok->next;
-            }
-
-            TokenList temp2(files);
-            temp2.push_back(new Token(temp.cback()->str(), tok->location));
-
-            const Token * const tok2 = appendTokens(temp2, loc, tok->next, macros, expandedmacros, parametertokens);
-            if (!tok2)
-                return tok->next;
             output.takeTokens(temp);
-            output.deleteToken(output.back());
-            calledMacro.expand(output, loc, temp2.cfront(), macros, expandedmacros);
-            return tok2->next;
+            return tok->next;
         }
 
         const Token *expandToken(TokenList &output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
