@@ -517,12 +517,15 @@ static void combineOperators_ellipsis()
 
 static void comment()
 {
+    simplecpp::DUI dui;
+    dui.removeComments = true;
+
     ASSERT_EQUALS("// abc", readfile("// abc"));
-    ASSERT_EQUALS("", preprocess("// abc"));
+    ASSERT_EQUALS("", preprocess("// abc", dui));
     ASSERT_EQUALS("/*\n\n*/abc", readfile("/*\n\n*/abc"));
-    ASSERT_EQUALS("\n\nabc", preprocess("/*\n\n*/abc"));
+    ASSERT_EQUALS("\n\nabc", preprocess("/*\n\n*/abc", dui));
     ASSERT_EQUALS("* p = a / * b / * c ;", readfile("*p=a/ *b/ *c;"));
-    ASSERT_EQUALS("* p = a / * b / * c ;", preprocess("*p=a/ *b/ *c;"));
+    ASSERT_EQUALS("* p = a / * b / * c ;", preprocess("*p=a/ *b/ *c;", dui));
 }
 
 static void comment_multiline()
@@ -2568,13 +2571,16 @@ static void location11()
 
 static void location12()
 {
+    simplecpp::DUI dui;
+    dui.removeComments = true;
+
     const char code[] =
         "/**//**/#/**//**/line/**//**/3/**//**/\"file.c\"/**/\n"
         "__LINE__ __FILE__\n";
     ASSERT_EQUALS("\n"
                   "#line 3 \"file.c\"\n"
                   "3 \"file.c\"",
-                  preprocess(code));
+                  preprocess(code, dui));
 }
 
 static void missingHeader1()
@@ -3012,6 +3018,7 @@ static void include9()
     simplecpp::TokenList out(files);
     simplecpp::DUI dui;
     dui.includePaths.emplace_back(".");
+    dui.removeComments = true;
     simplecpp::preprocess(out, rawtokens_c, files, cache, dui);
 
     ASSERT_EQUALS("\n#line 2 \"1.h\"\nx = 1 ;", out.stringify());
