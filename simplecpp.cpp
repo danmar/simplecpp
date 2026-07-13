@@ -2106,7 +2106,7 @@ namespace simplecpp {
             // Expand while the expansion result ends with the name of a function-like
             // macro whose arguments are supplied by the tokens that follow it. Each round
             // consumes that macro call from the token stream, so tok always advances.
-            while (const Macro *calledMacro = rescanMacro(temp, tok, macros, expandedmacros)) {
+            while (const Macro * const calledMacro = rescanMacro(temp, tok, macros, expandedmacros)) {
                 TokenList temp2(files);
                 temp2.push_back(new Token(temp.cback()->str(), tok->location));
 
