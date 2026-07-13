@@ -565,6 +565,27 @@ static void comment_multiline()
     ASSERT_EQUALS("// abc\ndef", readfile("// abc\\\ndef"));
 }
 
+static void keep_comments()
+{
+    simplecpp::DUI dui;
+    dui.removeComments = false;
+
+    {
+        const char code[] = "/* comment */\n";
+        ASSERT_EQUALS("/* comment */", preprocess(code,dui));
+    }
+
+    {
+        const char code[] = "// comment\n";
+        ASSERT_EQUALS("// comment", preprocess(code,dui));
+    }
+
+    {
+        const char code[] = "#define MACRO /* comment */\nMACRO\n";
+        ASSERT_EQUALS("\n/* comment */", preprocess(code,dui));
+    }
+}
+
 
 static void constFold()
 {
@@ -4073,6 +4094,7 @@ static void runTests(int argc, char **argv, Input input)
 
     TEST_CASE(comment);
     TEST_CASE(comment_multiline);
+    TEST_CASE(keep_comments);
 
     TEST_CASE(constFold);
 
