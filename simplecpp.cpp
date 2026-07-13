@@ -2089,21 +2089,24 @@ namespace simplecpp {
             return functionLike() ? parametertokens2.back()->next : nameTokInst->next;
         }
 
+        /** Returns the macro to expand when the last token of @p temp is the name of a
+         *  function-like macro and the tokens after @p tok supply its arguments; nullptr otherwise */
+        static const Macro *rescanMacro(const TokenList &temp, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros) {
+            if (!temp.cback() || !temp.cback()->name || !sameline(tok, tok->next) || tok->next->op != '(')
+                return nullptr;
+            const MacroMap::const_iterator it = macros.find(temp.cback()->str());
+            if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end())
+                return nullptr;
+            if (!it->second.functionLike() || temp.cback()->isExpandedFrom(&it->second))
+                return nullptr;
+            return &it->second;
+        }
+
         const Token *recursiveExpandToken(TokenList &output, TokenList &temp, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens) const {
-            // Loop: the expansion result may itself end with the name of a function-like
-            // macro whose arguments are supplied by the tokens that follow it.
-            while (true) {
-                if (!temp.cback() || !temp.cback()->name || !tok->next || tok->next->op != '(' || !sameline(tok, tok->next))
-                    break;
-
-                const MacroMap::const_iterator it = macros.find(temp.cback()->str());
-                if (it == macros.end() || expandedmacros.find(temp.cback()->str()) != expandedmacros.end())
-                    break;
-
-                const Macro &calledMacro = it->second;
-                if (!calledMacro.functionLike() || temp.cback()->isExpandedFrom(&calledMacro))
-                    break;
-
+            // Expand while the expansion result ends with the name of a function-like
+            // macro whose arguments are supplied by the tokens that follow it. Each round
+            // consumes that macro call from the token stream, so tok always advances.
+            while (const Macro *calledMacro = rescanMacro(temp, tok, macros, expandedmacros)) {
                 TokenList temp2(files);
                 temp2.push_back(new Token(temp.cback()->str(), tok->location));
 
@@ -2112,7 +2115,7 @@ namespace simplecpp {
                     break;
                 output.takeTokens(temp);
                 output.deleteToken(output.back());
-                calledMacro.expand(temp, loc, temp2.cfront(), macros, expandedmacros);
+                calledMacro->expand(temp, loc, temp2.cfront(), macros, expandedmacros);
                 tok = tok2;
             }
             output.takeTokens(temp);
