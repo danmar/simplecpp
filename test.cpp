@@ -934,6 +934,21 @@ static void define25()
                   "f ( )", preprocess(code));
 }
 
+static void define26()
+{
+    // a macro name that came from expanding that same macro must not be
+    // re-expanded with arguments taken from the raw token stream
+    const char code[] = "#define f() f\n"
+                        "f()()\n";
+    ASSERT_EQUALS("\n"
+                  "f ( )", preprocess(code));
+
+    const char code2[] = "#define f() f\n"
+                         "f()()()\n";
+    ASSERT_EQUALS("\n"
+                  "f ( ) ( )", preprocess(code2));
+}
+
 
 static void define_invalid_1()
 {
@@ -4123,6 +4138,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define23); // #40
     TEST_CASE(define24);
     TEST_CASE(define25);
+    TEST_CASE(define26);
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_invalid_3);

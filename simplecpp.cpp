@@ -1635,7 +1635,7 @@ namespace simplecpp {
                 if (output2.cfront() != output2.cback() && macro2tok->str() == this->name())
                     break;
                 const MacroMap::const_iterator macro = macros.find(macro2tok->str());
-                if (macro == macros.end() || !macro->second.functionLike())
+                if (macro == macros.end() || !macro->second.functionLike() || macro2tok->isExpandedFrom(&macro->second))
                     break;
                 TokenList rawtokens2(inputFiles);
                 const Location loc(macro2tok->location);
