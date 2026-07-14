@@ -30,6 +30,14 @@
 #include <span>
 #endif
 
+#if __cplusplus >= 201402L
+#include <experimental/propagate_const>
+
+#define SIMPLECPP_PROPAGATE_CONST(t) std::experimental::propagate_const<t>
+#else
+#define SIMPLECPP_PROPAGATE_CONST(t) t
+#endif
+
 #ifdef _WIN32
 #  ifdef SIMPLECPP_EXPORT
 #    define SIMPLECPP_LIB __declspec(dllexport)
@@ -192,8 +200,8 @@ namespace simplecpp {
         bool number;
         bool whitespaceahead;
         Location location;
-        Token *previous{};
-        Token *next{};
+        SIMPLECPP_PROPAGATE_CONST(Token*) previous;
+        SIMPLECPP_PROPAGATE_CONST(Token*) next;
         mutable const Token *nextcond{};
 
         const Token *previousSkipComments() const {
@@ -363,18 +371,7 @@ namespace simplecpp {
             delete tok;
         }
 
-        void takeTokens(TokenList &other) {
-            if (!other.frontToken)
-                return;
-            if (!frontToken) {
-                frontToken = other.frontToken;
-            } else {
-                backToken->next = other.frontToken;
-                other.frontToken->previous = backToken;
-            }
-            backToken = other.backToken;
-            other.frontToken = other.backToken = nullptr;
-        }
+        void takeTokens(TokenList &other);
 
         /** sizeof(T) */
         std::map<std::string, std::size_t> sizeOfType;
@@ -413,8 +410,8 @@ namespace simplecpp {
 
         unsigned int fileIndex(const std::string &filename);
 
-        Token *frontToken;
-        Token *backToken;
+        SIMPLECPP_PROPAGATE_CONST(Token*) frontToken;
+        SIMPLECPP_PROPAGATE_CONST(Token*) backToken;
         std::vector<std::string> &files;
     };
 
@@ -608,6 +605,8 @@ namespace simplecpp {
 #if defined(_MSC_VER)
 #  pragma warning(pop)
 #endif
+
+#undef SIMPLECPP_PROPAGATE_CONST
 
 #undef SIMPLECPP_LIB
 

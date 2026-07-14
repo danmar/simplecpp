@@ -60,6 +60,12 @@
 #  include <sys/types.h>
 #endif
 
+#if __cplusplus >= 201402L
+#define SIMPLECPP_PROPAGATE_CONST_GET(t) (t).get()
+#else
+#define SIMPLECPP_PROPAGATE_CONST_GET(t) (t)
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -531,9 +537,9 @@ simplecpp::TokenList &simplecpp::TokenList::operator=(TokenList &&other)
 {
     if (this != &other) {
         clear();
-        frontToken = other.frontToken;
+        frontToken = SIMPLECPP_PROPAGATE_CONST_GET(other.frontToken);
         other.frontToken = nullptr;
-        backToken = other.backToken;
+        backToken = SIMPLECPP_PROPAGATE_CONST_GET(other.backToken);
         other.backToken = nullptr;
         files = other.files;
         sizeOfType = std::move(other.sizeOfType);
@@ -545,8 +551,9 @@ void simplecpp::TokenList::clear()
 {
     backToken = nullptr;
     while (frontToken) {
+        // NOLINTNEXTLINE(misc-const-correctness) - FP
         Token * const next = frontToken->next;
-        delete frontToken;
+        delete SIMPLECPP_PROPAGATE_CONST_GET(frontToken);
         frontToken = next;
     }
     sizeOfType.clear();
@@ -558,7 +565,7 @@ void simplecpp::TokenList::push_back(Token *tok)
         frontToken = tok;
     else
         backToken->next = tok;
-    tok->previous = backToken;
+    tok->previous = SIMPLECPP_PROPAGATE_CONST_GET(backToken);
     backToken = tok;
 }
 
@@ -1363,8 +1370,7 @@ void simplecpp::TokenList::constFoldLogicalOp(Token *tok)
 void simplecpp::TokenList::constFoldQuestionOp(Token *&tok1)
 {
     bool gotoTok1 = false;
-    // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
-    for (Token *tok = tok1; tok && tok->op != ')'; tok =  gotoTok1 ? tok1 : tok->next) {
+    for (Token *tok = tok1; tok && tok->op != ')'; tok = gotoTok1 ? tok1 : SIMPLECPP_PROPAGATE_CONST_GET(tok->next)) {
         gotoTok1 = false;
         if (tok->str() != "?")
             continue;
@@ -1398,6 +1404,21 @@ void simplecpp::TokenList::removeComments()
         if (tok1->comment)
             deleteToken(tok1);
     }
+}
+
+void simplecpp::TokenList::takeTokens(TokenList &other)
+{
+    if (!other.frontToken)
+        return;
+    if (!frontToken) {
+        frontToken = SIMPLECPP_PROPAGATE_CONST_GET(other.frontToken);
+    } else {
+        backToken->next = SIMPLECPP_PROPAGATE_CONST_GET(other.frontToken);
+        other.frontToken->previous = SIMPLECPP_PROPAGATE_CONST_GET(backToken);
+    }
+    backToken = SIMPLECPP_PROPAGATE_CONST_GET(other.backToken);
+    other.frontToken = nullptr;
+    other.backToken = nullptr;
 }
 
 std::string simplecpp::TokenList::readUntil(Stream &stream, const Location &location, const char start, const char end, OutputList *outputList)
@@ -1783,7 +1804,7 @@ namespace simplecpp {
                     valueToken = nullptr;
                     return false;
                 }
-                valueToken = argtok ? argtok->next : nullptr;
+                valueToken = argtok ? SIMPLECPP_PROPAGATE_CONST_GET(argtok->next) : nullptr;
             } else {
                 args.clear();
                 valueToken = nameTokDef->next;
@@ -1822,7 +1843,7 @@ namespace simplecpp {
                             tok = tok->next;
                         }
                         if (par != 0) {
-                            const Token *const lastTok = expandValue.back() ? expandValue.back() : valueToken->next;
+                            const Token *const lastTok = expandValue.back() ? expandValue.back() : SIMPLECPP_PROPAGATE_CONST_GET(valueToken->next);
                             throw Error(lastTok->location, "In definition of '" + nameTokDef->str() + "': Missing closing parenthesis for __VA_OPT__");
                         }
                     } else {
@@ -1991,7 +2012,6 @@ namespace simplecpp {
                 }
             }
 
-            // NOLINTNEXTLINE(misc-const-correctness) - technically correct but used to access non-const data
             Token * const output_end_1 = output.back();
 
             const Token *valueToken2;
@@ -2078,7 +2098,7 @@ namespace simplecpp {
             }
 
             if (!functionLike()) {
-                for (Token *tok = output_end_1 ? output_end_1->next : output.front(); tok; tok = tok->next) {
+                for (Token *tok = output_end_1 ? SIMPLECPP_PROPAGATE_CONST_GET(output_end_1->next) : output.front(); tok; tok = tok->next) {
                     tok->macro = nameTokInst->str();
                 }
             }
@@ -2180,8 +2200,8 @@ namespace simplecpp {
 
             if (tok->str() == DEFINED) {
                 const Token * const tok2 = tok->next;
-                const Token * const tok3 = tok2 ? tok2->next : nullptr;
-                const Token * const tok4 = tok3 ? tok3->next : nullptr;
+                const Token * const tok3 = tok2 ? SIMPLECPP_PROPAGATE_CONST_GET(tok2->next) : nullptr;
+                const Token * const tok4 = tok3 ? SIMPLECPP_PROPAGATE_CONST_GET(tok3->next) : nullptr;
                 const Token *defToken = nullptr;
                 const Token *lastToken = nullptr;
                 if (sameline(tok, tok4) && tok2->op == '(' && tok3->name && tok4->op == ')') {
@@ -3299,7 +3319,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
         filelist.emplace_back(filedata->tokens.front());
     }
 
-    for (const Token *rawtok = rawtokens.cfront(); rawtok || !filelist.empty(); rawtok = rawtok ? rawtok->next : nullptr) {
+    for (const Token *rawtok = rawtokens.cfront(); rawtok || !filelist.empty(); rawtok = rawtok ? SIMPLECPP_PROPAGATE_CONST_GET(rawtok->next) : nullptr) {
         if (rawtok == nullptr) {
             rawtok = filelist.back();
             filelist.pop_back();
@@ -3755,7 +3775,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                     expr.push_back(new Token("0", tok->location));
                             }
                             if (par)
-                                tok = tok ? tok->next : nullptr;
+                                tok = tok ? SIMPLECPP_PROPAGATE_CONST_GET(tok->next) : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')')) {
                                 if (outputList) {
                                     Output out{
@@ -3798,7 +3818,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 }
                             }
                             if (par)
-                                tok = tok ? tok->next : nullptr;
+                                tok = tok ? SIMPLECPP_PROPAGATE_CONST_GET(tok->next) : nullptr;
                             if (!tok || !sameline(rawtok,tok) || (par && tok->op != ')') || (!closingAngularBracket)) {
                                 if (outputList) {
                                     Output out{
