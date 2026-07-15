@@ -26,7 +26,7 @@ static bool isDir(const std::string& path)
     return (file_stat.st_mode & S_IFMT) == S_IFDIR;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     bool error = false;
     const char *filename = nullptr;
@@ -49,6 +49,7 @@ int main(int argc, char **argv)
         if (*arg == '-') {
             bool found = false;
             const char c = arg[1];
+            // NOLINTNEXTLINE(bugprone-unhandled-code-paths)
             switch (c) {
             case 'D': { // define symbol
                 found = true;

@@ -84,6 +84,7 @@ namespace simplecpp {
     struct View
     {
         // cppcheck-suppress noExplicitConstructor
+        // NOLINTNEXTLINE(misc-explicit-constructor)
         View(const char* data)
             : mData(data)
             , mSize(strlen(data))
@@ -97,6 +98,7 @@ namespace simplecpp {
         {}
 
         // cppcheck-suppress noExplicitConstructor
+        // NOLINTNEXTLINE(misc-explicit-constructor)
         View(const std::string& str)
             : mData(str.data())
             , mSize(str.size())
