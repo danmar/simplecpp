@@ -77,6 +77,14 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options_safe(-Wno-thread-safety-negative)
     add_compile_options_safe(-Wno-thread-safety-beta)
 
+    # we do not add the annotation until C++20
+    # the warnings were introduced with Clang 23
+    if(CMAKE_CXX_STANDARD LESS 20)
+        add_compile_options_safe(-Wno-lifetime-safety-intra-tu-suggestions)
+        add_compile_options_safe(-Wno-lifetime-safety-intra-tu-constructor-suggestions)
+        add_compile_options_safe(-Wno-lifetime-safety-cross-tu-constructor-suggestions)
+    endif()
+
     # TODO: fix these?
     add_compile_options(-Wno-padded)
     add_compile_options(-Wno-sign-conversion)
@@ -87,6 +95,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # we are not interested in these
     set_source_files_properties(test.cpp PROPERTIES COMPILE_FLAGS "-Wno-multichar -Wno-four-char-constants")
 
+    # TODO: check for proper AppleClang version
     if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 14 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14)
         # TODO: verify this regression still exists in clang-15
         if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")

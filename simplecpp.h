@@ -42,6 +42,16 @@
 #  define SIMPLECPP_LIB
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 #if defined(_MSC_VER)
 #  pragma warning(push)
 // suppress warnings about "conversion from 'type1' to 'type2', possible loss of data"
@@ -84,7 +94,8 @@ namespace simplecpp {
     struct View
     {
         // cppcheck-suppress noExplicitConstructor
-        View(const char* data)
+        // NOLINTNEXTLINE(misc-explicit-constructor)
+        View(const char* data SIMPLECPP_LIFETIMEBOUND)
             : mData(data)
             , mSize(strlen(data))
         {}
@@ -97,7 +108,8 @@ namespace simplecpp {
         {}
 
         // cppcheck-suppress noExplicitConstructor
-        View(const std::string& str)
+        // NOLINTNEXTLINE(misc-explicit-constructor)
+        View(const std::string& str )
             : mData(str.data())
             , mSize(str.size())
         {}
@@ -169,7 +181,7 @@ namespace simplecpp {
 
         Token &operator=(const Token &tok) = delete;
 
-        const TokenString& str() const {
+        const TokenString& str() const SIMPLECPP_LIFETIMEBOUND {
             return string;
         }
         void setstr(const std::string &s) {
@@ -266,9 +278,9 @@ namespace simplecpp {
     public:
         class Stream;
 
-        explicit TokenList(std::vector<std::string> &filenames);
+        explicit TokenList(std::vector<std::string> &filenames SIMPLECPP_LIFETIMEBOUND);
         /** generates a token list from the given std::istream parameter */
-        TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr);
+        TokenList(std::istream &istr, std::vector<std::string> &filenames SIMPLECPP_LIFETIMEBOUND, const std::string &filename=std::string(), OutputList *outputList = nullptr);
         /** generates a token list from the given buffer */
         template<size_t size>
         TokenList(const char (&data)[size], std::vector<std::string> &filenames, const std::string &filename=std::string(), OutputList *outputList = nullptr)
@@ -306,7 +318,7 @@ namespace simplecpp {
 #endif // __cpp_lib_span
 
         /** generates a token list from the given filename parameter */
-        TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList = nullptr);
+        TokenList(const std::string &filename, std::vector<std::string> &filenames SIMPLECPP_LIFETIMEBOUND, OutputList *outputList = nullptr);
         TokenList(const TokenList &other);
         TokenList(TokenList &&other);
         ~TokenList();
@@ -386,7 +398,7 @@ namespace simplecpp {
         const std::string& file(const Location& loc) const;
 
     private:
-        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int /*unused*/);
+        TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames SIMPLECPP_LIFETIMEBOUND, const std::string &filename, OutputList *outputList, int /*unused*/);
 
         void combineOperators();
 
@@ -490,22 +502,22 @@ namespace simplecpp {
         size_type size() const {
             return mData.size();
         }
-        iterator begin() {
+        iterator begin() SIMPLECPP_LIFETIMEBOUND {
             return mData.begin();
         }
-        iterator end() {
+        iterator end() SIMPLECPP_LIFETIMEBOUND {
             return mData.end();
         }
-        const_iterator begin() const {
+        const_iterator begin() const SIMPLECPP_LIFETIMEBOUND {
             return mData.begin();
         }
-        const_iterator end() const {
+        const_iterator end() const SIMPLECPP_LIFETIMEBOUND {
             return mData.end();
         }
-        const_iterator cbegin() const {
+        const_iterator cbegin() const SIMPLECPP_LIFETIMEBOUND {
             return mData.cbegin();
         }
-        const_iterator cend() const {
+        const_iterator cend() const SIMPLECPP_LIFETIMEBOUND {
             return mData.cend();
         }
 
@@ -608,6 +620,8 @@ namespace simplecpp {
 #if defined(_MSC_VER)
 #  pragma warning(pop)
 #endif
+
+#undef SIMPLECPP_LIFETIMEBOUND
 
 #undef SIMPLECPP_LIB
 

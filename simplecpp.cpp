@@ -60,6 +60,16 @@
 #  include <sys/types.h>
 #endif
 
+#if defined(__has_cpp_attribute)
+#  if __has_cpp_attribute (clang::lifetimebound)
+#    define SIMPLECPP_LIFETIMEBOUND [[clang::lifetimebound]]
+#  else
+#    define SIMPLECPP_LIFETIMEBOUND
+#  endif
+#else
+#  define SIMPLECPP_LIFETIMEBOUND
+#endif
+
 static bool isHex(const std::string &s)
 {
     return s.size()>2 && (s.compare(0,2,"0x")==0 || s.compare(0,2,"0X")==0);
@@ -153,12 +163,12 @@ static bool endsWith(const std::string &s, const std::string &e)
     return (s.size() >= e.size()) && std::equal(e.rbegin(), e.rend(), s.rbegin());
 }
 
-static bool sameline(const simplecpp::Token *tok1, const simplecpp::Token *tok2)
+static bool sameline(const simplecpp::Token * const tok1, const simplecpp::Token * const tok2)
 {
     return tok1 && tok2 && tok1->location.sameline(tok2->location);
 }
 
-static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeBinaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return (tok->name &&
             tok->str() == alt &&
@@ -168,7 +178,7 @@ static bool isAlternativeBinaryOp(const simplecpp::Token *tok, const std::string
             (tok->next->number || tok->next->name || tok->next->op == '('));
 }
 
-static bool isAlternativeUnaryOp(const simplecpp::Token *tok, const std::string &alt)
+static bool isAlternativeUnaryOp(const simplecpp::Token * const tok, const std::string &alt)
 {
     return ((tok->name && tok->str() == alt) &&
             (!tok->previous || tok->previous->op == '(') &&
@@ -358,7 +368,7 @@ namespace {
     class StdIStream : public simplecpp::TokenList::Stream {
     public:
         // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-        explicit StdIStream(std::istream &istr)
+        explicit StdIStream(std::istream &istr SIMPLECPP_LIFETIMEBOUND)
             : istr(istr) {
             assert(istr.good());
             init();
@@ -384,7 +394,7 @@ namespace {
     class StdCharBufStream : public simplecpp::TokenList::Stream {
     public:
         // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
-        StdCharBufStream(const unsigned char* str, std::size_t size)
+        StdCharBufStream(const unsigned char* str SIMPLECPP_LIFETIMEBOUND, std::size_t size)
             : str(str)
             , size(size)
         {
@@ -622,7 +632,7 @@ static std::string escapeString(const std::string &str)
     return ostr.str();
 }
 
-static void portabilityBackslash(simplecpp::OutputList *outputList, const simplecpp::Location &location)
+static void portabilityBackslash(simplecpp::OutputList * const outputList, const simplecpp::Location &location)
 {
     if (!outputList)
         return;
@@ -799,7 +809,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (ch == '\\') {
                     TokenString tmp;
                     char tmp_ch = ch;
-                    while ((stream.good()) && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
+                    while (stream.good() && (tmp_ch == '\\' || tmp_ch == ' ' || tmp_ch == '\t')) {
                         tmp += tmp_ch;
                         tmp_ch = stream.readChar();
                     }
@@ -999,7 +1009,7 @@ void simplecpp::TokenList::constFold()
     }
 }
 
-static bool isFloatSuffix(const simplecpp::Token *tok)
+static bool isFloatSuffix(const simplecpp::Token * const tok)
 {
     if (!tok || tok->str().size() != 1U)
         return false;
@@ -1010,7 +1020,7 @@ static bool isFloatSuffix(const simplecpp::Token *tok)
 static const std::string AND("and");
 static const std::string BITAND("bitand");
 static const std::string BITOR("bitor");
-static bool isAlternativeAndBitandBitor(const simplecpp::Token* tok)
+static bool isAlternativeAndBitandBitor(const simplecpp::Token * const tok)
 {
     return isAlternativeBinaryOp(tok, AND) || isAlternativeBinaryOp(tok, BITAND) || isAlternativeBinaryOp(tok, BITOR);
 }
@@ -1498,12 +1508,12 @@ namespace simplecpp {
 
     class Macro {
     public:
-        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
+        explicit Macro(std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), variadicOpt(false), valueDefinedInCode_(false) {}
 
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+        Macro(const Token *tok, std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
             if (sameline(tok->previousSkipComments(), tok))
                 throw std::runtime_error("bad macro syntax");
             if (tok->op != '#')
@@ -1522,7 +1532,7 @@ namespace simplecpp {
         /**
          * @throws std::runtime_error thrown on bad macro syntax
          */
-        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
+        Macro(const std::string &name, const std::string &value, std::vector<std::string> &f SIMPLECPP_LIFETIMEBOUND) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(false) {
             const std::string def(name + ' ' + value);
             StdCharBufStream stream(reinterpret_cast<const unsigned char*>(def.data()), def.size());
             tokenListDefine.readfile(stream);
@@ -1679,7 +1689,7 @@ namespace simplecpp {
         }
 
         /** how has this macro been used so far */
-        const std::list<Location> &usage() const {
+        const std::list<Location> &usage() const SIMPLECPP_LIFETIMEBOUND {
             return usageList;
         }
 
@@ -1699,7 +1709,7 @@ namespace simplecpp {
         };
 
         struct invalidDirectiveAsMacroParameter : public Error {
-            invalidDirectiveAsMacroParameter(const Location &loc)
+            explicit invalidDirectiveAsMacroParameter(const Location &loc)
                 : Error(loc, "it is invalid to use a preprocessor directive as macro parameter") {}
         };
 
@@ -1874,7 +1884,7 @@ namespace simplecpp {
 
         const Token *appendTokens(TokenList &tokens,
                                   const Location &rawloc,
-                                  const Token * const lpar,
+                                  const Token * const lpar SIMPLECPP_LIFETIMEBOUND,
                                   const MacroMap &macros,
                                   const std::set<TokenString> &expandedmacros,
                                   const std::vector<const Token*> &parametertokens) const {
@@ -2296,7 +2306,7 @@ namespace simplecpp {
          * @return token after B
          */
         const Token *expandHashHash(TokenList &output, const Location &loc, const Token *tok, const MacroMap &macros, const std::set<TokenString> &expandedmacros, const std::vector<const Token*> &parametertokens, bool expandResult=true) const {
-            Token *A = output.back();
+            Token * const A = output.back();
             if (!A)
                 throw invalidHashHash(tok->location, name(), "Missing first argument");
             if (!sameline(tok, tok->next) || !sameline(tok, tok->next->next))
@@ -3001,7 +3011,7 @@ static long long evaluate(simplecpp::TokenList &expr, const simplecpp::DUI &dui,
     return expr.cfront() && expr.cfront() == expr.cback() && expr.cfront()->number ? stringToLL(expr.cfront()->str()) : 0LL;
 }
 
-static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
+static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok SIMPLECPP_LIFETIMEBOUND)
 {
     const unsigned int line = tok->location.line;
     const unsigned int file = tok->location.fileIndex;
@@ -3258,7 +3268,7 @@ static bool getFileId(const std::string &path, FileID &id)
 #endif
 }
 
-simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, FileDataCache cache)
+simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, std::vector<std::string> &filenames, const simplecpp::DUI &dui, simplecpp::OutputList * const outputList, FileDataCache cache)
 {
 #ifdef SIMPLECPP_WINDOWS
     if (dui.clearIncludeCache)
@@ -3341,7 +3351,7 @@ simplecpp::FileDataCache simplecpp::load(const simplecpp::TokenList &rawtokens, 
     return cache;
 }
 
-static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token *&tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList *outputList)
+static bool preprocessToken(simplecpp::TokenList &output, const simplecpp::Token *&tok1, simplecpp::MacroMap &macros, std::vector<std::string> &files, simplecpp::OutputList * const outputList)
 {
     const simplecpp::Token * const tok = tok1;
     const simplecpp::MacroMap::const_iterator it = tok->name ? macros.find(tok->str()) : macros.end();
@@ -3391,21 +3401,21 @@ static void getLocaltime(struct tm &ltime)
 #endif
 }
 
-static std::string getDateDefine(const struct tm *timep)
+static std::string getDateDefine(const struct tm * const timep)
 {
     char buf[] = "??? ?? ????";
     strftime(buf, sizeof(buf), "%b %d %Y", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-static std::string getTimeDefine(const struct tm *timep)
+static std::string getTimeDefine(const struct tm * const timep)
 {
     char buf[] = "??:??:??";
     strftime(buf, sizeof(buf), "%H:%M:%S", timep);
     return std::string("\"").append(buf).append("\"");
 }
 
-void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, simplecpp::FileDataCache &cache, const simplecpp::DUI &dui, simplecpp::OutputList *outputList, std::list<simplecpp::MacroUsage> *macroUsage, std::list<simplecpp::IfCond> *ifCond)
+void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenList &rawtokens, std::vector<std::string> &files, simplecpp::FileDataCache &cache, const simplecpp::DUI &dui, simplecpp::OutputList * const outputList, std::list<simplecpp::MacroUsage> * const macroUsage, std::list<simplecpp::IfCond> * const ifCond)
 {
 #ifdef SIMPLECPP_WINDOWS
     if (dui.clearIncludeCache)
@@ -3783,6 +3793,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                                 std::string header;
 
                                 if (systemheader) {
+                                    // NOLINTNEXTLINE(bugprone-assignment-in-selection-statement)
                                     while ((tok = tok->next) && tok->op != '>')
                                         header += tok->str();
                                     if (tok && tok->op == '>')
