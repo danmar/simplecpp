@@ -40,12 +40,62 @@ jobs:
         run: |
           clang-tidy-22 --verify-config
 
-      - name: Prepare CMake
+      - name: Prepare CMake (C++11)
         run: |
-          cmake -S . -B cmake.output -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=23 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -S . -B cmake.output.cxx11 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=11 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         env:
           CXX: clang-22
 
-      - name: Clang-Tidy
+      - name: Clang-Tidy (C++11)
         run: |
-          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx11
+
+      - name: Prepare CMake (C++14)
+        run: |
+          cmake -S . -B cmake.output.cxx14 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=14 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        env:
+          CXX: clang-22
+
+      - name: Clang-Tidy (C++14)
+        run: |
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx14
+
+      - name: Prepare CMake (C++17)
+        run: |
+          cmake -S . -B cmake.output.cxx17 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=17 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        env:
+          CXX: clang-22
+
+      - name: Clang-Tidy (C++17)
+        run: |
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx17
+
+      - name: Prepare CMake (C++20)
+        run: |
+          cmake -S . -B cmake.output.cxx20 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=20 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        env:
+          CXX: clang-22
+
+      - name: Clang-Tidy (C++20)
+        run: |
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx20
+
+      - name: Prepare CMake (C++23)
+        run: |
+          cmake -S . -B cmake.output.cxx23 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=23 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        env:
+          CXX: clang-22
+
+      - name: Clang-Tidy (C++23)
+        run: |
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx23
+
+      - name: Prepare CMake (C++26)
+        run: |
+          cmake -S . -B cmake.output.cxx26 -Werror=dev --warn-uninitialized -DCMAKE_CXX_STANDARD=26 -DCMAKE_COMPILE_WARNING_AS_ERROR=On -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        env:
+          CXX: clang-22
+
+      - name: Clang-Tidy (C++26)
+        run: |
+          run-clang-tidy-22 -q -j $(nproc) -enable-check-profile -p=cmake.output.cxx26
