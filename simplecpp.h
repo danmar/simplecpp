@@ -151,7 +151,7 @@ namespace simplecpp {
     class SIMPLECPP_LIB Token {
     public:
         Token(const TokenString &s, const Location &loc, bool wsahead = false) :
-            whitespaceahead(wsahead), locationchange(false), location(loc), string(s) {
+            whitespaceahead(wsahead), location(loc), string(s) {
             flags();
         }
 
@@ -182,7 +182,8 @@ namespace simplecpp {
         bool name;
         bool number;
         bool whitespaceahead;
-        bool locationchange; /* token location is at a discontinuity from #line directive */
+        /** whether token location is at a discontinuity from a #line directive */
+        bool locationchange {false};
         Location location;
         Token *previous{};
         Token *next{};
