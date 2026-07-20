@@ -640,23 +640,6 @@ static bool isStringLiteralPrefix(const std::string &str)
            str == "R" || str == "uR" || str == "UR" || str == "LR" || str == "u8R";
 }
 
-void simplecpp::TokenList::lineDirective(unsigned int fileIndex_, unsigned int line, Location &location)
-{
-    if (fileIndex_ != location.fileIndex || line >= location.line) {
-        location.fileIndex = fileIndex_;
-        location.line = line;
-        return;
-    }
-
-    if (line + 2 >= location.line) {
-        location.line = line;
-        while (cback()->op != '#')
-            deleteToken(back());
-        deleteToken(back());
-        return;
-    }
-}
-
 static const std::string COMMENT_END("*/");
 
 void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
@@ -726,17 +709,13 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!ppTok || !ppTok->number)
                     continue;
 
-                const unsigned int line = std::atol(ppTok->str().c_str());
+                location.line = std::atol(ppTok->str().c_str());
+
                 ppTok = advanceAndSkipComments(ppTok);
 
-                unsigned int fileindex;
-
                 if (ppTok && ppTok->str()[0] == '\"')
-                    fileindex = fileIndex(replaceAll(ppTok->str().substr(1U, ppTok->str().size() - 2U),"\\\\","\\"));
-                else
-                    fileindex = location.fileIndex;
+                    location.fileIndex = fileIndex(replaceAll(ppTok->str().substr(1U, ppTok->str().size() - 2U),"\\\\","\\"));
 
-                lineDirective(fileindex, line, location);
             }
 
             continue;

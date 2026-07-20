@@ -396,7 +396,6 @@ namespace simplecpp {
         void constFoldQuestionOp(Token *&tok1);
 
         std::string readUntil(Stream &stream, const Location &location, char start, char end, OutputList *outputList);
-        void lineDirective(unsigned int fileIndex_, unsigned int line, Location &location);
 
         const Token* lastLineTok(int maxsize=1000) const;
         const Token* isLastLinePreprocessor(int maxsize=1000) const;
