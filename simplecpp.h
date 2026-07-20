@@ -151,12 +151,12 @@ namespace simplecpp {
     class SIMPLECPP_LIB Token {
     public:
         Token(const TokenString &s, const Location &loc, bool wsahead = false) :
-            whitespaceahead(wsahead), location(loc), string(s) {
+            whitespaceahead(wsahead), locationchange(false), location(loc), string(s) {
             flags();
         }
 
         Token(const Token &tok) :
-            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), location(tok.location), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
+            macro(tok.macro), op(tok.op), comment(tok.comment), name(tok.name), number(tok.number), whitespaceahead(tok.whitespaceahead), locationchange(tok.locationchange), location(tok.location), string(tok.string), mExpandedFrom(tok.mExpandedFrom) {}
 
         Token &operator=(const Token &tok) = delete;
 
@@ -182,6 +182,7 @@ namespace simplecpp {
         bool name;
         bool number;
         bool whitespaceahead;
+        bool locationchange; /* token location is at a discontinuity from #line directive */
         Location location;
         Token *previous{};
         Token *next{};

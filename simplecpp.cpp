@@ -648,6 +648,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
     const Token *oldLastToken = nullptr;
 
+    bool locationchange = false;
+
     Location location(fileIndex(filename), 1, 1);
     while (stream.good()) {
         unsigned char ch = stream.readChar();
@@ -716,6 +718,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (ppTok && ppTok->str()[0] == '\"')
                     location.fileIndex = fileIndex(replaceAll(ppTok->str().substr(1U, ppTok->str().size() - 2U),"\\\\","\\"));
 
+                locationchange = true;
             }
 
             continue;
@@ -933,6 +936,11 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
         }
 
         push_back(new Token(currentToken, location, !!std::isspace(stream.peekChar())));
+
+        if (locationchange) {
+            back()->locationchange = true;
+            locationchange = false;
+        }
 
         if (multiline)
             location.col += currentToken.size();
@@ -1435,7 +1443,7 @@ const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
     const Token* prevTok = nullptr;
     int count = 0;
     for (const Token *tok = cback(); ; tok = tok->previous) {
-        if (!sameline(tok, cback()))
+        if (!sameline(tok, cback()) || tok->locationchange)
             break;
         if (tok->comment)
             continue;
@@ -2979,7 +2987,9 @@ static const simplecpp::Token *gotoNextLine(const simplecpp::Token *tok)
 {
     const unsigned int line = tok->location.line;
     const unsigned int file = tok->location.fileIndex;
-    while (tok && tok->location.line == line && tok->location.fileIndex == file)
+    if (tok)
+        tok = tok->next;
+    while (tok && tok->location.line == line && tok->location.fileIndex == file && !tok->locationchange)
         tok = tok->next;
     return tok;
 }
