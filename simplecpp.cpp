@@ -1443,8 +1443,10 @@ const simplecpp::Token* simplecpp::TokenList::lastLineTok(int maxsize) const
     const Token* prevTok = nullptr;
     int count = 0;
     for (const Token *tok = cback(); ; tok = tok->previous) {
-        if (!sameline(tok, cback()) || tok->locationchange)
+        if (!sameline(tok, cback()))
             break;
+        if (tok->locationchange)
+            return tok;
         if (tok->comment)
             continue;
         if (++count > maxsize)
