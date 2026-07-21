@@ -2481,9 +2481,9 @@ static void location12()
         "/**//**/#/**//**/line/**//**/3/**//**/\"file.c\"/**/\n"
         "__LINE__ __FILE__\n";
     ASSERT_EQUALS("\n"
-                  "#line 3 \"file.c\"\n"
-                  "3 \"file.c\"",
-                  preprocess(code));
+        "#line 3 \"file.c\"\n"
+        "3 \"file.c\"",
+        preprocess(code));
 }
 
 static void missingHeader1()
@@ -2747,6 +2747,62 @@ static void nullDirective3()
                         "x = a;\n";
 
     ASSERT_EQUALS("\n\n\n\nx = 1 ;", preprocess(code));
+}
+
+static void lineDirective1()
+{
+    const char code[] = "#line 1\n"
+                        "#line 2 \"header1.h\"\n"
+                        "# 1\n"
+                        "# 2 \"header2.h\"\n"
+                        "# 3 \"header2.h\" 0\n";
+
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens(code, files);
+
+    ASSERT_EQUALS("1: # line 1 # line 2 \"header1.h\"\n"
+                  "#line 2 \"header1.h\"\n"
+                  "2: # 1\n"
+                  "#line 1 \"header1.h\"\n"
+                  "1: # 2 \"header2.h\"\n"
+                  "#line 2 \"header2.h\"\n"
+                  "2: # 3 \"header2.h\" 0",
+                  rawtokens.stringify(true));
+
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    simplecpp::preprocess(out, rawtokens, files, cache, dui);
+
+    ASSERT_EQUALS("", out.stringify(true));
+}
+
+static void lineDirective2()
+{
+    const char code[] = "#\n"
+                        "#line 1\n"
+                        "include\n"
+                        "#line 1\n"
+                        "\"header1.h\"\n";
+
+    std::vector<std::string> files;
+    const simplecpp::TokenList rawtokens(code, files);
+
+    ASSERT_EQUALS("1: #\n"
+                  "2: # line 1\n"
+                  "#line 1 \"\"\n"
+                  "1: include\n"
+                  "2: # line 1\n"
+                  "#line 1 \"\"\n"
+                  "1: \"header1.h\"",
+                  rawtokens.stringify(true));
+
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList out(files);
+    simplecpp::DUI dui;
+    simplecpp::preprocess(out, rawtokens, files, cache, dui);
+
+    ASSERT_EQUALS("1: include \"header1.h\"", out.stringify(true));
 }
 
 static void include1()
@@ -4166,6 +4222,9 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(nullDirective1);
     TEST_CASE(nullDirective2);
     TEST_CASE(nullDirective3);
+
+    TEST_CASE(lineDirective1);
+    TEST_CASE(lineDirective2);
 
     TEST_CASE(include1);
     TEST_CASE(include2);

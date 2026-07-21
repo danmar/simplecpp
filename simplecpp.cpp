@@ -3532,7 +3532,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
             continue;
         }
 
-        if (rawtok->op == '#' && !sameline(rawtok->previousSkipComments(), rawtok)) {
+        if (rawtok->op == '#' && (!sameline(rawtok->previousSkipComments(), rawtok) || rawtok->locationchange)) {
             if (!sameline(rawtok, rawtok->next)) {
                 rawtok = rawtok->next;
                 continue;
