@@ -2771,7 +2771,7 @@ static void lineDirective1()
 
     simplecpp::FileDataCache cache;
     simplecpp::TokenList out(files);
-    simplecpp::DUI dui;
+    const simplecpp::DUI dui;
     simplecpp::preprocess(out, rawtokens, files, cache, dui);
 
     ASSERT_EQUALS("", out.stringify(true));
@@ -2799,7 +2799,7 @@ static void lineDirective2()
 
     simplecpp::FileDataCache cache;
     simplecpp::TokenList out(files);
-    simplecpp::DUI dui;
+    const simplecpp::DUI dui;
     simplecpp::preprocess(out, rawtokens, files, cache, dui);
 
     ASSERT_EQUALS("1: include \"header1.h\"", out.stringify(true));
