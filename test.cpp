@@ -2481,9 +2481,9 @@ static void location12()
         "/**//**/#/**//**/line/**//**/3/**//**/\"file.c\"/**/\n"
         "__LINE__ __FILE__\n";
     ASSERT_EQUALS("\n"
-        "#line 3 \"file.c\"\n"
-        "3 \"file.c\"",
-        preprocess(code));
+                  "#line 3 \"file.c\"\n"
+                  "3 \"file.c\"",
+                  preprocess(code));
 }
 
 static void missingHeader1()
