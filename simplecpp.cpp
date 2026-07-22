@@ -4027,7 +4027,8 @@ const char *simplecpp::getCStdName(cstd_t std)
     case CUnknown: return "C";
     case C89: return "C89";
     case C99: return "C99";
-    case C11: return "C17";
+    case C11: return "C11";
+    case C17: return "C17";
     case C23: return "C23";
     case C2Y: return "C2Y";
     }
