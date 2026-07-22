@@ -753,9 +753,10 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         if (line == 0) {
                             msg += "Line number zero is undefined behavior.";
                         } else {
-                            const char *support_type = cppstd == CPP26 ? "conditionally supported" : "undefined behavior";
-                            std::string std_name = std_is_c ? getCStdName(cstd) : getCppStdName(cppstd);
-                            msg += "Line numbers above " + std::to_string(maxline) + " are " + support_type + " in " + std_name + ".";
+                            msg += "Line numbers above " + std::to_string(maxline) + " are " +
+                                (cppstd == CPP26 ? "conditionally supported" : "undefined behavior") +
+                                " in " +
+                                (std_is_c ? getCStdName(cstd) : getCppStdName(cppstd)) + ".";
                         }
                         simplecpp::Output err{
                             simplecpp::Output::PORTABILITY_LINE_DIRECTIVE,

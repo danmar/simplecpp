@@ -2978,7 +2978,7 @@ static void lineDirective()
     }
 
     {
-        std::string std_name = "C++26";
+        const std::string std_name = "C++26";
 
         simplecpp::DUI dui;
         dui.std = "c++26";
