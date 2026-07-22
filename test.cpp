@@ -223,6 +223,9 @@ static std::string toString(const simplecpp::OutputList &outputList)
         case simplecpp::Output::Type::PORTABILITY_BACKSLASH:
             ostr << "portability_backslash,";
             break;
+        case simplecpp::Output::Type::PORTABILITY_LINE_DIRECTIVE:
+            ostr << "portability_line_directive,";
+            break;
         case simplecpp::Output::Type::PORTABILITY_NO_EOF_NEWLINE:
             ostr << "portability_no_eof_newline,";
             break;
