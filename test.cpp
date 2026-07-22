@@ -2871,6 +2871,16 @@ static void lineDirective()
 
         {
             const char code[] =
+                "#line -1\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,syntax_error,Invalid character in line directive: '-'.\n",
+                          toString(outputList));
+        }
+
+        {
+            const char code[] =
                 "#line 0\n"
                 ";\n";
             simplecpp::OutputList outputList;
@@ -2918,6 +2928,16 @@ static void lineDirective()
 
         simplecpp::DUI dui;
         dui.std = std;
+
+        {
+            const char code[] =
+                "#line -1\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,syntax_error,Invalid character in line directive: '-'.\n",
+                          toString(outputList));
+        }
 
         {
             const char code[] =
@@ -2982,6 +3002,16 @@ static void lineDirective()
 
         simplecpp::DUI dui;
         dui.std = "c++26";
+
+        {
+            const char code[] =
+                "#line -1\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,syntax_error,Invalid character in line directive: '-'.\n",
+                          toString(outputList));
+        }
 
         {
             const char code[] =

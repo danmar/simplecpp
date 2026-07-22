@@ -737,6 +737,19 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (ppTok->str() == "line")
                     ppTok = advanceAndSkipComments(ppTok);
 
+                if (ppTok && (ppTok->str()[0] == '-' || ppTok->str()[0] == '+')) {
+                    if (outputList) {
+                        simplecpp::Output err{
+                            simplecpp::Output::SYNTAX_ERROR,
+                            location,
+                            "Invalid character in line directive: '" + ppTok->str() + "'."
+                        };
+                        outputList->emplace_back(std::move(err));
+                    }
+                    clear();
+                    return;
+                }
+
                 if (!ppTok || !ppTok->number)
                     continue;
 
