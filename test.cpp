@@ -2871,7 +2871,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 0.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0.\n",
                           toString(outputList));
         }
 
@@ -2890,7 +2890,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 32768.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 32768.\n",
                           toString(outputList));
         }
 
@@ -2900,7 +2900,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 18446744073709551617.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617.\n",
                           toString(outputList));
         }
     }
@@ -2915,7 +2915,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 0.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0.\n",
                           toString(outputList));
         }
 
@@ -2952,7 +2952,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 2147483648.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 2147483648.\n",
                           toString(outputList));
         }
 
@@ -2962,7 +2962,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,Line number out of range: 18446744073709551617.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617.\n",
                           toString(outputList));
         }
     }
