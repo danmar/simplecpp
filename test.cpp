@@ -2860,6 +2860,12 @@ static void nullDirective3()
 static void lineDirective()
 {
     for (const std::string std : {"c89", "c90", "c++03"}) {
+        std::string std_name;
+        if (simplecpp::getCStd(std) != simplecpp::CUnknown)
+            std_name = simplecpp::getCStdName(simplecpp::getCStd(std));
+        else
+            std_name = simplecpp::getCppStdName(simplecpp::getCppStd(std));
+
         simplecpp::DUI dui;
         dui.std = std;
 
@@ -2869,7 +2875,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0. Line number zero is undefined behavior.\n",
                           toString(outputList));
         }
 
@@ -2888,7 +2894,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 32768.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 32768. Line numbers above 32767 are undefined behavior in " + std_name + ".\n",
                           toString(outputList));
         }
 
@@ -2898,12 +2904,18 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617. Line numbers above 32767 are undefined behavior in " + std_name + ".\n",
                           toString(outputList));
         }
     }
 
-    for (const std::string std : {"c99", "c++11"}) {
+    for (const std::string std : {"c99", "c++11", "c++14", "c++17", "c++20", "c++23"}) {
+        std::string std_name;
+        if (simplecpp::getCStd(std) != simplecpp::CUnknown)
+            std_name = simplecpp::getCStdName(simplecpp::getCStd(std));
+        else
+            std_name = simplecpp::getCppStdName(simplecpp::getCppStd(std));
+
         simplecpp::DUI dui;
         dui.std = std;
 
@@ -2913,7 +2925,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0. Line number zero is undefined behavior.\n",
                           toString(outputList));
         }
 
@@ -2950,7 +2962,7 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 2147483648.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 2147483648. Line numbers above 2147483647 are undefined behavior in " + std_name + ".\n",
                           toString(outputList));
         }
 
@@ -2960,7 +2972,71 @@ static void lineDirective()
                 ";\n";
             simplecpp::OutputList outputList;
             makeTokenList(code, dui, &outputList);
-            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617.\n",
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617. Line numbers above 2147483647 are undefined behavior in " + std_name + ".\n",
+                          toString(outputList));
+        }
+    }
+
+    {
+        std::string std_name = "C++26";
+
+        simplecpp::DUI dui;
+        dui.std = "c++26";
+
+        {
+            const char code[] =
+                "#line 0\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 0. Line number zero is undefined behavior.\n",
+                          toString(outputList));
+        }
+
+        {
+            const char code[] =
+                "#line 32767\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("", toString(outputList));
+        }
+
+        {
+            const char code[] =
+                "#line 32768\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("", toString(outputList));
+        }
+
+        {
+            const char code[] =
+                "#line 2147483647\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("", toString(outputList));
+        }
+
+        {
+            const char code[] =
+                "#line 2147483648\n"
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 2147483648. Line numbers above 2147483647 are conditionally supported in " + std_name + ".\n",
+                          toString(outputList));
+        }
+
+        {
+            const char code[] =
+                "#line 18446744073709551617\n" // 2^64 + 1
+                ";\n";
+            simplecpp::OutputList outputList;
+            makeTokenList(code, dui, &outputList);
+            ASSERT_EQUALS("file0,2,portability_line_directive,Line number out of range: 18446744073709551617. Line numbers above 2147483647 are conditionally supported in " + std_name + ".\n",
                           toString(outputList));
         }
     }

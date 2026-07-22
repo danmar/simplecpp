@@ -666,15 +666,15 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
     const Token *oldLastToken = nullptr;
 
+    const cstd_t cstd = getCStd(dui.std);
+    const bool std_is_c = cstd != CUnknown;
+    const cppstd_t cppstd = getCppStd(dui.std, std_is_c ? CPPUnknown : CPP26); // use C++26 by default
+
     unsigned long maxline;
-    {
-        const cstd_t cstd = getCStd(dui.std);
-        const cppstd_t cppstd = getCppStd(dui.std);
-        if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
-            maxline = 32767;
-        else
-            maxline = 2147483647;
-    }
+    if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
+        maxline = 32767;
+    else
+        maxline = 2147483647;
 
     Location location(fileIndex(filename), 1, 1);
     while (stream.good()) {
@@ -744,15 +744,22 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 try {
                     line = std::stoul(ppTok->str());
                 } catch (...) {
-                    line = 0;
+                    line = std::numeric_limits<unsigned long>::max();
                 }
 
                 if (line == 0 || line > maxline) {
                     if (outputList) {
+                        std::string msg = "Line number out of range: " + ppTok->str() + ". ";
+                        if (line == 0) {
+                            msg += "Line number zero is undefined behavior.";
+                        } else {
+                            const char *support_type = cppstd == CPP26 ? "conditionally supported" : "undefined behavior";
+                            std::string std_name = std_is_c ? getCStdName(cstd) : getCppStdName(cppstd);
+                            msg += "Line numbers above " + std::to_string(maxline) + " are " + support_type + " in " + std_name + ".";
+                        }
                         simplecpp::Output err{
                             simplecpp::Output::PORTABILITY_LINE_DIRECTIVE,
-                            location,
-                            "Line number out of range: " + ppTok->str() + "."
+                            location, msg
                         };
                         outputList->emplace_back(std::move(err));
                     }
@@ -3997,7 +4004,7 @@ void simplecpp::cleanup(FileDataCache &cache)
     cache.clear();
 }
 
-simplecpp::cstd_t simplecpp::getCStd(const std::string &std)
+simplecpp::cstd_t simplecpp::getCStd(const std::string &std, cstd_t dflt)
 {
     if (std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89")
         return C89;
@@ -4011,7 +4018,19 @@ simplecpp::cstd_t simplecpp::getCStd(const std::string &std)
         return C23;
     if (std == "c2y" || std == "gnu2y")
         return C2Y;
-    return CUnknown;
+    return dflt;
+}
+
+const char *simplecpp::getCStdName(cstd_t std)
+{
+    switch (std) {
+    case CUnknown: return "C";
+    case C89: return "C89";
+    case C99: return "C99";
+    case C11: return "C17";
+    case C23: return "C23";
+    case C2Y: return "C2Y";
+    }
 }
 
 std::string simplecpp::getCStdString(cstd_t std)
@@ -4047,7 +4066,7 @@ std::string simplecpp::getCStdString(const std::string &std)
     return getCStdString(getCStd(std));
 }
 
-simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std)
+simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std, cppstd_t dflt)
 {
     if (std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03")
         return CPP03;
@@ -4063,7 +4082,21 @@ simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std)
         return CPP23;
     if (std == "c++26" || std == "c++2c" || std == "gnu++26" || std == "gnu++2c")
         return CPP26;
-    return CPPUnknown;
+    return dflt;
+}
+
+const char *simplecpp::getCppStdName(cppstd_t std)
+{
+    switch (std) {
+    case CPPUnknown: return "C++";
+    case CPP03: return "C++03";
+    case CPP11: return "C++11";
+    case CPP14: return "C++14";
+    case CPP17: return "C++17";
+    case CPP20: return "C++20";
+    case CPP23: return "C++23";
+    case CPP26: return "C++26";
+    }
 }
 
 std::string simplecpp::getCppStdString(cppstd_t std)
