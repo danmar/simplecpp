@@ -264,9 +264,9 @@ namespace simplecpp {
     using OutputList = std::list<Output>;
 
     /**
-    * Command line preprocessor settings.
-    * On the command line these are configured by -D, -U, -I, --include, -std
-    */
+     * Command line preprocessor settings.
+     * On the command line these are configured by -D, -U, -I, --include, -std
+     */
     struct SIMPLECPP_LIB DUI {
         DUI() = default;
         std::list<std::string> defines;
