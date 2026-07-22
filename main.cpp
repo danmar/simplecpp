@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     {
         simplecpp::TokenList *rawtokens;
         if (toklist_inf == Fstream) {
-            rawtokens = new simplecpp::TokenList(f,files,filename,&outputList);
+            rawtokens = new simplecpp::TokenList(f,files,filename,dui,&outputList);
         }
         else if (toklist_inf == Sstream || toklist_inf == CharBuffer) {
             std::ostringstream oss;
@@ -233,14 +233,14 @@ int main(int argc, char **argv)
             const std::string s = oss.str();
             if (toklist_inf == Sstream) {
                 std::istringstream iss(s);
-                rawtokens = new simplecpp::TokenList(iss,files,filename,&outputList);
+                rawtokens = new simplecpp::TokenList(iss,files,filename,dui,&outputList);
             }
             else {
-                rawtokens = new simplecpp::TokenList({s.data(),s.size()},files,filename,&outputList);
+                rawtokens = new simplecpp::TokenList({s.data(),s.size()},files,filename,dui,&outputList);
             }
         } else {
             f.close();
-            rawtokens = new simplecpp::TokenList(filename,files,&outputList);
+            rawtokens = new simplecpp::TokenList(filename,files,dui,&outputList);
         }
         rawtokens->removeComments();
         simplecpp::FileDataCache filedata;
@@ -276,6 +276,7 @@ int main(int argc, char **argv)
                 std::cerr << "directive as macro parameter: ";
                 break;
             case simplecpp::Output::PORTABILITY_BACKSLASH:
+            case simplecpp::Output::PORTABILITY_LINE_DIRECTIVE:
                 std::cerr << "portability: ";
                 break;
             case simplecpp::Output::PORTABILITY_NO_EOF_NEWLINE:

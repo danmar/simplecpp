@@ -475,26 +475,26 @@ namespace {
 
 simplecpp::TokenList::TokenList(std::vector<std::string> &filenames) : frontToken(nullptr), backToken(nullptr), files(filenames) {}
 
-simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList)
+simplecpp::TokenList::TokenList(std::istream &istr, std::vector<std::string> &filenames, const std::string &filename, const DUI &dui, OutputList *outputList)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     StdIStream stream(istr);
-    readfile(stream,filename,outputList);
+    readfile(stream,filename,dui,outputList);
 }
 
-simplecpp::TokenList::TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, OutputList *outputList, int /*unused*/)
+simplecpp::TokenList::TokenList(const unsigned char* data, std::size_t size, std::vector<std::string> &filenames, const std::string &filename, const DUI &dui, OutputList *outputList, int /*unused*/)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     StdCharBufStream stream(data, size);
-    readfile(stream,filename,outputList);
+    readfile(stream,filename,dui,outputList);
 }
 
-simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, OutputList *outputList)
+simplecpp::TokenList::TokenList(const std::string &filename, std::vector<std::string> &filenames, const DUI &dui, OutputList *outputList)
     : frontToken(nullptr), backToken(nullptr), files(filenames)
 {
     try {
         FileStream stream(filename, filenames);
-        readfile(stream,filename,outputList);
+        readfile(stream,filename,dui,outputList);
     } catch (const simplecpp::Output & e) {
         outputList->emplace_back(e);
     }
@@ -659,12 +659,22 @@ void simplecpp::TokenList::lineDirective(unsigned int fileIndex_, unsigned int l
 
 static const std::string COMMENT_END("*/");
 
-void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, OutputList *outputList)
+void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename, const DUI &dui, OutputList *outputList)
 {
     unsigned int multiline = 0U;
     bool trailing_nl = true;
 
     const Token *oldLastToken = nullptr;
+
+    unsigned long maxline;
+    {
+        cstd_t cstd = getCStd(dui.std);
+        cppstd_t cppstd = getCppStd(dui.std);
+        if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
+            maxline = 32767;
+        else
+            maxline = 2147483647;
+    }
 
     Location location(fileIndex(filename), 1, 1);
     while (stream.good()) {
@@ -730,7 +740,22 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!ppTok || !ppTok->number)
                     continue;
 
-                const unsigned int line = std::atol(ppTok->str().c_str());
+                unsigned long line = 0;
+                try {
+                    line = std::stoul(ppTok->str());
+                } catch (...) {}
+
+                if (line == 0 || line > maxline) {
+                    if (outputList) {
+                        simplecpp::Output err{
+                            simplecpp::Output::PORTABILITY_LINE_DIRECTIVE,
+                            location,
+                            "Line number out of range: " + ppTok->str() + "."
+                        };
+                        outputList->emplace_back(std::move(err));
+                    }
+                }
+
                 ppTok = advanceAndSkipComments(ppTok);
 
                 unsigned int fileindex;
@@ -3163,7 +3188,7 @@ std::pair<simplecpp::FileData *, bool> simplecpp::FileDataCache::tryload(FileDat
         return {id_it->second, false};
     }
 
-    auto *const data = new FileData {path, TokenList(path, filenames, outputList)};
+    auto *const data = new FileData {path, TokenList(path, filenames, {}, outputList)};
 
     if (dui.removeComments)
         data->tokens.removeComments();
