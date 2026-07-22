@@ -2909,7 +2909,7 @@ static void lineDirective()
         }
     }
 
-    for (const std::string std : {"c99", "c++11", "c++14", "c++17", "c++20", "c++23"}) {
+    for (const std::string std : {"c99", "c11", "c17", "c23", "c2y", "c++11", "c++14", "c++17", "c++20", "c++23"}) {
         std::string std_name;
         if (simplecpp::getCStd(std) != simplecpp::CUnknown)
             std_name = simplecpp::getCStdName(simplecpp::getCStd(std));

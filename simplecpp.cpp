@@ -4032,6 +4032,7 @@ const char *simplecpp::getCStdName(cstd_t std)
     case C23: return "C23";
     case C2Y: return "C2Y";
     }
+    return "";
 }
 
 std::string simplecpp::getCStdString(cstd_t std)
@@ -4098,6 +4099,7 @@ const char *simplecpp::getCppStdName(cppstd_t std)
     case CPP23: return "C++23";
     case CPP26: return "C++26";
     }
+    return "";
 }
 
 std::string simplecpp::getCppStdString(cppstd_t std)
