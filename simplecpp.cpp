@@ -755,8 +755,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                         } else {
                             msg += "Line numbers above " + std::to_string(maxline) + " are " +
                                     (cppstd == CPP26 ? "conditionally supported" : "undefined behavior") +
-                                    " in " +
-                                    (std_is_c ? getCStdName(cstd) : getCppStdName(cppstd)) + ".";
+                                    " in " + (std_is_c ? getCStdName(cstd) : getCppStdName(cppstd)) + ".";
                         }
                         simplecpp::Output err{
                             simplecpp::Output::PORTABILITY_LINE_DIRECTIVE,
