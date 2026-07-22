@@ -2859,8 +2859,6 @@ static void nullDirective3()
 
 static void lineDirective()
 {
-    std::vector<std::string> filenames;
-
     for (const std::string std : {"c89", "c90", "c++03"}) {
         simplecpp::DUI dui;
         dui.std = std;

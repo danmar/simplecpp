@@ -668,8 +668,8 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
 
     unsigned long maxline;
     {
-        cstd_t cstd = getCStd(dui.std);
-        cppstd_t cppstd = getCppStd(dui.std);
+        const cstd_t cstd = getCStd(dui.std);
+        const cppstd_t cppstd = getCppStd(dui.std);
         if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
             maxline = 32767;
         else
@@ -740,10 +740,12 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!ppTok || !ppTok->number)
                     continue;
 
-                unsigned long line = 0;
+                unsigned long line;
                 try {
                     line = std::stoul(ppTok->str());
-                } catch (...) {}
+                } catch (...) {
+                    line = 0;
+                }
 
                 if (line == 0 || line > maxline) {
                     if (outputList) {
