@@ -2370,6 +2370,82 @@ static void elif()
     ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code3));
 }
 
+static void elifdef()
+{
+    simplecpp::DUI dui;
+    dui.std = "c++23";
+
+    {
+        const char code[] = "#if 1\n"
+                            "1\n"
+                            "#elifdef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n1", preprocess(code, dui));
+    }
+    {
+        const char code[] = "#define X\n"
+                            "#if 0\n"
+                            "1\n"
+                            "#elifdef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n\n\n\n2", preprocess(code, dui));
+    }
+    {
+        const char code[] = "#if 0\n"
+                            "1\n"
+                            "#elifdef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code, dui));
+    }
+}
+
+static void elifndef()
+{
+    simplecpp::DUI dui;
+    dui.std = "c++23";
+
+    {
+        const char code[] = "#if 1\n"
+                            "1\n"
+                            "#elifndef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n1", preprocess(code, dui));
+    }
+    {
+        const char code[] = "#if 0\n"
+                            "1\n"
+                            "#elifndef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n\n\n2", preprocess(code, dui));
+    }
+    {
+        const char code[] = "#define X\n"
+                            "#if 0\n"
+                            "1\n"
+                            "#elifndef X\n"
+                            "2\n"
+                            "#else\n"
+                            "3\n"
+                            "#endif";
+        ASSERT_EQUALS("\n\n\n\n\n\n3", preprocess(code, dui));
+    }
+}
+
 static void ifif()
 {
     // source code from LLVM
@@ -4329,6 +4405,8 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(ifLogical);
     TEST_CASE(ifSizeof);
     TEST_CASE(elif);
+    TEST_CASE(elifdef);
+    TEST_CASE(elifndef);
     TEST_CASE(ifif);
     TEST_CASE(ifoverflow);
     TEST_CASE(ifdiv0);
