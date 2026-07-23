@@ -96,6 +96,8 @@ static const simplecpp::TokenString IFNDEF("ifndef");
 static const simplecpp::TokenString DEFINED("defined");
 static const simplecpp::TokenString ELSE("else");
 static const simplecpp::TokenString ELIF("elif");
+static const simplecpp::TokenString ELIFDEF("elifdef");
+static const simplecpp::TokenString ELIFNDEF("elifndef");
 static const simplecpp::TokenString ENDIF("endif");
 
 static const simplecpp::TokenString PRAGMA("pragma");
@@ -3580,7 +3582,9 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 continue;
             }
 
-            if (ifstates.size() <= 1U && (rawtok->str() == ELIF || rawtok->str() == ELSE || rawtok->str() == ENDIF)) {
+            if (ifstates.size() <= 1U && (rawtok->str() == ELIF || rawtok->str() == ELIFDEF ||
+                                          rawtok->str() == ELIFNDEF || rawtok->str() == ELSE ||
+                                          rawtok->str() == ENDIF)) {
                 if (outputList) {
                     simplecpp::Output err{
                         Output::SYNTAX_ERROR,
@@ -3721,7 +3725,8 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     rawtok = filedata->tokens.cfront();
                     continue;
                 }
-            } else if (rawtok->str() == IF || rawtok->str() == IFDEF || rawtok->str() == IFNDEF || rawtok->str() == ELIF) {
+            } else if (rawtok->str() == IF || rawtok->str() == IFDEF || rawtok->str() == IFNDEF || rawtok->str() == ELIF ||
+                       ((getCStd(dui.std) >= C23 || getCppStd(dui.std) >= CPP23) && (rawtok->str() == ELIFDEF || rawtok->str() == ELIFNDEF))) {
                 if (!sameline(rawtok,rawtok->next)) {
                     if (outputList) {
                         simplecpp::Output out{
@@ -3736,10 +3741,11 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                 }
 
                 bool conditionIsTrue;
-                if (ifstates.top() == AlwaysFalse || (ifstates.top() == ElseIsTrue && rawtok->str() != ELIF)) {
+                if (ifstates.top() == AlwaysFalse || (ifstates.top() == ElseIsTrue && rawtok->str() != ELIF &&
+                                                      rawtok->str() != ELIFDEF && rawtok->str() != ELIFNDEF)) {
                     conditionIsTrue = false;
                 }
-                else if (rawtok->str() == IFDEF) {
+                else if (rawtok->str() == IFDEF || rawtok->str() == ELIFDEF) {
                     const std::string &name = rawtok->next->str();
                     conditionIsTrue = (macros.find(name) != macros.end() || (hasInclude && name == HAS_INCLUDE));
                     maybeUsedMacros[name].emplace_back(rawtok->next->location);
@@ -3748,7 +3754,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                         const long long result = conditionIsTrue ? 1 : 0;
                         ifCond->emplace_back(rawtok->location, E, result);
                     }
-                } else if (rawtok->str() == IFNDEF) {
+                } else if (rawtok->str() == IFNDEF || rawtok->str() == ELIFNDEF) {
                     const std::string &name = rawtok->next->str();
                     conditionIsTrue = (macros.find(name) == macros.end() && !(hasInclude && name == HAS_INCLUDE));
                     maybeUsedMacros[name].emplace_back(rawtok->next->location);
@@ -3879,7 +3885,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     }
                 }
 
-                if (rawtok->str() != ELIF) {
+                if (rawtok->str() != ELIF && rawtok->str() != ELIFDEF && rawtok->str() != ELIFNDEF) {
                     // push a new ifstate..
                     if (ifstates.top() != True)
                         ifstates.push(AlwaysFalse);
