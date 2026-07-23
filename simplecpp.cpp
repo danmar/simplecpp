@@ -767,15 +767,16 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                             msg += "Line number zero is undefined behavior.";
                         } else {
                             msg += "Line numbers above " + std::to_string(maxline) + " are ";
-                            if (unknown_std || cppstd >= CPP26)
+                            if (unknown_std)
+                                msg += "undefined behavior or conditionally supported";
+                            else if (cppstd >= CPP26)
                                 msg += "conditionally supported";
                             else
                                 msg += "undefined behavior";
-                            msg += " in ";
                             if (cstd != CUnknown)
-                                msg += getCStdName(cstd);
-                            else
-                                msg += getCppStdName(unknown_std ? CPP26 : cppstd);
+                                msg += " in " + getCStdName(cstd);
+                            else if (cppstd != CPPUnknown)
+                                msg += " in " + getCppStdName(cppstd);
                             msg += ".";
                         }
                         simplecpp::Output err{
