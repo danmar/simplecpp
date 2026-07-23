@@ -4026,7 +4026,7 @@ void simplecpp::cleanup(FileDataCache &cache)
     cache.clear();
 }
 
-simplecpp::cstd_t simplecpp::getCStd(const std::string &std, cstd_t dflt)
+simplecpp::cstd_t simplecpp::getCStd(const std::string &std)
 {
     if (std == "c90" || std == "c89" || std == "iso9899:1990" || std == "iso9899:199409" || std == "gnu90" || std == "gnu89")
         return C89;
@@ -4040,7 +4040,7 @@ simplecpp::cstd_t simplecpp::getCStd(const std::string &std, cstd_t dflt)
         return C23;
     if (std == "c2y" || std == "gnu2y")
         return C2Y;
-    return dflt;
+    return CUnknown;
 }
 
 const char *simplecpp::getCStdName(cstd_t std)
@@ -4090,7 +4090,7 @@ std::string simplecpp::getCStdString(const std::string &std)
     return getCStdString(getCStd(std));
 }
 
-simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std, cppstd_t dflt)
+simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std)
 {
     if (std == "c++98" || std == "c++03" || std == "gnu++98" || std == "gnu++03")
         return CPP03;
@@ -4106,7 +4106,7 @@ simplecpp::cppstd_t simplecpp::getCppStd(const std::string &std, cppstd_t dflt)
         return CPP23;
     if (std == "c++26" || std == "c++2c" || std == "gnu++26" || std == "gnu++2c")
         return CPP26;
-    return dflt;
+    return CPPUnknown;
 }
 
 const char *simplecpp::getCppStdName(cppstd_t std)

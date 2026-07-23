@@ -588,13 +588,13 @@ namespace simplecpp {
     SIMPLECPP_LIB std::string convertCygwinToWindowsPath(const std::string &cygwinPath);
 
     /** Returns the C version a given standard */
-    SIMPLECPP_LIB cstd_t getCStd(const std::string &std, cstd_t dflt = CUnknown);
+    SIMPLECPP_LIB cstd_t getCStd(const std::string &std);
 
     /** Returns the name of a C standard */
     SIMPLECPP_LIB const char *getCStdName(cstd_t std);
 
     /** Returns the C++ version a given standard */
-    SIMPLECPP_LIB cppstd_t getCppStd(const std::string &std, cppstd_t dflt = CPPUnknown);
+    SIMPLECPP_LIB cppstd_t getCppStd(const std::string &std);
 
     /** Returns the name of a C++ standard */
     SIMPLECPP_LIB const char *getCppStdName(cppstd_t std);
