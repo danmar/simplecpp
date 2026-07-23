@@ -3740,11 +3740,23 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     conditionIsTrue = false;
                 }
                 else if (rawtok->str() == IFDEF) {
-                    conditionIsTrue = (macros.find(rawtok->next->str()) != macros.end() || (hasInclude && rawtok->next->str() == HAS_INCLUDE));
-                    maybeUsedMacros[rawtok->next->str()].emplace_back(rawtok->next->location);
+                    const std::string &name = rawtok->next->str();
+                    conditionIsTrue = (macros.find(name) != macros.end() || (hasInclude && name == HAS_INCLUDE));
+                    maybeUsedMacros[name].emplace_back(rawtok->next->location);
+                    if (ifCond) {
+                        const std::string E = conditionIsTrue ? "1" : "0";
+                        const long long result = conditionIsTrue ? 1 : 0;
+                        ifCond->emplace_back(rawtok->location, E, result);
+                    }
                 } else if (rawtok->str() == IFNDEF) {
-                    conditionIsTrue = (macros.find(rawtok->next->str()) == macros.end() && !(hasInclude && rawtok->next->str() == HAS_INCLUDE));
-                    maybeUsedMacros[rawtok->next->str()].emplace_back(rawtok->next->location);
+                    const std::string &name = rawtok->next->str();
+                    conditionIsTrue = (macros.find(name) == macros.end() && !(hasInclude && name == HAS_INCLUDE));
+                    maybeUsedMacros[name].emplace_back(rawtok->next->location);
+                    if (ifCond) {
+                        const std::string E = conditionIsTrue ? "1" : "0";
+                        const long long result = conditionIsTrue ? 1 : 0;
+                        ifCond->emplace_back(rawtok->location, E, result);
+                    }
                 } else { /*if (rawtok->str() == IF || rawtok->str() == ELIF)*/
                     TokenList expr(files);
                     for (const Token *tok = rawtok->next; tok && tok->location.sameline(rawtok->location); tok = tok->next) {
