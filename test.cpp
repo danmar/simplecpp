@@ -4026,6 +4026,27 @@ static void ifCond()
         ASSERT_EQUALS("0", it->E);
         ASSERT_EQUALS(0, it->result);
     }
+    {
+        const char code[] = "#ifdef NOTDEFINED\n"
+                            "#endif\n"
+                            "#ifndef NOTDEFINED\n"
+                            "#endif\n";
+        std::list<simplecpp::IfCond> ifCond;
+        ASSERT_EQUALS("", preprocess(code, &ifCond));
+        ASSERT_EQUALS(2, ifCond.size());
+        auto it = ifCond.cbegin();
+        ASSERT_EQUALS(0, it->location.fileIndex);
+        ASSERT_EQUALS(1, it->location.line);
+        ASSERT_EQUALS(2, it->location.col);
+        ASSERT_EQUALS("0", it->E);
+        ASSERT_EQUALS(0, it->result);
+        ++it;
+        ASSERT_EQUALS(0, it->location.fileIndex);
+        ASSERT_EQUALS(3, it->location.line);
+        ASSERT_EQUALS(2, it->location.col);
+        ASSERT_EQUALS("1", it->E);
+        ASSERT_EQUALS(1, it->result);
+    }
 }
 
 static void macroUsage()
