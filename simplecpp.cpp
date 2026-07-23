@@ -746,12 +746,10 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                 if (!ppTok || !ppTok->number)
                     continue;
 
-                constexpr auto line_limit = std::numeric_limits<decltype(Location::line)>::max();
+                constexpr unsigned long line_limit = std::numeric_limits<decltype(Location::line)>::max();
                 unsigned long line;
                 try {
-                    line = std::stoul(ppTok->str());
-                    if (line > line_limit)
-                        line = line_limit;
+                    line = std::min(line_limit, std::stoul(ppTok->str()));
                 } catch (...) {
                     line = line_limit;
                 }
