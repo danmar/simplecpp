@@ -667,14 +667,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
     const Token *oldLastToken = nullptr;
 
     const cstd_t cstd = getCStd(dui.std);
-    const bool std_is_c = cstd != CUnknown;
-    const cppstd_t cppstd = getCppStd(dui.std, std_is_c ? CPPUnknown : CPP26); // use C++26 by default
-
-    unsigned long maxline;
-    if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
-        maxline = 32767;
-    else
-        maxline = 2147483647;
+    const cppstd_t cppstd = getCppStd(dui.std);
 
     Location location(fileIndex(filename), 1, 1);
     while (stream.good()) {
@@ -760,15 +753,30 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                     line = std::numeric_limits<unsigned long>::max();
                 }
 
+                unsigned long maxline;
+                if ((cstd != CUnknown && cstd < C99) || (cppstd != CPPUnknown && cppstd < CPP11))
+                    maxline = 32767;
+                else
+                    maxline = 2147483647;
+
                 if (line == 0 || line > maxline) {
                     if (outputList) {
+                        const bool unknown_std = cstd == CUnknown && cppstd == CPPUnknown;
                         std::string msg = "Line number out of range: " + ppTok->str() + ". ";
                         if (line == 0) {
                             msg += "Line number zero is undefined behavior.";
                         } else {
-                            msg += "Line numbers above " + std::to_string(maxline) + " are " +
-                                   (cppstd >= CPP26 ? "conditionally supported" : "undefined behavior") +
-                                   " in " + (std_is_c ? getCStdName(cstd) : getCppStdName(cppstd)) + ".";
+                            msg += "Line numbers above " + std::to_string(maxline) + " are ";
+                            if (unknown_std || cppstd >= CPP26)
+                                msg += "conditionally supported";
+                            else
+                                msg += "undefined behavior";
+                            msg += " in ";
+                            if (cstd != CUnknown)
+                                msg += getCStdName(cstd);
+                            else
+                                msg += getCppStdName(unknown_std ? CPP26 : cppstd);
+                            msg += ".";
                         }
                         simplecpp::Output err{
                             simplecpp::Output::PORTABILITY_LINE_DIRECTIVE,
