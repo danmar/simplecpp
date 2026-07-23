@@ -774,9 +774,9 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
                             else
                                 msg += "undefined behavior";
                             if (cstd != CUnknown)
-                                msg += " in " + getCStdName(cstd);
+                                msg += std::string(" in ") + getCStdName(cstd);
                             else if (cppstd != CPPUnknown)
-                                msg += " in " + getCppStdName(cppstd);
+                                msg += std::string(" in ") + getCppStdName(cppstd);
                             msg += ".";
                         }
                         simplecpp::Output err{
