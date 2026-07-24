@@ -242,7 +242,8 @@ int main(int argc, char **argv)
             f.close();
             rawtokens = new simplecpp::TokenList(filename,files,dui,&outputList);
         }
-        rawtokens->removeComments();
+        if (dui.removeComments)
+            rawtokens->removeComments();
         simplecpp::FileDataCache filedata;
         simplecpp::preprocess(outputTokens, *rawtokens, files, filedata, dui, &outputList);
         simplecpp::cleanup(filedata);
