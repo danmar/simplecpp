@@ -1022,11 +1022,11 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             location.adjust(currentToken);
     }
 
-    if (!trailing_nl && outputList) {
+    if ((cstd != CUnknown || (cstd == CUnknown && cppstd == CPPUnknown)) && !trailing_nl && outputList) {
         Output err{
             Output::PORTABILITY_NO_EOF_NEWLINE,
             location,
-            "No newline at end of file."
+            "No newline at end of file is undefined behavior in C."
         };
         outputList->emplace_back(std::move(err));
     }

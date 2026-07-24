@@ -3480,13 +3480,21 @@ static void readfile_no_eof_newline()
         const char code[] = "\\\n";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, {}, &outputList);
-        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file is undefined behavior in C.\n", toString(outputList));
+    }
+    {
+        const char code[] = "\\\n";
+        simplecpp::DUI dui;
+        dui.std = "c++03";
+        simplecpp::OutputList outputList;
+        readfile(code, sizeof(code)-1, dui, &outputList);
+        ASSERT_EQUALS("", toString(outputList));
     }
     {
         const char code[] = "#define A";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, {}, &outputList);
-        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file is undefined behavior in C.\n", toString(outputList));
     }
     {
         const char code[] = "#define A\n";
@@ -3498,13 +3506,13 @@ static void readfile_no_eof_newline()
         const char code[] = "#define A\\";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, {}, &outputList);
-        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file is undefined behavior in C.\n", toString(outputList));
     }
     {
         const char code[] = "// comment";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, {}, &outputList);
-        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,1,portability_no_eof_newline,No newline at end of file is undefined behavior in C.\n", toString(outputList));
     }
     {
         const char code[] = "// comment\n";
@@ -3516,7 +3524,7 @@ static void readfile_no_eof_newline()
         const char code[] = "/* comment \n comment */";
         simplecpp::OutputList outputList;
         readfile(code, sizeof(code)-1, {}, &outputList);
-        ASSERT_EQUALS("file0,2,portability_no_eof_newline,No newline at end of file.\n", toString(outputList));
+        ASSERT_EQUALS("file0,2,portability_no_eof_newline,No newline at end of file is undefined behavior in C.\n", toString(outputList));
     }
     {
         const char code[] = "/* comment \n comment */\n";
