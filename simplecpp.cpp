@@ -1022,7 +1022,7 @@ void simplecpp::TokenList::readfile(Stream &stream, const std::string &filename,
             location.adjust(currentToken);
     }
 
-    if ((cstd != CUnknown || (cstd == CUnknown && cppstd == CPPUnknown)) && !trailing_nl && outputList) {
+    if ((cstd != CUnknown || cppstd == CPPUnknown) && !trailing_nl && outputList) {
         Output err{
             Output::PORTABILITY_NO_EOF_NEWLINE,
             location,
