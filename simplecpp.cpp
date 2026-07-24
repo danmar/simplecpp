@@ -3726,7 +3726,7 @@ void simplecpp::preprocess(simplecpp::TokenList &output, const simplecpp::TokenL
                     continue;
                 }
             } else if (rawtok->str() == IF || rawtok->str() == IFDEF || rawtok->str() == IFNDEF || rawtok->str() == ELIF ||
-                       ((getCStd(dui.std) >= C23 || getCppStd(dui.std) >= CPP23) && (rawtok->str() == ELIFDEF || rawtok->str() == ELIFNDEF))) {
+                       rawtok->str() == ELIFDEF || rawtok->str() == ELIFNDEF) {
                 if (!sameline(rawtok,rawtok->next)) {
                     if (outputList) {
                         simplecpp::Output out{

@@ -2372,9 +2372,6 @@ static void elif()
 
 static void elifdef()
 {
-    simplecpp::DUI dui;
-    dui.std = "c++23";
-
     {
         const char code[] = "#if 1\n"
                             "1\n"
@@ -2383,7 +2380,7 @@ static void elifdef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n1", preprocess(code, dui));
+        ASSERT_EQUALS("\n1", preprocess(code));
     }
     {
         const char code[] = "#define X\n"
@@ -2394,7 +2391,7 @@ static void elifdef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n\n\n\n2", preprocess(code, dui));
+        ASSERT_EQUALS("\n\n\n\n2", preprocess(code));
     }
     {
         const char code[] = "#if 0\n"
@@ -2404,15 +2401,12 @@ static void elifdef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code, dui));
+        ASSERT_EQUALS("\n\n\n\n\n3", preprocess(code));
     }
 }
 
 static void elifndef()
 {
-    simplecpp::DUI dui;
-    dui.std = "c++23";
-
     {
         const char code[] = "#if 1\n"
                             "1\n"
@@ -2421,7 +2415,7 @@ static void elifndef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n1", preprocess(code, dui));
+        ASSERT_EQUALS("\n1", preprocess(code));
     }
     {
         const char code[] = "#if 0\n"
@@ -2431,7 +2425,7 @@ static void elifndef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n\n\n2", preprocess(code, dui));
+        ASSERT_EQUALS("\n\n\n2", preprocess(code));
     }
     {
         const char code[] = "#define X\n"
@@ -2442,7 +2436,7 @@ static void elifndef()
                             "#else\n"
                             "3\n"
                             "#endif";
-        ASSERT_EQUALS("\n\n\n\n\n\n3", preprocess(code, dui));
+        ASSERT_EQUALS("\n\n\n\n\n\n3", preprocess(code));
     }
 }
 
