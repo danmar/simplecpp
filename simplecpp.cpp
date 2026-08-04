@@ -2310,12 +2310,43 @@ namespace simplecpp {
                 return false;
             if (variadic && argnr + 1U >= parametertokens.size()) // empty variadic parameter
                 return true;
-            for (const Token *partok = parametertokens[argnr]->next; partok != parametertokens[argnr + 1U];) {
+            const Token * const argEnd = parametertokens[argnr + 1U];
+            for (const Token *partok = parametertokens[argnr]->next; partok != argEnd;) {
                 const MacroMap::const_iterator it = macros.find(partok->str());
                 if (it != macros.end() && !partok->isExpandedFrom(&it->second) && (partok->str() == name() || expandedmacros.find(partok->str()) == expandedmacros.end())) {
                     std::set<TokenString> expandedmacros2(expandedmacros); // temporary amnesia to allow reexpansion of currently expanding macros during argument evaluation
                     expandedmacros2.erase(name());
-                    partok = it->second.expand(output, loc, partok, macros, std::move(expandedmacros2));
+                    TokenList temp(files);
+                    partok = it->second.expand(temp, loc, partok, macros, expandedmacros2);
+                    // Expand while the expansion result ends with the name of a
+                    // function-like macro whose arguments are supplied by the
+                    // remaining argument tokens
+                    while (partok && partok->previous) {
+                        const Macro * const calledMacro = rescanMacro(temp, partok->previous, macros, expandedmacros2);
+                        if (!calledMacro)
+                            break;
+                        TokenList temp2(files);
+                        temp2.push_back(new Token(temp.cback()->str(), partok->location));
+                        unsigned int par = 0;
+                        const Token *tok2 = partok;
+                        for (; tok2 && tok2 != argEnd; tok2 = tok2->next) {
+                            temp2.push_back(new Token(*tok2));
+                            if (tok2->op == '(')
+                                ++par;
+                            else if (tok2->op == ')') {
+                                --par;
+                                if (par == 0U)
+                                    break;
+                            }
+                        }
+                        if (!tok2 || tok2 == argEnd)
+                            break;
+                        output.takeTokens(temp);
+                        output.deleteToken(output.back());
+                        calledMacro->expand(temp, loc, temp2.cfront(), macros, expandedmacros2);
+                        partok = tok2->next;
+                    }
+                    output.takeTokens(temp);
                 } else {
                     output.push_back(newMacroToken(partok->str(), loc, isReplaced(expandedmacros), partok));
                     output.back()->macro = partok->macro;
