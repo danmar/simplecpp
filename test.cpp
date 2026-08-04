@@ -949,6 +949,46 @@ static void define23() // #40
                   "unsigned A , B ;", preprocess(code));
 }
 
+static void define24()
+{
+    // an expansion result that is a function-like macro name must be rescanned
+    // repeatedly against the tokens that follow it
+    const char code[] = "#define a(b, c) c\n"
+                        "#define d() a\n"
+                        "#define g(e) h(e, ) h(e, )\n"
+                        "#define h(e, b) d()(, e)()\n"
+                        "#define i()\n"
+                        "g(i)\n";
+    ASSERT_EQUALS("", preprocess(code));
+}
+
+static void define25()
+{
+    // a macro name that came from expanding that same macro must not be
+    // re-expanded when rescanned with the tokens that follow it
+    const char code[] = "#define f() f\n"
+                        "#define wrap(x) x()\n"
+                        "wrap(f())\n";
+    ASSERT_EQUALS("\n"
+                  "\n"
+                  "f ( )", preprocess(code));
+}
+
+static void define26()
+{
+    // a macro name that came from expanding that same macro must not be
+    // re-expanded with arguments taken from the raw token stream
+    const char code[] = "#define f() f\n"
+                        "f()()\n";
+    ASSERT_EQUALS("\n"
+                  "f ( )", preprocess(code));
+
+    const char code2[] = "#define f() f\n"
+                         "f()()()\n";
+    ASSERT_EQUALS("\n"
+                  "f ( ) ( )", preprocess(code2));
+}
+
 
 static void define_invalid_1()
 {
@@ -4520,6 +4560,9 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(define21); // #66
     TEST_CASE(define22); // #40
     TEST_CASE(define23); // #40
+    TEST_CASE(define24);
+    TEST_CASE(define25);
+    TEST_CASE(define26);
     TEST_CASE(define_invalid_1);
     TEST_CASE(define_invalid_2);
     TEST_CASE(define_invalid_3);
