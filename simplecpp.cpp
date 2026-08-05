@@ -2265,10 +2265,12 @@ namespace simplecpp {
                     argTok = argTok->next;
                     if (!sameline(tok, argTok))
                         break;
-                    if (argTok && argTok->str() == "#") {
+                    if (argTok->str() == "#") {
                         if (!argTok->next || argTok->next->str() != "#")
                             throw Error(argTok->location, "Expected '#'");
                         argTok = argTok->next->next;
+                        if (!sameline(tok, argTok) || !argTok->name)
+                            throw Error(argTok->location, "Expected name");
                     } else {
                         break;
                     }
