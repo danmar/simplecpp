@@ -2337,9 +2337,9 @@ namespace simplecpp {
                             unsigned int par = 0;
                             for (const Token *tok2 = lpar; tok2 != argEnd; tok2 = tok2->next) {
                                 temp2.push_back(new Token(*tok2));
-                                if (tok2->op == '(')
+                                if (tok2->op == '(') {
                                     ++par;
-                                else if (tok2->op == ')') {
+                                } else if (tok2->op == ')') {
                                     if (--par == 0U)
                                         return tok2;
                                 }
