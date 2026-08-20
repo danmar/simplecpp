@@ -3782,6 +3782,31 @@ static void tokenMacro5()
     ASSERT_EQUALS("SET_BPF_JUMP", tok->macro);
 }
 
+static void tokenMacro6()
+{
+    const char code[] = "#define FILE() __FILE__\n"
+                        "#define LINE() __LINE__\n"
+                        "#define COUNTER() __COUNTER__\n"
+                        "FILE()\n"
+                        "LINE()\n"
+                        "COUNTER()\n";
+    std::vector<std::string> files;
+    simplecpp::FileDataCache cache;
+    simplecpp::TokenList tokenList(files);
+    const simplecpp::TokenList rawtokens = makeTokenList(code,files);
+    simplecpp::preprocess(tokenList, rawtokens, files, cache, simplecpp::DUI());
+    const simplecpp::Token *tok;
+
+    tok = tokenList.cfront();
+    ASSERT_EQUALS("__FILE__", tok->macro);
+
+    tok = tok->next;
+    ASSERT_EQUALS("__LINE__", tok->macro);
+
+    tok = tok->next;
+    ASSERT_EQUALS("__COUNTER__", tok->macro);
+}
+
 static void undef()
 {
     const char code[] = "#define A\n"
@@ -4781,6 +4806,7 @@ static void runTests(int argc, char **argv, Input input)
     TEST_CASE(tokenMacro3);
     TEST_CASE(tokenMacro4);
     TEST_CASE(tokenMacro5);
+    TEST_CASE(tokenMacro6);
 
     TEST_CASE(undef);
 

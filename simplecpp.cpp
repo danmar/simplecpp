@@ -1994,14 +1994,17 @@ namespace simplecpp {
 
             if (nameTokInst->str() == "__FILE__") {
                 output.push_back(new Token('\"'+output.file(loc)+'\"', loc));
+                output.back()->macro = "__FILE__";
                 return nameTokInst->next;
             }
             if (nameTokInst->str() == "__LINE__") {
                 output.push_back(new Token(toString(loc.line), loc));
+                output.back()->macro = "__LINE__";
                 return nameTokInst->next;
             }
             if (nameTokInst->str() == "__COUNTER__") {
                 output.push_back(new Token(toString(usageList.size()-1U), loc));
+                output.back()->macro = "__COUNTER__";
                 return nameTokInst->next;
             }
 
